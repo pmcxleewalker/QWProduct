@@ -274,6 +274,18 @@ const Admin = () => {
           <Phone className="inline mr-2" size={20} />
           Manage Providers
         </button>
+        <button
+          onClick={() => setActiveTab('users')}
+          data-testid="tab-users"
+          className={`pb-4 px-4 font-medium transition-colors ${
+            activeTab === 'users'
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-600 hover:text-blue-600'
+          }`}
+        >
+          <Users className="inline mr-2" size={20} />
+          Manage Users
+        </button>
       </div>
 
       {/* Cars Tab */}

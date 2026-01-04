@@ -57,12 +57,35 @@ const Bookings = () => {
     setSuccess('');
 
     try {
-      await bookingAPI.create({
+      const bookingData = {
         ...formData,
         start_time: new Date(formData.start_time).toISOString(),
         end_time: new Date(formData.end_time).toISOString(),
-      });
-      setSuccess('Booking created successfully!');
+      };
+      
+      // Add recurrence data if recurring
+      if (formData.is_recurring && formData.recurrence_type) {
+        bookingData.is_recurring = true;
+        bookingData.recurrence_type = formData.recurrence_type;
+        if (formData.recurrence_end_date) {
+          bookingData.recurrence_end_date = new Date(formData.recurrence_end_date).toISOString();
+        }
+        if (formData.recurrence_count) {
+          bookingData.recurrence_count = parseInt(formData.recurrence_count);
+        }
+      }
+      
+      await bookingAPI.create(bookingData);
+      
+      const isRecurring = formData.is_recurring && formData.recurrence_type;
+      const isStaff = user?.role !== 'admin';
+      
+      if (isRecurring && isStaff) {
+        setSuccess('Recurring booking submitted for admin approval!');
+      } else {
+        setSuccess('Booking created successfully!');
+      }
+      
       setShowForm(false);
       setFormData({
         car_id: '',
@@ -70,6 +93,10 @@ const Bookings = () => {
         start_time: '',
         end_time: '',
         destination_notes: '',
+        is_recurring: false,
+        recurrence_type: '',
+        recurrence_end_date: '',
+        recurrence_count: '',
       });
       fetchData(); // Auto-refresh calendar
     } catch (err) {

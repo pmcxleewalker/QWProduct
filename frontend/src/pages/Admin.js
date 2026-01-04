@@ -434,7 +434,36 @@ const Admin = () => {
           }`}
         >
           <Users className="inline mr-2" size={20} />
-          Manage Users
+          Users
+        </button>
+        <button
+          onClick={() => setActiveTab('approvals')}
+          data-testid="tab-approvals"
+          className={`pb-4 px-4 font-medium transition-colors relative ${
+            activeTab === 'approvals'
+              ? 'border-b-2 border-orange-600 text-orange-600'
+              : 'text-gray-600 hover:text-orange-600'
+          }`}
+        >
+          <Clock className="inline mr-2" size={20} />
+          Approvals
+          {pendingBookings.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              {pendingBookings.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('messages')}
+          data-testid="tab-messages"
+          className={`pb-4 px-4 font-medium transition-colors ${
+            activeTab === 'messages'
+              ? 'border-b-2 border-purple-600 text-purple-600'
+              : 'text-gray-600 hover:text-purple-600'
+          }`}
+        >
+          <MessageSquare className="inline mr-2" size={20} />
+          Messages
         </button>
       </div>
 

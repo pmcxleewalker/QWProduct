@@ -33,6 +33,9 @@ export const bookingAPI = {
   getByCar: (carId) => axios.get(`${API}/bookings/car/${carId}`),
   create: (data) => axios.post(`${API}/bookings`, data),
   delete: (id) => axios.delete(`${API}/bookings/${id}`),
+  getPending: () => axios.get(`${API}/admin/pending-bookings`),
+  approve: (groupId) => axios.post(`${API}/admin/bookings/${groupId}/approve`),
+  reject: (groupId) => axios.post(`${API}/admin/bookings/${groupId}/reject`),
 };
 
 // Assistance API
@@ -52,4 +55,16 @@ export const userAPI = {
   delete: (id) => axios.delete(`${API}/admin/users/${id}`),
 };
 
-export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI };
+// Admin Messages API
+export const messageAPI = {
+  // Admin endpoints
+  create: (data) => axios.post(`${API}/admin/messages`, data),
+  getAll: () => axios.get(`${API}/admin/messages`),
+  update: (id, data) => axios.put(`${API}/admin/messages/${id}`, data),
+  delete: (id) => axios.delete(`${API}/admin/messages/${id}`),
+  // Staff endpoints
+  getUnacknowledged: () => axios.get(`${API}/messages/unacknowledged`),
+  acknowledge: (id) => axios.post(`${API}/messages/${id}/acknowledge`),
+};
+
+export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI };

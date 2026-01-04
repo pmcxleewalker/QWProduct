@@ -677,23 +677,51 @@ const Bookings = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="border-t p-4 flex space-x-3">
-              <button
-                onClick={() => setSelectedBooking(null)}
-                className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  handleDelete(selectedBooking.id);
-                  setSelectedBooking(null);
-                }}
-                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center justify-center space-x-2"
-              >
-                <Trash2 size={18} />
-                <span>Delete Booking</span>
-              </button>
+            <div className="border-t p-4">
+              {/* Permission check: Admin can delete any, user can only cancel their own */}
+              {(() => {
+                const isAdmin = user?.role === 'admin';
+                const isOwner = selectedBooking.created_by_email === user?.email;
+                const canDelete = isAdmin || isOwner;
+
+                return (
+                  <div className="space-y-3">
+                    {/* Show who created the booking */}
+                    {selectedBooking.created_by_email && (
+                      <p className="text-xs text-gray-500 text-center">
+                        Created by: {selectedBooking.created_by_email}
+                        {isOwner && <span className="text-blue-600 ml-1">(You)</span>}
+                      </p>
+                    )}
+                    
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => setSelectedBooking(null)}
+                        className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                      >
+                        Close
+                      </button>
+                      
+                      {canDelete ? (
+                        <button
+                          onClick={() => {
+                            handleDelete(selectedBooking.id);
+                            setSelectedBooking(null);
+                          }}
+                          className={`flex-1 ${isAdmin && !isOwner ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-500 hover:bg-orange-600'} text-white py-2 px-4 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2`}
+                        >
+                          <Trash2 size={18} />
+                          <span>{isAdmin && !isOwner ? 'Delete' : 'Cancel Booking'}</span>
+                        </button>
+                      ) : (
+                        <div className="flex-1 bg-gray-200 text-gray-500 py-2 px-4 rounded-lg text-center text-sm">
+                          Only the creator or admin can cancel
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

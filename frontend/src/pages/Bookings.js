@@ -581,6 +581,121 @@ const Bookings = () => {
           )}
         </>
       )}
+
+      {/* Booking Preview Modal */}
+      {selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            {/* Modal Header */}
+            <div className={`${getCarColor(selectedBooking.car_id)} text-white p-4`}>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-xl font-bold">{getCarName(selectedBooking.car_id)}</h3>
+                  {getCarInfo(selectedBooking.car_id) && (
+                    <p className="text-sm opacity-80">{getCarInfo(selectedBooking.car_id).registration}</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setSelectedBooking(null)}
+                  className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {/* Booked By */}
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <User className="text-blue-600" size={20} />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Booked By</p>
+                  <p className="font-semibold text-gray-900">{selectedBooking.user_name}</p>
+                </div>
+              </div>
+
+              {/* Start Time */}
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Clock className="text-green-600" size={20} />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Start Time</p>
+                  <p className="font-semibold text-gray-900">{formatFullDateTime(selectedBooking.start_time)}</p>
+                </div>
+              </div>
+
+              {/* End Time */}
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <Clock className="text-red-600" size={20} />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">End Time</p>
+                  <p className="font-semibold text-gray-900">{formatFullDateTime(selectedBooking.end_time)}</p>
+                </div>
+              </div>
+
+              {/* Destination */}
+              {selectedBooking.destination_notes && (
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <MapPin className="text-purple-600" size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Destination / Notes</p>
+                    <p className="font-semibold text-gray-900">{selectedBooking.destination_notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Duration */}
+              <div className="bg-gray-50 rounded-lg p-3 mt-4">
+                <p className="text-sm text-gray-500">Duration</p>
+                <p className="font-semibold text-gray-900">
+                  {(() => {
+                    const start = new Date(selectedBooking.start_time);
+                    const end = new Date(selectedBooking.end_time);
+                    const diffMs = end - start;
+                    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    if (diffHours > 0 && diffMins > 0) {
+                      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ${diffMins} min${diffMins !== 1 ? 's' : ''}`;
+                    } else if (diffHours > 0) {
+                      return `${diffHours} hour${diffHours !== 1 ? 's' : ''}`;
+                    } else {
+                      return `${diffMins} minute${diffMins !== 1 ? 's' : ''}`;
+                    }
+                  })()}
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t p-4 flex space-x-3">
+              <button
+                onClick={() => setSelectedBooking(null)}
+                className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  handleDelete(selectedBooking.id);
+                  setSelectedBooking(null);
+                }}
+                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center justify-center space-x-2"
+              >
+                <Trash2 size={18} />
+                <span>Delete Booking</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

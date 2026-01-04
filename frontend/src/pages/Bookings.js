@@ -218,8 +218,9 @@ const Bookings = () => {
             {dayBookings.slice(0, 3).map((booking, idx) => (
               <div 
                 key={booking.id}
-                className={`${getCarColor(booking.car_id)} text-white text-xs px-1 py-0.5 rounded truncate cursor-pointer`}
-                title={`${getCarName(booking.car_id)} - ${booking.user_name}\n${formatTime(booking.start_time)} - ${formatTime(booking.end_time)}`}
+                onClick={() => setSelectedBooking(booking)}
+                className={`${getCarColor(booking.car_id)} text-white text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity`}
+                title="Click to view details"
               >
                 <span className="hidden md:inline">{formatTime(booking.start_time)} </span>
                 {selectedCar === 'all' ? getCarName(booking.car_id) : booking.user_name}

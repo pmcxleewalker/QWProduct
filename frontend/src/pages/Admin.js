@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { carAPI, assistanceAPI } from '../api/api';
-import { Car, Phone, Plus, Trash2, Edit2, QrCode } from 'lucide-react';
+import { carAPI, assistanceAPI, userAPI } from '../api/api';
+import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, Mail, Copy, CheckCircle } from 'lucide-react';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('cars');

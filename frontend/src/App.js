@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import LiveSheet from './pages/LiveSheet';
 import StatusUpdate from './pages/StatusUpdate';
 import Bookings from './pages/Bookings';
 import Assistance from './pages/Assistance';

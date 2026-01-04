@@ -17,6 +17,7 @@ const StatusUpdate = () => {
     status: 'Free',
     notes: '',
     user_name: '',
+    location: '',
   });
 
   useEffect(() => {

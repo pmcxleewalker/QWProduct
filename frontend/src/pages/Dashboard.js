@@ -44,6 +44,7 @@ const Dashboard = () => {
       fetchComplianceAlerts();
     }, 30000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const formatTime = (date) => {

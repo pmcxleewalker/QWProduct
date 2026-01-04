@@ -635,6 +635,13 @@ async def create_booking(booking: BookingCreate, current_user: dict = Depends(ge
     if not car:
         raise HTTPException(status_code=404, detail="Car not found")
     
+    # Check if car is blocked
+    if car.get('is_blocked'):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Car is blocked for {car.get('block_reason', 'maintenance')}. Cannot create booking."
+        )
+    
     # Check for booking conflicts
     conflicts = await db.bookings.find({
         "car_id": booking.car_id,

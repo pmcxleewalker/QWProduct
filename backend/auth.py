@@ -58,8 +58,7 @@ def generate_invite_token() -> str:
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db = None
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     """Dependency to get current authenticated user"""
     token = credentials.credentials
@@ -72,11 +71,8 @@ async def get_current_user(
             detail="Could not validate credentials"
         )
     
-    # Get user from database
-    from motor.motor_asyncio import AsyncIOMotorClient
-    mongo_url = os.environ['MONGO_URL']
-    client = AsyncIOMotorClient(mongo_url)
-    db = client[os.environ['DB_NAME']]
+    # Import db from server to reuse connection
+    from server import db
     
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     if user is None or not user.get('is_active', True):

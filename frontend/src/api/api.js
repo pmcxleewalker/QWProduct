@@ -52,4 +52,4 @@ export const userAPI = {
   delete: (id) => axios.delete(`${API}/admin/users/${id}`),
 };
 
-export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI };
+export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI };

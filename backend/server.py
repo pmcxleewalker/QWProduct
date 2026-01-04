@@ -826,6 +826,171 @@ async def delete_booking(booking_id: str, current_user: dict = Depends(get_curre
     return {"message": f"Booking {action} successfully"}
 
 
+# ==================== RECURRING BOOKING APPROVAL ENDPOINTS ====================
+
+@api_router.get("/admin/pending-bookings")
+async def get_pending_bookings(current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Get all pending recurring bookings that need approval"""
+    # Get unique recurring groups that are pending
+    pending = await db.bookings.find(
+        {"status": "pending_approval"},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(500)
+    
+    for booking in pending:
+        deserialize_datetime(booking, ['start_time', 'end_time', 'created_at', 'recurrence_end_date'])
+    
+    # Group by recurring_group_id
+    groups = {}
+    for booking in pending:
+        group_id = booking.get('recurring_group_id') or booking['id']
+        if group_id not in groups:
+            groups[group_id] = {
+                'group_id': group_id,
+                'bookings': [],
+                'car_id': booking['car_id'],
+                'user_name': booking['user_name'],
+                'created_by_email': booking.get('created_by_email'),
+                'recurrence_type': booking.get('recurrence_type'),
+                'first_booking': booking,
+            }
+        groups[group_id]['bookings'].append(booking)
+    
+    return list(groups.values())
+
+
+@api_router.post("/admin/bookings/{group_id}/approve")
+async def approve_recurring_booking(group_id: str, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Approve a recurring booking group"""
+    result = await db.bookings.update_many(
+        {"recurring_group_id": group_id, "status": "pending_approval"},
+        {"$set": {"status": "approved"}}
+    )
+    
+    if result.modified_count == 0:
+        # Try single booking
+        result = await db.bookings.update_one(
+            {"id": group_id, "status": "pending_approval"},
+            {"$set": {"status": "approved"}}
+        )
+    
+    return {"message": f"Approved {result.modified_count} booking(s)"}
+
+
+@api_router.post("/admin/bookings/{group_id}/reject")
+async def reject_recurring_booking(group_id: str, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Reject and delete a recurring booking group"""
+    result = await db.bookings.delete_many(
+        {"recurring_group_id": group_id, "status": "pending_approval"}
+    )
+    
+    if result.deleted_count == 0:
+        # Try single booking
+        result = await db.bookings.delete_one(
+            {"id": group_id, "status": "pending_approval"}
+        )
+    
+    return {"message": f"Rejected and deleted {result.deleted_count} booking(s)"}
+
+
+# ==================== ADMIN MESSAGING BOARD ENDPOINTS ====================
+
+@api_router.post("/admin/messages", response_model=AdminMessage)
+async def create_admin_message(message: AdminMessageCreate, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Create a new message/announcement for staff"""
+    message_obj = AdminMessage(**message.model_dump())
+    message_obj.created_by = current_user['email']
+    doc = serialize_datetime(message_obj.model_dump())
+    await db.admin_messages.insert_one(doc)
+    return message_obj
+
+
+@api_router.get("/admin/messages")
+async def get_admin_messages(current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Get all messages"""
+    messages = await db.admin_messages.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    for msg in messages:
+        deserialize_datetime(msg, ['created_at'])
+    return messages
+
+
+@api_router.delete("/admin/messages/{message_id}")
+async def delete_admin_message(message_id: str, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Delete a message"""
+    result = await db.admin_messages.delete_one({"id": message_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Message not found")
+    # Also delete acknowledgments
+    await db.message_acknowledgments.delete_many({"message_id": message_id})
+    return {"message": "Message deleted successfully"}
+
+
+@api_router.put("/admin/messages/{message_id}")
+async def update_admin_message(message_id: str, message: AdminMessageCreate, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Update a message"""
+    result = await db.admin_messages.update_one(
+        {"id": message_id},
+        {"$set": {
+            "title": message.title,
+            "content": message.content,
+            "requires_acknowledgment": message.requires_acknowledgment,
+            "is_active": message.is_active
+        }}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Message not found")
+    return {"message": "Message updated successfully"}
+
+
+# ==================== STAFF MESSAGE ENDPOINTS ====================
+
+@api_router.get("/messages/unacknowledged")
+async def get_unacknowledged_messages(current_user: dict = Depends(get_current_user)):
+    """Get messages that require acknowledgment from current user"""
+    # Get all active messages that require acknowledgment
+    messages = await db.admin_messages.find(
+        {"is_active": True, "requires_acknowledgment": True},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    # Get user's acknowledgments
+    acks = await db.message_acknowledgments.find(
+        {"user_email": current_user['email']},
+        {"_id": 0}
+    ).to_list(100)
+    acked_ids = {a['message_id'] for a in acks}
+    
+    # Filter to unacknowledged
+    unacked = [m for m in messages if m['id'] not in acked_ids]
+    
+    for msg in unacked:
+        deserialize_datetime(msg, ['created_at'])
+    
+    return unacked
+
+
+@api_router.post("/messages/{message_id}/acknowledge")
+async def acknowledge_message(message_id: str, current_user: dict = Depends(get_current_user)):
+    """Acknowledge a message"""
+    # Check if already acknowledged
+    existing = await db.message_acknowledgments.find_one({
+        "message_id": message_id,
+        "user_email": current_user['email']
+    })
+    
+    if existing:
+        return {"message": "Already acknowledged"}
+    
+    ack = {
+        "message_id": message_id,
+        "user_email": current_user['email'],
+        "acknowledged_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.message_acknowledgments.insert_one(ack)
+    
+    return {"message": "Message acknowledged"}
+
+
 # ==================== ASSISTANCE PROVIDER ENDPOINTS ====================
 
 @api_router.post("/assistance", response_model=AssistanceProvider)

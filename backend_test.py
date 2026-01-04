@@ -13,6 +13,8 @@ class FleetManagementAPITester:
         self.test_car_id = None
         self.test_booking_id = None
         self.test_provider_id = None
+        self.admin_token = None
+        self.staff_token = None
 
     def run_test(self, name, method, endpoint, expected_status, data=None, params=None):
         """Run a single API test"""

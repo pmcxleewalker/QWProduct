@@ -180,7 +180,7 @@ const LiveSheet = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {liveStatus.map((item) => (
-                <tr key={item.car.id} data-testid={`row-${item.car.id}`} className="hover:bg-gray-50">
+                <tr key={item.car.id} data-testid={`row-${item.car.id}`} className={`hover:bg-gray-50 ${item.car.is_blocked ? 'bg-purple-50' : ''}`}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{item.car.name}</div>
                   </td>
@@ -188,7 +188,11 @@ const LiveSheet = () => {
                     <div className="text-sm text-gray-500">{item.car.registration}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={item.car.current_status} />
+                    <StatusBadge 
+                      status={item.car.current_status} 
+                      isBlocked={item.car.is_blocked}
+                      blockReason={item.car.block_reason}
+                    />
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900">

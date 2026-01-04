@@ -359,7 +359,7 @@ const Admin = () => {
               onClick={() => {
                 setShowCarForm(true);
                 setEditingCar(null);
-                setCarForm({ name: '', registration: '', current_status: 'Free' });
+                setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_date: '' });
               }}
               data-testid="add-car-button"
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"

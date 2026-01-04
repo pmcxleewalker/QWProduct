@@ -396,23 +396,46 @@ async def create_status_update(status_update: StatusUpdateCreate):
 
 @api_router.get("/status/live", response_model=List[dict])
 async def get_live_status(current_user: dict = Depends(get_current_user)):
-    """Get live status of all cars (authenticated users)"""
-    cars = await db.cars.find({}, {"_id": 0}).to_list(1000)
+    """Get live status of all cars (authenticated users) - Optimized with aggregation"""
+    # Use aggregation pipeline to avoid N+1 query problem
+    pipeline = [
+        {"$project": {"_id": 0}},
+        {
+            "$lookup": {
+                "from": "status_updates",
+                "let": {"car_id": "$id"},
+                "pipeline": [
+                    {"$match": {"$expr": {"$eq": ["$car_id", "$$car_id"]}}},
+                    {"$sort": {"timestamp": -1}},
+                    {"$limit": 1},
+                    {"$project": {"_id": 0}}
+                ],
+                "as": "status_array"
+            }
+        },
+        {
+            "$addFields": {
+                "latest_status": {"$arrayElemAt": ["$status_array", 0]}
+            }
+        },
+        {"$project": {"status_array": 0}}
+    ]
     
+    cars_with_status = await db.cars.aggregate(pipeline).to_list(1000)
+    
+    # Deserialize datetime fields
+    for item in cars_with_status:
+        if 'created_at' in item:
+            deserialize_datetime(item, ['created_at'])
+        if item.get('latest_status') and 'timestamp' in item['latest_status']:
+            deserialize_datetime(item['latest_status'], ['timestamp'])
+    
+    # Format response to match expected structure
     result = []
-    for car in cars:
-        latest_status = await db.status_updates.find_one(
-            {"car_id": car['id']},
-            {"_id": 0},
-            sort=[("timestamp", -1)]
-        )
-        
-        deserialize_datetime(car, ['created_at'])
-        if latest_status:
-            deserialize_datetime(latest_status, ['timestamp'])
-        
+    for item in cars_with_status:
+        latest_status = item.pop('latest_status', None)
         result.append({
-            "car": car,
+            "car": item,
             "latest_status": latest_status
         })
     

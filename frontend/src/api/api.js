@@ -37,4 +37,12 @@ export const assistanceAPI = {
   delete: (id) => axios.delete(`${API}/assistance/${id}`),
 };
 
-export default { carAPI, statusAPI, bookingAPI, assistanceAPI };
+// User Management API
+export const userAPI = {
+  invite: (data) => axios.post(`${API}/admin/users/invite`, data),
+  getAll: () => axios.get(`${API}/admin/users`),
+  update: (id, data) => axios.put(`${API}/admin/users/${id}`, data),
+  delete: (id) => axios.delete(`${API}/admin/users/${id}`),
+};
+
+export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI };

@@ -536,13 +536,82 @@ const Bookings = () => {
               />
             </div>
 
+            {/* Recurring Booking Section */}
+            <div className="border-t pt-4 mt-4">
+              <div className="flex items-center space-x-2 mb-4">
+                <input
+                  type="checkbox"
+                  id="is_recurring"
+                  checked={formData.is_recurring}
+                  onChange={(e) => setFormData({ ...formData, is_recurring: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="is_recurring" className="text-sm font-medium text-gray-700">
+                  🔄 Make this a recurring booking
+                </label>
+                {user?.role !== 'admin' && formData.is_recurring && (
+                  <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                    Requires admin approval
+                  </span>
+                )}
+              </div>
+
+              {formData.is_recurring && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Repeat *
+                    </label>
+                    <select
+                      value={formData.recurrence_type}
+                      onChange={(e) => setFormData({ ...formData, recurrence_type: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      required={formData.is_recurring}
+                    >
+                      <option value="">Select frequency</option>
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Until Date
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.recurrence_end_date}
+                      onChange={(e) => setFormData({ ...formData, recurrence_end_date: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Or # of times
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="52"
+                      value={formData.recurrence_count}
+                      onChange={(e) => setFormData({ ...formData, recurrence_count: e.target.value })}
+                      placeholder="e.g., 10"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="flex space-x-4">
               <button
                 type="submit"
                 data-testid="submit-booking-button"
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Create Booking
+                {formData.is_recurring ? 'Create Recurring Booking' : 'Create Booking'}
               </button>
               <button
                 type="button"

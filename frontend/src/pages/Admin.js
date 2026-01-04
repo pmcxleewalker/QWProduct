@@ -412,7 +412,45 @@ const Admin = () => {
                     </select>
                   </div>
                 </div>
-                <div className="flex space-x-4">
+                
+                {/* Compliance Dates Section */}
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">📋 Compliance Dates (Optional)</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Tax Due Date</label>
+                      <input
+                        type="date"
+                        data-testid="car-tax-date-input"
+                        value={carForm.tax_due_date ? carForm.tax_due_date.split('T')[0] : ''}
+                        onChange={(e) => setCarForm({ ...carForm, tax_due_date: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">NCT Due Date</label>
+                      <input
+                        type="date"
+                        data-testid="car-nct-date-input"
+                        value={carForm.nct_due_date ? carForm.nct_due_date.split('T')[0] : ''}
+                        onChange={(e) => setCarForm({ ...carForm, nct_due_date: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Service Due Date</label>
+                      <input
+                        type="date"
+                        data-testid="car-service-date-input"
+                        value={carForm.service_due_date ? carForm.service_due_date.split('T')[0] : ''}
+                        onChange={(e) => setCarForm({ ...carForm, service_due_date: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex space-x-4 mt-4">
                   <button
                     type="submit"
                     data-testid="submit-car-button"

@@ -57,25 +57,43 @@ const Navigation = () => {
             <div className="flex items-center">
               <h1 className="text-2xl font-bold text-blue-600">Quick Wing</h1>
             </div>
-            <div className="flex space-x-8">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    data-testid={`nav-${item.label.toLowerCase()}`}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
-                      isActive(item.path)
-                        ? 'text-blue-600 bg-blue-50'
-                        : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Icon size={20} />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
+            <div className="flex items-center space-x-4">
+              <div className="flex space-x-8">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      data-testid={`nav-${item.label.toLowerCase()}`}
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
+                        isActive(item.path)
+                          ? 'text-blue-600 bg-blue-50'
+                          : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Icon size={20} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+              <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
+                <span className="text-sm text-gray-700">{user?.email}</span>
+                {isAdmin() && (
+                  <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded">
+                    Admin
+                  </span>
+                )}
+                <button
+                  onClick={handleLogout}
+                  data-testid="logout-button"
+                  className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                  title="Logout"
+                >
+                  <LogOut size={20} />
+                </button>
+              </div>
             </div>
           </div>
         </div>

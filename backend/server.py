@@ -251,9 +251,13 @@ async def invite_user(invite_data: UserInvite, current_admin: dict = Depends(get
 
 
 @api_router.get("/admin/users", response_model=List[User])
-async def list_users(current_admin: dict = Depends(get_current_admin_user)):
-    """Admin: Get all users"""
-    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(1000)
+async def list_users(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=500, description="Maximum number of records to return"),
+    current_admin: dict = Depends(get_current_admin_user)
+):
+    """Admin: Get all users with pagination"""
+    users = await db.users.find({}, {"_id": 0, "password_hash": 0}).skip(skip).limit(limit).to_list(limit)
     for user in users:
         deserialize_datetime(user, ['created_at'])
     return users

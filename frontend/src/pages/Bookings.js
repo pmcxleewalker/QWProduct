@@ -100,7 +100,18 @@ const Bookings = () => {
       });
       fetchData(); // Auto-refresh calendar
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create booking');
+      // Handle error - detail can be string or array of validation errors
+      const detail = err.response?.data?.detail;
+      if (typeof detail === 'string') {
+        setError(detail);
+      } else if (Array.isArray(detail)) {
+        // Validation errors come as array of objects
+        setError(detail.map(e => e.msg || e.message || 'Validation error').join(', '));
+      } else if (detail && typeof detail === 'object') {
+        setError(detail.msg || detail.message || 'Failed to create booking');
+      } else {
+        setError('Failed to create booking');
+      }
     }
   };
 

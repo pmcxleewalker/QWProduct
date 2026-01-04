@@ -88,6 +88,10 @@ const Bookings = () => {
     return car ? car.name : 'Unknown';
   };
 
+  const getCarInfo = (carId) => {
+    return cars.find(c => c.id === carId);
+  };
+
   const getCarColor = (carId) => {
     const colors = [
       'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 

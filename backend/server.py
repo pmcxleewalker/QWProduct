@@ -124,12 +124,39 @@ class BookingCreate(BaseModel):
     start_time: datetime
     end_time: datetime
     destination_notes: Optional[str] = ""
+    # Recurring booking fields
+    is_recurring: bool = False
+    recurrence_type: Optional[str] = None  # daily, weekly, monthly
+    recurrence_end_date: Optional[datetime] = None
+    recurrence_count: Optional[int] = None  # Number of occurrences
 
 class Booking(BookingCreate):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     created_by_email: Optional[str] = None  # Track who created the booking
+    status: str = "approved"  # approved, pending_approval, rejected
+    recurring_group_id: Optional[str] = None  # Links recurring bookings together
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# ==================== ADMIN MESSAGE MODELS ====================
+
+class AdminMessageCreate(BaseModel):
+    title: str
+    content: str
+    requires_acknowledgment: bool = True
+    is_active: bool = True
+
+class AdminMessage(AdminMessageCreate):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_by: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class MessageAcknowledgment(BaseModel):
+    message_id: str
+    user_email: str
+    acknowledged_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ==================== ASSISTANCE PROVIDER MODELS ====================

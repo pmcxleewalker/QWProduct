@@ -97,7 +97,7 @@ const Admin = () => {
       }
       setShowCarForm(false);
       setEditingCar(null);
-      setCarForm({ name: '', registration: '', current_status: 'Free' });
+      setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_date: '' });
       fetchData();
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to save car');

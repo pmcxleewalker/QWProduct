@@ -519,12 +519,17 @@ async def get_all_bookings(
 
 
 @api_router.get("/bookings/car/{car_id}", response_model=List[Booking])
-async def get_car_bookings(car_id: str, current_user: dict = Depends(get_current_user)):
-    """Get bookings for a specific car (authenticated users)"""
+async def get_car_bookings(
+    car_id: str,
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=500, description="Maximum number of records to return"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get bookings for a specific car (authenticated users) with pagination"""
     bookings = await db.bookings.find(
         {"car_id": car_id},
         {"_id": 0}
-    ).sort("start_time", -1).to_list(1000)
+    ).sort("start_time", -1).skip(skip).limit(limit).to_list(limit)
     
     for booking in bookings:
         deserialize_datetime(booking, ['start_time', 'end_time', 'created_at'])

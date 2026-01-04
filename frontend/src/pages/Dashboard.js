@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { statusAPI, complianceAPI } from '../api/api';
+import { statusAPI, complianceAPI, bookingAPI, carAPI } from '../api/api';
 import StatusBadge from '../components/StatusBadge';
-import { RefreshCw, Clock, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Clock, AlertTriangle, Check, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const [liveStatus, setLiveStatus] = useState([]);
   const [complianceAlerts, setComplianceAlerts] = useState([]);
+  const [pendingBookings, setPendingBookings] = useState([]);
+  const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -35,17 +37,59 @@ const Dashboard = () => {
     }
   };
 
+  const fetchPendingBookings = async () => {
+    if (user?.role === 'admin') {
+      try {
+        const [pendingRes, carsRes] = await Promise.all([
+          bookingAPI.getPending(),
+          carAPI.getAll(),
+        ]);
+        setPendingBookings(pendingRes.data);
+        setCars(carsRes.data);
+      } catch (error) {
+        console.error('Error fetching pending bookings:', error);
+      }
+    }
+  };
+
   useEffect(() => {
     fetchLiveStatus();
     fetchComplianceAlerts();
+    fetchPendingBookings();
     // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
       fetchLiveStatus();
       fetchComplianceAlerts();
+      fetchPendingBookings();
     }, 30000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const getCarName = (carId) => {
+    const car = cars.find(c => c.id === carId);
+    return car ? car.name : 'Unknown';
+  };
+
+  const handleApproveBooking = async (groupId) => {
+    try {
+      await bookingAPI.approve(groupId);
+      fetchPendingBookings();
+      fetchLiveStatus();
+    } catch (err) {
+      console.error('Failed to approve booking:', err);
+    }
+  };
+
+  const handleRejectBooking = async (groupId) => {
+    if (!window.confirm('Reject this recurring booking request?')) return;
+    try {
+      await bookingAPI.reject(groupId);
+      fetchPendingBookings();
+    } catch (err) {
+      console.error('Failed to reject booking:', err);
+    }
+  };
 
   const formatTime = (date) => {
     if (!date) return 'Never';

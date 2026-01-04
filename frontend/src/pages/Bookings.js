@@ -22,6 +22,10 @@ const Bookings = () => {
     start_time: '',
     end_time: '',
     destination_notes: '',
+    is_recurring: false,
+    recurrence_type: '',
+    recurrence_end_date: '',
+    recurrence_count: '',
   });
 
   useEffect(() => {

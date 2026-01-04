@@ -98,6 +98,7 @@ class StatusUpdateCreate(BaseModel):
     status: str
     notes: Optional[str] = ""
     user_name: Optional[str] = "Anonymous"
+    location: Optional[str] = ""
 
 class StatusUpdate(StatusUpdateCreate):
     model_config = ConfigDict(extra="ignore")

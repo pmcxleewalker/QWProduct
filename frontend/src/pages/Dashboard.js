@@ -85,6 +85,11 @@ const Dashboard = () => {
 
               {item.latest_status && (
                 <div className="border-t pt-4 mt-4">
+                  {item.latest_status.location && (
+                    <div className="mb-3 bg-blue-50 rounded-lg p-3">
+                      <p className="text-sm font-medium text-blue-900">📍 {item.latest_status.location}</p>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Last updated:</span>
                     <span className="font-medium text-gray-700">

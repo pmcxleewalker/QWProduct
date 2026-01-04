@@ -643,9 +643,18 @@ class FleetManagementAPITester:
             print("❌ Root endpoint failed, stopping tests")
             return False
 
+        # Authenticate as admin
+        if not self.authenticate_admin():
+            print("❌ Admin authentication failed, stopping tests")
+            return False
+
         # Test all CRUD operations
         tests = [
             self.test_car_crud,
+            self.test_compliance_alerts,
+            self.test_car_blocking,
+            self.test_car_unblocking,
+            self.test_blocked_car_booking_prevention,
             self.test_status_operations,
             self.test_booking_operations,
             self.test_assistance_operations

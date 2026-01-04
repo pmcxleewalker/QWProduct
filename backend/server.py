@@ -312,9 +312,13 @@ async def create_car(car: CarCreate, current_user: dict = Depends(get_current_ad
 
 
 @api_router.get("/cars", response_model=List[Car])
-async def get_cars(current_user: dict = Depends(get_current_user)):
-    """Get all cars (authenticated users)"""
-    cars = await db.cars.find({}, {"_id": 0}).to_list(1000)
+async def get_cars(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=500, description="Maximum number of records to return"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all cars (authenticated users) with pagination"""
+    cars = await db.cars.find({}, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     for car in cars:
         deserialize_datetime(car, ['created_at'])
     return cars

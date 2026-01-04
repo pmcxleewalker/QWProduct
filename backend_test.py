@@ -431,7 +431,8 @@ class FleetManagementAPITester:
             "Get Live Status",
             "GET",
             "status/live",
-            200
+            200,
+            token=self.admin_token
         )
         
         if not success:
@@ -443,7 +444,7 @@ class FleetManagementAPITester:
             "GET",
             f"status/history/{self.test_car_id}",
             200,
-            params={"limit": 10}
+            token=self.admin_token
         )
         
         return success

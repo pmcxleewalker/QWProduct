@@ -546,7 +546,8 @@ class FleetManagementAPITester:
             "POST",
             "assistance",
             200,
-            data=provider_data
+            data=provider_data,
+            token=self.admin_token
         )
         
         if success and 'id' in response:
@@ -560,7 +561,8 @@ class FleetManagementAPITester:
             "Get All Providers",
             "GET",
             "assistance",
-            200
+            200,
+            token=self.admin_token
         )
         
         if not success:
@@ -571,7 +573,8 @@ class FleetManagementAPITester:
             "Get Providers by Region",
             "GET",
             "assistance/Kerry",
-            200
+            200,
+            token=self.admin_token
         )
         
         if not success:
@@ -590,7 +593,8 @@ class FleetManagementAPITester:
             "PUT",
             f"assistance/{self.test_provider_id}",
             200,
-            data=update_data
+            data=update_data,
+            token=self.admin_token
         )
         
         return success

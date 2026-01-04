@@ -474,7 +474,8 @@ class FleetManagementAPITester:
             "POST",
             "bookings",
             200,
-            data=booking_data
+            data=booking_data,
+            token=self.admin_token
         )
         
         if success and 'id' in response:
@@ -497,7 +498,8 @@ class FleetManagementAPITester:
             "POST",
             "bookings",
             409,  # Expecting conflict error
-            data=conflict_booking
+            data=conflict_booking,
+            token=self.admin_token
         )
         
         if not success:
@@ -509,7 +511,8 @@ class FleetManagementAPITester:
             "Get All Bookings",
             "GET",
             "bookings",
-            200
+            200,
+            token=self.admin_token
         )
         
         if not success:
@@ -520,7 +523,8 @@ class FleetManagementAPITester:
             "Get Car Bookings",
             "GET",
             f"bookings/car/{self.test_car_id}",
-            200
+            200,
+            token=self.admin_token
         )
         
         return success

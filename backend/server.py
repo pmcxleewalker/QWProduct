@@ -571,12 +571,17 @@ async def get_all_assistance_providers(
 
 
 @api_router.get("/assistance/{region}", response_model=List[AssistanceProvider])
-async def get_assistance_providers_by_region(region: str, current_user: dict = Depends(get_current_user)):
-    """Get assistance providers by region (authenticated users)"""
+async def get_assistance_providers_by_region(
+    region: str,
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=500, description="Maximum number of records to return"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get assistance providers by region (authenticated users) with pagination"""
     providers = await db.assistance_providers.find(
         {"region": region},
         {"_id": 0}
-    ).to_list(1000)
+    ).skip(skip).limit(limit).to_list(limit)
     
     for provider in providers:
         deserialize_datetime(provider, ['created_at'])

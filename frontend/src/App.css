@@ -2,10 +2,27 @@
   min-height: 100vh;
 }
 
+/* Ensure proper box-sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Prevent horizontal scroll on mobile */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
 /* Mobile-first responsive utilities */
 @media (max-width: 768px) {
   .mobile-padding {
     padding: 1rem;
+  }
+  
+  /* Ensure inputs are properly sized on iOS */
+  input, select, textarea, button {
+    font-size: 16px !important;
   }
 }
 

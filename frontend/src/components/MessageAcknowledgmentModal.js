@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { messageAPI } from '../api/api';
-import { Bell, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Bell, CheckCircle, AlertTriangle, X } from 'lucide-react';
 
 const MessageAcknowledgmentModal = ({ onComplete }) => {
   const [messages, setMessages] = useState([]);
@@ -58,7 +58,7 @@ const MessageAcknowledgmentModal = ({ onComplete }) => {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
+      <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[100]">
         <div className="bg-white rounded-lg p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading messages...</p>
@@ -74,16 +74,19 @@ const MessageAcknowledgmentModal = ({ onComplete }) => {
   const currentMessage = messages[currentIndex];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[100] p-4">
+      {/* Block everything underneath */}
+      <div className="absolute inset-0 backdrop-blur-sm"></div>
+      
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
         {/* Header */}
-        <div className="bg-orange-500 text-white p-4">
+        <div className="bg-red-600 text-white p-4">
           <div className="flex items-center space-x-2">
-            <AlertTriangle size={24} />
+            <AlertTriangle size={28} />
             <div>
-              <h2 className="text-lg font-bold">Important Notice</h2>
-              <p className="text-sm opacity-80">
-                {currentIndex + 1} of {messages.length} message{messages.length > 1 ? 's' : ''}
+              <h2 className="text-xl font-bold">⚠️ Important Notice - Please Read</h2>
+              <p className="text-sm opacity-90">
+                Message {currentIndex + 1} of {messages.length} - You must acknowledge to continue
               </p>
             </div>
           </div>
@@ -92,8 +95,8 @@ const MessageAcknowledgmentModal = ({ onComplete }) => {
         {/* Content */}
         <div className="p-6">
           <div className="flex items-start space-x-3 mb-4">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <Bell className="text-orange-600" size={20} />
+            <div className="p-2 bg-red-100 rounded-lg">
+              <Bell className="text-red-600" size={24} />
             </div>
             <div className="flex-1">
               <h3 className="text-xl font-bold text-gray-900">{currentMessage.title}</h3>
@@ -103,21 +106,23 @@ const MessageAcknowledgmentModal = ({ onComplete }) => {
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <p className="text-gray-700 whitespace-pre-wrap">{currentMessage.content}</p>
+          <div className="bg-gray-50 rounded-lg p-4 mb-6 max-h-64 overflow-y-auto">
+            <p className="text-gray-700 whitespace-pre-wrap text-base leading-relaxed">{currentMessage.content}</p>
           </div>
 
-          <p className="text-sm text-gray-500 text-center mb-4">
-            You must acknowledge this message to continue using the app.
-          </p>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-yellow-800 font-medium text-center">
+              🔒 You must acknowledge this message to access the app
+            </p>
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="border-t p-4">
+        <div className="border-t bg-gray-50 p-4">
           <button
             onClick={handleAcknowledge}
             disabled={acknowledging}
-            className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
+            className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white py-4 px-4 rounded-lg hover:bg-green-700 transition-colors font-bold text-lg disabled:opacity-50"
           >
             {acknowledging ? (
               <>
@@ -126,8 +131,8 @@ const MessageAcknowledgmentModal = ({ onComplete }) => {
               </>
             ) : (
               <>
-                <CheckCircle size={20} />
-                <span>I Acknowledge & Accept</span>
+                <CheckCircle size={24} />
+                <span>I Have Read & Acknowledge This Message</span>
               </>
             )}
           </button>

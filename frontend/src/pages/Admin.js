@@ -6,9 +6,13 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState('cars');
   const [cars, setCars] = useState([]);
   const [providers, setProviders] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCarForm, setShowCarForm] = useState(false);
   const [showProviderForm, setShowProviderForm] = useState(false);
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState('');
+  const [copied, setCopied] = useState(false);
   const [editingCar, setEditingCar] = useState(null);
   const [editingProvider, setEditingProvider] = useState(null);
   const [error, setError] = useState('');
@@ -25,6 +29,11 @@ const Admin = () => {
     name: '',
     phone: '',
     service_type: 'Breakdown',
+  });
+
+  const [inviteForm, setInviteForm] = useState({
+    email: '',
+    role: 'staff',
   });
 
   useEffect(() => {

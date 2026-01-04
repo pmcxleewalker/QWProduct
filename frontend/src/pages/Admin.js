@@ -38,16 +38,26 @@ const Admin = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [activeTab]);
 
   const fetchData = async () => {
     try {
-      const [carsRes, providersRes] = await Promise.all([
+      const promises = [
         carAPI.getAll(),
         assistanceAPI.getAll(),
-      ]);
-      setCars(carsRes.data);
-      setProviders(providersRes.data);
+      ];
+      
+      if (activeTab === 'users') {
+        promises.push(userAPI.getAll());
+      }
+      
+      const results = await Promise.all(promises);
+      setCars(results[0].data);
+      setProviders(results[1].data);
+      
+      if (results[2]) {
+        setUsers(results[2].data);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {

@@ -1,5 +1,9 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import StatusUpdate from './pages/StatusUpdate';
 import Bookings from './pages/Bookings';
@@ -11,18 +15,41 @@ import './App.css';
 function App() {
   return (
     <BrowserRouter>
-      <div className="App min-h-screen bg-gray-50">
-        <Navigation />
-        <div className="pb-20 md:pb-0">
+      <AuthProvider>
+        <div className="App min-h-screen bg-gray-50">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/status-update" element={<StatusUpdate />} />
-            <Route path="/bookings" element={<Bookings />} />
-            <Route path="/assistance" element={<Assistance />} />
-            <Route path="/admin" element={<Admin />} />
+            
+            {/* Protected routes */}
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <Navigation />
+                  <div className="pb-20 md:pb-0">
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/bookings" element={<Bookings />} />
+                      <Route path="/assistance" element={<Assistance />} />
+                      <Route
+                        path="/admin"
+                        element={
+                          <ProtectedRoute adminOnly={true}>
+                            <Admin />
+                          </ProtectedRoute>
+                        }
+                      />
+                    </Routes>
+                  </div>
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </div>
-      </div>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

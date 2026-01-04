@@ -177,7 +177,7 @@ const Dashboard = () => {
                   )}
                   {item.latest_status.notes && (
                     <div className="mt-3">
-                      <p className="text-sm text-gray-600 italic">"{item.latest_status.notes}"</p>
+                      <p className="text-sm text-gray-600 italic">&ldquo;{item.latest_status.notes}&rdquo;</p>
                     </div>
                   )}
                 </div>

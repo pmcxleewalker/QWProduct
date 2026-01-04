@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { bookingAPI, carAPI } from '../api/api';
-import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, List, Grid } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, List, Grid, Car } from 'lucide-react';
 
 const Bookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -11,6 +11,7 @@ const Bookings = () => {
   const [success, setSuccess] = useState('');
   const [viewMode, setViewMode] = useState('calendar'); // 'calendar' or 'list'
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedCar, setSelectedCar] = useState('all'); // 'all' or car id
   
   const [formData, setFormData] = useState({
     car_id: '',

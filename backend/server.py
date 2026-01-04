@@ -80,6 +80,15 @@ class CarBase(BaseModel):
     name: str
     registration: str
     current_status: str = "Free"
+    # Compliance dates
+    tax_due_date: Optional[str] = None
+    nct_due_date: Optional[str] = None
+    service_due_date: Optional[str] = None
+    # Blocking feature
+    is_blocked: bool = False
+    block_reason: Optional[str] = None  # Service, Cleaning, Other
+    blocked_by: Optional[str] = None
+    blocked_at: Optional[str] = None
 
 class CarCreate(CarBase):
     pass

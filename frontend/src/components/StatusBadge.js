@@ -6,11 +6,11 @@ const StatusBadge = ({ status }) => {
       case 'Free':
         return 'bg-green-500 text-white';
       case 'In Use':
-        return 'bg-blue-500 text-white';
-      case 'Needs Cleaning':
-        return 'bg-amber-500 text-white';
-      case 'Needs Repair':
         return 'bg-red-500 text-white';
+      case 'Needs Cleaning':
+        return 'bg-orange-500 text-white';
+      case 'Needs Repair':
+        return 'bg-orange-600 text-white';
       default:
         return 'bg-gray-500 text-white';
     }

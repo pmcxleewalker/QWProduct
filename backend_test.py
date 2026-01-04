@@ -16,10 +16,14 @@ class FleetManagementAPITester:
         self.admin_token = None
         self.staff_token = None
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, params=None):
+    def run_test(self, name, method, endpoint, expected_status, data=None, params=None, token=None):
         """Run a single API test"""
         url = f"{self.api_url}/{endpoint}"
         headers = {'Content-Type': 'application/json'}
+        
+        # Add authorization header if token provided
+        if token:
+            headers['Authorization'] = f'Bearer {token}'
 
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")

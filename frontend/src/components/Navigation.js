@@ -11,6 +11,7 @@ const Navigation = () => {
   
   const navItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
+    { path: '/live-sheet', icon: FileSpreadsheet, label: 'Live Sheet' },
     { path: '/bookings', icon: Calendar, label: 'Bookings' },
     { path: '/assistance', icon: PhoneCall, label: 'Assistance' },
   ];

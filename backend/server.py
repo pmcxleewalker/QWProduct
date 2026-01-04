@@ -145,6 +145,26 @@ class AssistanceProvider(AssistanceProviderCreate):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+# ==================== CAR BLOCK MODELS ====================
+
+class CarBlockCreate(BaseModel):
+    reason: str  # Service, Cleaning, Other
+
+class CarUnblockCreate(BaseModel):
+    sign_off_notes: Optional[str] = ""
+
+
+# ==================== CAR UPDATE MODEL ====================
+
+class CarUpdate(BaseModel):
+    name: Optional[str] = None
+    registration: Optional[str] = None
+    current_status: Optional[str] = None
+    tax_due_date: Optional[str] = None
+    nct_due_date: Optional[str] = None
+    service_due_date: Optional[str] = None
+
+
 # ==================== HELPER FUNCTIONS ====================
 
 def serialize_datetime(doc):

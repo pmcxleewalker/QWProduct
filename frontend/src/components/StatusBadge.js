@@ -1,0 +1,29 @@
+import React from 'react';
+
+const StatusBadge = ({ status }) => {
+  const getStatusClass = () => {
+    switch (status) {
+      case 'Free':
+        return 'bg-green-500 text-white';
+      case 'In Use':
+        return 'bg-blue-500 text-white';
+      case 'Needs Cleaning':
+        return 'bg-amber-500 text-white';
+      case 'Needs Repair':
+        return 'bg-red-500 text-white';
+      default:
+        return 'bg-gray-500 text-white';
+    }
+  };
+
+  return (
+    <span
+      data-testid={`status-badge-${status.toLowerCase().replace(/\s+/g, '-')}`}
+      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusClass()}`}
+    >
+      {status}
+    </span>
+  );
+};
+
+export default StatusBadge;

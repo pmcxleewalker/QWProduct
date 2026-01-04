@@ -710,11 +710,27 @@ async def get_car_bookings(
 
 @api_router.delete("/bookings/{booking_id}")
 async def delete_booking(booking_id: str, current_user: dict = Depends(get_current_user)):
-    """Delete a booking (authenticated users)"""
+    """Delete a booking - Admins can delete any booking, users can only cancel their own"""
+    booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    # Check permissions: Admin can delete any, user can only delete their own
+    is_admin = current_user.get('role') == 'admin'
+    is_owner = booking.get('created_by_email') == current_user['email']
+    
+    if not is_admin and not is_owner:
+        raise HTTPException(
+            status_code=403, 
+            detail="You can only cancel your own bookings. Contact an admin to delete other bookings."
+        )
+    
     result = await db.bookings.delete_one({"id": booking_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Booking not found")
-    return {"message": "Booking deleted successfully"}
+    
+    action = "deleted" if is_admin else "cancelled"
+    return {"message": f"Booking {action} successfully"}
 
 
 # ==================== ASSISTANCE PROVIDER ENDPOINTS ====================

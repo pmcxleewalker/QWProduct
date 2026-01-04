@@ -553,6 +553,179 @@ const Admin = () => {
           </div>
         </div>
       )}
+
+
+      {/* Users Tab */}
+      {activeTab === 'users' && (
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">User Management</h2>
+            <button
+              onClick={() => {
+                setShowInviteForm(true);
+                setInviteForm({ email: '', role: 'staff' });
+              }}
+              data-testid="invite-user-button"
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              <Plus size={18} />
+              <span>Invite User</span>
+            </button>
+          </div>
+
+          {/* Invite Form */}
+          {showInviteForm && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h3 className="text-lg font-bold mb-4">Invite New User</h3>
+              <form onSubmit={handleInviteSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                    <input
+                      type="email"
+                      data-testid="invite-email-input"
+                      value={inviteForm.email}
+                      onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Role *</label>
+                    <select
+                      data-testid="invite-role-select"
+                      value={inviteForm.role}
+                      onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="staff">Staff</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex space-x-4">
+                  <button
+                    type="submit"
+                    data-testid="submit-invite-button"
+                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+                  >
+                    Send Invitation
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowInviteForm(false)}
+                    className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Invite URL Display */}
+          {inviteUrl && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+              <div className="flex items-start">
+                <Mail className="text-blue-600 mr-3 mt-1" size={24} />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-blue-900 mb-2">Invitation Created!</h3>
+                  <p className="text-sm text-blue-700 mb-3">Share this link with the user to complete registration:</p>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={inviteUrl}
+                      readOnly
+                      className="flex-1 px-3 py-2 bg-white border border-blue-300 rounded text-sm"
+                    />
+                    <button
+                      onClick={() => copyToClipboard(inviteUrl)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center space-x-2"
+                    >
+                      {copied ? <CheckCircle size={16} /> : <Copy size={16} />}
+                      <span>{copied ? 'Copied!' : 'Copy'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Users List */}
+          <div className="space-y-4">
+            {users.map((user) => (
+              <div
+                key={user.id}
+                data-testid={`user-card-${user.id}`}
+                className="bg-white rounded-lg shadow-md p-6"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h3 className="text-lg font-bold text-gray-900">{user.email}</h3>
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded ${
+                          user.role === 'admin'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}
+                      >
+                        {user.role}
+                      </span>
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded ${
+                          user.is_active
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {user.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      Joined: {new Date(user.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    <select
+                      value={user.role}
+                      onChange={(e) => handleChangeUserRole(user, e.target.value)}
+                      data-testid={`role-select-${user.id}`}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="staff">Staff</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    
+                    <button
+                      onClick={() => handleToggleUserStatus(user)}
+                      data-testid={`toggle-status-${user.id}`}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                        user.is_active
+                          ? 'bg-amber-600 text-white hover:bg-amber-700'
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      }`}
+                    >
+                      {user.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
+                    
+                    <button
+                      onClick={() => handleDeleteUser(user.id)}
+                      data-testid={`delete-user-${user.id}`}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                    >
+                      <Trash2 size={16} className="inline" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

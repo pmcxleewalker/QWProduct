@@ -11,6 +11,13 @@ export const carAPI = {
   update: (id, data) => axios.put(`${API}/cars/${id}`, data),
   delete: (id) => axios.delete(`${API}/cars/${id}`),
   getQRCode: (id) => `${API}/cars/${id}/qr`,
+  block: (id, data) => axios.post(`${API}/cars/${id}/block`, data),
+  unblock: (id, data) => axios.post(`${API}/cars/${id}/unblock`, data),
+};
+
+// Compliance API
+export const complianceAPI = {
+  getAlerts: () => axios.get(`${API}/admin/compliance-alerts`),
 };
 
 // Status API

@@ -43,7 +43,7 @@ All staff members with login credentials can access Quick Wing.
 
 ### Accessing the System
 
-**Website:** https://page-maker-117.preview.emergentagent.com
+**Website:** https://quickwing.preview.emergentagent.com
 
 **Your Login Credentials:**
 - Your email address (provided by admin)

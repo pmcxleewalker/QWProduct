@@ -113,7 +113,7 @@ Quick Wing is a complete fleet management solution with:
 
 ### Default Admin Access
 
-**Website:** https://page-maker-117.preview.emergentagent.com
+**Website:** https://quickwing.preview.emergentagent.com
 
 **Default Admin Login:**
 - Email: `admin@quickwing.com`
@@ -407,7 +407,7 @@ Best regards,
 
 **QR Code URL Format:**
 ```
-https://page-maker-117.preview.emergentagent.com/api/cars/[VEHICLE_ID]/qr
+https://quickwing.preview.emergentagent.com/api/cars/[VEHICLE_ID]/qr
 ```
 
 **Printing QR Codes:**
@@ -845,7 +845,7 @@ https://page-maker-117.preview.emergentagent.com/api/cars/[VEHICLE_ID]/qr
 
 **QR URL Format:**
 ```
-https://page-maker-117.preview.emergentagent.com/status-update?car=[VEHICLE_ID]
+https://quickwing.preview.emergentagent.com/status-update?car=[VEHICLE_ID]
 ```
 
 **Security:**
@@ -1124,7 +1124,7 @@ https://page-maker-117.preview.emergentagent.com/status-update?car=[VEHICLE_ID]
 
 **Main Application:**
 ```
-https://page-maker-117.preview.emergentagent.com
+https://quickwing.preview.emergentagent.com
 ```
 
 **Direct Pages:**
@@ -1137,12 +1137,12 @@ https://page-maker-117.preview.emergentagent.com
 
 **Example Vehicle QR:**
 ```
-https://page-maker-117.preview.emergentagent.com/api/cars/[ID]/qr
+https://quickwing.preview.emergentagent.com/api/cars/[ID]/qr
 ```
 
 **Example Status Update:**
 ```
-https://page-maker-117.preview.emergentagent.com/status-update?car=[ID]
+https://quickwing.preview.emergentagent.com/status-update?car=[ID]
 ```
 
 ### Fleet Statistics Template

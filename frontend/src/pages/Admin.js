@@ -156,6 +156,64 @@ const Admin = () => {
     setShowProviderForm(true);
   };
 
+  // User Management Operations
+  const handleInviteSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setInviteUrl('');
+
+    try {
+      const response = await userAPI.invite(inviteForm);
+      setSuccess(`Invitation sent to ${inviteForm.email}!`);
+      setInviteUrl(response.data.invite_url);
+      setShowInviteForm(false);
+      setInviteForm({ email: '', role: 'staff' });
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to create invitation');
+    }
+  };
+
+  const handleToggleUserStatus = async (user) => {
+    try {
+      await userAPI.update(user.id, { is_active: !user.is_active });
+      setSuccess(`User ${user.is_active ? 'deactivated' : 'activated'} successfully`);
+      fetchData();
+    } catch (err) {
+      setError('Failed to update user status');
+    }
+  };
+
+  const handleChangeUserRole = async (user, newRole) => {
+    try {
+      await userAPI.update(user.id, { role: newRole });
+      setSuccess(`User role updated to ${newRole}`);
+      fetchData();
+    } catch (err) {
+      setError('Failed to update user role');
+    }
+  };
+
+  const handleDeleteUser = async (id) => {
+    if (!window.confirm('Are you sure you want to deactivate this user?')) return;
+    
+    try {
+      await userAPI.delete(id);
+      setSuccess('User deactivated successfully');
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to deactivate user');
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+
   const handleDownloadQR = (carId, carName) => {
     const qrUrl = carAPI.getQRCode(carId);
     const link = document.createElement('a');

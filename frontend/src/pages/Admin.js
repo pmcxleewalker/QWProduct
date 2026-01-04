@@ -1065,6 +1065,225 @@ const Admin = () => {
         </div>
       )}
 
+      {/* Approvals Tab */}
+      {activeTab === 'approvals' && (
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">Pending Recurring Bookings</h2>
+            <span className="text-sm text-gray-500">
+              {pendingBookings.length} pending approval{pendingBookings.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {pendingBookings.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-lg shadow">
+              <CheckCircle className="mx-auto text-green-500" size={48} />
+              <p className="text-gray-500 mt-4">No pending bookings to approve!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pendingBookings.map((group) => (
+                <div
+                  key={group.group_id}
+                  className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">
+                        {getCarName(group.car_id)}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Requested by: <span className="font-medium">{group.created_by_email}</span>
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Booked for: <span className="font-medium">{group.user_name}</span>
+                      </p>
+                    </div>
+                    <span className="bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded-full">
+                      {group.recurrence_type} × {group.bookings.length}
+                    </span>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">First:</span>{' '}
+                      {new Date(group.first_booking.start_time).toLocaleString()}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">Repeats:</span>{' '}
+                      {group.recurrence_type} for {group.bookings.length} occurrences
+                    </p>
+                  </div>
+
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => handleApproveBooking(group.group_id)}
+                      className="flex-1 flex items-center justify-center space-x-2 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700"
+                    >
+                      <Check size={18} />
+                      <span>Approve All</span>
+                    </button>
+                    <button
+                      onClick={() => handleRejectBooking(group.group_id)}
+                      className="flex-1 flex items-center justify-center space-x-2 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700"
+                    >
+                      <X size={18} />
+                      <span>Reject</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Messages Tab */}
+      {activeTab === 'messages' && (
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">Staff Announcements</h2>
+            <button
+              onClick={() => {
+                setShowMessageForm(true);
+                setEditingMessage(null);
+                setMessageForm({ title: '', content: '', requires_acknowledgment: true, is_active: true });
+              }}
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            >
+              <Plus size={18} />
+              <span>New Message</span>
+            </button>
+          </div>
+
+          {/* Message Form */}
+          {showMessageForm && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-purple-500">
+              <h3 className="text-lg font-bold mb-4">
+                {editingMessage ? 'Edit Message' : 'Create New Message'}
+              </h3>
+              <form onSubmit={handleMessageSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                  <input
+                    type="text"
+                    value={messageForm.title}
+                    onChange={(e) => setMessageForm({ ...messageForm, title: e.target.value })}
+                    placeholder="e.g., New Safety Policy Update"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Message *</label>
+                  <textarea
+                    value={messageForm.content}
+                    onChange={(e) => setMessageForm({ ...messageForm, content: e.target.value })}
+                    placeholder="Enter your message for staff..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    rows={4}
+                    required
+                  />
+                </div>
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={messageForm.requires_acknowledgment}
+                      onChange={(e) => setMessageForm({ ...messageForm, requires_acknowledgment: e.target.checked })}
+                      className="w-4 h-4 text-purple-600 rounded"
+                    />
+                    <span className="text-sm text-gray-700">Require acknowledgment on login</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={messageForm.is_active}
+                      onChange={(e) => setMessageForm({ ...messageForm, is_active: e.target.checked })}
+                      className="w-4 h-4 text-purple-600 rounded"
+                    />
+                    <span className="text-sm text-gray-700">Active</span>
+                  </label>
+                </div>
+                <div className="flex space-x-4">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700"
+                  >
+                    {editingMessage ? 'Update Message' : 'Create Message'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMessageForm(false);
+                      setEditingMessage(null);
+                    }}
+                    className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Messages List */}
+          {messages.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-lg shadow">
+              <MessageSquare className="mx-auto text-gray-400" size={48} />
+              <p className="text-gray-500 mt-4">No messages yet. Create your first announcement!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`bg-white rounded-lg shadow-md p-6 ${!msg.is_active ? 'opacity-50' : ''}`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">{msg.title}</h3>
+                      <p className="text-xs text-gray-500">
+                        Posted {new Date(msg.created_at).toLocaleDateString()} by {msg.created_by}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {msg.requires_acknowledgment && (
+                        <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded">
+                          Requires Ack
+                        </span>
+                      )}
+                      {!msg.is_active && (
+                        <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
+                          Inactive
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-gray-700 whitespace-pre-wrap mb-4">{msg.content}</p>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEditMessage(msg)}
+                      className="flex items-center space-x-1 px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm"
+                    >
+                      <Edit2 size={14} />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteMessage(msg.id)}
+                      className="flex items-center space-x-1 px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm"
+                    >
+                      <Trash2 size={14} />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 };

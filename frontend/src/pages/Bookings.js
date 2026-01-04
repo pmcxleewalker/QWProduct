@@ -659,45 +659,52 @@ const Bookings = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {bookings.map((booking) => (
-                <div
-                  key={booking.id}
-                  data-testid={`booking-card-${booking.id}`}
-                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${getCarColor(booking.car_id)}`}></div>
-                        <h3 className="text-lg font-bold text-gray-900">
-                          {getCarName(booking.car_id)}
-                        </h3>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Booked by: <span className="font-medium">{booking.user_name}</span>
-                        {booking.created_by_email === user?.email && (
-                          <span className="text-blue-600 ml-1">(You)</span>
+              {bookings.map((booking) => {
+                const isPending = booking.status === 'pending_approval';
+                return (
+                  <div
+                    key={booking.id}
+                    data-testid={`booking-card-${booking.id}`}
+                    className={`bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow ${isPending ? 'opacity-60 border-2 border-gray-300' : ''}`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-3 h-3 rounded-full ${isPending ? 'bg-gray-400' : getCarColor(booking.car_id)}`}></div>
+                          <h3 className="text-lg font-bold text-gray-900">
+                            {getCarName(booking.car_id)}
+                          </h3>
+                          {isPending && (
+                            <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded">
+                              ⏳ Pending Approval
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Booked by: <span className="font-medium">{booking.user_name}</span>
+                          {booking.created_by_email === user?.email && (
+                            <span className="text-blue-600 ml-1">(You)</span>
+                          )}
+                        </p>
+                        <div className="mt-3 space-y-1">
+                          <p className="text-sm text-gray-700">
+                            <span className="font-medium">From:</span> {formatDateTime(booking.start_time)}
+                          </p>
+                          <p className="text-sm text-gray-700">
+                            <span className="font-medium">To:</span> {formatDateTime(booking.end_time)}
+                          </p>
+                        </div>
+                        {booking.destination_notes && (
+                          <p className="text-sm text-gray-600 mt-2 italic">
+                            Destination: {booking.destination_notes}
+                          </p>
                         )}
-                      </p>
-                      <div className="mt-3 space-y-1">
-                        <p className="text-sm text-gray-700">
-                          <span className="font-medium">From:</span> {formatDateTime(booking.start_time)}
-                        </p>
-                        <p className="text-sm text-gray-700">
-                          <span className="font-medium">To:</span> {formatDateTime(booking.end_time)}
-                        </p>
                       </div>
-                      {booking.destination_notes && (
-                        <p className="text-sm text-gray-600 mt-2 italic">
-                          Destination: {booking.destination_notes}
-                        </p>
-                      )}
-                    </div>
-                    {/* Only show delete button if admin or owner */}
-                    {(user?.role === 'admin' || booking.created_by_email === user?.email) && (
-                      <button
-                        onClick={() => handleDelete(booking.id)}
-                        data-testid={`delete-booking-${booking.id}`}
+                      {/* Only show delete button if admin or owner */}
+                      {(user?.role === 'admin' || booking.created_by_email === user?.email) && !isPending && (
+                        <button
+                          onClick={() => handleDelete(booking.id)}
+                          data-testid={`delete-booking-${booking.id}`}
                         className="text-red-500 hover:text-red-700 transition-colors"
                         title={user?.role === 'admin' ? 'Delete booking' : 'Cancel your booking'}
                       >

@@ -58,20 +58,25 @@ const Bookings = () => {
 
     try {
       const bookingData = {
-        ...formData,
+        car_id: formData.car_id,
+        user_name: formData.user_name,
         start_time: new Date(formData.start_time).toISOString(),
         end_time: new Date(formData.end_time).toISOString(),
+        destination_notes: formData.destination_notes || '',
+        is_recurring: false,
       };
       
       // Add recurrence data if recurring
       if (formData.is_recurring && formData.recurrence_type) {
         bookingData.is_recurring = true;
         bookingData.recurrence_type = formData.recurrence_type;
+        
         if (formData.recurrence_end_date) {
           bookingData.recurrence_end_date = new Date(formData.recurrence_end_date).toISOString();
         }
-        if (formData.recurrence_count) {
-          bookingData.recurrence_count = parseInt(formData.recurrence_count);
+        
+        if (formData.recurrence_count && formData.recurrence_count !== '') {
+          bookingData.recurrence_count = parseInt(formData.recurrence_count, 10);
         }
       }
       

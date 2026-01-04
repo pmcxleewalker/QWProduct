@@ -22,7 +22,23 @@ const Admin = () => {
     name: '',
     registration: '',
     current_status: 'Free',
+    tax_due_date: '',
+    nct_due_date: '',
+    service_due_date: '',
   });
+
+  const [blockForm, setBlockForm] = useState({
+    carId: null,
+    reason: 'Service',
+  });
+
+  const [unblockForm, setUnblockForm] = useState({
+    carId: null,
+    sign_off_notes: '',
+  });
+
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [showUnblockModal, setShowUnblockModal] = useState(false);
 
   const [providerForm, setProviderForm] = useState({
     region: 'Kerry',

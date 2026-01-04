@@ -1,6 +1,18 @@
 import React from 'react';
 
-const StatusBadge = ({ status }) => {
+const StatusBadge = ({ status, isBlocked, blockReason }) => {
+  // If car is blocked, show blocked status
+  if (isBlocked) {
+    return (
+      <span
+        data-testid="status-badge-blocked"
+        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-600 text-white"
+      >
+        🚫 Blocked - {blockReason || 'Maintenance'}
+      </span>
+    );
+  }
+
   const getStatusClass = () => {
     switch (status) {
       case 'Free':

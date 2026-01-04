@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { bookingAPI, carAPI } from '../api/api';
 import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, List, Grid, Car, X, Clock, User, MapPin } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Bookings = () => {
+  const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);

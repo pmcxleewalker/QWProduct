@@ -31,10 +31,11 @@ const LiveSheet = () => {
   // Calculate counters
   const counters = {
     total: liveStatus.length,
-    free: liveStatus.filter(item => item.car.current_status === 'Free').length,
-    inUse: liveStatus.filter(item => item.car.current_status === 'In Use').length,
-    needsCleaning: liveStatus.filter(item => item.car.current_status === 'Needs Cleaning').length,
-    needsRepair: liveStatus.filter(item => item.car.current_status === 'Needs Repair').length,
+    free: liveStatus.filter(item => item.car.current_status === 'Free' && !item.car.is_blocked).length,
+    inUse: liveStatus.filter(item => item.car.current_status === 'In Use' && !item.car.is_blocked).length,
+    needsCleaning: liveStatus.filter(item => item.car.current_status === 'Needs Cleaning' && !item.car.is_blocked).length,
+    needsRepair: liveStatus.filter(item => item.car.current_status === 'Needs Repair' && !item.car.is_blocked).length,
+    blocked: liveStatus.filter(item => item.car.is_blocked).length,
   };
 
   const formatTime = (date) => {

@@ -669,6 +669,7 @@ async def create_booking(booking: BookingCreate, current_user: dict = Depends(ge
         )
     
     booking_obj = Booking(**booking.model_dump())
+    booking_obj.created_by_email = current_user['email']  # Track who created the booking
     doc = serialize_datetime(booking_obj.model_dump())
     await db.bookings.insert_one(doc)
     

@@ -264,17 +264,22 @@ const Bookings = () => {
             {day}
           </div>
           <div className="space-y-0.5 overflow-y-auto max-h-16 md:max-h-24">
-            {dayBookings.slice(0, 3).map((booking, idx) => (
-              <div 
-                key={booking.id}
-                onClick={() => setSelectedBooking(booking)}
-                className={`${getCarColor(booking.car_id)} text-white text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity`}
-                title="Click to view details"
-              >
-                <span className="hidden md:inline">{formatTime(booking.start_time)} </span>
-                {selectedCar === 'all' ? getCarName(booking.car_id) : booking.user_name}
-              </div>
-            ))}
+            {dayBookings.slice(0, 3).map((booking, idx) => {
+              const isPending = booking.status === 'pending_approval';
+              return (
+                <div 
+                  key={booking.id}
+                  onClick={() => setSelectedBooking(booking)}
+                  className={`${isPending ? 'bg-gray-400' : getCarColor(booking.car_id)} text-white text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity ${isPending ? 'opacity-60' : ''}`}
+                  title={isPending ? "Pending admin approval" : "Click to view details"}
+                >
+                  {isPending && <span className="mr-1">⏳</span>}
+                  <span className="hidden md:inline">{formatTime(booking.start_time)} </span>
+                  {selectedCar === 'all' ? getCarName(booking.car_id) : booking.user_name}
+                  {isPending && <span className="ml-1 text-xs opacity-75">(Pending)</span>}
+                </div>
+              );
+            })}
             {dayBookings.length > 3 && (
               <div className="text-xs text-gray-500 px-1">
                 +{dayBookings.length - 3} more

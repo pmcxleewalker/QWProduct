@@ -17,25 +17,32 @@ import './App.css';
 // Wrapper component that handles message acknowledgment
 const AppContent = () => {
   const { user, isAuthenticated } = useAuth();
-  const [showAcknowledgment, setShowAcknowledgment] = useState(false);
-  const [acknowledgedSession, setAcknowledgedSession] = useState(false);
+  const [hasAcknowledged, setHasAcknowledged] = useState(false);
+  const [checkingMessages, setCheckingMessages] = useState(false);
 
   useEffect(() => {
-    // Show acknowledgment modal when user logs in (non-admin)
-    if (isAuthenticated && user && !acknowledgedSession) {
-      setShowAcknowledgment(true);
+    // Reset acknowledgment state when user changes
+    if (isAuthenticated && user) {
+      setHasAcknowledged(false);
+      setCheckingMessages(true);
+    } else {
+      setHasAcknowledged(false);
+      setCheckingMessages(false);
     }
-  }, [isAuthenticated, user, acknowledgedSession]);
+  }, [isAuthenticated, user]);
 
   const handleAcknowledgmentComplete = () => {
-    setShowAcknowledgment(false);
-    setAcknowledgedSession(true);
+    setHasAcknowledged(true);
+    setCheckingMessages(false);
   };
+
+  // Show blocking modal for authenticated users who haven't acknowledged
+  const showBlockingModal = isAuthenticated && checkingMessages && !hasAcknowledged;
 
   return (
     <div className="App min-h-screen bg-gray-50">
-      {/* Message Acknowledgment Modal */}
-      {showAcknowledgment && isAuthenticated && (
+      {/* Blocking Message Acknowledgment Modal - Must acknowledge before using app */}
+      {showBlockingModal && (
         <MessageAcknowledgmentModal onComplete={handleAcknowledgmentComplete} />
       )}
 

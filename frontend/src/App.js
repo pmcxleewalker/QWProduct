@@ -33,6 +33,7 @@ function App() {
                   <div className="pb-20 md:pb-0">
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
+                      <Route path="/live-sheet" element={<LiveSheet />} />
                       <Route path="/bookings" element={<Bookings />} />
                       <Route path="/assistance" element={<Assistance />} />
                       <Route

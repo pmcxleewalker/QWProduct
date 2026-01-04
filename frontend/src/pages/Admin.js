@@ -83,15 +83,90 @@ const Admin = () => {
       const results = await Promise.all(promises);
       setCars(results[0].data);
       setProviders(results[1].data);
+      setPendingBookings(results[2].data);
+      setMessages(results[3].data);
       
-      if (results[2]) {
-        setUsers(results[2].data);
+      if (results[4]) {
+        setUsers(results[4].data);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Get car name helper
+  const getCarName = (carId) => {
+    const car = cars.find(c => c.id === carId);
+    return car ? car.name : 'Unknown';
+  };
+
+  // Booking Approval Operations
+  const handleApproveBooking = async (groupId) => {
+    try {
+      await bookingAPI.approve(groupId);
+      setSuccess('Recurring booking approved!');
+      fetchData();
+    } catch (err) {
+      setError('Failed to approve booking');
+    }
+  };
+
+  const handleRejectBooking = async (groupId) => {
+    if (!window.confirm('Are you sure you want to reject this recurring booking?')) return;
+    try {
+      await bookingAPI.reject(groupId);
+      setSuccess('Recurring booking rejected');
+      fetchData();
+    } catch (err) {
+      setError('Failed to reject booking');
+    }
+  };
+
+  // Message Operations
+  const handleMessageSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      if (editingMessage) {
+        await messageAPI.update(editingMessage.id, messageForm);
+        setSuccess('Message updated!');
+      } else {
+        await messageAPI.create(messageForm);
+        setSuccess('Message created! Staff will see it on next login.');
+      }
+      setShowMessageForm(false);
+      setEditingMessage(null);
+      setMessageForm({ title: '', content: '', requires_acknowledgment: true, is_active: true });
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to save message');
+    }
+  };
+
+  const handleDeleteMessage = async (id) => {
+    if (!window.confirm('Delete this message?')) return;
+    try {
+      await messageAPI.delete(id);
+      setSuccess('Message deleted');
+      fetchData();
+    } catch (err) {
+      setError('Failed to delete message');
+    }
+  };
+
+  const handleEditMessage = (msg) => {
+    setEditingMessage(msg);
+    setMessageForm({
+      title: msg.title,
+      content: msg.content,
+      requires_acknowledgment: msg.requires_acknowledgment,
+      is_active: msg.is_active,
+    });
+    setShowMessageForm(true);
   };
 
   // Car CRUD Operations

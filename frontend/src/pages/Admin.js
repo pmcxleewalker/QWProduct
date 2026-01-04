@@ -479,11 +479,35 @@ const Admin = () => {
               <div
                 key={car.id}
                 data-testid={`admin-car-card-${car.id}`}
-                className="bg-white rounded-lg shadow-md p-6"
+                className={`bg-white rounded-lg shadow-md p-6 ${car.is_blocked ? 'border-2 border-purple-400' : ''}`}
               >
-                <h3 className="text-lg font-bold text-gray-900">{car.name}</h3>
-                <p className="text-sm text-gray-600">{car.registration}</p>
-                <p className="text-xs text-gray-500 mt-2">Status: {car.current_status}</p>
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">{car.name}</h3>
+                    <p className="text-sm text-gray-600">{car.registration}</p>
+                  </div>
+                  {car.is_blocked && (
+                    <span className="px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-800">
+                      🚫 {car.block_reason}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">Status: {car.current_status}</p>
+                
+                {/* Compliance Dates Display */}
+                {(car.tax_due_date || car.nct_due_date || car.service_due_date) && (
+                  <div className="mt-3 p-2 bg-gray-50 rounded-lg text-xs">
+                    {car.tax_due_date && (
+                      <p className="text-gray-600">Tax: {new Date(car.tax_due_date).toLocaleDateString()}</p>
+                    )}
+                    {car.nct_due_date && (
+                      <p className="text-gray-600">NCT: {new Date(car.nct_due_date).toLocaleDateString()}</p>
+                    )}
+                    {car.service_due_date && (
+                      <p className="text-gray-600">Service: {new Date(car.service_due_date).toLocaleDateString()}</p>
+                    )}
+                  </div>
+                )}
                 
                 <div className="flex space-x-2 mt-4">
                   <button
@@ -511,9 +535,107 @@ const Admin = () => {
                     <span>Delete</span>
                   </button>
                 </div>
+                
+                {/* Block/Unblock Button */}
+                <div className="mt-2">
+                  {car.is_blocked ? (
+                    <button
+                      onClick={() => openUnblockModal(car)}
+                      data-testid={`unblock-car-${car.id}`}
+                      className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white py-2 px-3 rounded-lg hover:bg-green-700 text-sm"
+                    >
+                      <Unlock size={16} />
+                      <span>Sign Off & Unblock</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => openBlockModal(car)}
+                      data-testid={`block-car-${car.id}`}
+                      className="w-full flex items-center justify-center space-x-2 bg-gray-600 text-white py-2 px-3 rounded-lg hover:bg-gray-700 text-sm"
+                    >
+                      <Lock size={16} />
+                      <span>Block for Appointment</span>
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
+
+          {/* Block Modal */}
+          {showBlockModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <h3 className="text-lg font-bold mb-4">Block Car for Appointment</h3>
+                <form onSubmit={handleBlockCar} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Reason *</label>
+                    <select
+                      value={blockForm.reason}
+                      onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="Service">Service Appointment</option>
+                      <option value="Cleaning">Cleaning Appointment</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="flex space-x-4">
+                    <button
+                      type="submit"
+                      className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700"
+                    >
+                      Block Car
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowBlockModal(false)}
+                      className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Unblock Modal */}
+          {showUnblockModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <h3 className="text-lg font-bold mb-4">Sign Off & Unblock Car</h3>
+                <form onSubmit={handleUnblockCar} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Sign Off Notes (Optional)</label>
+                    <textarea
+                      value={unblockForm.sign_off_notes}
+                      onChange={(e) => setUnblockForm({ ...unblockForm, sign_off_notes: e.target.value })}
+                      placeholder="e.g., Service completed, oil changed, tires rotated"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex space-x-4">
+                    <button
+                      type="submit"
+                      className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700"
+                    >
+                      Sign Off & Unblock
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowUnblockModal(false)}
+                      className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

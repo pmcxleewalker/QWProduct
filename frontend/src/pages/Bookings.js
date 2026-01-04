@@ -725,10 +725,17 @@ const Bookings = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
             {/* Modal Header */}
-            <div className={`${getCarColor(selectedBooking.car_id)} text-white p-4`}>
+            <div className={`${selectedBooking.status === 'pending_approval' ? 'bg-gray-500' : getCarColor(selectedBooking.car_id)} text-white p-4`}>
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-xl font-bold">{getCarName(selectedBooking.car_id)}</h3>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-xl font-bold">{getCarName(selectedBooking.car_id)}</h3>
+                    {selectedBooking.status === 'pending_approval' && (
+                      <span className="bg-white/20 text-white text-xs px-2 py-1 rounded">
+                        ⏳ Pending
+                      </span>
+                    )}
+                  </div>
                   {getCarInfo(selectedBooking.car_id) && (
                     <p className="text-sm opacity-80">{getCarInfo(selectedBooking.car_id).registration}</p>
                   )}

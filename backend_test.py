@@ -609,7 +609,8 @@ class FleetManagementAPITester:
                 "Delete Test Booking",
                 "DELETE",
                 f"bookings/{self.test_booking_id}",
-                200
+                200,
+                token=self.admin_token
             )
 
         # Delete test provider
@@ -618,7 +619,8 @@ class FleetManagementAPITester:
                 "Delete Test Provider",
                 "DELETE",
                 f"assistance/{self.test_provider_id}",
-                200
+                200,
+                token=self.admin_token
             )
 
         # Delete test car
@@ -627,7 +629,8 @@ class FleetManagementAPITester:
                 "Delete Test Car",
                 "DELETE",
                 f"cars/{self.test_car_id}",
-                200
+                200,
+                token=self.admin_token
             )
 
     def run_all_tests(self):

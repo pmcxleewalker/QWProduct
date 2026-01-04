@@ -53,9 +53,10 @@ const StatusUpdate = () => {
         status: formData.status,
         notes: formData.notes,
         user_name: formData.user_name || 'Anonymous',
+        location: formData.location,
       });
       setSuccess(true);
-      setFormData({ status: formData.status, notes: '', user_name: '' });
+      setFormData({ status: formData.status, notes: '', user_name: '', location: '' });
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to update status');
     } finally {

@@ -146,6 +146,58 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Pending Booking Approvals - Admin Only */}
+      {user?.role === 'admin' && pendingBookings.length > 0 && (
+        <div className="mb-6 bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
+          <div className="flex items-center mb-3">
+            <Clock className="text-orange-600 mr-2" size={24} />
+            <h2 className="text-lg font-bold text-orange-800">
+              Pending Booking Approvals ({pendingBookings.length})
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {pendingBookings.map((group) => (
+              <div key={group.group_id} className="bg-white rounded-lg p-4 border border-orange-200">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-gray-900">{getCarName(group.car_id)}</span>
+                      <span className="bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded">
+                        {group.recurrence_type} × {group.bookings.length}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Requested by <span className="font-medium">{group.created_by_email}</span> for {group.user_name}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Starts: {new Date(group.first_booking.start_time).toLocaleDateString('en-US', { 
+                        weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleApproveBooking(group.group_id)}
+                      className="flex items-center space-x-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+                    >
+                      <Check size={16} />
+                      <span>Approve</span>
+                    </button>
+                    <button
+                      onClick={() => handleRejectBooking(group.group_id)}
+                      className="flex items-center space-x-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+                    >
+                      <X size={16} />
+                      <span>Reject</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>

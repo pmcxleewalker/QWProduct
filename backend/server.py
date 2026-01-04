@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional
+from datetime import timedelta
 import uuid
 from datetime import datetime, timezone
 import qrcode

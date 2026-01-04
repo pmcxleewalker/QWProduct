@@ -554,6 +554,9 @@ const Bookings = () => {
                       </div>
                       <p className="text-sm text-gray-600 mt-1">
                         Booked by: <span className="font-medium">{booking.user_name}</span>
+                        {booking.created_by_email === user?.email && (
+                          <span className="text-blue-600 ml-1">(You)</span>
+                        )}
                       </p>
                       <div className="mt-3 space-y-1">
                         <p className="text-sm text-gray-700">
@@ -569,13 +572,17 @@ const Bookings = () => {
                         </p>
                       )}
                     </div>
-                    <button
-                      onClick={() => handleDelete(booking.id)}
-                      data-testid={`delete-booking-${booking.id}`}
-                      className="text-red-500 hover:text-red-700 transition-colors"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                    {/* Only show delete button if admin or owner */}
+                    {(user?.role === 'admin' || booking.created_by_email === user?.email) && (
+                      <button
+                        onClick={() => handleDelete(booking.id)}
+                        data-testid={`delete-booking-${booking.id}`}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                        title={user?.role === 'admin' ? 'Delete booking' : 'Cancel your booking'}
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

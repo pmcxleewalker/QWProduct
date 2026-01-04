@@ -128,9 +128,14 @@ const Bookings = () => {
 
   const getBookingsForDate = (day) => {
     const { year, month } = getDaysInMonth(currentDate);
-    const dateToCheck = new Date(year, month, day);
     
-    return bookings.filter(booking => {
+    // Filter bookings by selected car first
+    let filteredBookings = bookings;
+    if (selectedCar !== 'all') {
+      filteredBookings = bookings.filter(b => b.car_id === selectedCar);
+    }
+    
+    return filteredBookings.filter(booking => {
       const startDate = new Date(booking.start_time);
       const endDate = new Date(booking.end_time);
       

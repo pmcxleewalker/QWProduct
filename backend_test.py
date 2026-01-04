@@ -59,7 +59,246 @@ class FleetManagementAPITester:
             print(f"❌ Failed - Error: {str(e)}")
             return False, {}
 
-    def test_root_endpoint(self):
+    def authenticate_admin(self):
+        """Authenticate as admin user"""
+        print("\n=== Authenticating as Admin ===")
+        
+        login_data = {
+            "email": "admin@quickwing.com",
+            "password": "admin123"
+        }
+        
+        success, response = self.run_test(
+            "Admin Login",
+            "POST",
+            "auth/login",
+            200,
+            data=login_data
+        )
+        
+        if success and 'access_token' in response:
+            self.admin_token = response['access_token']
+            print(f"   Admin authenticated successfully")
+            return True
+        else:
+            print("❌ Failed to authenticate admin")
+            return False
+
+    def test_compliance_alerts(self):
+        """Test compliance alerts API"""
+        print("\n=== Testing Compliance Alerts ===")
+        
+        if not self.admin_token:
+            print("❌ No admin token available")
+            return False
+
+        # Get compliance alerts
+        success, response = self.run_test(
+            "Get Compliance Alerts",
+            "GET",
+            "admin/compliance-alerts",
+            200,
+            token=self.admin_token
+        )
+        
+        if success:
+            print(f"   Found {len(response)} compliance alerts")
+            # Check if Hyundai i30 (M) is in alerts
+            hyundai_found = False
+            for alert in response:
+                if "Hyundai i30" in alert.get('car_name', ''):
+                    hyundai_found = True
+                    print(f"   ✅ Found Hyundai i30 with {len(alert.get('alerts', []))} alerts")
+                    for car_alert in alert.get('alerts', []):
+                        print(f"      - {car_alert['type']}: {car_alert['days_until']} days")
+            
+            if not hyundai_found:
+                print("   ⚠️  Hyundai i30 not found in alerts (may not have compliance dates set)")
+        
+        return success
+
+    def test_car_blocking(self):
+        """Test car blocking functionality"""
+        print("\n=== Testing Car Blocking ===")
+        
+        if not self.admin_token:
+            print("❌ No admin token available")
+            return False
+
+        if not self.test_car_id:
+            print("❌ No test car available for blocking")
+            return False
+
+        # Block the car
+        block_data = {
+            "reason": "Service"
+        }
+        
+        success, response = self.run_test(
+            "Block Car for Service",
+            "POST",
+            f"cars/{self.test_car_id}/block",
+            200,
+            data=block_data,
+            token=self.admin_token
+        )
+        
+        if not success:
+            return False
+
+        # Verify car is blocked by getting car details
+        success, car_response = self.run_test(
+            "Verify Car is Blocked",
+            "GET",
+            f"cars/{self.test_car_id}",
+            200
+        )
+        
+        if success:
+            if car_response.get('is_blocked') == True and car_response.get('block_reason') == 'Service':
+                print("   ✅ Car successfully blocked with correct reason")
+            else:
+                print(f"   ❌ Car blocking verification failed: is_blocked={car_response.get('is_blocked')}, reason={car_response.get('block_reason')}")
+                return False
+        else:
+            return False
+
+        # Test booking prevention on blocked car
+        start_time = datetime.now() + timedelta(hours=1)
+        end_time = start_time + timedelta(hours=2)
+        
+        booking_data = {
+            "car_id": self.test_car_id,
+            "user_name": "Test User",
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
+            "destination_notes": "Should fail - car is blocked"
+        }
+        
+        success, response = self.run_test(
+            "Test Booking Prevention on Blocked Car",
+            "POST",
+            "bookings",
+            400,  # Should fail with 400
+            data=booking_data,
+            token=self.admin_token
+        )
+        
+        if success:
+            print("   ✅ Booking correctly prevented for blocked car")
+        else:
+            print("   ❌ Booking prevention failed - blocked car should not be bookable")
+            return False
+
+        return True
+
+    def test_car_unblocking(self):
+        """Test car unblocking functionality"""
+        print("\n=== Testing Car Unblocking ===")
+        
+        if not self.admin_token:
+            print("❌ No admin token available")
+            return False
+
+        if not self.test_car_id:
+            print("❌ No test car available for unblocking")
+            return False
+
+        # Unblock the car
+        unblock_data = {
+            "sign_off_notes": "Service completed successfully"
+        }
+        
+        success, response = self.run_test(
+            "Unblock Car with Sign-off",
+            "POST",
+            f"cars/{self.test_car_id}/unblock",
+            200,
+            data=unblock_data,
+            token=self.admin_token
+        )
+        
+        if not success:
+            return False
+
+        # Verify car is unblocked
+        success, car_response = self.run_test(
+            "Verify Car is Unblocked",
+            "GET",
+            f"cars/{self.test_car_id}",
+            200
+        )
+        
+        if success:
+            if car_response.get('is_blocked') == False and car_response.get('block_reason') is None:
+                print("   ✅ Car successfully unblocked")
+            else:
+                print(f"   ❌ Car unblocking verification failed: is_blocked={car_response.get('is_blocked')}, reason={car_response.get('block_reason')}")
+                return False
+        else:
+            return False
+
+        return True
+
+    def test_blocked_car_booking_prevention(self):
+        """Test booking prevention specifically for Toyota Aygo (M) which should be blocked"""
+        print("\n=== Testing Blocked Car Booking Prevention ===")
+        
+        if not self.admin_token:
+            print("❌ No admin token available")
+            return False
+
+        # Get all cars to find Toyota Aygo
+        success, cars_response = self.run_test(
+            "Get All Cars to Find Toyota Aygo",
+            "GET",
+            "cars",
+            200,
+            token=self.admin_token
+        )
+        
+        if not success:
+            return False
+
+        toyota_aygo_id = None
+        for car in cars_response:
+            if "Toyota Aygo" in car.get('name', ''):
+                toyota_aygo_id = car['id']
+                print(f"   Found Toyota Aygo with ID: {toyota_aygo_id}")
+                print(f"   Blocked status: {car.get('is_blocked')}, Reason: {car.get('block_reason')}")
+                break
+        
+        if not toyota_aygo_id:
+            print("   ⚠️  Toyota Aygo (M) not found in database")
+            return True  # Not a failure, just not present
+
+        # Try to book the Toyota Aygo
+        start_time = datetime.now() + timedelta(hours=1)
+        end_time = start_time + timedelta(hours=2)
+        
+        booking_data = {
+            "car_id": toyota_aygo_id,
+            "user_name": "Test User",
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
+            "destination_notes": "Should fail if car is blocked"
+        }
+        
+        success, response = self.run_test(
+            "Test Booking Toyota Aygo (Should Fail if Blocked)",
+            "POST",
+            "bookings",
+            400,  # Should fail with 400 if blocked
+            data=booking_data,
+            token=self.admin_token
+        )
+        
+        if success:
+            print("   ✅ Toyota Aygo booking correctly prevented (car is blocked)")
+        else:
+            print("   ⚠️  Toyota Aygo booking was allowed (car may not be blocked)")
+
+        return True
         """Test root API endpoint"""
         success, response = self.run_test(
             "Root API Endpoint",

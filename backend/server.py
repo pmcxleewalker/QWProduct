@@ -697,6 +697,72 @@ async def create_booking(booking: BookingCreate, current_user: dict = Depends(ge
     
     booking_obj = Booking(**booking.model_dump())
     booking_obj.created_by_email = current_user['email']  # Track who created the booking
+    
+    # Handle recurring bookings
+    if booking.is_recurring and booking.recurrence_type:
+        is_admin = current_user.get('role') == 'admin'
+        # Staff recurring bookings need admin approval
+        if not is_admin:
+            booking_obj.status = "pending_approval"
+        
+        # Generate recurring group ID
+        recurring_group_id = str(uuid.uuid4())
+        booking_obj.recurring_group_id = recurring_group_id
+        
+        # Calculate recurring dates
+        recurring_bookings = []
+        current_start = booking.start_time
+        current_end = booking.end_time
+        duration = current_end - current_start
+        
+        count = 0
+        max_count = booking.recurrence_count or 52  # Default max 52 occurrences
+        
+        while count < max_count:
+            if booking.recurrence_end_date and current_start > booking.recurrence_end_date:
+                break
+            
+            # Create booking for this occurrence
+            occurrence = Booking(**booking.model_dump())
+            occurrence.id = str(uuid.uuid4())
+            occurrence.created_by_email = current_user['email']
+            occurrence.recurring_group_id = recurring_group_id
+            occurrence.start_time = current_start
+            occurrence.end_time = current_start + duration
+            if not is_admin:
+                occurrence.status = "pending_approval"
+            
+            doc = serialize_datetime(occurrence.model_dump())
+            recurring_bookings.append(doc)
+            
+            # Calculate next occurrence
+            if booking.recurrence_type == "daily":
+                current_start = current_start + timedelta(days=1)
+            elif booking.recurrence_type == "weekly":
+                current_start = current_start + timedelta(weeks=1)
+            elif booking.recurrence_type == "monthly":
+                # Add one month
+                month = current_start.month + 1
+                year = current_start.year
+                if month > 12:
+                    month = 1
+                    year += 1
+                try:
+                    current_start = current_start.replace(year=year, month=month)
+                except ValueError:
+                    # Handle edge cases like Jan 31 -> Feb 28
+                    current_start = current_start.replace(year=year, month=month, day=28)
+            
+            count += 1
+        
+        # Insert all recurring bookings
+        if recurring_bookings:
+            await db.bookings.insert_many(recurring_bookings)
+        
+        # Return the first booking
+        booking_obj = Booking(**{k: v for k, v in recurring_bookings[0].items() if k != '_id'})
+        return booking_obj
+    
     doc = serialize_datetime(booking_obj.model_dump())
     await db.bookings.insert_one(doc)
     

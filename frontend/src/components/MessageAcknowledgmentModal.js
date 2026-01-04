@@ -1,29 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import { messageAPI } from '../api/api';
 import { Bell, CheckCircle, AlertTriangle, X } from 'lucide-react';
+import axios from 'axios';
 
 const MessageAcknowledgmentModal = ({ onComplete }) => {
   const [messages, setMessages] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [acknowledging, setAcknowledging] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchUnacknowledgedMessages();
+    // Wait a bit for the token to be set in axios defaults
+    const timer = setTimeout(() => {
+      fetchUnacknowledgedMessages();
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   const fetchUnacknowledgedMessages = async () => {
     try {
+      // Check if token is available
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No token found, skipping message check');
+        onComplete();
+        return;
+      }
+      
       const response = await messageAPI.getUnacknowledged();
-      setMessages(response.data);
-      if (response.data.length === 0) {
+      console.log('Unacknowledged messages:', response.data);
+      
+      if (response.data && response.data.length > 0) {
+        setMessages(response.data);
+        setLoading(false);
+      } else {
         onComplete();
       }
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      onComplete(); // Continue even if there's an error
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching messages:', err);
+      setError(err.message);
+      // If 401, token might be invalid - let user continue
+      if (err.response?.status === 401) {
+        onComplete();
+      } else {
+        // For other errors, still show the loading failed state briefly
+        setLoading(false);
+        setTimeout(onComplete, 1000);
+      }
     }
   };
 

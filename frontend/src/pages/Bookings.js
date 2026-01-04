@@ -174,6 +174,9 @@ const Bookings = () => {
                         'July', 'August', 'September', 'October', 'November', 'December'];
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+    // Get selected car info
+    const selectedCarInfo = selectedCar !== 'all' ? cars.find(c => c.id === selectedCar) : null;
+
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDay; i++) {
       days.push(
@@ -202,7 +205,7 @@ const Bookings = () => {
                 title={`${getCarName(booking.car_id)} - ${booking.user_name}\n${formatTime(booking.start_time)} - ${formatTime(booking.end_time)}`}
               >
                 <span className="hidden md:inline">{formatTime(booking.start_time)} </span>
-                {getCarName(booking.car_id)}
+                {selectedCar === 'all' ? getCarName(booking.car_id) : booking.user_name}
               </div>
             ))}
             {dayBookings.length > 3 && (
@@ -217,27 +220,63 @@ const Bookings = () => {
 
     return (
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        {/* Car Selector Tabs */}
+        <div className="bg-gray-100 p-2 border-b overflow-x-auto">
+          <div className="flex space-x-2 min-w-max">
+            <button
+              onClick={() => setSelectedCar('all')}
+              className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                selectedCar === 'all' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Grid size={14} />
+              <span>All Cars</span>
+            </button>
+            {cars.filter(car => !car.is_blocked).map((car) => (
+              <button
+                key={car.id}
+                onClick={() => setSelectedCar(car.id)}
+                className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                  selectedCar === car.id 
+                    ? `${getCarColor(car.id)} text-white` 
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <Car size={14} />
+                <span>{car.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Calendar Header */}
-        <div className="bg-blue-600 text-white p-4">
+        <div className={`${selectedCarInfo ? getCarColor(selectedCarInfo.id) : 'bg-blue-600'} text-white p-4`}>
           <div className="flex justify-between items-center">
             <button 
               onClick={prevMonth}
-              className="p-2 hover:bg-blue-700 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
             >
               <ChevronLeft size={20} />
             </button>
             <div className="text-center">
-              <h2 className="text-xl font-bold">{monthNames[month]} {year}</h2>
+              <h2 className="text-xl font-bold">
+                {selectedCarInfo ? `${selectedCarInfo.name} - ` : ''}{monthNames[month]} {year}
+              </h2>
+              {selectedCarInfo && (
+                <p className="text-sm opacity-80">{selectedCarInfo.registration}</p>
+              )}
               <button 
                 onClick={goToToday}
-                className="text-sm text-blue-200 hover:text-white transition-colors"
+                className="text-sm opacity-80 hover:opacity-100 transition-colors"
               >
                 Go to Today
               </button>
             </div>
             <button 
               onClick={nextMonth}
-              className="p-2 hover:bg-blue-700 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
             >
               <ChevronRight size={20} />
             </button>
@@ -259,21 +298,43 @@ const Bookings = () => {
           {days}
         </div>
 
-        {/* Legend */}
-        <div className="p-3 bg-gray-50 border-t">
-          <p className="text-xs text-gray-500 mb-2">Car Legend:</p>
-          <div className="flex flex-wrap gap-2">
-            {cars.slice(0, 6).map((car) => (
-              <div key={car.id} className="flex items-center space-x-1">
-                <div className={`w-3 h-3 rounded ${getCarColor(car.id)}`}></div>
-                <span className="text-xs text-gray-600">{car.name}</span>
-              </div>
-            ))}
-            {cars.length > 6 && (
-              <span className="text-xs text-gray-500">+{cars.length - 6} more</span>
-            )}
+        {/* Legend - only show when viewing all cars */}
+        {selectedCar === 'all' && (
+          <div className="p-3 bg-gray-50 border-t">
+            <p className="text-xs text-gray-500 mb-2">Car Legend:</p>
+            <div className="flex flex-wrap gap-2">
+              {cars.filter(car => !car.is_blocked).slice(0, 6).map((car) => (
+                <div key={car.id} className="flex items-center space-x-1">
+                  <div className={`w-3 h-3 rounded ${getCarColor(car.id)}`}></div>
+                  <span className="text-xs text-gray-600">{car.name}</span>
+                </div>
+              ))}
+              {cars.filter(car => !car.is_blocked).length > 6 && (
+                <span className="text-xs text-gray-500">+{cars.filter(car => !car.is_blocked).length - 6} more</span>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Single car stats */}
+        {selectedCar !== 'all' && (
+          <div className="p-3 bg-gray-50 border-t">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">{bookings.filter(b => b.car_id === selectedCar).length}</span> bookings this month
+              </p>
+              <button
+                onClick={() => {
+                  setFormData({ ...formData, car_id: selectedCar });
+                  setShowForm(true);
+                }}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                + Book this car
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };

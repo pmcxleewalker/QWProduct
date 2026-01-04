@@ -122,8 +122,54 @@ const Admin = () => {
       name: car.name,
       registration: car.registration,
       current_status: car.current_status,
+      tax_due_date: car.tax_due_date || '',
+      nct_due_date: car.nct_due_date || '',
+      service_due_date: car.service_due_date || '',
     });
     setShowCarForm(true);
+  };
+
+  // Block/Unblock Operations
+  const handleBlockCar = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      await carAPI.block(blockForm.carId, { reason: blockForm.reason });
+      setSuccess('Car blocked successfully!');
+      setShowBlockModal(false);
+      setBlockForm({ carId: null, reason: 'Service' });
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to block car');
+    }
+  };
+
+  const handleUnblockCar = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      await carAPI.unblock(unblockForm.carId, { sign_off_notes: unblockForm.sign_off_notes });
+      setSuccess('Car unblocked successfully!');
+      setShowUnblockModal(false);
+      setUnblockForm({ carId: null, sign_off_notes: '' });
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to unblock car');
+    }
+  };
+
+  const openBlockModal = (car) => {
+    setBlockForm({ carId: car.id, reason: 'Service' });
+    setShowBlockModal(true);
+  };
+
+  const openUnblockModal = (car) => {
+    setUnblockForm({ carId: car.id, sign_off_notes: '' });
+    setShowUnblockModal(true);
   };
 
   // Provider CRUD Operations

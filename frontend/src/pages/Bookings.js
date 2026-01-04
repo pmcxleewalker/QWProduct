@@ -713,7 +713,8 @@ const Bookings = () => {
                     )}
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </>

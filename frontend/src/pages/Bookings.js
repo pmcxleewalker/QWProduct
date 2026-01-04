@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { bookingAPI, carAPI } from '../api/api';
-import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, List, Grid } from 'lucide-react';
 
 const Bookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -9,6 +9,8 @@ const Bookings = () => {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [viewMode, setViewMode] = useState('calendar'); // 'calendar' or 'list'
+  const [currentDate, setCurrentDate] = useState(new Date());
   
   const [formData, setFormData] = useState({
     car_id: '',
@@ -20,6 +22,9 @@ const Bookings = () => {
 
   useEffect(() => {
     fetchData();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
@@ -58,7 +63,7 @@ const Bookings = () => {
         end_time: '',
         destination_notes: '',
       });
-      fetchData();
+      fetchData(); // Auto-refresh calendar
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to create booking');
     }
@@ -70,7 +75,7 @@ const Bookings = () => {
     try {
       await bookingAPI.delete(id);
       setSuccess('Booking deleted successfully');
-      fetchData();
+      fetchData(); // Auto-refresh calendar
     } catch (err) {
       setError('Failed to delete booking');
     }
@@ -78,7 +83,16 @@ const Bookings = () => {
 
   const getCarName = (carId) => {
     const car = cars.find(c => c.id === carId);
-    return car ? `${car.name} (${car.registration})` : 'Unknown Car';
+    return car ? car.name : 'Unknown';
+  };
+
+  const getCarColor = (carId) => {
+    const colors = [
+      'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 
+      'bg-pink-500', 'bg-teal-500', 'bg-indigo-500', 'bg-red-500'
+    ];
+    const index = cars.findIndex(c => c.id === carId);
+    return colors[index % colors.length];
   };
 
   const formatDateTime = (dateStr) => {
@@ -91,6 +105,173 @@ const Bookings = () => {
     });
   };
 
+  const formatTime = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // Calendar helper functions
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDay = firstDay.getDay();
+    
+    return { daysInMonth, startingDay, year, month };
+  };
+
+  const getBookingsForDate = (day) => {
+    const { year, month } = getDaysInMonth(currentDate);
+    const dateToCheck = new Date(year, month, day);
+    
+    return bookings.filter(booking => {
+      const startDate = new Date(booking.start_time);
+      const endDate = new Date(booking.end_time);
+      
+      // Check if the booking overlaps with this day
+      const dayStart = new Date(year, month, day, 0, 0, 0);
+      const dayEnd = new Date(year, month, day, 23, 59, 59);
+      
+      return startDate <= dayEnd && endDate >= dayStart;
+    });
+  };
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const isToday = (day) => {
+    const today = new Date();
+    const { year, month } = getDaysInMonth(currentDate);
+    return today.getDate() === day && 
+           today.getMonth() === month && 
+           today.getFullYear() === year;
+  };
+
+  const renderCalendar = () => {
+    const { daysInMonth, startingDay, year, month } = getDaysInMonth(currentDate);
+    const days = [];
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDay; i++) {
+      days.push(
+        <div key={`empty-${i}`} className="h-24 md:h-32 bg-gray-50 border border-gray-100"></div>
+      );
+    }
+
+    // Add cells for each day of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayBookings = getBookingsForDate(day);
+      const todayClass = isToday(day) ? 'bg-blue-50 border-blue-300' : 'bg-white';
+      
+      days.push(
+        <div 
+          key={day} 
+          className={`h-24 md:h-32 ${todayClass} border border-gray-200 p-1 overflow-hidden hover:bg-gray-50 transition-colors`}
+        >
+          <div className={`text-sm font-medium mb-1 ${isToday(day) ? 'text-blue-600' : 'text-gray-700'}`}>
+            {day}
+          </div>
+          <div className="space-y-0.5 overflow-y-auto max-h-16 md:max-h-24">
+            {dayBookings.slice(0, 3).map((booking, idx) => (
+              <div 
+                key={booking.id}
+                className={`${getCarColor(booking.car_id)} text-white text-xs px-1 py-0.5 rounded truncate cursor-pointer`}
+                title={`${getCarName(booking.car_id)} - ${booking.user_name}\n${formatTime(booking.start_time)} - ${formatTime(booking.end_time)}`}
+              >
+                <span className="hidden md:inline">{formatTime(booking.start_time)} </span>
+                {getCarName(booking.car_id)}
+              </div>
+            ))}
+            {dayBookings.length > 3 && (
+              <div className="text-xs text-gray-500 px-1">
+                +{dayBookings.length - 3} more
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        {/* Calendar Header */}
+        <div className="bg-blue-600 text-white p-4">
+          <div className="flex justify-between items-center">
+            <button 
+              onClick={prevMonth}
+              className="p-2 hover:bg-blue-700 rounded-lg transition-colors"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="text-center">
+              <h2 className="text-xl font-bold">{monthNames[month]} {year}</h2>
+              <button 
+                onClick={goToToday}
+                className="text-sm text-blue-200 hover:text-white transition-colors"
+              >
+                Go to Today
+              </button>
+            </div>
+            <button 
+              onClick={nextMonth}
+              className="p-2 hover:bg-blue-700 rounded-lg transition-colors"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        </div>
+        
+        {/* Day Headers */}
+        <div className="grid grid-cols-7 bg-gray-100">
+          {dayNames.map(day => (
+            <div key={day} className="p-2 text-center text-sm font-medium text-gray-600 border-b">
+              <span className="hidden md:inline">{day}</span>
+              <span className="md:hidden">{day.charAt(0)}</span>
+            </div>
+          ))}
+        </div>
+        
+        {/* Calendar Grid */}
+        <div className="grid grid-cols-7">
+          {days}
+        </div>
+
+        {/* Legend */}
+        <div className="p-3 bg-gray-50 border-t">
+          <p className="text-xs text-gray-500 mb-2">Car Legend:</p>
+          <div className="flex flex-wrap gap-2">
+            {cars.slice(0, 6).map((car) => (
+              <div key={car.id} className="flex items-center space-x-1">
+                <div className={`w-3 h-3 rounded ${getCarColor(car.id)}`}></div>
+                <span className="text-xs text-gray-600">{car.name}</span>
+              </div>
+            ))}
+            {cars.length > 6 && (
+              <span className="text-xs text-gray-500">+{cars.length - 6} more</span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -101,16 +282,43 @@ const Bookings = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900" data-testid="bookings-title">Car Bookings</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          data-testid="new-booking-button"
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus size={18} />
-          <span>New Booking</span>
-        </button>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900" data-testid="bookings-title">Car Bookings</h1>
+          <p className="text-sm text-gray-500 mt-1">Auto-updates every 30 seconds</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          {/* View Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm transition-colors ${
+                viewMode === 'calendar' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
+              }`}
+            >
+              <Grid size={16} />
+              <span className="hidden md:inline">Calendar</span>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm transition-colors ${
+                viewMode === 'list' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
+              }`}
+            >
+              <List size={16} />
+              <span className="hidden md:inline">List</span>
+            </button>
+          </div>
+          
+          <button
+            onClick={() => setShowForm(!showForm)}
+            data-testid="new-booking-button"
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus size={18} />
+            <span>New Booking</span>
+          </button>
+        </div>
       </div>
 
       {/* Success/Error Messages */}
@@ -145,7 +353,7 @@ const Bookings = () => {
                   required
                 >
                   <option value="">Choose a car</option>
-                  {cars.map((car) => (
+                  {cars.filter(car => !car.is_blocked).map((car) => (
                     <option key={car.id} value={car.id}>
                       {car.name} ({car.registration})
                     </option>
@@ -230,53 +438,63 @@ const Bookings = () => {
         </div>
       )}
 
-      {/* Bookings List */}
-      {bookings.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg shadow">
-          <CalendarIcon className="mx-auto text-gray-400" size={48} />
-          <p className="text-gray-500 mt-4">No bookings yet. Create your first booking!</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {bookings.map((booking) => (
-            <div
-              key={booking.id}
-              data-testid={`booking-card-${booking.id}`}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900">
-                    {getCarName(booking.car_id)}
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Booked by: <span className="font-medium">{booking.user_name}</span>
-                  </p>
-                  <div className="mt-3 space-y-1">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">From:</span> {formatDateTime(booking.start_time)}
-                    </p>
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">To:</span> {formatDateTime(booking.end_time)}
-                    </p>
-                  </div>
-                  {booking.destination_notes && (
-                    <p className="text-sm text-gray-600 mt-2 italic">
-                      Destination: {booking.destination_notes}
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleDelete(booking.id)}
-                  data-testid={`delete-booking-${booking.id}`}
-                  className="text-red-500 hover:text-red-700 transition-colors"
-                >
-                  <Trash2 size={20} />
-                </button>
-              </div>
+      {/* Calendar View */}
+      {viewMode === 'calendar' && renderCalendar()}
+
+      {/* List View */}
+      {viewMode === 'list' && (
+        <>
+          {bookings.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-lg shadow">
+              <CalendarIcon className="mx-auto text-gray-400" size={48} />
+              <p className="text-gray-500 mt-4">No bookings yet. Create your first booking!</p>
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="space-y-4">
+              {bookings.map((booking) => (
+                <div
+                  key={booking.id}
+                  data-testid={`booking-card-${booking.id}`}
+                  className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-3 h-3 rounded-full ${getCarColor(booking.car_id)}`}></div>
+                        <h3 className="text-lg font-bold text-gray-900">
+                          {getCarName(booking.car_id)}
+                        </h3>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Booked by: <span className="font-medium">{booking.user_name}</span>
+                      </p>
+                      <div className="mt-3 space-y-1">
+                        <p className="text-sm text-gray-700">
+                          <span className="font-medium">From:</span> {formatDateTime(booking.start_time)}
+                        </p>
+                        <p className="text-sm text-gray-700">
+                          <span className="font-medium">To:</span> {formatDateTime(booking.end_time)}
+                        </p>
+                      </div>
+                      {booking.destination_notes && (
+                        <p className="text-sm text-gray-600 mt-2 italic">
+                          Destination: {booking.destination_notes}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDelete(booking.id)}
+                      data-testid={`delete-booking-${booking.id}`}
+                      className="text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

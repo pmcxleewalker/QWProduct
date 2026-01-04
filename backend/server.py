@@ -558,9 +558,13 @@ async def create_assistance_provider(provider: AssistanceProviderCreate, current
 
 
 @api_router.get("/assistance", response_model=List[AssistanceProvider])
-async def get_all_assistance_providers(current_user: dict = Depends(get_current_user)):
-    """Get all assistance providers (authenticated users)"""
-    providers = await db.assistance_providers.find({}, {"_id": 0}).to_list(1000)
+async def get_all_assistance_providers(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=500, description="Maximum number of records to return"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all assistance providers (authenticated users) with pagination"""
+    providers = await db.assistance_providers.find({}, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     for provider in providers:
         deserialize_datetime(provider, ['created_at'])
     return providers

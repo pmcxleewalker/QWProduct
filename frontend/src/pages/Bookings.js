@@ -111,6 +111,18 @@ const Bookings = () => {
     });
   };
 
+  const formatFullDateTime = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   const formatTime = (dateStr) => {
     const date = new Date(dateStr);
     return date.toLocaleTimeString('en-US', {

@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { carAPI, assistanceAPI, userAPI } from '../api/api';
-import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, Mail, Copy, CheckCircle, Lock, Unlock } from 'lucide-react';
+import { carAPI, assistanceAPI, userAPI, bookingAPI, messageAPI } from '../api/api';
+import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, Mail, Copy, CheckCircle, Lock, Unlock, Bell, Clock, Check, X, MessageSquare } from 'lucide-react';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('cars');
   const [cars, setCars] = useState([]);
   const [providers, setProviders] = useState([]);
   const [users, setUsers] = useState([]);
+  const [pendingBookings, setPendingBookings] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCarForm, setShowCarForm] = useState(false);
   const [showProviderForm, setShowProviderForm] = useState(false);
   const [showInviteForm, setShowInviteForm] = useState(false);
+  const [showMessageForm, setShowMessageForm] = useState(false);
   const [inviteUrl, setInviteUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [editingCar, setEditingCar] = useState(null);
   const [editingProvider, setEditingProvider] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -52,6 +56,13 @@ const Admin = () => {
     role: 'staff',
   });
 
+  const [messageForm, setMessageForm] = useState({
+    title: '',
+    content: '',
+    requires_acknowledgment: true,
+    is_active: true,
+  });
+
   useEffect(() => {
     fetchData();
   }, [activeTab]);
@@ -61,6 +72,8 @@ const Admin = () => {
       const promises = [
         carAPI.getAll(),
         assistanceAPI.getAll(),
+        bookingAPI.getPending(),
+        messageAPI.getAll(),
       ];
       
       if (activeTab === 'users') {

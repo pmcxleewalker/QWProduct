@@ -299,6 +299,7 @@ class FleetManagementAPITester:
             print("   ⚠️  Toyota Aygo booking was allowed (car may not be blocked)")
 
         return True
+    def test_root_endpoint(self):
         """Test root API endpoint"""
         success, response = self.run_test(
             "Root API Endpoint",
@@ -309,27 +310,37 @@ class FleetManagementAPITester:
         return success
 
     def test_car_crud(self):
-        """Test Car CRUD operations"""
+        """Test Car CRUD operations with compliance dates"""
         print("\n=== Testing Car CRUD Operations ===")
         
-        # Create a car
+        if not self.admin_token:
+            print("❌ No admin token available")
+            return False
+        
+        # Create a car with compliance dates
+        future_date = (datetime.now() + timedelta(days=15)).isoformat()
         car_data = {
             "name": f"Test Car {datetime.now().strftime('%H%M%S')}",
             "registration": f"TEST-{datetime.now().strftime('%H%M%S')}",
-            "current_status": "Free"
+            "current_status": "Free",
+            "tax_due_date": future_date,
+            "nct_due_date": future_date,
+            "service_due_date": future_date
         }
         
         success, response = self.run_test(
-            "Create Car",
+            "Create Car with Compliance Dates",
             "POST",
             "cars",
             200,
-            data=car_data
+            data=car_data,
+            token=self.admin_token
         )
         
         if success and 'id' in response:
             self.test_car_id = response['id']
             print(f"   Created car with ID: {self.test_car_id}")
+            print(f"   Compliance dates set for: {future_date}")
         else:
             return False
 
@@ -338,7 +349,8 @@ class FleetManagementAPITester:
             "Get All Cars",
             "GET",
             "cars",
-            200
+            200,
+            token=self.admin_token
         )
         
         if not success:
@@ -359,7 +371,10 @@ class FleetManagementAPITester:
         update_data = {
             "name": car_data["name"] + " Updated",
             "registration": car_data["registration"],
-            "current_status": "In Use"
+            "current_status": "In Use",
+            "tax_due_date": car_data["tax_due_date"],
+            "nct_due_date": car_data["nct_due_date"],
+            "service_due_date": car_data["service_due_date"]
         }
         
         success, response = self.run_test(
@@ -367,7 +382,8 @@ class FleetManagementAPITester:
             "PUT",
             f"cars/{self.test_car_id}",
             200,
-            data=update_data
+            data=update_data,
+            token=self.admin_token
         )
         
         if not success:

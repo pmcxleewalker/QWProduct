@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Navigation = () => {
   const location = useLocation();
+  const { user, logout, isAdmin } = useAuth();
   
   const isActive = (path) => location.pathname === path;
   
@@ -12,8 +13,16 @@ const Navigation = () => {
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/bookings', icon: Calendar, label: 'Bookings' },
     { path: '/assistance', icon: PhoneCall, label: 'Assistance' },
-    { path: '/admin', icon: Settings, label: 'Admin' },
   ];
+
+  // Only show Admin for admin users
+  if (isAdmin()) {
+    navItems.push({ path: '/admin', icon: Settings, label: 'Admin' });
+  }
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <>

@@ -412,6 +412,137 @@ async def get_car_qr_code(car_id: str):
     return StreamingResponse(buf, media_type="image/png")
 
 
+# ==================== CAR BLOCKING ENDPOINTS ====================
+
+@api_router.post("/cars/{car_id}/block")
+async def block_car(car_id: str, block_data: CarBlockCreate, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Block a car for service/cleaning/other"""
+    car = await db.cars.find_one({"id": car_id}, {"_id": 0})
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+    
+    if car.get('is_blocked'):
+        raise HTTPException(status_code=400, detail="Car is already blocked")
+    
+    update_data = {
+        "is_blocked": True,
+        "block_reason": block_data.reason,
+        "blocked_by": current_user['email'],
+        "blocked_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.cars.update_one({"id": car_id}, {"$set": update_data})
+    
+    return {"message": f"Car blocked for {block_data.reason}", "car_id": car_id}
+
+
+@api_router.post("/cars/{car_id}/unblock")
+async def unblock_car(car_id: str, unblock_data: CarUnblockCreate, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Unblock a car (sign off)"""
+    car = await db.cars.find_one({"id": car_id}, {"_id": 0})
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+    
+    if not car.get('is_blocked'):
+        raise HTTPException(status_code=400, detail="Car is not blocked")
+    
+    # Log the unblock action
+    unblock_log = {
+        "id": str(uuid.uuid4()),
+        "car_id": car_id,
+        "action": "unblock",
+        "previous_reason": car.get('block_reason'),
+        "sign_off_by": current_user['email'],
+        "sign_off_notes": unblock_data.sign_off_notes,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    await db.car_block_logs.insert_one(unblock_log)
+    
+    update_data = {
+        "is_blocked": False,
+        "block_reason": None,
+        "blocked_by": None,
+        "blocked_at": None
+    }
+    
+    await db.cars.update_one({"id": car_id}, {"$set": update_data})
+    
+    return {"message": "Car unblocked successfully", "car_id": car_id}
+
+
+# ==================== COMPLIANCE ALERTS ENDPOINT ====================
+
+@api_router.get("/admin/compliance-alerts")
+async def get_compliance_alerts(current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Get cars with upcoming compliance dates (within 30 days)"""
+    cars = await db.cars.find({}, {"_id": 0}).to_list(1000)
+    
+    alerts = []
+    today = datetime.now(timezone.utc).date()
+    alert_threshold = today + timedelta(days=30)
+    
+    for car in cars:
+        car_alerts = []
+        
+        # Check Tax due date
+        if car.get('tax_due_date'):
+            try:
+                tax_date = datetime.fromisoformat(car['tax_due_date'].replace('Z', '+00:00')).date()
+                if tax_date <= alert_threshold:
+                    days_until = (tax_date - today).days
+                    car_alerts.append({
+                        "type": "Tax",
+                        "due_date": car['tax_due_date'],
+                        "days_until": days_until,
+                        "is_overdue": days_until < 0
+                    })
+            except (ValueError, TypeError):
+                pass
+        
+        # Check NCT due date
+        if car.get('nct_due_date'):
+            try:
+                nct_date = datetime.fromisoformat(car['nct_due_date'].replace('Z', '+00:00')).date()
+                if nct_date <= alert_threshold:
+                    days_until = (nct_date - today).days
+                    car_alerts.append({
+                        "type": "NCT",
+                        "due_date": car['nct_due_date'],
+                        "days_until": days_until,
+                        "is_overdue": days_until < 0
+                    })
+            except (ValueError, TypeError):
+                pass
+        
+        # Check Service due date
+        if car.get('service_due_date'):
+            try:
+                service_date = datetime.fromisoformat(car['service_due_date'].replace('Z', '+00:00')).date()
+                if service_date <= alert_threshold:
+                    days_until = (service_date - today).days
+                    car_alerts.append({
+                        "type": "Service",
+                        "due_date": car['service_due_date'],
+                        "days_until": days_until,
+                        "is_overdue": days_until < 0
+                    })
+            except (ValueError, TypeError):
+                pass
+        
+        if car_alerts:
+            alerts.append({
+                "car_id": car['id'],
+                "car_name": car['name'],
+                "registration": car['registration'],
+                "alerts": car_alerts
+            })
+    
+    # Sort by most urgent (lowest days_until)
+    alerts.sort(key=lambda x: min(a['days_until'] for a in x['alerts']))
+    
+    return alerts
+
+
 # ==================== STATUS UPDATE ENDPOINTS ====================
 
 @api_router.post("/status", response_model=StatusUpdate)

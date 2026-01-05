@@ -113,7 +113,7 @@ Quick Wing is a complete fleet management solution with:
 
 ### Default Admin Access
 
-**Website:** https://quickwing.preview.emergentagent.com
+**Website:** https://cartrack-19.preview.emergentagent.com
 
 **Default Admin Login:**
 - Email: `admin@quickwing.com`
@@ -407,7 +407,7 @@ Best regards,
 
 **QR Code URL Format:**
 ```
-https://quickwing.preview.emergentagent.com/api/cars/[VEHICLE_ID]/qr
+https://cartrack-19.preview.emergentagent.com/api/cars/[VEHICLE_ID]/qr
 ```
 
 **Printing QR Codes:**
@@ -845,7 +845,7 @@ https://quickwing.preview.emergentagent.com/api/cars/[VEHICLE_ID]/qr
 
 **QR URL Format:**
 ```
-https://quickwing.preview.emergentagent.com/status-update?car=[VEHICLE_ID]
+https://cartrack-19.preview.emergentagent.com/status-update?car=[VEHICLE_ID]
 ```
 
 **Security:**
@@ -1124,7 +1124,7 @@ https://quickwing.preview.emergentagent.com/status-update?car=[VEHICLE_ID]
 
 **Main Application:**
 ```
-https://quickwing.preview.emergentagent.com
+https://cartrack-19.preview.emergentagent.com
 ```
 
 **Direct Pages:**
@@ -1137,12 +1137,12 @@ https://quickwing.preview.emergentagent.com
 
 **Example Vehicle QR:**
 ```
-https://quickwing.preview.emergentagent.com/api/cars/[ID]/qr
+https://cartrack-19.preview.emergentagent.com/api/cars/[ID]/qr
 ```
 
 **Example Status Update:**
 ```
-https://quickwing.preview.emergentagent.com/status-update?car=[ID]
+https://cartrack-19.preview.emergentagent.com/status-update?car=[ID]
 ```
 
 ### Fleet Statistics Template

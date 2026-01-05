@@ -104,7 +104,7 @@ const LiftRequestsPanel = ({ requests, onAccept, onCancel, currentUserEmail, isA
                       className="flex items-center space-x-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm font-medium transition-colors"
                     >
                       <X size={16} />
-                      <span>{isOwnRequest ? 'Cancel' : 'Remove'}</span>
+                      <span>Dismiss</span>
                     </button>
                   )}
                 </div>

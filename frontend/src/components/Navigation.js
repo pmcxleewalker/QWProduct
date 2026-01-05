@@ -193,15 +193,14 @@ const Navigation = () => {
                         <span>I can help!</span>
                       </button>
                     )}
-                    {(isOwnRequest || isAdmin()) && (
-                      <button
-                        onClick={() => handleDismissRequest(request.id)}
-                        className="flex-1 flex items-center justify-center space-x-1 px-3 py-1.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-xs font-medium transition-colors"
-                      >
-                        <X size={14} />
-                        <span>Dismiss</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleDismissRequest(request.id)}
+                      className="flex-1 flex items-center justify-center space-x-1 px-3 py-1.5 bg-gray-400 text-white rounded-lg hover:bg-gray-500 text-xs font-medium transition-colors"
+                      title="Hide from your view"
+                    >
+                      <X size={14} />
+                      <span>Hide</span>
+                    </button>
                   </div>
                 </div>
               );

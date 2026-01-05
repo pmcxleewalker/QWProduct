@@ -88,7 +88,7 @@ const AcceptLiftModal = ({ isOpen, onClose, onAccept, request }) => {
         {/* Message Form */}
         <form onSubmit={handleSubmit} className="p-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Send a message to {request.requester_name.split(' ')[0]}:
+            Send a message to {request.requester_name ? request.requester_name.split(' ')[0] : 'them'}:
           </label>
           <textarea
             value={message}

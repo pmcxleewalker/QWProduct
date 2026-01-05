@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { statusAPI, complianceAPI, bookingAPI, carAPI, liftRequestAPI } from '../api/api';
 import StatusBadge from '../components/StatusBadge';
 import LiftRequestsPanel from '../components/LiftRequestsPanel';
-import { RefreshCw, Clock, AlertTriangle, Check, X } from 'lucide-react';
+import LiftRequestModal from '../components/LiftRequestModal';
+import { RefreshCw, Clock, AlertTriangle, Check, X, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard = () => {
@@ -14,6 +15,7 @@ const Dashboard = () => {
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [showLiftModal, setShowLiftModal] = useState(false);
 
   const fetchLiveStatus = async () => {
     try {
@@ -123,6 +125,10 @@ const Dashboard = () => {
       console.error('Error cancelling lift request:', error);
       alert(error.response?.data?.detail || 'Failed to cancel lift request');
     }
+  };
+
+  const handleLiftRequestSuccess = () => {
+    fetchLiftRequests();
   };
 
   const formatTime = (date) => {
@@ -328,6 +334,25 @@ const Dashboard = () => {
           ))}
         </div>
       )}
+
+      {/* Request a Lift Button - Footer */}
+      <div className="mt-8 mb-20 md:mb-8">
+        <button
+          onClick={() => setShowLiftModal(true)}
+          className="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-3"
+        >
+          <span className="text-2xl">🙋‍♂️</span>
+          <span className="text-lg">Request a Lift</span>
+          <Plus size={20} />
+        </button>
+      </div>
+
+      {/* Lift Request Modal */}
+      <LiftRequestModal
+        isOpen={showLiftModal}
+        onClose={() => setShowLiftModal(false)}
+        onSuccess={handleLiftRequestSuccess}
+      />
     </div>
   );
 };

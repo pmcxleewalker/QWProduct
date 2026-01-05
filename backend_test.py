@@ -905,6 +905,11 @@ class FleetManagementAPITester:
             print("❌ Admin authentication failed, stopping tests")
             return False
 
+        # Authenticate as staff
+        if not self.authenticate_staff():
+            print("❌ Staff authentication failed, stopping tests")
+            return False
+
         # Test all CRUD operations
         tests = [
             self.test_car_crud,
@@ -914,7 +919,8 @@ class FleetManagementAPITester:
             self.test_blocked_car_booking_prevention,
             self.test_status_operations,
             self.test_booking_operations,
-            self.test_assistance_operations
+            self.test_assistance_operations,
+            self.test_lift_request_operations
         ]
         
         for test in tests:

@@ -83,7 +83,7 @@ const Navigation = () => {
 
   const handleDismissRequest = async (requestId) => {
     try {
-      await liftRequestAPI.cancel(requestId);
+      await liftRequestAPI.dismiss(requestId);
       // Refresh
       const [countRes, requestsRes] = await Promise.all([
         liftRequestAPI.getCount(),

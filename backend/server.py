@@ -1085,8 +1085,8 @@ async def get_lift_request_count(current_user: dict = Depends(get_current_user))
 
 
 @api_router.post("/lift-requests/{request_id}/accept")
-async def accept_lift_request(request_id: str, current_user: dict = Depends(get_current_user)):
-    """Accept a lift request"""
+async def accept_lift_request(request_id: str, accept_data: dict = None, current_user: dict = Depends(get_current_user)):
+    """Accept a lift request and notify the requester"""
     lift_request = await db.lift_requests.find_one({"id": request_id}, {"_id": 0})
     if not lift_request:
         raise HTTPException(status_code=404, detail="Lift request not found")
@@ -1098,19 +1098,83 @@ async def accept_lift_request(request_id: str, current_user: dict = Depends(get_
     if lift_request['requester_email'] == current_user['email']:
         raise HTTPException(status_code=400, detail="You cannot accept your own lift request")
     
-    # Get the acceptor's name from user email (try to find their name)
+    # Get the acceptor's name from user email
     acceptor_name = current_user['email'].split('@')[0].replace('.', ' ').title()
+    
+    # Get message from request body
+    message = ""
+    if accept_data and isinstance(accept_data, dict):
+        message = accept_data.get('message', '')
     
     update_data = {
         "status": "accepted",
         "accepted_by_email": current_user['email'],
         "accepted_by_name": acceptor_name,
-        "accepted_at": datetime.now(timezone.utc).isoformat()
+        "accepted_at": datetime.now(timezone.utc).isoformat(),
+        "acceptor_message": message
     }
     
     await db.lift_requests.update_one({"id": request_id}, {"$set": update_data})
     
-    return {"message": "Lift request accepted successfully"}
+    # Create notification for the requester
+    notification = {
+        "id": str(uuid.uuid4()),
+        "type": "lift_accepted",
+        "recipient_email": lift_request['requester_email'],
+        "lift_request_id": request_id,
+        "requester_name": lift_request['requester_name'],
+        "from_location": lift_request['from_location'],
+        "to_location": lift_request['to_location'],
+        "lift_date": lift_request['lift_date'],
+        "lift_time": lift_request['lift_time'],
+        "accepted_by_email": current_user['email'],
+        "accepted_by_name": acceptor_name,
+        "message": message,
+        "is_read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.lift_notifications.insert_one(notification)
+    
+    # Clean up dismissals for this request since it's now accepted
+    await db.lift_request_dismissals.delete_many({"request_id": request_id})
+    
+    return {"message": "Lift request accepted successfully", "acceptor_name": acceptor_name}
+
+
+# Lift Notifications Endpoints
+@api_router.get("/lift-notifications")
+async def get_lift_notifications(current_user: dict = Depends(get_current_user)):
+    """Get lift notifications for current user"""
+    notifications = await db.lift_notifications.find(
+        {"recipient_email": current_user['email'], "is_read": False},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    
+    return notifications
+
+
+@api_router.get("/lift-notifications/count")
+async def get_lift_notification_count(current_user: dict = Depends(get_current_user)):
+    """Get count of unread lift notifications"""
+    count = await db.lift_notifications.count_documents({
+        "recipient_email": current_user['email'],
+        "is_read": False
+    })
+    return {"count": count}
+
+
+@api_router.post("/lift-notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, current_user: dict = Depends(get_current_user)):
+    """Mark a notification as read"""
+    result = await db.lift_notifications.update_one(
+        {"id": notification_id, "recipient_email": current_user['email']},
+        {"$set": {"is_read": True}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    
+    return {"message": "Notification marked as read"}
 
 
 @api_router.post("/lift-requests/{request_id}/dismiss")

@@ -116,14 +116,24 @@ const Dashboard = () => {
     }
   };
 
-  const handleCancelLift = async (requestId) => {
-    if (!window.confirm('Are you sure you want to cancel this lift request?')) return;
+  const handleDismissLift = async (requestId) => {
     try {
-      await liftRequestAPI.cancel(requestId);
+      await liftRequestAPI.dismiss(requestId);
       fetchLiftRequests();
     } catch (error) {
-      console.error('Error cancelling lift request:', error);
-      alert(error.response?.data?.detail || 'Failed to cancel lift request');
+      console.error('Error dismissing lift request:', error);
+      alert(error.response?.data?.detail || 'Failed to dismiss lift request');
+    }
+  };
+
+  const handleDeleteLift = async (requestId) => {
+    if (!window.confirm('Are you sure you want to permanently delete this lift request? This action cannot be undone.')) return;
+    try {
+      await liftRequestAPI.delete(requestId);
+      fetchLiftRequests();
+    } catch (error) {
+      console.error('Error deleting lift request:', error);
+      alert(error.response?.data?.detail || 'Failed to delete lift request');
     }
   };
 

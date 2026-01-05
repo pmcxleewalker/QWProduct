@@ -36,6 +36,13 @@ const AcceptLiftModal = ({ isOpen, onClose, onAccept, request }) => {
 
   if (!isOpen || !request) return null;
 
+  // Safety check for request data
+  const requesterName = request.requester_name || 'Unknown';
+  const fromLocation = request.from_location || 'Not specified';
+  const toLocation = request.to_location || 'Not specified';
+  const liftDate = request.lift_date || '';
+  const liftTime = request.lift_time || '';
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -57,7 +64,7 @@ const AcceptLiftModal = ({ isOpen, onClose, onAccept, request }) => {
         <div className="p-4 bg-gray-50 border-b">
           <div className="flex items-center space-x-2 mb-2">
             <User size={16} className="text-blue-600" />
-            <span className="font-bold text-gray-900">{request.requester_name}</span>
+            <span className="font-bold text-gray-900">{requesterName}</span>
             <span className="text-gray-500 text-sm">needs a lift</span>
           </div>
           
@@ -65,21 +72,21 @@ const AcceptLiftModal = ({ isOpen, onClose, onAccept, request }) => {
             <div className="flex items-center space-x-2">
               <MapPin size={14} className="text-green-500" />
               <span className="text-gray-600">From:</span>
-              <span className="font-medium">{request.from_location}</span>
+              <span className="font-medium">{fromLocation}</span>
             </div>
             <div className="flex items-center space-x-2">
               <MapPin size={14} className="text-red-500" />
               <span className="text-gray-600">To:</span>
-              <span className="font-medium">{request.to_location}</span>
+              <span className="font-medium">{toLocation}</span>
             </div>
             <div className="flex items-center space-x-4 mt-2">
               <div className="flex items-center space-x-1 text-gray-600">
                 <Calendar size={14} />
-                <span>{formatDate(request.lift_date)}</span>
+                <span>{formatDate(liftDate)}</span>
               </div>
               <div className="flex items-center space-x-1 text-gray-600">
                 <Clock size={14} />
-                <span>{formatTime(request.lift_time)}</span>
+                <span>{formatTime(liftTime)}</span>
               </div>
             </div>
           </div>
@@ -88,7 +95,7 @@ const AcceptLiftModal = ({ isOpen, onClose, onAccept, request }) => {
         {/* Message Form */}
         <form onSubmit={handleSubmit} className="p-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Send a message to {request.requester_name ? request.requester_name.split(' ')[0] : 'them'}:
+            Send a message to {requesterName.split(' ')[0]}:
           </label>
           <textarea
             value={message}

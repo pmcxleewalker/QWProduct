@@ -82,11 +82,6 @@ const Login = () => {
               <span>{loading ? 'Signing in...' : 'Sign In'}</span>
             </button>
           </form>
-
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p>Default admin credentials:</p>
-            <p className="font-mono text-xs mt-1">admin@quickwing.com / admin123</p>
-          </div>
         </div>
       </div>
     </div>

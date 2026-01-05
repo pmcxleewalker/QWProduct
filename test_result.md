@@ -73,15 +73,18 @@ backend:
 
   - task: "Lift Request CRUD API"
     implemented: true
-    working: needs_testing
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: needs_testing
         agent: "main"
         comment: "✅ Implemented lift request endpoints: POST /api/lift-requests (create), GET /api/lift-requests (active), GET /api/lift-requests/count (badge count), POST /api/lift-requests/{id}/accept (accept), DELETE /api/lift-requests/{id} (cancel). Manual curl test shows create and get working."
+      - working: true
+        agent: "testing"
+        comment: "✅ All lift request endpoints working correctly. POST /api/lift-requests creates requests with requester_email from token. GET /api/lift-requests returns active requests. GET /api/lift-requests/count returns correct count. POST /api/lift-requests/{id}/accept works with proper validation (prevents self-acceptance, updates status to accepted). DELETE /api/lift-requests/{id} allows creator and admin to cancel. All authentication and authorization working properly."
 
 frontend:
   - task: "Dashboard Compliance Alerts"

@@ -625,6 +625,237 @@ class FleetManagementAPITester:
         
         return success
 
+    def test_lift_request_operations(self):
+        """Test Lift Request CRUD operations"""
+        print("\n=== Testing Lift Request Operations ===")
+        
+        if not self.admin_token:
+            print("❌ No admin token available")
+            return False
+
+        if not self.staff_token:
+            print("❌ No staff token available")
+            return False
+
+        # Test 1: Create a lift request as staff
+        lift_request_data = {
+            "requester_name": "John Doe",
+            "from_location": "Dublin",
+            "to_location": "Cork",
+            "lift_date": "2025-12-25",
+            "lift_time": "10:00",
+            "notes": "Need lift for business meeting"
+        }
+        
+        success, response = self.run_test(
+            "Create Lift Request (Staff)",
+            "POST",
+            "lift-requests",
+            200,
+            data=lift_request_data,
+            token=self.staff_token
+        )
+        
+        if success and 'id' in response:
+            self.test_lift_request_id = response['id']
+            print(f"   Created lift request with ID: {self.test_lift_request_id}")
+            print(f"   Requester email set to: {response.get('requester_email')}")
+            if response.get('requester_email') != 'staff@quickwing.com':
+                print("   ❌ Requester email not set correctly from token")
+                return False
+        else:
+            return False
+
+        # Test 2: Get active lift requests
+        success, response = self.run_test(
+            "Get Active Lift Requests",
+            "GET",
+            "lift-requests",
+            200,
+            token=self.admin_token
+        )
+        
+        if success:
+            print(f"   Found {len(response)} active lift requests")
+            # Verify our request is in the list
+            found_request = False
+            for req in response:
+                if req.get('id') == self.test_lift_request_id:
+                    found_request = True
+                    print(f"   ✅ Found our test request: {req.get('requester_name')} from {req.get('from_location')} to {req.get('to_location')}")
+                    break
+            if not found_request:
+                print("   ❌ Our test request not found in active requests")
+                return False
+        else:
+            return False
+
+        # Test 3: Get lift request count
+        success, response = self.run_test(
+            "Get Lift Request Count",
+            "GET",
+            "lift-requests/count",
+            200,
+            token=self.admin_token
+        )
+        
+        if success:
+            count = response.get('count', 0)
+            print(f"   Active lift requests count: {count}")
+            if count < 1:
+                print("   ❌ Count should be at least 1 (our test request)")
+                return False
+        else:
+            return False
+
+        # Test 4: Try to accept own request (should fail)
+        success, response = self.run_test(
+            "Try to Accept Own Request (Should Fail)",
+            "POST",
+            f"lift-requests/{self.test_lift_request_id}/accept",
+            400,  # Should fail
+            token=self.staff_token
+        )
+        
+        if success:
+            print("   ✅ Correctly prevented accepting own request")
+        else:
+            print("   ❌ Should not allow accepting own request")
+            return False
+
+        # Test 5: Accept request as admin (different user)
+        success, response = self.run_test(
+            "Accept Lift Request (Admin)",
+            "POST",
+            f"lift-requests/{self.test_lift_request_id}/accept",
+            200,
+            token=self.admin_token
+        )
+        
+        if success:
+            print("   ✅ Admin successfully accepted the lift request")
+        else:
+            return False
+
+        # Test 6: Verify request is no longer active
+        success, response = self.run_test(
+            "Verify Request No Longer Active",
+            "GET",
+            "lift-requests",
+            200,
+            token=self.admin_token
+        )
+        
+        if success:
+            # Our request should not be in active list anymore
+            found_request = False
+            for req in response:
+                if req.get('id') == self.test_lift_request_id:
+                    found_request = True
+                    break
+            if found_request:
+                print("   ❌ Accepted request still appears in active list")
+                return False
+            else:
+                print("   ✅ Accepted request correctly removed from active list")
+        else:
+            return False
+
+        # Test 7: Create another request to test cancellation
+        cancel_request_data = {
+            "requester_name": "Jane Smith",
+            "from_location": "Galway",
+            "to_location": "Limerick",
+            "lift_date": "2025-12-26",
+            "lift_time": "14:00",
+            "notes": "Christmas shopping trip"
+        }
+        
+        success, response = self.run_test(
+            "Create Second Lift Request for Cancellation Test",
+            "POST",
+            "lift-requests",
+            200,
+            data=cancel_request_data,
+            token=self.staff_token
+        )
+        
+        if success and 'id' in response:
+            cancel_request_id = response['id']
+            print(f"   Created second lift request with ID: {cancel_request_id}")
+        else:
+            return False
+
+        # Test 8: Cancel the request as creator
+        success, response = self.run_test(
+            "Cancel Lift Request (Creator)",
+            "DELETE",
+            f"lift-requests/{cancel_request_id}",
+            200,
+            token=self.staff_token
+        )
+        
+        if success:
+            print("   ✅ Creator successfully cancelled their lift request")
+        else:
+            return False
+
+        # Test 9: Try to cancel non-existent request
+        success, response = self.run_test(
+            "Try to Cancel Non-existent Request",
+            "DELETE",
+            f"lift-requests/{cancel_request_id}",
+            404,  # Should fail - already deleted
+            token=self.staff_token
+        )
+        
+        if success:
+            print("   ✅ Correctly returned 404 for non-existent request")
+        else:
+            print("   ❌ Should return 404 for non-existent request")
+            return False
+
+        # Test 10: Create request as admin and cancel as admin
+        admin_request_data = {
+            "requester_name": "Admin User",
+            "from_location": "Waterford",
+            "to_location": "Kilkenny",
+            "lift_date": "2025-12-27",
+            "lift_time": "09:00",
+            "notes": "Admin test request"
+        }
+        
+        success, response = self.run_test(
+            "Create Lift Request as Admin",
+            "POST",
+            "lift-requests",
+            200,
+            data=admin_request_data,
+            token=self.admin_token
+        )
+        
+        if success and 'id' in response:
+            admin_request_id = response['id']
+            print(f"   Created admin lift request with ID: {admin_request_id}")
+        else:
+            return False
+
+        # Test 11: Admin can cancel any request
+        success, response = self.run_test(
+            "Admin Cancel Any Request",
+            "DELETE",
+            f"lift-requests/{admin_request_id}",
+            200,
+            token=self.admin_token
+        )
+        
+        if success:
+            print("   ✅ Admin successfully cancelled lift request")
+        else:
+            return False
+
+        return True
+
     def cleanup_test_data(self):
         """Clean up test data"""
         print("\n=== Cleaning Up Test Data ===")

@@ -111,7 +111,8 @@ const LiftRequestsPanel = ({ requests, onAccept, onCancel, currentUserEmail, isA
               </div>
             </div>
           );
-        })}n      </div>
+        })}
+      </div>
     </div>
   );
 };

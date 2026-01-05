@@ -83,7 +83,7 @@ const LiftRequestsPanel = ({ requests, onAccept, onCancel, currentUserEmail, isA
 
                   {/* Notes */}
                   {request.notes && (
-                    <p className="mt-2 text-sm text-gray-500 italic">"{request.notes}"</p>
+                    <p className="mt-2 text-sm text-gray-500 italic">&ldquo;{request.notes}&rdquo;</p>
                   )}
                 </div>
 

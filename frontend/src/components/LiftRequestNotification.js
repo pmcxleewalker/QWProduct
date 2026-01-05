@@ -78,7 +78,7 @@ const LiftRequestNotification = ({ request, onAccept, onClose, currentUserEmail 
 
           {request.notes && (
             <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-              <em>"{request.notes}"</em>
+              <em>&ldquo;{request.notes}&rdquo;</em>
             </div>
           )}
         </div>

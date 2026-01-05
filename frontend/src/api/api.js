@@ -67,4 +67,14 @@ export const messageAPI = {
   acknowledge: (id) => axios.post(`${API}/messages/${id}/acknowledge`),
 };
 
-export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI };
+// Lift Request API
+export const liftRequestAPI = {
+  create: (data) => axios.post(`${API}/lift-requests`, data),
+  getActive: () => axios.get(`${API}/lift-requests`),
+  getAll: () => axios.get(`${API}/lift-requests/all`),
+  getCount: () => axios.get(`${API}/lift-requests/count`),
+  accept: (id) => axios.post(`${API}/lift-requests/${id}/accept`),
+  cancel: (id) => axios.delete(`${API}/lift-requests/${id}`),
+};
+
+export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI, liftRequestAPI };

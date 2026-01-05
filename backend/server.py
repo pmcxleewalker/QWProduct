@@ -159,6 +159,27 @@ class MessageAcknowledgment(BaseModel):
     acknowledged_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+# ==================== LIFT REQUEST MODELS ====================
+
+class LiftRequestCreate(BaseModel):
+    requester_name: str  # Who needs the lift
+    from_location: str   # From where
+    to_location: str     # To where
+    lift_date: str       # Date of lift (ISO format)
+    lift_time: str       # Time of lift (HH:MM format)
+    notes: Optional[str] = ""
+
+class LiftRequest(LiftRequestCreate):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    requester_email: str  # Email of the staff who created the request
+    status: str = "active"  # active, accepted, cancelled
+    accepted_by_email: Optional[str] = None
+    accepted_by_name: Optional[str] = None
+    accepted_at: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 # ==================== ASSISTANCE PROVIDER MODELS ====================
 
 class AssistanceProviderCreate(BaseModel):
@@ -989,6 +1010,105 @@ async def acknowledge_message(message_id: str, current_user: dict = Depends(get_
     await db.message_acknowledgments.insert_one(ack)
     
     return {"message": "Message acknowledged"}
+
+
+# ==================== LIFT REQUEST ENDPOINTS ====================
+
+@api_router.post("/lift-requests", response_model=LiftRequest)
+async def create_lift_request(request: LiftRequestCreate, current_user: dict = Depends(get_current_user)):
+    """Create a lift request (staff only)"""
+    lift_obj = LiftRequest(**request.model_dump())
+    lift_obj.requester_email = current_user['email']
+    
+    doc = serialize_datetime(lift_obj.model_dump())
+    await db.lift_requests.insert_one(doc)
+    
+    return lift_obj
+
+
+@api_router.get("/lift-requests")
+async def get_lift_requests(current_user: dict = Depends(get_current_user)):
+    """Get all active lift requests"""
+    requests = await db.lift_requests.find(
+        {"status": "active"},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    for req in requests:
+        deserialize_datetime(req, ['created_at'])
+    
+    return requests
+
+
+@api_router.get("/lift-requests/all")
+async def get_all_lift_requests(current_user: dict = Depends(get_current_user)):
+    """Get all lift requests (including accepted/cancelled)"""
+    requests = await db.lift_requests.find(
+        {},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(200)
+    
+    for req in requests:
+        deserialize_datetime(req, ['created_at'])
+    
+    return requests
+
+
+@api_router.get("/lift-requests/count")
+async def get_lift_request_count(current_user: dict = Depends(get_current_user)):
+    """Get count of active lift requests (for notification badge)"""
+    count = await db.lift_requests.count_documents({"status": "active"})
+    return {"count": count}
+
+
+@api_router.post("/lift-requests/{request_id}/accept")
+async def accept_lift_request(request_id: str, current_user: dict = Depends(get_current_user)):
+    """Accept a lift request"""
+    lift_request = await db.lift_requests.find_one({"id": request_id}, {"_id": 0})
+    if not lift_request:
+        raise HTTPException(status_code=404, detail="Lift request not found")
+    
+    if lift_request['status'] != 'active':
+        raise HTTPException(status_code=400, detail="This lift request is no longer active")
+    
+    # Cannot accept your own request
+    if lift_request['requester_email'] == current_user['email']:
+        raise HTTPException(status_code=400, detail="You cannot accept your own lift request")
+    
+    # Get the acceptor's name from user email (try to find their name)
+    acceptor_name = current_user['email'].split('@')[0].replace('.', ' ').title()
+    
+    update_data = {
+        "status": "accepted",
+        "accepted_by_email": current_user['email'],
+        "accepted_by_name": acceptor_name,
+        "accepted_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.lift_requests.update_one({"id": request_id}, {"$set": update_data})
+    
+    return {"message": "Lift request accepted successfully"}
+
+
+@api_router.delete("/lift-requests/{request_id}")
+async def cancel_lift_request(request_id: str, current_user: dict = Depends(get_current_user)):
+    """Cancel a lift request - Only creator or admin can cancel"""
+    lift_request = await db.lift_requests.find_one({"id": request_id}, {"_id": 0})
+    if not lift_request:
+        raise HTTPException(status_code=404, detail="Lift request not found")
+    
+    is_admin = current_user.get('role') == 'admin'
+    is_owner = lift_request['requester_email'] == current_user['email']
+    
+    if not is_admin and not is_owner:
+        raise HTTPException(
+            status_code=403,
+            detail="You can only cancel your own lift requests"
+        )
+    
+    await db.lift_requests.delete_one({"id": request_id})
+    
+    return {"message": "Lift request cancelled successfully"}
 
 
 # ==================== ASSISTANCE PROVIDER ENDPOINTS ====================

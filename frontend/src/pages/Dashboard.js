@@ -160,7 +160,8 @@ const Dashboard = () => {
         <LiftRequestsPanel
           requests={liftRequests}
           onAccept={handleAcceptLift}
-          onCancel={handleCancelLift}
+          onDismiss={handleDismissLift}
+          onDelete={handleDeleteLift}
           currentUserEmail={user?.email}
           isAdmin={user?.role === 'admin'}
         />

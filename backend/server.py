@@ -1017,8 +1017,9 @@ async def acknowledge_message(message_id: str, current_user: dict = Depends(get_
 @api_router.post("/lift-requests", response_model=LiftRequest)
 async def create_lift_request(request: LiftRequestCreate, current_user: dict = Depends(get_current_user)):
     """Create a lift request (staff only)"""
-    lift_obj = LiftRequest(**request.model_dump())
-    lift_obj.requester_email = current_user['email']
+    lift_data = request.model_dump()
+    lift_data['requester_email'] = current_user['email']
+    lift_obj = LiftRequest(**lift_data)
     
     doc = serialize_datetime(lift_obj.model_dump())
     await db.lift_requests.insert_one(doc)

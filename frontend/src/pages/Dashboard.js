@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { statusAPI, complianceAPI, bookingAPI, carAPI } from '../api/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import { statusAPI, complianceAPI, bookingAPI, carAPI, liftRequestAPI } from '../api/api';
 import StatusBadge from '../components/StatusBadge';
+import LiftRequestsPanel from '../components/LiftRequestsPanel';
 import { RefreshCw, Clock, AlertTriangle, Check, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -9,6 +10,7 @@ const Dashboard = () => {
   const [liveStatus, setLiveStatus] = useState([]);
   const [complianceAlerts, setComplianceAlerts] = useState([]);
   const [pendingBookings, setPendingBookings] = useState([]);
+  const [liftRequests, setLiftRequests] = useState([]);
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -52,15 +54,26 @@ const Dashboard = () => {
     }
   };
 
+  const fetchLiftRequests = useCallback(async () => {
+    try {
+      const response = await liftRequestAPI.getActive();
+      setLiftRequests(response.data);
+    } catch (error) {
+      console.error('Error fetching lift requests:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchLiveStatus();
     fetchComplianceAlerts();
     fetchPendingBookings();
+    fetchLiftRequests();
     // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
       fetchLiveStatus();
       fetchComplianceAlerts();
       fetchPendingBookings();
+      fetchLiftRequests();
     }, 30000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -91,6 +104,27 @@ const Dashboard = () => {
     }
   };
 
+  const handleAcceptLift = async (requestId) => {
+    try {
+      await liftRequestAPI.accept(requestId);
+      fetchLiftRequests();
+    } catch (error) {
+      console.error('Error accepting lift request:', error);
+      alert(error.response?.data?.detail || 'Failed to accept lift request');
+    }
+  };
+
+  const handleCancelLift = async (requestId) => {
+    if (!window.confirm('Are you sure you want to cancel this lift request?')) return;
+    try {
+      await liftRequestAPI.cancel(requestId);
+      fetchLiftRequests();
+    } catch (error) {
+      console.error('Error cancelling lift request:', error);
+      alert(error.response?.data?.detail || 'Failed to cancel lift request');
+    }
+  };
+
   const formatTime = (date) => {
     if (!date) return 'Never';
     const d = new Date(date);
@@ -105,6 +139,17 @@ const Dashboard = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      {/* Lift Requests Section - Visible to all users */}
+      <div id="lift-requests">
+        <LiftRequestsPanel
+          requests={liftRequests}
+          onAccept={handleAcceptLift}
+          onCancel={handleCancelLift}
+          currentUserEmail={user?.email}
+          isAdmin={user?.role === 'admin'}
+        />
+      </div>
+
       {/* Compliance Alerts Section - Admin Only */}
       {user?.role === 'admin' && complianceAlerts.length > 0 && (
         <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-lg p-4">
@@ -208,7 +253,7 @@ const Dashboard = () => {
           </p>
         </div>
         <button
-          onClick={() => { fetchLiveStatus(); fetchComplianceAlerts(); fetchPendingBookings(); }}
+          onClick={() => { fetchLiveStatus(); fetchComplianceAlerts(); fetchPendingBookings(); fetchLiftRequests(); }}
           data-testid="refresh-button"
           className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >

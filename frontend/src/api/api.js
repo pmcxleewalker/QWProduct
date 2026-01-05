@@ -74,7 +74,8 @@ export const liftRequestAPI = {
   getAll: () => axios.get(`${API}/lift-requests/all`),
   getCount: () => axios.get(`${API}/lift-requests/count`),
   accept: (id) => axios.post(`${API}/lift-requests/${id}/accept`),
-  cancel: (id) => axios.delete(`${API}/lift-requests/${id}`),
+  dismiss: (id) => axios.post(`${API}/lift-requests/${id}/dismiss`),
+  delete: (id) => axios.delete(`${API}/lift-requests/${id}`),
 };
 
 export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI, liftRequestAPI };

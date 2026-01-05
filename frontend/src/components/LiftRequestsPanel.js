@@ -91,7 +91,7 @@ const LiftRequestsPanel = ({ requests, onAccept, onDismiss, onDelete, currentUse
                     {/* I can help - only for other's requests */}
                     {!isOwnRequest && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); onAccept(request.id); }}
+                        onClick={(e) => { e.stopPropagation(); onAccept(request); }}
                         className="flex items-center space-x-1 px-2 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 transition-colors"
                         title="Accept this lift request"
                       >

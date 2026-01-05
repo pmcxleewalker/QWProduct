@@ -1019,6 +1019,7 @@ async def create_lift_request(request: LiftRequestCreate, current_user: dict = D
     """Create a lift request (staff only)"""
     lift_data = request.model_dump()
     lift_data['requester_email'] = current_user['email']
+    lift_data['id'] = str(uuid.uuid4())
     lift_obj = LiftRequest(**lift_data)
     
     doc = serialize_datetime(lift_obj.model_dump())

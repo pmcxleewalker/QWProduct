@@ -73,9 +73,16 @@ export const liftRequestAPI = {
   getActive: () => axios.get(`${API}/lift-requests`),
   getAll: () => axios.get(`${API}/lift-requests/all`),
   getCount: () => axios.get(`${API}/lift-requests/count`),
-  accept: (id) => axios.post(`${API}/lift-requests/${id}/accept`),
+  accept: (id, message) => axios.post(`${API}/lift-requests/${id}/accept`, { message }),
   dismiss: (id) => axios.post(`${API}/lift-requests/${id}/dismiss`),
   delete: (id) => axios.delete(`${API}/lift-requests/${id}`),
+};
+
+// Lift Notifications API
+export const liftNotificationAPI = {
+  get: () => axios.get(`${API}/lift-notifications`),
+  getCount: () => axios.get(`${API}/lift-notifications/count`),
+  markRead: (id) => axios.post(`${API}/lift-notifications/${id}/read`),
 };
 
 export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI, liftRequestAPI };

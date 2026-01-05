@@ -85,6 +85,31 @@ class FleetManagementAPITester:
             print("❌ Failed to authenticate admin")
             return False
 
+    def authenticate_staff(self):
+        """Authenticate as staff user"""
+        print("\n=== Authenticating as Staff ===")
+        
+        login_data = {
+            "email": "staff@quickwing.com",
+            "password": "staff123"
+        }
+        
+        success, response = self.run_test(
+            "Staff Login",
+            "POST",
+            "auth/login",
+            200,
+            data=login_data
+        )
+        
+        if success and 'access_token' in response:
+            self.staff_token = response['access_token']
+            print(f"   Staff authenticated successfully")
+            return True
+        else:
+            print("❌ Failed to authenticate staff")
+            return False
+
     def test_compliance_alerts(self):
         """Test compliance alerts API"""
         print("\n=== Testing Compliance Alerts ===")

@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { statusAPI, complianceAPI, bookingAPI, carAPI, liftRequestAPI } from '../api/api';
+import { statusAPI, complianceAPI, bookingAPI, carAPI, liftRequestAPI, liftNotificationAPI } from '../api/api';
 import StatusBadge from '../components/StatusBadge';
 import LiftRequestsPanel from '../components/LiftRequestsPanel';
 import LiftRequestModal from '../components/LiftRequestModal';
+import AcceptLiftModal from '../components/AcceptLiftModal';
+import LiftAcceptedNotification from '../components/LiftAcceptedNotification';
 import { RefreshCw, Clock, AlertTriangle, Check, X, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -12,10 +14,13 @@ const Dashboard = () => {
   const [complianceAlerts, setComplianceAlerts] = useState([]);
   const [pendingBookings, setPendingBookings] = useState([]);
   const [liftRequests, setLiftRequests] = useState([]);
+  const [liftNotifications, setLiftNotifications] = useState([]);
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [showLiftModal, setShowLiftModal] = useState(false);
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
 
   const fetchLiveStatus = async () => {
     try {
@@ -65,17 +70,28 @@ const Dashboard = () => {
     }
   }, []);
 
+  const fetchLiftNotifications = useCallback(async () => {
+    try {
+      const response = await liftNotificationAPI.get();
+      setLiftNotifications(response.data);
+    } catch (error) {
+      console.error('Error fetching lift notifications:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchLiveStatus();
     fetchComplianceAlerts();
     fetchPendingBookings();
     fetchLiftRequests();
+    fetchLiftNotifications();
     // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
       fetchLiveStatus();
       fetchComplianceAlerts();
       fetchPendingBookings();
       fetchLiftRequests();
+      fetchLiftNotifications();
     }, 30000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -106,9 +122,16 @@ const Dashboard = () => {
     }
   };
 
-  const handleAcceptLift = async (requestId) => {
+  const handleAcceptLiftClick = (request) => {
+    setSelectedRequest(request);
+    setShowAcceptModal(true);
+  };
+
+  const handleAcceptLift = async (requestId, message) => {
     try {
-      await liftRequestAPI.accept(requestId);
+      await liftRequestAPI.accept(requestId, message);
+      setShowAcceptModal(false);
+      setSelectedRequest(null);
       fetchLiftRequests();
     } catch (error) {
       console.error('Error accepting lift request:', error);
@@ -137,6 +160,15 @@ const Dashboard = () => {
     }
   };
 
+  const handleDismissNotification = async (notificationId) => {
+    try {
+      await liftNotificationAPI.markRead(notificationId);
+      setLiftNotifications(prev => prev.filter(n => n.id !== notificationId));
+    } catch (error) {
+      console.error('Error dismissing notification:', error);
+    }
+  };
+
   const handleLiftRequestSuccess = () => {
     fetchLiftRequests();
   };
@@ -155,11 +187,19 @@ const Dashboard = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      {/* Lift Accepted Notifications - Show as modal */}
+      {liftNotifications.length > 0 && (
+        <LiftAcceptedNotification
+          notification={liftNotifications[0]}
+          onDismiss={handleDismissNotification}
+        />
+      )}
+
       {/* Lift Requests Section - Visible to all users */}
       <div id="lift-requests">
         <LiftRequestsPanel
           requests={liftRequests}
-          onAccept={handleAcceptLift}
+          onAccept={handleAcceptLiftClick}
           onDismiss={handleDismissLift}
           onDelete={handleDeleteLift}
           currentUserEmail={user?.email}
@@ -270,7 +310,7 @@ const Dashboard = () => {
           </p>
         </div>
         <button
-          onClick={() => { fetchLiveStatus(); fetchComplianceAlerts(); fetchPendingBookings(); fetchLiftRequests(); }}
+          onClick={() => { fetchLiveStatus(); fetchComplianceAlerts(); fetchPendingBookings(); fetchLiftRequests(); fetchLiftNotifications(); }}
           data-testid="refresh-button"
           className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
@@ -363,6 +403,14 @@ const Dashboard = () => {
         isOpen={showLiftModal}
         onClose={() => setShowLiftModal(false)}
         onSuccess={handleLiftRequestSuccess}
+      />
+
+      {/* Accept Lift Modal */}
+      <AcceptLiftModal
+        isOpen={showAcceptModal}
+        onClose={() => { setShowAcceptModal(false); setSelectedRequest(null); }}
+        onAccept={handleAcceptLift}
+        request={selectedRequest}
       />
     </div>
   );

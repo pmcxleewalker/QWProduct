@@ -66,8 +66,10 @@ const Navigation = () => {
   }, [user]);
 
   const handleAcceptLift = async (requestId) => {
+    // For navigation dropdown, we'll just accept without message modal
+    // The full modal experience is on the Dashboard
     try {
-      await liftRequestAPI.accept(requestId);
+      await liftRequestAPI.accept(requestId, '');
       // Refresh
       const [countRes, requestsRes] = await Promise.all([
         liftRequestAPI.getCount(),

@@ -1030,16 +1030,27 @@ async def create_lift_request(request: LiftRequestCreate, current_user: dict = D
 
 @api_router.get("/lift-requests")
 async def get_lift_requests(current_user: dict = Depends(get_current_user)):
-    """Get all active lift requests"""
+    """Get all active lift requests (excluding ones dismissed by current user)"""
+    # Get user's dismissed requests
+    dismissed = await db.lift_request_dismissals.find(
+        {"user_email": current_user['email']},
+        {"_id": 0}
+    ).to_list(100)
+    dismissed_ids = {d['request_id'] for d in dismissed}
+    
+    # Get all active requests
     requests = await db.lift_requests.find(
         {"status": "active"},
         {"_id": 0}
     ).sort("created_at", -1).to_list(100)
     
-    for req in requests:
+    # Filter out dismissed ones
+    visible_requests = [r for r in requests if r['id'] not in dismissed_ids]
+    
+    for req in visible_requests:
         deserialize_datetime(req, ['created_at'])
     
-    return requests
+    return visible_requests
 
 
 @api_router.get("/lift-requests/all")
@@ -1058,9 +1069,19 @@ async def get_all_lift_requests(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/lift-requests/count")
 async def get_lift_request_count(current_user: dict = Depends(get_current_user)):
-    """Get count of active lift requests (for notification badge)"""
-    count = await db.lift_requests.count_documents({"status": "active"})
-    return {"count": count}
+    """Get count of active lift requests visible to current user (for notification badge)"""
+    # Get user's dismissed requests
+    dismissed = await db.lift_request_dismissals.find(
+        {"user_email": current_user['email']},
+        {"_id": 0}
+    ).to_list(100)
+    dismissed_ids = {d['request_id'] for d in dismissed}
+    
+    # Count active requests not dismissed by user
+    all_active = await db.lift_requests.find({"status": "active"}, {"_id": 0, "id": 1}).to_list(100)
+    visible_count = sum(1 for r in all_active if r['id'] not in dismissed_ids)
+    
+    return {"count": visible_count}
 
 
 @api_router.post("/lift-requests/{request_id}/accept")
@@ -1092,25 +1113,56 @@ async def accept_lift_request(request_id: str, current_user: dict = Depends(get_
     return {"message": "Lift request accepted successfully"}
 
 
+@api_router.post("/lift-requests/{request_id}/dismiss")
+async def dismiss_lift_request(request_id: str, current_user: dict = Depends(get_current_user)):
+    """Dismiss a lift request from view (personal - only hides for current user)"""
+    lift_request = await db.lift_requests.find_one({"id": request_id}, {"_id": 0})
+    if not lift_request:
+        raise HTTPException(status_code=404, detail="Lift request not found")
+    
+    # Check if already dismissed
+    existing = await db.lift_request_dismissals.find_one({
+        "request_id": request_id,
+        "user_email": current_user['email']
+    })
+    
+    if existing:
+        return {"message": "Already dismissed"}
+    
+    # Add dismissal record
+    dismissal = {
+        "id": str(uuid.uuid4()),
+        "request_id": request_id,
+        "user_email": current_user['email'],
+        "dismissed_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.lift_request_dismissals.insert_one(dismissal)
+    
+    return {"message": "Lift request dismissed from view"}
+
+
 @api_router.delete("/lift-requests/{request_id}")
-async def cancel_lift_request(request_id: str, current_user: dict = Depends(get_current_user)):
-    """Cancel a lift request - Only creator or admin can cancel"""
+async def delete_lift_request(request_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a lift request - Only admin can delete"""
     lift_request = await db.lift_requests.find_one({"id": request_id}, {"_id": 0})
     if not lift_request:
         raise HTTPException(status_code=404, detail="Lift request not found")
     
     is_admin = current_user.get('role') == 'admin'
-    is_owner = lift_request['requester_email'] == current_user['email']
     
-    if not is_admin and not is_owner:
+    if not is_admin:
         raise HTTPException(
             status_code=403,
-            detail="You can only cancel your own lift requests"
+            detail="Only admins can delete lift requests. Use 'Dismiss' to hide from your view."
         )
     
+    # Delete the request
     await db.lift_requests.delete_one({"id": request_id})
     
-    return {"message": "Lift request cancelled successfully"}
+    # Also clean up any dismissals for this request
+    await db.lift_request_dismissals.delete_many({"request_id": request_id})
+    
+    return {"message": "Lift request deleted successfully"}
 
 
 # ==================== ASSISTANCE PROVIDER ENDPOINTS ====================

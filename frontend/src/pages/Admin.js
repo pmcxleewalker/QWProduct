@@ -48,11 +48,6 @@ const Admin = () => {
     service_type: 'Breakdown',
   });
 
-  const [inviteForm, setInviteForm] = useState({
-    email: '',
-    role: 'staff',
-  });
-
   const [createUserForm, setCreateUserForm] = useState({
     email: '',
     password: '',

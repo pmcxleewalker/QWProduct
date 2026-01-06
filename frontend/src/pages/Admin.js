@@ -1554,6 +1554,202 @@ const Admin = () => {
         </div>
       )}
 
+      {/* To-Do List Tab */}
+      {activeTab === 'todos' && (
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">To-Do List</h2>
+            <button
+              onClick={() => {
+                setShowTodoForm(true);
+                setEditingTodo(null);
+                setTodoForm({ title: '', is_mandatory: false });
+              }}
+              data-testid="add-todo-button"
+              className="flex items-center space-x-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
+            >
+              <Plus size={18} />
+              <span>Add Task</span>
+            </button>
+          </div>
+
+          {/* To-Do Form */}
+          {showTodoForm && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-teal-500">
+              <h3 className="text-lg font-bold mb-4">
+                {editingTodo ? 'Edit Task' : 'Add New Task'}
+              </h3>
+              <form onSubmit={handleTodoSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Task Title *</label>
+                  <input
+                    type="text"
+                    value={todoForm.title}
+                    onChange={(e) => setTodoForm({ ...todoForm, title: e.target.value })}
+                    placeholder="e.g., Check all vehicles for cleanliness"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
+                    required
+                  />
+                </div>
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center space-x-2 bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
+                    <input
+                      type="checkbox"
+                      checked={todoForm.is_mandatory}
+                      onChange={(e) => setTodoForm({ ...todoForm, is_mandatory: e.target.checked })}
+                      className="w-5 h-5 text-amber-600 rounded"
+                    />
+                    <div className="flex items-center space-x-2">
+                      <Settings size={16} className="text-amber-600" />
+                      <span className="text-sm font-medium text-amber-800">Mandatory Task</span>
+                    </div>
+                  </label>
+                  <span className="text-xs text-gray-500">Mandatory tasks are highlighted and cannot be skipped</span>
+                </div>
+                <div className="flex space-x-4">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700"
+                  >
+                    {editingTodo ? 'Update Task' : 'Add Task'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTodoForm(false);
+                      setEditingTodo(null);
+                    }}
+                    className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* To-Do List */}
+          {todos.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-lg shadow">
+              <ListTodo className="mx-auto text-gray-400" size={48} />
+              <p className="text-gray-500 mt-4">No tasks yet. Add your first to-do item!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Incomplete Tasks */}
+              {todos.filter(t => !t.is_completed).length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">
+                    Pending Tasks ({todos.filter(t => !t.is_completed).length})
+                  </h3>
+                  <div className="space-y-2">
+                    {todos.filter(t => !t.is_completed).map((todo) => (
+                      <div
+                        key={todo.id}
+                        className={`bg-white rounded-lg shadow-md p-4 flex items-center justify-between ${
+                          todo.is_mandatory ? 'border-l-4 border-amber-500 bg-amber-50' : ''
+                        }`}
+                      >
+                        <div className="flex items-center space-x-4 flex-1">
+                          <button
+                            onClick={() => handleToggleTodo(todo)}
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              todo.is_mandatory
+                                ? 'border-amber-500 hover:bg-amber-100'
+                                : 'border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            {/* Empty circle for incomplete */}
+                          </button>
+                          <div className="flex-1">
+                            <p className={`font-medium ${todo.is_mandatory ? 'text-amber-900' : 'text-gray-900'}`}>
+                              {todo.title}
+                            </p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              {todo.is_mandatory && (
+                                <span className="bg-amber-200 text-amber-800 text-xs px-2 py-0.5 rounded font-medium">
+                                  ⚠️ Mandatory
+                                </span>
+                              )}
+                              <span className="text-xs text-gray-500">
+                                Added by {todo.created_by}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditTodo(todo)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTodo(todo.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Completed Tasks */}
+              {todos.filter(t => t.is_completed).length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">
+                    Completed ({todos.filter(t => t.is_completed).length})
+                  </h3>
+                  <div className="space-y-2">
+                    {todos.filter(t => t.is_completed).map((todo) => (
+                      <div
+                        key={todo.id}
+                        className="bg-gray-50 rounded-lg shadow-sm p-4 flex items-center justify-between opacity-70"
+                      >
+                        <div className="flex items-center space-x-4 flex-1">
+                          <button
+                            onClick={() => handleToggleTodo(todo)}
+                            className="w-6 h-6 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center"
+                          >
+                            <Check size={14} className="text-white" />
+                          </button>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-500 line-through">
+                              {todo.title}
+                            </p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              {todo.is_mandatory && (
+                                <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded">
+                                  Mandatory
+                                </span>
+                              )}
+                              <span className="text-xs text-gray-400">
+                                Completed by {todo.completed_by}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleDeleteTodo(todo.id)}
+                            className="p-2 text-red-400 hover:bg-red-50 rounded"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 };

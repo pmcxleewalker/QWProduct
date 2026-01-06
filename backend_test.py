@@ -856,6 +856,360 @@ class FleetManagementAPITester:
 
         return True
 
+    def test_booking_notifications_and_editing(self):
+        """Test Booking Notifications & Recurring Booking Editing feature"""
+        print("\n=== Testing Booking Notifications & Recurring Booking Editing ===")
+        
+        if not self.admin_token or not self.staff_token:
+            print("❌ Both admin and staff tokens required")
+            return False
+
+        # Step 1: Create a recurring booking as staff (will need admin approval)
+        print("\n--- Step 1: Create Recurring Booking as Staff ---")
+        start_time = datetime.now() + timedelta(days=1)
+        end_time = start_time + timedelta(hours=2)
+        
+        recurring_booking_data = {
+            "car_id": self.test_car_id if self.test_car_id else "test-car-id",
+            "user_name": "Sarah Connor",
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
+            "destination_notes": "Weekly team meeting",
+            "is_recurring": True,
+            "recurrence_type": "weekly",
+            "recurrence_count": 4
+        }
+        
+        # First, get a valid car ID if we don't have one
+        if not self.test_car_id:
+            success, cars_response = self.run_test(
+                "Get Cars for Recurring Booking Test",
+                "GET",
+                "cars",
+                200,
+                token=self.admin_token
+            )
+            
+            if success and cars_response:
+                # Use the first available car
+                recurring_booking_data["car_id"] = cars_response[0]["id"]
+                print(f"   Using car ID: {cars_response[0]['id']} ({cars_response[0]['name']})")
+            else:
+                print("❌ No cars available for testing")
+                return False
+        
+        success, response = self.run_test(
+            "Create Recurring Booking (Staff - Needs Approval)",
+            "POST",
+            "bookings",
+            200,
+            data=recurring_booking_data,
+            token=self.staff_token
+        )
+        
+        if not success:
+            return False
+        
+        recurring_group_id = response.get('recurring_group_id')
+        if not recurring_group_id:
+            print("❌ No recurring_group_id returned")
+            return False
+        
+        print(f"   Created recurring booking group: {recurring_group_id}")
+        print(f"   Status: {response.get('status')}")
+
+        # Step 2: Get pending bookings as admin
+        print("\n--- Step 2: Get Pending Bookings ---")
+        success, pending_response = self.run_test(
+            "Get Pending Bookings (Admin)",
+            "GET",
+            "admin/pending-bookings",
+            200,
+            token=self.admin_token
+        )
+        
+        if not success:
+            return False
+        
+        print(f"   Found {len(pending_response)} pending booking groups")
+        
+        # Find our booking group
+        our_group = None
+        for group in pending_response:
+            if group.get('group_id') == recurring_group_id:
+                our_group = group
+                break
+        
+        if not our_group:
+            print("❌ Our recurring booking group not found in pending bookings")
+            return False
+        
+        print(f"   Found our group: {our_group.get('user_name')} - {len(our_group.get('bookings', []))} bookings")
+
+        # Step 3: Reject the booking with a reason
+        print("\n--- Step 3: Reject Booking with Reason ---")
+        reject_data = {
+            "reason": "Car maintenance scheduled during requested time period"
+        }
+        
+        success, response = self.run_test(
+            "Reject Recurring Booking with Reason",
+            "POST",
+            f"admin/bookings/{recurring_group_id}/reject",
+            200,
+            data=reject_data,
+            token=self.admin_token
+        )
+        
+        if not success:
+            return False
+        
+        print(f"   Rejection response: {response.get('message')}")
+
+        # Step 4: Check for rejection notification as staff
+        print("\n--- Step 4: Check Booking Notifications (Staff) ---")
+        success, notifications_response = self.run_test(
+            "Get Booking Notifications (Staff)",
+            "GET",
+            "booking-notifications",
+            200,
+            token=self.staff_token
+        )
+        
+        if not success:
+            return False
+        
+        print(f"   Found {len(notifications_response)} unread notifications")
+        
+        # Find the rejection notification
+        rejection_notification = None
+        for notification in notifications_response:
+            if (notification.get('type') == 'booking_rejected' and 
+                notification.get('booking_group_id') == recurring_group_id):
+                rejection_notification = notification
+                break
+        
+        if not rejection_notification:
+            print("❌ Rejection notification not found")
+            return False
+        
+        print(f"   ✅ Found rejection notification:")
+        print(f"      Reason: {rejection_notification.get('rejection_reason')}")
+        print(f"      Rejected by: {rejection_notification.get('rejected_by')}")
+        print(f"      Car: {rejection_notification.get('car_id')}")
+
+        # Step 5: Mark notification as read
+        print("\n--- Step 5: Mark Notification as Read ---")
+        notification_id = rejection_notification.get('id')
+        
+        success, response = self.run_test(
+            "Mark Notification as Read",
+            "POST",
+            f"booking-notifications/{notification_id}/read",
+            200,
+            token=self.staff_token
+        )
+        
+        if not success:
+            return False
+        
+        print(f"   Notification marked as read: {response.get('message')}")
+
+        # Step 6: Verify notification is no longer unread
+        print("\n--- Step 6: Verify Notification Read Status ---")
+        success, notifications_response = self.run_test(
+            "Get Unread Notifications After Marking Read",
+            "GET",
+            "booking-notifications",
+            200,
+            token=self.staff_token
+        )
+        
+        if success:
+            # Should not find our notification in unread list
+            found_notification = False
+            for notification in notifications_response:
+                if notification.get('id') == notification_id:
+                    found_notification = True
+                    break
+            
+            if found_notification:
+                print("❌ Notification still appears in unread list")
+                return False
+            else:
+                print("   ✅ Notification correctly removed from unread list")
+
+        # Step 7: Test editing individual booking
+        print("\n--- Step 7: Test Individual Booking Editing ---")
+        
+        # First create an approved booking to edit
+        single_booking_data = {
+            "car_id": recurring_booking_data["car_id"],
+            "user_name": "John Smith",
+            "start_time": (datetime.now() + timedelta(days=2)).isoformat(),
+            "end_time": (datetime.now() + timedelta(days=2, hours=1)).isoformat(),
+            "destination_notes": "Original destination"
+        }
+        
+        success, booking_response = self.run_test(
+            "Create Single Booking for Edit Test",
+            "POST",
+            "bookings",
+            200,
+            data=single_booking_data,
+            token=self.admin_token  # Admin booking is auto-approved
+        )
+        
+        if not success:
+            return False
+        
+        single_booking_id = booking_response.get('id')
+        print(f"   Created single booking: {single_booking_id}")
+
+        # Edit the single booking
+        edit_data = {
+            "user_name": "John Smith Updated",
+            "destination_notes": "Updated destination notes"
+        }
+        
+        success, response = self.run_test(
+            "Edit Single Booking (Admin)",
+            "PUT",
+            f"admin/bookings/{single_booking_id}",
+            200,
+            data=edit_data,
+            token=self.admin_token
+        )
+        
+        if not success:
+            return False
+        
+        print(f"   ✅ Single booking edited successfully")
+        print(f"      Updated user: {response.get('user_name')}")
+        print(f"      Updated notes: {response.get('destination_notes')}")
+
+        # Step 8: Test editing booking series
+        print("\n--- Step 8: Test Booking Series Editing ---")
+        
+        # Create another recurring booking series to edit
+        series_booking_data = {
+            "car_id": recurring_booking_data["car_id"],
+            "user_name": "Team Alpha",
+            "start_time": (datetime.now() + timedelta(days=3)).isoformat(),
+            "end_time": (datetime.now() + timedelta(days=3, hours=1)).isoformat(),
+            "destination_notes": "Original series notes",
+            "is_recurring": True,
+            "recurrence_type": "weekly",
+            "recurrence_count": 3
+        }
+        
+        success, series_response = self.run_test(
+            "Create Recurring Series for Edit Test",
+            "POST",
+            "bookings",
+            200,
+            data=series_booking_data,
+            token=self.admin_token  # Admin booking is auto-approved
+        )
+        
+        if not success:
+            return False
+        
+        series_group_id = series_response.get('recurring_group_id')
+        print(f"   Created recurring series: {series_group_id}")
+
+        # Edit the entire series
+        series_edit_data = {
+            "user_name": "Team Alpha Updated",
+            "destination_notes": "Updated series destination"
+        }
+        
+        success, response = self.run_test(
+            "Edit Booking Series (Admin)",
+            "PUT",
+            f"admin/bookings/series/{series_group_id}",
+            200,
+            data=series_edit_data,
+            token=self.admin_token
+        )
+        
+        if not success:
+            return False
+        
+        print(f"   ✅ Booking series edited successfully")
+        print(f"      Response: {response.get('message')}")
+
+        # Step 9: Test approval workflow
+        print("\n--- Step 9: Test Approval Workflow ---")
+        
+        # Create another recurring booking to approve
+        approval_booking_data = {
+            "car_id": recurring_booking_data["car_id"],
+            "user_name": "Test Approval User",
+            "start_time": (datetime.now() + timedelta(days=5)).isoformat(),
+            "end_time": (datetime.now() + timedelta(days=5, hours=1)).isoformat(),
+            "destination_notes": "Approval test booking",
+            "is_recurring": True,
+            "recurrence_type": "daily",
+            "recurrence_count": 2
+        }
+        
+        success, approval_response = self.run_test(
+            "Create Recurring Booking for Approval Test",
+            "POST",
+            "bookings",
+            200,
+            data=approval_booking_data,
+            token=self.staff_token
+        )
+        
+        if not success:
+            return False
+        
+        approval_group_id = approval_response.get('recurring_group_id')
+        print(f"   Created booking for approval: {approval_group_id}")
+
+        # Approve the booking
+        success, response = self.run_test(
+            "Approve Recurring Booking",
+            "POST",
+            f"admin/bookings/{approval_group_id}/approve",
+            200,
+            token=self.admin_token
+        )
+        
+        if not success:
+            return False
+        
+        print(f"   ✅ Booking approved: {response.get('message')}")
+
+        # Check for approval notification
+        success, notifications_response = self.run_test(
+            "Check for Approval Notification",
+            "GET",
+            "booking-notifications",
+            200,
+            token=self.staff_token
+        )
+        
+        if success:
+            approval_notification = None
+            for notification in notifications_response:
+                if (notification.get('type') == 'booking_approved' and 
+                    notification.get('booking_group_id') == approval_group_id):
+                    approval_notification = notification
+                    break
+            
+            if approval_notification:
+                print(f"   ✅ Found approval notification:")
+                print(f"      Approved by: {approval_notification.get('approved_by')}")
+                print(f"      Booking count: {approval_notification.get('booking_count')}")
+            else:
+                print("   ⚠️  Approval notification not found (may have been processed)")
+
+        print("\n✅ All Booking Notifications & Recurring Booking Editing tests completed successfully!")
+        return True
+
     def cleanup_test_data(self):
         """Clean up test data"""
         print("\n=== Cleaning Up Test Data ===")

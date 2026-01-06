@@ -333,6 +333,27 @@ const Admin = () => {
     }
   };
 
+  const handleCreateUserSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (createUserForm.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      await userAPI.create(createUserForm);
+      setSuccess(`User account created for ${createUserForm.email}! They can now log in with the default password.`);
+      setShowCreateUserForm(false);
+      setCreateUserForm({ email: '', password: '', role: 'staff' });
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to create user');
+    }
+  };
+
   const handleToggleUserStatus = async (user) => {
     try {
       await userAPI.update(user.id, { is_active: !user.is_active });

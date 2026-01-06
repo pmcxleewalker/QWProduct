@@ -1,19 +1,29 @@
 import React, { useState } from 'react';
-import { X, XCircle, MessageSquare } from 'lucide-react';
+import { X, XCircle, MessageSquare, AlertTriangle } from 'lucide-react';
 
 const RejectBookingModal = ({ isOpen, onClose, onReject, booking }) => {
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Reason is required
+    if (!reason.trim()) {
+      setError('Please provide a reason for rejection');
+      return;
+    }
+    
     setLoading(true);
+    setError('');
     try {
       await onReject(booking.group_id, reason);
       setReason('');
       onClose();
     } catch (error) {
       console.error('Error rejecting booking:', error);
+      setError('Failed to reject booking');
     } finally {
       setLoading(false);
     }
@@ -41,7 +51,7 @@ const RejectBookingModal = ({ isOpen, onClose, onReject, booking }) => {
         {/* Booking Info */}
         <div className="p-4 bg-red-50 border-b">
           <p className="text-sm text-gray-700">
-            Rejecting <span className="font-bold">{booking.recurrence_type}</span> booking for <span className="font-bold">{booking.user_name}</span>
+            Rejecting <span className="font-bold capitalize">{booking.recurrence_type}</span> booking for <span className="font-bold">{booking.user_name}</span>
           </p>
           <p className="text-xs text-gray-500 mt-1">
             {booking.bookings?.length || 1} booking(s) will be removed
@@ -50,10 +60,17 @@ const RejectBookingModal = ({ isOpen, onClose, onReject, booking }) => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center">
+              <AlertTriangle size={16} className="mr-2" />
+              {error}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <MessageSquare size={14} className="inline mr-1" />
-              Reason for Rejection (Optional)
+              Reason for Rejection <span className="text-red-500">*</span>
             </label>
             <textarea
               value={reason}
@@ -61,6 +78,7 @@ const RejectBookingModal = ({ isOpen, onClose, onReject, booking }) => {
               rows={3}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
               placeholder="e.g., Vehicle already booked for maintenance, conflicting schedules..."
+              required
             />
             <p className="text-xs text-gray-500 mt-1">
               This reason will be sent to the staff member who made the request.
@@ -78,8 +96,8 @@ const RejectBookingModal = ({ isOpen, onClose, onReject, booking }) => {
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors disabled:opacity-50 flex items-center justify-center"
+              disabled={loading || !reason.trim()}
+              className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>

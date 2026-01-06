@@ -100,7 +100,7 @@ const Dashboard = () => {
     fetchLiftRequests();
     fetchLiftNotifications();
     fetchBookingNotifications();
-    // Auto-refresh every 30 seconds
+    // Auto-refresh every 10 seconds for faster notifications
     const interval = setInterval(() => {
       fetchLiveStatus();
       fetchComplianceAlerts();
@@ -108,7 +108,7 @@ const Dashboard = () => {
       fetchLiftRequests();
       fetchLiftNotifications();
       fetchBookingNotifications();
-    }, 30000);
+    }, 10000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);

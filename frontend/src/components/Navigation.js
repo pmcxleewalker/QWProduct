@@ -257,6 +257,13 @@ const Navigation = () => {
               </span>
             )}
             <button
+              onClick={() => setShowChangePassword(true)}
+              className="flex items-center p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+              title="Change Password"
+            >
+              <Key size={18} />
+            </button>
+            <button
               onClick={handleLogout}
               data-testid="mobile-logout-button"
               className="flex items-center p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"

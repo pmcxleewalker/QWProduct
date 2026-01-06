@@ -49,10 +49,12 @@ export const assistanceAPI = {
 
 // User Management API
 export const userAPI = {
+  create: (data) => axios.post(`${API}/admin/users/create`, data),
   invite: (data) => axios.post(`${API}/admin/users/invite`, data),
   getAll: () => axios.get(`${API}/admin/users`),
   update: (id, data) => axios.put(`${API}/admin/users/${id}`, data),
   delete: (id) => axios.delete(`${API}/admin/users/${id}`),
+  changePassword: (data) => axios.post(`${API}/auth/change-password`, data),
 };
 
 // Admin Messages API

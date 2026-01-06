@@ -6,10 +6,19 @@ const AuthContext = createContext(null);
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Storage helper - uses localStorage for "remember me", sessionStorage otherwise
+const getStoredToken = () => {
+  return localStorage.getItem('token') || sessionStorage.getItem('token');
+};
+
+const getRememberMe = () => {
+  return localStorage.getItem('rememberMe') === 'true';
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(getStoredToken());
 
   // Set axios default header
   useEffect(() => {
@@ -33,11 +42,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email, password, rememberMe = false) => {
     const response = await axios.post(`${API}/auth/login`, { email, password });
     const { access_token, user: userData } = response.data;
     
-    localStorage.setItem('token', access_token);
+    // Store based on "remember me" preference
+    if (rememberMe) {
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('rememberMe', 'true');
+      sessionStorage.removeItem('token');
+    } else {
+      sessionStorage.setItem('token', access_token);
+      localStorage.removeItem('token');
+      localStorage.removeItem('rememberMe');
+    }
+    
     setToken(access_token);
     setUser(userData);
     axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
@@ -53,7 +72,8 @@ export const AuthProvider = ({ children }) => {
     });
     const { access_token, user: userData } = response.data;
     
-    localStorage.setItem('token', access_token);
+    // Default to session storage for new registrations
+    sessionStorage.setItem('token', access_token);
     setToken(access_token);
     setUser(userData);
     axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
@@ -63,6 +83,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('rememberMe');
+    sessionStorage.removeItem('token');
     setToken(null);
     setUser(null);
     delete axios.defaults.headers.common['Authorization'];

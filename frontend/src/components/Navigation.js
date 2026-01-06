@@ -11,6 +11,7 @@ const Navigation = () => {
   const [liftRequestCount, setLiftRequestCount] = useState(0);
   const [liftRequests, setLiftRequests] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const notificationRef = useRef(null);
   const seenRequestIds = useRef(new Set());
   

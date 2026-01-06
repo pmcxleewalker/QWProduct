@@ -1,8 +1,9 @@
 # Quick Wing Fleet Management System
 ## Staff Training Manual
 
-**Author:** Lee Walker  
-**Version:** 1.0  
+**Owner:** Lee Walker  
+**Copyright:** © 2026 Lee Walker. All rights reserved.  
+**Version:** 1.1  
 **Date:** January 2026  
 **Document Type:** Staff User Guide
 
@@ -15,10 +16,11 @@
 3. [Updating Vehicle Status (QR Code)](#updating-vehicle-status)
 4. [Viewing Fleet Status](#viewing-fleet-status)
 5. [Making Bookings](#making-bookings)
-6. [Accessing Breakdown Assistance](#accessing-breakdown-assistance)
-7. [Best Practices](#best-practices)
-8. [Troubleshooting](#troubleshooting)
-9. [Contact Information](#contact-information)
+6. [Request a Lift Feature](#request-a-lift-feature)
+7. [Accessing Breakdown Assistance](#accessing-breakdown-assistance)
+8. [Best Practices](#best-practices)
+9. [Troubleshooting](#troubleshooting)
+10. [Contact Information](#contact-information)
 
 ---
 
@@ -30,6 +32,7 @@ Quick Wing is our fleet management system that helps you:
 - ✅ Update vehicle status in seconds using QR codes
 - ✅ Check which vehicles are available
 - ✅ Book vehicles for specific dates and times
+- ✅ Request lifts from colleagues
 - ✅ Access breakdown assistance contacts
 - ✅ Track vehicle locations
 
@@ -43,7 +46,7 @@ All staff members with login credentials can access Quick Wing.
 
 ### Accessing the System
 
-**Website:** https://cartrack-19.preview.emergentagent.com
+**Website:** https://cartrack-19.emergent.host
 
 **Your Login Credentials:**
 - Your email address (provided by admin)
@@ -279,7 +282,65 @@ All staff members with login credentials can access Quick Wing.
 
 ---
 
-## 6. Accessing Breakdown Assistance
+## 6. Request a Lift Feature
+
+### What is Request a Lift?
+
+This feature allows you to ask colleagues for a ride when you need transportation.
+
+### How to Request a Lift
+
+1. **On the Dashboard**, click the big blue **"🙋‍♂️ Request a Lift"** button at the bottom
+
+2. **Fill in the Request Form:**
+   - **Who needs the lift?** - Your name
+   - **From where?** - Pickup location
+   - **To where?** - Drop-off location
+   - **Date** - When you need the lift
+   - **Time** - What time
+   - **Notes** (optional) - Any extra info
+
+3. **Click "Request Lift"**
+
+4. **Your request appears** on everyone's dashboard
+
+### Viewing Lift Requests
+
+- **Blue panel** at the top of Dashboard shows active requests
+- Click the **minimize button (−)** to collapse/expand
+- See who needs a lift, where, and when
+
+### Responding to Requests
+
+When you see someone else's lift request:
+
+1. **Click "I can help!"** button
+2. **Add a message** for the requester (e.g., "I'll pick you up at the main entrance")
+3. **Click "Accept & Send"**
+
+### What Happens After Acceptance
+
+- The **request is removed** from all dashboards
+- The **requester gets a notification** showing:
+  - Who accepted their request
+  - Your message
+  - "Got it, thanks!" button to acknowledge
+
+### Managing Your Requests
+
+- **Hide** - Click the eye icon to hide a request from your view only
+- **Your requests** show a "You" tag
+- Only **admins can delete** requests permanently
+
+### Notification Bell 🔔
+
+- In the top navigation, the **bell icon** shows lift request count
+- Click to see a **dropdown** of all active requests
+- Quick way to view and respond to requests
+
+---
+
+## 7. Accessing Breakdown Assistance
 
 ### When to Use
 
@@ -351,7 +412,7 @@ When calling:
 
 ---
 
-## 7. Best Practices
+## 8. Best Practices
 
 ### Daily Habits
 
@@ -415,7 +476,7 @@ When calling:
 
 ---
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 ### Can't Login
 
@@ -492,7 +553,7 @@ When calling:
 
 ---
 
-## 9. Contact Information
+## 10. Contact Information
 
 ### Technical Issues
 
@@ -527,7 +588,7 @@ Email: [Admin Email]
 ├─────────────────────────────────────────┤
 │                                         │
 │ 📱 Website:                             │
-│ page-maker-117.preview.emergentagent.com│
+│ https://cartrack-19.emergent.host       │
 │                                         │
 │ 🔐 Login: Your Email + Password        │
 │                                         │
@@ -541,6 +602,9 @@ Email: [Admin Email]
 │ 🟢 Green = Free                         │
 │ 🔴 Red = In Use                         │
 │ 🟠 Orange = Needs Attention             │
+│                                         │
+│ 🙋 Request a Lift:                      │
+│ Dashboard → Blue button at bottom       │
 │                                         │
 │ 📞 Help:                                │
 │ Contact: [Admin Phone]                  │
@@ -563,6 +627,7 @@ Email: [Admin Email]
 - [ ] Added location to status update
 - [ ] Created a test booking
 - [ ] Cancelled a test booking
+- [ ] Requested a lift (practice)
 - [ ] Viewed Assistance providers
 - [ ] Know who to contact for help
 - [ ] Saved website to phone home screen
@@ -597,6 +662,11 @@ ________________________________
 
 **Questions?** Contact your administrator: [Admin Contact]
 
-**Document Version:** 1.0  
+---
+
+**Document Version:** 1.1  
 **Last Updated:** January 2026  
-**Author:** Lee Walker
+**Owner:** Lee Walker  
+**Copyright:** © 2026 Lee Walker. All rights reserved.
+
+This document and the Quick Wing Fleet Management System are the intellectual property of Lee Walker. Unauthorized reproduction, distribution, or modification is prohibited.

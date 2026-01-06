@@ -12,10 +12,7 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [showCarForm, setShowCarForm] = useState(false);
   const [showProviderForm, setShowProviderForm] = useState(false);
-  const [showInviteForm, setShowInviteForm] = useState(false);
   const [showMessageForm, setShowMessageForm] = useState(false);
-  const [inviteUrl, setInviteUrl] = useState('');
-  const [copied, setCopied] = useState(false);
   const [editingCar, setEditingCar] = useState(null);
   const [editingProvider, setEditingProvider] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);

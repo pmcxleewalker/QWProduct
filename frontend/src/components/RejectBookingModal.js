@@ -18,7 +18,9 @@ const RejectBookingModal = ({ isOpen, onClose, onReject, booking }) => {
     setLoading(true);
     setError('');
     try {
-      await onReject(booking.group_id, reason);
+      // Use group_id from the booking group object
+      const groupId = booking.group_id || booking.recurring_group_id;
+      await onReject(groupId, reason);
       setReason('');
       onClose();
     } catch (error) {

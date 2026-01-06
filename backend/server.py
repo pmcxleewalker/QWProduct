@@ -1202,6 +1202,56 @@ async def update_admin_message(message_id: str, message: AdminMessageCreate, cur
     return {"message": "Message updated successfully"}
 
 
+# ==================== TO DO LIST ENDPOINTS ====================
+
+@api_router.get("/admin/todos")
+async def get_todos(current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Get all to-do items"""
+    todos = await db.todos.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    for todo in todos:
+        deserialize_datetime(todo, ['created_at'])
+    return todos
+
+@api_router.post("/admin/todos", response_model=dict)
+async def create_todo(todo: TodoItemCreate, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Create a new to-do item"""
+    todo_item = TodoItem(**todo.model_dump())
+    todo_item.created_by = current_user['email']
+    doc = serialize_datetime(todo_item.model_dump())
+    await db.todos.insert_one(doc)
+    return todo_item.model_dump()
+
+@api_router.put("/admin/todos/{todo_id}")
+async def update_todo(todo_id: str, todo_update: TodoItemUpdate, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Update a to-do item"""
+    update_data = {k: v for k, v in todo_update.model_dump().items() if v is not None}
+    
+    # If marking as completed, add completion info
+    if update_data.get('is_completed') == True:
+        update_data['completed_by'] = current_user['email']
+        update_data['completed_at'] = datetime.now(timezone.utc).isoformat()
+    elif update_data.get('is_completed') == False:
+        update_data['completed_by'] = None
+        update_data['completed_at'] = None
+    
+    if update_data:
+        result = await db.todos.update_one({"id": todo_id}, {"$set": update_data})
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="To-do item not found")
+    
+    updated = await db.todos.find_one({"id": todo_id}, {"_id": 0})
+    deserialize_datetime(updated, ['created_at'])
+    return updated
+
+@api_router.delete("/admin/todos/{todo_id}")
+async def delete_todo(todo_id: str, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Delete a to-do item"""
+    result = await db.todos.delete_one({"id": todo_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="To-do item not found")
+    return {"message": "To-do item deleted successfully"}
+
+
 # ==================== STAFF MESSAGE ENDPOINTS ====================
 
 @api_router.get("/messages/unacknowledged")

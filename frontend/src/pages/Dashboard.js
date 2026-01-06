@@ -17,12 +17,15 @@ const Dashboard = () => {
   const [pendingBookings, setPendingBookings] = useState([]);
   const [liftRequests, setLiftRequests] = useState([]);
   const [liftNotifications, setLiftNotifications] = useState([]);
+  const [bookingNotifications, setBookingNotifications] = useState([]);
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [showLiftModal, setShowLiftModal] = useState(false);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [selectedBookingGroup, setSelectedBookingGroup] = useState(null);
 
   const fetchLiveStatus = async () => {
     try {

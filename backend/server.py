@@ -1103,6 +1103,35 @@ async def edit_booking(booking_id: str, booking_update: BookingUpdate, current_u
     return updated_booking
 
 
+class SeriesBookingUpdate(BaseModel):
+    user_name: Optional[str] = None
+    destination_notes: Optional[str] = None
+    # Note: For series, we don't allow changing times as each booking has different times
+
+@api_router.put("/admin/bookings/series/{recurrence_id}")
+async def edit_booking_series(recurrence_id: str, booking_update: SeriesBookingUpdate, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Edit all bookings in a recurring series"""
+    # Check if the series exists
+    count = await db.bookings.count_documents({"recurring_group_id": recurrence_id})
+    if count == 0:
+        raise HTTPException(status_code=404, detail="No bookings found in this series")
+    
+    update_data = {}
+    if booking_update.user_name:
+        update_data["user_name"] = booking_update.user_name
+    if booking_update.destination_notes is not None:
+        update_data["destination_notes"] = booking_update.destination_notes
+    
+    if update_data:
+        result = await db.bookings.update_many(
+            {"recurring_group_id": recurrence_id},
+            {"$set": update_data}
+        )
+        return {"message": f"Updated {result.modified_count} booking(s) in series"}
+    
+    return {"message": "No changes provided"}
+
+
 # ==================== ADMIN MESSAGING BOARD ENDPOINTS ====================
 
 @api_router.post("/admin/messages", response_model=AdminMessage)

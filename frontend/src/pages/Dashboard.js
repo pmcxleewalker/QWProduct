@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { statusAPI, complianceAPI, bookingAPI, carAPI, liftRequestAPI, liftNotificationAPI } from '../api/api';
+import { statusAPI, complianceAPI, bookingAPI, carAPI, liftRequestAPI, liftNotificationAPI, bookingNotificationAPI } from '../api/api';
 import StatusBadge from '../components/StatusBadge';
 import LiftRequestsPanel from '../components/LiftRequestsPanel';
 import LiftRequestModal from '../components/LiftRequestModal';
 import AcceptLiftModal from '../components/AcceptLiftModal';
 import LiftAcceptedNotification from '../components/LiftAcceptedNotification';
+import RejectBookingModal from '../components/RejectBookingModal';
+import BookingNotificationModal from '../components/BookingNotificationModal';
 import { RefreshCw, Clock, AlertTriangle, Check, X, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 

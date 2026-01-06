@@ -1227,10 +1227,10 @@ async def update_todo(todo_id: str, todo_update: TodoItemUpdate, current_user: d
     update_data = {k: v for k, v in todo_update.model_dump().items() if v is not None}
     
     # If marking as completed, add completion info
-    if update_data.get('is_completed') == True:
+    if update_data.get('is_completed') is True:
         update_data['completed_by'] = current_user['email']
         update_data['completed_at'] = datetime.now(timezone.utc).isoformat()
-    elif update_data.get('is_completed') == False:
+    elif update_data.get('is_completed') is False:
         update_data['completed_by'] = None
         update_data['completed_at'] = None
     

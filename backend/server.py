@@ -295,6 +295,28 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     return current_user
 
 
+@api_router.post("/auth/change-password")
+async def change_password(password_data: PasswordChange, current_user: dict = Depends(get_current_user)):
+    """Change current user's password"""
+    # Verify current password
+    user = await db.users.find_one({"id": current_user['id']}, {"_id": 0})
+    if not user or not verify_password(password_data.current_password, user['password_hash']):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    # Validate new password
+    if len(password_data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+    
+    # Update password
+    new_hash = get_password_hash(password_data.new_password)
+    await db.users.update_one(
+        {"id": current_user['id']},
+        {"$set": {"password_hash": new_hash, "must_change_password": False}}
+    )
+    
+    return {"message": "Password changed successfully"}
+
+
 # ==================== ADMIN USER MANAGEMENT ENDPOINTS ====================
 
 class DirectUserCreate(BaseModel):

@@ -928,18 +928,99 @@ const Admin = () => {
         <div>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold">User Management</h2>
-            <button
-              onClick={() => {
-                setShowInviteForm(true);
-                setInviteForm({ email: '', role: 'staff' });
-              }}
-              data-testid="invite-user-button"
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus size={18} />
-              <span>Invite User</span>
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => {
+                  setShowCreateUserForm(true);
+                  setShowInviteForm(false);
+                  setCreateUserForm({ email: '', password: '', role: 'staff' });
+                }}
+                data-testid="create-user-button"
+                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                <Plus size={18} />
+                <span>Create User</span>
+              </button>
+              <button
+                onClick={() => {
+                  setShowInviteForm(true);
+                  setShowCreateUserForm(false);
+                  setInviteForm({ email: '', role: 'staff' });
+                }}
+                data-testid="invite-user-button"
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <Mail size={18} />
+                <span>Send Invite</span>
+              </button>
+            </div>
           </div>
+
+          {/* Create User Form */}
+          {showCreateUserForm && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-2 border-green-200">
+              <h3 className="text-lg font-bold mb-4 text-green-800">Create User Account</h3>
+              <p className="text-sm text-gray-600 mb-4">Create an account directly with a default password. The user can change their password after logging in.</p>
+              <form onSubmit={handleCreateUserSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                    <input
+                      type="email"
+                      data-testid="create-email-input"
+                      value={createUserForm.email}
+                      onChange={(e) => setCreateUserForm({ ...createUserForm, email: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      placeholder="user@example.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Default Password *</label>
+                    <input
+                      type="text"
+                      data-testid="create-password-input"
+                      value={createUserForm.password}
+                      onChange={(e) => setCreateUserForm({ ...createUserForm, password: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      placeholder="Min 6 characters"
+                      minLength={6}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Role *</label>
+                    <select
+                      data-testid="create-role-select"
+                      value={createUserForm.role}
+                      onChange={(e) => setCreateUserForm({ ...createUserForm, role: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                      required
+                    >
+                      <option value="staff">Staff</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex space-x-4">
+                  <button
+                    type="submit"
+                    data-testid="submit-create-button"
+                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 font-medium"
+                  >
+                    Create Account
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateUserForm(false)}
+                    className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
           {/* Invite Form */}
           {showInviteForm && (

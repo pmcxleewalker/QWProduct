@@ -47,7 +47,7 @@ const BookingNotificationModal = ({ notification, onDismiss }) => {
             <div className="space-y-2 text-sm">
               <div className="flex items-center space-x-2">
                 <Car size={16} className="text-gray-500" />
-                <span className="text-gray-600">For:</span>
+                <span className="text-gray-600">Booked for:</span>
                 <span className="font-medium">{notification.user_name}</span>
               </div>
               <div className="flex items-center space-x-2">
@@ -58,8 +58,8 @@ const BookingNotificationModal = ({ notification, onDismiss }) => {
               {notification.recurrence_type && (
                 <div className="flex items-center space-x-2">
                   <Clock size={16} className="text-gray-500" />
-                  <span className="text-gray-600">Type:</span>
-                  <span className="font-medium capitalize">{notification.recurrence_type} × {notification.booking_count}</span>
+                  <span className="text-gray-600">Recurrence:</span>
+                  <span className="font-medium capitalize">{notification.recurrence_type} × {notification.booking_count} bookings</span>
                 </div>
               )}
             </div>
@@ -72,14 +72,14 @@ const BookingNotificationModal = ({ notification, onDismiss }) => {
             </p>
           </div>
 
-          {/* Rejection Reason */}
+          {/* Rejection Reason - Highlighted */}
           {!isApproved && notification.rejection_reason && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
-              <div className="flex items-center space-x-2 mb-1">
-                <MessageSquare size={14} className="text-gray-500" />
-                <span className="text-xs font-medium text-gray-700">Reason:</span>
+            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <MessageSquare size={16} className="text-red-600" />
+                <span className="text-sm font-bold text-red-700">Reason for Rejection:</span>
               </div>
-              <p className="text-sm text-gray-700">&ldquo;{notification.rejection_reason}&rdquo;</p>
+              <p className="text-sm text-gray-800 italic">&ldquo;{notification.rejection_reason}&rdquo;</p>
             </div>
           )}
 

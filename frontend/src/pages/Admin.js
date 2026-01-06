@@ -557,6 +557,18 @@ const Admin = () => {
           <MessageSquare className="inline mr-2" size={20} />
           Messages
         </button>
+        <button
+          onClick={() => setActiveTab('todos')}
+          data-testid="tab-todos"
+          className={`pb-4 px-4 font-medium transition-colors ${
+            activeTab === 'todos'
+              ? 'border-b-2 border-teal-600 text-teal-600'
+              : 'text-gray-600 hover:text-teal-600'
+          }`}
+        >
+          <ListTodo className="inline mr-2" size={20} />
+          To-Do List
+        </button>
       </div>
 
       {/* Cars Tab */}

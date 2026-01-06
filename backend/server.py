@@ -913,6 +913,9 @@ async def delete_booking(booking_id: str, current_user: dict = Depends(get_curre
 
 # ==================== RECURRING BOOKING APPROVAL ENDPOINTS ====================
 
+class BookingRejectRequest(BaseModel):
+    reason: str = ""
+
 @api_router.get("/admin/pending-bookings")
 async def get_pending_bookings(current_user: dict = Depends(get_current_admin_user)):
     """Admin: Get all pending recurring bookings that need approval"""
@@ -947,6 +950,15 @@ async def get_pending_bookings(current_user: dict = Depends(get_current_admin_us
 @api_router.post("/admin/bookings/{group_id}/approve")
 async def approve_recurring_booking(group_id: str, current_user: dict = Depends(get_current_admin_user)):
     """Admin: Approve a recurring booking group"""
+    # Get the bookings to find the requester
+    bookings = await db.bookings.find(
+        {"$or": [{"recurring_group_id": group_id}, {"id": group_id}], "status": "pending_approval"},
+        {"_id": 0}
+    ).to_list(100)
+    
+    if not bookings:
+        raise HTTPException(status_code=404, detail="No pending bookings found")
+    
     result = await db.bookings.update_many(
         {"recurring_group_id": group_id, "status": "pending_approval"},
         {"$set": {"status": "approved"}}
@@ -959,12 +971,60 @@ async def approve_recurring_booking(group_id: str, current_user: dict = Depends(
             {"$set": {"status": "approved"}}
         )
     
+    # Create notification for the requester
+    first_booking = bookings[0]
+    notification = {
+        "id": str(uuid.uuid4()),
+        "type": "booking_approved",
+        "recipient_email": first_booking.get('created_by_email'),
+        "booking_group_id": group_id,
+        "car_id": first_booking['car_id'],
+        "user_name": first_booking['user_name'],
+        "recurrence_type": first_booking.get('recurrence_type'),
+        "booking_count": len(bookings),
+        "start_time": first_booking['start_time'] if isinstance(first_booking['start_time'], str) else first_booking['start_time'].isoformat(),
+        "approved_by": current_user['email'],
+        "is_read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.booking_notifications.insert_one(notification)
+    
     return {"message": f"Approved {result.modified_count} booking(s)"}
 
 
 @api_router.post("/admin/bookings/{group_id}/reject")
-async def reject_recurring_booking(group_id: str, current_user: dict = Depends(get_current_admin_user)):
-    """Admin: Reject and delete a recurring booking group"""
+async def reject_recurring_booking(group_id: str, reject_data: BookingRejectRequest, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Reject and delete a recurring booking group with reason"""
+    # Get the bookings to find the requester before deleting
+    bookings = await db.bookings.find(
+        {"$or": [{"recurring_group_id": group_id}, {"id": group_id}], "status": "pending_approval"},
+        {"_id": 0}
+    ).to_list(100)
+    
+    if not bookings:
+        raise HTTPException(status_code=404, detail="No pending bookings found")
+    
+    first_booking = bookings[0]
+    
+    # Create notification for the requester BEFORE deleting
+    notification = {
+        "id": str(uuid.uuid4()),
+        "type": "booking_rejected",
+        "recipient_email": first_booking.get('created_by_email'),
+        "booking_group_id": group_id,
+        "car_id": first_booking['car_id'],
+        "user_name": first_booking['user_name'],
+        "recurrence_type": first_booking.get('recurrence_type'),
+        "booking_count": len(bookings),
+        "start_time": first_booking['start_time'] if isinstance(first_booking['start_time'], str) else first_booking['start_time'].isoformat(),
+        "rejected_by": current_user['email'],
+        "rejection_reason": reject_data.reason,
+        "is_read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.booking_notifications.insert_one(notification)
+    
+    # Now delete the bookings
     result = await db.bookings.delete_many(
         {"recurring_group_id": group_id, "status": "pending_approval"}
     )
@@ -976,6 +1036,71 @@ async def reject_recurring_booking(group_id: str, current_user: dict = Depends(g
         )
     
     return {"message": f"Rejected and deleted {result.deleted_count} booking(s)"}
+
+
+# ==================== BOOKING NOTIFICATIONS ENDPOINTS ====================
+
+@api_router.get("/booking-notifications")
+async def get_booking_notifications(current_user: dict = Depends(get_current_user)):
+    """Get booking notifications for current user"""
+    notifications = await db.booking_notifications.find(
+        {"recipient_email": current_user['email'], "is_read": False},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    
+    return notifications
+
+
+@api_router.post("/booking-notifications/{notification_id}/read")
+async def mark_booking_notification_read(notification_id: str, current_user: dict = Depends(get_current_user)):
+    """Mark a booking notification as read"""
+    result = await db.booking_notifications.update_one(
+        {"id": notification_id, "recipient_email": current_user['email']},
+        {"$set": {"is_read": True}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    
+    return {"message": "Notification marked as read"}
+
+
+# ==================== EDIT INDIVIDUAL BOOKING ENDPOINT ====================
+
+class BookingUpdate(BaseModel):
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    user_name: Optional[str] = None
+    destination_notes: Optional[str] = None
+
+@api_router.put("/admin/bookings/{booking_id}")
+async def edit_booking(booking_id: str, booking_update: BookingUpdate, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Edit an individual booking (even if part of a recurring series)"""
+    booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    update_data = {}
+    if booking_update.start_time:
+        update_data["start_time"] = booking_update.start_time.isoformat()
+    if booking_update.end_time:
+        update_data["end_time"] = booking_update.end_time.isoformat()
+    if booking_update.user_name:
+        update_data["user_name"] = booking_update.user_name
+    if booking_update.destination_notes is not None:
+        update_data["destination_notes"] = booking_update.destination_notes
+    
+    if update_data:
+        # Mark as individually edited if part of recurring series
+        if booking.get('recurring_group_id'):
+            update_data["individually_edited"] = True
+        
+        await db.bookings.update_one({"id": booking_id}, {"$set": update_data})
+    
+    updated_booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+    deserialize_datetime(updated_booking, ['start_time', 'end_time', 'created_at'])
+    
+    return updated_booking
 
 
 # ==================== ADMIN MESSAGING BOARD ENDPOINTS ====================

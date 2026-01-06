@@ -35,7 +35,14 @@ export const bookingAPI = {
   delete: (id) => axios.delete(`${API}/bookings/${id}`),
   getPending: () => axios.get(`${API}/admin/pending-bookings`),
   approve: (groupId) => axios.post(`${API}/admin/bookings/${groupId}/approve`),
-  reject: (groupId) => axios.post(`${API}/admin/bookings/${groupId}/reject`),
+  reject: (groupId, reason) => axios.post(`${API}/admin/bookings/${groupId}/reject`, { reason }),
+  edit: (bookingId, data) => axios.put(`${API}/admin/bookings/${bookingId}`, data),
+};
+
+// Booking Notifications API
+export const bookingNotificationAPI = {
+  get: () => axios.get(`${API}/booking-notifications`),
+  markRead: (id) => axios.post(`${API}/booking-notifications/${id}/read`),
 };
 
 // Assistance API

@@ -328,10 +328,6 @@ class DirectUserCreate(BaseModel):
     password: str
     role: str = "staff"
 
-class PasswordChange(BaseModel):
-    current_password: str
-    new_password: str
-
 
 @api_router.post("/admin/users/create")
 async def create_user_directly(user_data: DirectUserCreate, current_admin: dict = Depends(get_current_admin_user)):

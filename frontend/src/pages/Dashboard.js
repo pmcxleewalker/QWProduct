@@ -128,13 +128,22 @@ const Dashboard = () => {
     }
   };
 
-  const handleRejectBooking = async (groupId) => {
-    if (!window.confirm('Reject this recurring booking request?')) return;
+  const handleRejectClick = (group) => {
+    setSelectedBookingGroup(group);
+    setShowRejectModal(true);
+  };
+
+  const handleRejectBooking = async (groupId, reason) => {
+    await bookingAPI.reject(groupId, reason);
+    fetchPendingBookings();
+  };
+
+  const handleDismissBookingNotification = async (notificationId) => {
     try {
-      await bookingAPI.reject(groupId);
-      fetchPendingBookings();
-    } catch (err) {
-      console.error('Failed to reject booking:', err);
+      await bookingNotificationAPI.markRead(notificationId);
+      setBookingNotifications(prev => prev.filter(n => n.id !== notificationId));
+    } catch (error) {
+      console.error('Error dismissing booking notification:', error);
     }
   };
 

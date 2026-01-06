@@ -86,6 +86,21 @@ backend:
         agent: "testing"
         comment: "✅ All lift request endpoints working correctly. POST /api/lift-requests creates requests with requester_email from token. GET /api/lift-requests returns active requests. GET /api/lift-requests/count returns correct count. POST /api/lift-requests/{id}/accept works with proper validation (prevents self-acceptance, updates status to accepted). DELETE /api/lift-requests/{id} allows creator and admin to cancel. All authentication and authorization working properly."
 
+  - task: "Booking Notifications & Recurring Booking Editing"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: needs_testing
+        agent: "main"
+        comment: "✅ Implemented booking notifications and recurring booking editing endpoints: POST /api/admin/bookings/{group_id}/reject (reject with reason), GET /api/booking-notifications (get unread), POST /api/booking-notifications/{id}/read (mark read), PUT /api/admin/bookings/{booking_id} (edit single), PUT /api/admin/bookings/series/{recurrence_id} (edit series), POST /api/admin/bookings/{group_id}/approve (approve with notification)."
+      - working: true
+        agent: "testing"
+        comment: "✅ All booking notification and editing endpoints working perfectly. Complete workflow tested: staff creates recurring booking → admin rejects with reason → staff receives notification → marks as read → notification removed from unread list. Booking editing tested for both individual bookings (marks as individually_edited) and entire recurring series. Approval workflow creates notifications correctly. All authentication, authorization, data persistence, and notification lifecycle working correctly. Used localhost:8001 for testing due to database sync issues with external URL."
+
 frontend:
   - task: "Dashboard Compliance Alerts"
     implemented: true

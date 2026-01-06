@@ -1003,32 +1003,17 @@ const Admin = () => {
         <div>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold">User Management</h2>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => {
-                  setShowCreateUserForm(true);
-                  setShowInviteForm(false);
-                  setCreateUserForm({ email: '', password: '', role: 'staff' });
-                }}
-                data-testid="create-user-button"
-                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                <Plus size={18} />
-                <span>Create User</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowInviteForm(true);
-                  setShowCreateUserForm(false);
-                  setInviteForm({ email: '', role: 'staff' });
-                }}
-                data-testid="invite-user-button"
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                <Mail size={18} />
-                <span>Send Invite</span>
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                setShowCreateUserForm(true);
+                setCreateUserForm({ email: '', password: '', role: 'staff' });
+              }}
+              data-testid="create-user-button"
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              <Plus size={18} />
+              <span>Create User</span>
+            </button>
           </div>
 
           {/* Create User Form */}
@@ -1094,85 +1079,6 @@ const Admin = () => {
                   </button>
                 </div>
               </form>
-            </div>
-          )}
-
-          {/* Invite Form */}
-          {showInviteForm && (
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h3 className="text-lg font-bold mb-4">Invite New User</h3>
-              <form onSubmit={handleInviteSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
-                    <input
-                      type="email"
-                      data-testid="invite-email-input"
-                      value={inviteForm.email}
-                      onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Role *</label>
-                    <select
-                      data-testid="invite-role-select"
-                      value={inviteForm.role}
-                      onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="staff">Staff</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex space-x-4">
-                  <button
-                    type="submit"
-                    data-testid="submit-invite-button"
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
-                  >
-                    Send Invitation
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowInviteForm(false)}
-                    className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Invite URL Display */}
-          {inviteUrl && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-              <div className="flex items-start">
-                <Mail className="text-blue-600 mr-3 mt-1" size={24} />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-blue-900 mb-2">Invitation Created!</h3>
-                  <p className="text-sm text-blue-700 mb-3">Share this link with the user to complete registration:</p>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="text"
-                      value={inviteUrl}
-                      readOnly
-                      className="flex-1 px-3 py-2 bg-white border border-blue-300 rounded text-sm"
-                    />
-                    <button
-                      onClick={() => copyToClipboard(inviteUrl)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center space-x-2"
-                    >
-                      {copied ? <CheckCircle size={16} /> : <Copy size={16} />}
-                      <span>{copied ? 'Copied!' : 'Copy'}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 

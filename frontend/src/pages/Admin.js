@@ -91,6 +91,7 @@ const Admin = () => {
         assistanceAPI.getAll(),
         bookingAPI.getPending(),
         messageAPI.getAll(),
+        todoAPI.getAll(),
       ];
       
       if (activeTab === 'users') {
@@ -102,9 +103,10 @@ const Admin = () => {
       setProviders(results[1].data);
       setPendingBookings(results[2].data);
       setMessages(results[3].data);
+      setTodos(results[4].data);
       
-      if (results[4]) {
-        setUsers(results[4].data);
+      if (results[5]) {
+        setUsers(results[5].data);
       }
     } catch (error) {
       console.error('Error fetching data:', error);

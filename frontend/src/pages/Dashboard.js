@@ -84,6 +84,15 @@ const Dashboard = () => {
     }
   }, []);
 
+  const fetchBookingNotifications = useCallback(async () => {
+    try {
+      const response = await bookingNotificationAPI.get();
+      setBookingNotifications(response.data);
+    } catch (error) {
+      console.error('Error fetching booking notifications:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchLiveStatus();
     fetchComplianceAlerts();

@@ -1101,76 +1101,161 @@ const Admin = () => {
             </div>
           )}
 
-          {/* Users List */}
-          <div className="space-y-4">
-            {users.map((user) => (
-              <div
-                key={user.id}
-                data-testid={`user-card-${user.id}`}
-                className="bg-white rounded-lg shadow-md p-6"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-bold text-gray-900">{user.email}</h3>
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded ${
-                          user.role === 'admin'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}
-                      >
-                        {user.role}
-                      </span>
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded ${
-                          user.is_active
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {user.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      Joined: {new Date(user.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  
-                  <div className="flex space-x-2">
-                    <select
-                      value={user.role}
-                      onChange={(e) => handleChangeUserRole(user, e.target.value)}
-                      data-testid={`role-select-${user.id}`}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="staff">Staff</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                    
-                    <button
-                      onClick={() => handleToggleUserStatus(user)}
-                      data-testid={`toggle-status-${user.id}`}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                        user.is_active
-                          ? 'bg-amber-600 text-white hover:bg-amber-700'
-                          : 'bg-green-600 text-white hover:bg-green-700'
-                      }`}
-                    >
-                      {user.is_active ? 'Deactivate' : 'Activate'}
-                    </button>
-                    
-                    <button
-                      onClick={() => handleDeleteUser(user.id)}
-                      data-testid={`delete-user-${user.id}`}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
-                    >
-                      <Trash2 size={16} className="inline" />
-                    </button>
-                  </div>
+          {/* Users List - Separated by Role */}
+          {/* Admin Users Section */}
+          <div className="mb-8">
+            <h3 className="text-lg font-bold text-purple-800 mb-4 flex items-center">
+              <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-lg mr-2">👑</span>
+              Administrators ({users.filter(u => u.role === 'admin').length})
+            </h3>
+            <div className="space-y-4">
+              {users.filter(u => u.role === 'admin').length === 0 ? (
+                <div className="bg-purple-50 rounded-lg p-4 text-center text-purple-600">
+                  No admin users found
                 </div>
-              </div>
-            ))}
+              ) : (
+                users.filter(u => u.role === 'admin').map((user) => (
+                  <div
+                    key={user.id}
+                    data-testid={`user-card-${user.id}`}
+                    className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="text-lg font-bold text-gray-900">{user.email}</h3>
+                          <span className="px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-800">
+                            {user.role}
+                          </span>
+                          <span
+                            className={`px-2 py-1 text-xs font-medium rounded ${
+                              user.is_active
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {user.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          Joined: {new Date(user.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        <select
+                          value={user.role}
+                          onChange={(e) => handleChangeUserRole(user, e.target.value)}
+                          data-testid={`role-select-${user.id}`}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="staff">Staff</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                        
+                        <button
+                          onClick={() => handleToggleUserStatus(user)}
+                          data-testid={`toggle-status-${user.id}`}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                            user.is_active
+                              ? 'bg-amber-600 text-white hover:bg-amber-700'
+                              : 'bg-green-600 text-white hover:bg-green-700'
+                          }`}
+                        >
+                          {user.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                        
+                        <button
+                          onClick={() => handleDeleteUser(user.id)}
+                          data-testid={`delete-user-${user.id}`}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                        >
+                          <Trash2 size={16} className="inline" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Staff Users Section */}
+          <div>
+            <h3 className="text-lg font-bold text-blue-800 mb-4 flex items-center">
+              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg mr-2">👤</span>
+              Staff Members ({users.filter(u => u.role === 'staff').length})
+            </h3>
+            <div className="space-y-4">
+              {users.filter(u => u.role === 'staff').length === 0 ? (
+                <div className="bg-blue-50 rounded-lg p-4 text-center text-blue-600">
+                  No staff users found
+                </div>
+              ) : (
+                users.filter(u => u.role === 'staff').map((user) => (
+                  <div
+                    key={user.id}
+                    data-testid={`user-card-${user.id}`}
+                    className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="text-lg font-bold text-gray-900">{user.email}</h3>
+                          <span className="px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
+                            {user.role}
+                          </span>
+                          <span
+                            className={`px-2 py-1 text-xs font-medium rounded ${
+                              user.is_active
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {user.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          Joined: {new Date(user.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        <select
+                          value={user.role}
+                          onChange={(e) => handleChangeUserRole(user, e.target.value)}
+                          data-testid={`role-select-${user.id}`}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="staff">Staff</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                        
+                        <button
+                          onClick={() => handleToggleUserStatus(user)}
+                          data-testid={`toggle-status-${user.id}`}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                            user.is_active
+                              ? 'bg-amber-600 text-white hover:bg-amber-700'
+                              : 'bg-green-600 text-white hover:bg-green-700'
+                          }`}
+                        >
+                          {user.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                        
+                        <button
+                          onClick={() => handleDeleteUser(user.id)}
+                          data-testid={`delete-user-${user.id}`}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+                        >
+                          <Trash2 size={16} className="inline" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}

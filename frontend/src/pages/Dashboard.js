@@ -99,6 +99,7 @@ const Dashboard = () => {
     fetchPendingBookings();
     fetchLiftRequests();
     fetchLiftNotifications();
+    fetchBookingNotifications();
     // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
       fetchLiveStatus();
@@ -106,6 +107,7 @@ const Dashboard = () => {
       fetchPendingBookings();
       fetchLiftRequests();
       fetchLiftNotifications();
+      fetchBookingNotifications();
     }, 30000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -71,6 +71,15 @@ const Admin = () => {
     is_active: true,
   });
 
+  // To-Do List State
+  const [todos, setTodos] = useState([]);
+  const [showTodoForm, setShowTodoForm] = useState(false);
+  const [editingTodo, setEditingTodo] = useState(null);
+  const [todoForm, setTodoForm] = useState({
+    title: '',
+    is_mandatory: false,
+  });
+
   useEffect(() => {
     fetchData();
   }, [activeTab]);

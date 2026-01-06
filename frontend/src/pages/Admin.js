@@ -370,24 +370,6 @@ const Admin = () => {
   };
 
   // User Management Operations
-  const handleInviteSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setInviteUrl('');
-
-    try {
-      const response = await userAPI.invite(inviteForm);
-      setSuccess(`Invitation sent to ${inviteForm.email}!`);
-      setInviteUrl(response.data.invite_url);
-      setShowInviteForm(false);
-      setInviteForm({ email: '', role: 'staff' });
-      fetchData();
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create invitation');
-    }
-  };
-
   const handleCreateUserSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -440,13 +422,6 @@ const Admin = () => {
       setError(err.response?.data?.detail || 'Failed to deactivate user');
     }
   };
-
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
 
   const handleDownloadQR = (carId, carName) => {
     const qrUrl = carAPI.getQRCode(carId);

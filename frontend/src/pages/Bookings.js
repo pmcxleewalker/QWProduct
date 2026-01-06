@@ -828,6 +828,7 @@ const Bookings = () => {
                 const isAdmin = user?.role === 'admin';
                 const isOwner = selectedBooking.created_by_email === user?.email;
                 const canDelete = isAdmin || isOwner;
+                const isRecurring = !!selectedBooking.recurring_group_id;
 
                 return (
                   <div className="space-y-3">
@@ -836,6 +837,7 @@ const Bookings = () => {
                       <p className="text-xs text-gray-500 text-center">
                         Created by: {selectedBooking.created_by_email}
                         {isOwner && <span className="text-blue-600 ml-1">(You)</span>}
+                        {isRecurring && <span className="text-purple-600 ml-2">(Recurring)</span>}
                       </p>
                     )}
                     
@@ -846,6 +848,20 @@ const Bookings = () => {
                       >
                         Close
                       </button>
+                      
+                      {/* Admin Edit Button */}
+                      {isAdmin && (
+                        <button
+                          onClick={() => {
+                            setEditingBooking(selectedBooking);
+                            setSelectedBooking(null);
+                          }}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2"
+                        >
+                          <Edit size={18} />
+                          <span>Edit</span>
+                        </button>
+                      )}
                       
                       {canDelete ? (
                         <button
@@ -871,6 +887,17 @@ const Bookings = () => {
           </div>
         </div>
       )}
+
+      {/* Edit Booking Modal */}
+      <EditBookingModal
+        isOpen={!!editingBooking}
+        onClose={() => setEditingBooking(null)}
+        booking={editingBooking}
+        onSuccess={() => {
+          setEditingBooking(null);
+          fetchData();
+        }}
+      />
     </div>
   );
 };

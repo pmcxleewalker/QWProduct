@@ -95,4 +95,12 @@ export const liftNotificationAPI = {
   markRead: (id) => axios.post(`${API}/lift-notifications/${id}/read`),
 };
 
-export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI, liftRequestAPI };
+// Admin To-Do List API
+export const todoAPI = {
+  getAll: () => axios.get(`${API}/admin/todos`),
+  create: (data) => axios.post(`${API}/admin/todos`, data),
+  update: (id, data) => axios.put(`${API}/admin/todos/${id}`, data),
+  delete: (id) => axios.delete(`${API}/admin/todos/${id}`),
+};
+
+export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI, liftRequestAPI, todoAPI };

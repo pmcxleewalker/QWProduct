@@ -328,11 +328,28 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900" data-testid="dashboard-title">Fleet Status</h1>
-          <p className="text-sm text-gray-500 flex items-center mt-1">
-            <Clock size={14} className="mr-1" />
-            Last updated: {lastUpdated ? formatTime(lastUpdated) : 'Loading...'}
-          </p>
+          {/* Special greeting for Carly */}
+          {user?.email === 'carlyodonvan@bluebirdcare.ie' ? (
+            <>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center" data-testid="dashboard-title">
+                <span className="mr-2">🐾</span>
+                Welcome, Carly!
+                <span className="ml-2">🐾</span>
+              </h1>
+              <p className="text-sm text-gray-500 flex items-center mt-1">
+                <Clock size={14} className="mr-1" />
+                Last updated: {lastUpdated ? formatTime(lastUpdated) : 'Loading...'}
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold text-gray-900" data-testid="dashboard-title">Fleet Status</h1>
+              <p className="text-sm text-gray-500 flex items-center mt-1">
+                <Clock size={14} className="mr-1" />
+                Last updated: {lastUpdated ? formatTime(lastUpdated) : 'Loading...'}
+              </p>
+            </>
+          )}
         </div>
         <button
           onClick={() => { fetchLiveStatus(); fetchComplianceAlerts(); fetchPendingBookings(); fetchLiftRequests(); fetchLiftNotifications(); fetchBookingNotifications(); }}

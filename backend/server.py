@@ -74,6 +74,10 @@ class Token(BaseModel):
     token_type: str
     user: dict
 
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
 
 # ==================== CAR MODELS ====================
 

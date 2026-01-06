@@ -163,6 +163,27 @@ class MessageAcknowledgment(BaseModel):
     acknowledged_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+# ==================== TO DO LIST MODELS ====================
+
+class TodoItemCreate(BaseModel):
+    title: str
+    is_mandatory: bool = False
+
+class TodoItemUpdate(BaseModel):
+    title: Optional[str] = None
+    is_mandatory: Optional[bool] = None
+    is_completed: Optional[bool] = None
+
+class TodoItem(TodoItemCreate):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    is_completed: bool = False
+    created_by: Optional[str] = None
+    completed_by: Optional[str] = None
+    completed_at: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 # ==================== LIFT REQUEST MODELS ====================
 
 class LiftRequestCreate(BaseModel):

@@ -56,6 +56,14 @@ const Admin = () => {
     role: 'staff',
   });
 
+  const [createUserForm, setCreateUserForm] = useState({
+    email: '',
+    password: '',
+    role: 'staff',
+  });
+
+  const [showCreateUserForm, setShowCreateUserForm] = useState(false);
+
   const [messageForm, setMessageForm] = useState({
     title: '',
     content: '',

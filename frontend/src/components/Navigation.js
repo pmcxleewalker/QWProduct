@@ -346,9 +346,16 @@ const Navigation = () => {
                   </span>
                 )}
                 <button
+                  onClick={() => setShowChangePassword(true)}
+                  className="flex items-center p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                  title="Change Password"
+                >
+                  <Key size={18} />
+                </button>
+                <button
                   onClick={handleLogout}
                   data-testid="logout-button"
-                  className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                  className="flex items-center p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                   title="Logout"
                 >
                   <LogOut size={20} />
@@ -358,6 +365,12 @@ const Navigation = () => {
           </div>
         </div>
       </nav>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+      />
     </>
   );
 };

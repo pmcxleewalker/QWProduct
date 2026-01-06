@@ -311,7 +311,7 @@ const Dashboard = () => {
                       <span>Approve</span>
                     </button>
                     <button
-                      onClick={() => handleRejectBooking(group.group_id)}
+                      onClick={() => handleRejectClick(group)}
                       className="flex items-center space-x-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
                     >
                       <X size={16} />

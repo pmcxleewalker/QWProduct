@@ -1274,7 +1274,8 @@ class FleetManagementAPITester:
             self.test_status_operations,
             self.test_booking_operations,
             self.test_assistance_operations,
-            self.test_lift_request_operations
+            self.test_lift_request_operations,
+            self.test_booking_notifications_and_editing
         ]
         
         for test in tests:

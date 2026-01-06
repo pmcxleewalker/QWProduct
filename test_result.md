@@ -137,8 +137,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Lift Request CRUD API"
-    - "Request a Lift Feature"
+    - "Booking Notifications & Recurring Booking Editing"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

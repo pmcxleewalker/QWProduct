@@ -297,6 +297,48 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 # ==================== ADMIN USER MANAGEMENT ENDPOINTS ====================
 
+class DirectUserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    role: str = "staff"
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@api_router.post("/admin/users/create")
+async def create_user_directly(user_data: DirectUserCreate, current_admin: dict = Depends(get_current_admin_user)):
+    """Admin: Create a user account directly with a password"""
+    # Check if user already exists
+    existing_user = await db.users.find_one({"email": user_data.email}, {"_id": 0})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User with this email already exists")
+    
+    # Create new user
+    new_user = {
+        "id": str(uuid.uuid4()),
+        "email": user_data.email,
+        "password_hash": get_password_hash(user_data.password),
+        "role": user_data.role,
+        "is_active": True,
+        "must_change_password": True,  # Flag to prompt password change on first login
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": current_admin['email']
+    }
+    
+    await db.users.insert_one(new_user)
+    
+    return {
+        "message": "User created successfully",
+        "user": {
+            "id": new_user['id'],
+            "email": new_user['email'],
+            "role": new_user['role']
+        }
+    }
+
+
 @api_router.post("/admin/users/invite")
 async def invite_user(invite_data: UserInvite, current_admin: dict = Depends(get_current_admin_user)):
     """Admin: Create invite link for new user"""

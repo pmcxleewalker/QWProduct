@@ -188,6 +188,58 @@ const Admin = () => {
     setShowMessageForm(true);
   };
 
+  // To-Do List Operations
+  const handleTodoSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      if (editingTodo) {
+        await todoAPI.update(editingTodo.id, todoForm);
+        setSuccess('To-do item updated!');
+      } else {
+        await todoAPI.create(todoForm);
+        setSuccess('To-do item created!');
+      }
+      setShowTodoForm(false);
+      setEditingTodo(null);
+      setTodoForm({ title: '', is_mandatory: false });
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to save to-do item');
+    }
+  };
+
+  const handleToggleTodo = async (todo) => {
+    try {
+      await todoAPI.update(todo.id, { is_completed: !todo.is_completed });
+      fetchData();
+    } catch (err) {
+      setError('Failed to update to-do item');
+    }
+  };
+
+  const handleDeleteTodo = async (id) => {
+    if (!window.confirm('Delete this to-do item?')) return;
+    try {
+      await todoAPI.delete(id);
+      setSuccess('To-do item deleted');
+      fetchData();
+    } catch (err) {
+      setError('Failed to delete to-do item');
+    }
+  };
+
+  const handleEditTodo = (todo) => {
+    setEditingTodo(todo);
+    setTodoForm({
+      title: todo.title,
+      is_mandatory: todo.is_mandatory,
+    });
+    setShowTodoForm(true);
+  };
+
   // Car CRUD Operations
   const handleCarSubmit = async (e) => {
     e.preventDefault();

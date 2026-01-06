@@ -437,6 +437,22 @@ const Dashboard = () => {
         onAccept={handleAcceptLift}
         request={selectedRequest}
       />
+
+      {/* Reject Booking Modal */}
+      <RejectBookingModal
+        isOpen={showRejectModal}
+        onClose={() => { setShowRejectModal(false); setSelectedBookingGroup(null); }}
+        onReject={handleRejectBooking}
+        booking={selectedBookingGroup}
+      />
+
+      {/* Booking Notification Modal - Shows approval/rejection to staff */}
+      {bookingNotifications.length > 0 && (
+        <BookingNotificationModal
+          notification={bookingNotifications[0]}
+          onDismiss={handleDismissBookingNotification}
+        />
+      )}
     </div>
   );
 };

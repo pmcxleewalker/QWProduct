@@ -530,7 +530,8 @@ async def get_car_qr_code(car_id: str):
     if not car:
         raise HTTPException(status_code=404, detail="Car not found")
     
-    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+    # HARDCODED: Always use the production URL for QR codes
+    frontend_url = "https://cartrack-19.emergent.host"
     qr_url = f"{frontend_url}/status-update?car={car_id}"
     
     qr = qrcode.QRCode(version=1, box_size=10, border=5)

@@ -468,11 +468,22 @@ const Dashboard = () => {
                   </h3>
                   <p className="text-sm text-gray-500">{item.car.registration}</p>
                 </div>
-                <StatusBadge 
-                  status={item.car.current_status} 
-                  isBlocked={item.car.is_blocked}
-                  blockReason={item.car.block_reason}
-                />
+                <div className="flex items-center space-x-2">
+                  {user?.role === 'admin' && (
+                    <button
+                      onClick={() => handleOpenStatusModal({...item.car, car_id: item.car.id, location: item.latest_status?.location})}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Edit Status"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                  )}
+                  <StatusBadge 
+                    status={item.car.current_status} 
+                    isBlocked={item.car.is_blocked}
+                    blockReason={item.car.block_reason}
+                  />
+                </div>
               </div>
 
               {item.latest_status && (

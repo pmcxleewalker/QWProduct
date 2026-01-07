@@ -1160,6 +1160,19 @@ const Admin = () => {
                         </select>
                         
                         <button
+                          onClick={() => {
+                            setResetPasswordUser(user);
+                            setNewPassword('');
+                            setShowResetPasswordModal(true);
+                          }}
+                          className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center space-x-1"
+                          title="Reset Password"
+                        >
+                          <Key size={16} />
+                          <span>Reset PW</span>
+                        </button>
+                        
+                        <button
                           onClick={() => handleToggleUserStatus(user)}
                           data-testid={`toggle-status-${user.id}`}
                           className={`px-4 py-2 rounded-lg text-sm font-medium ${
@@ -1236,6 +1249,19 @@ const Admin = () => {
                           <option value="staff">Staff</option>
                           <option value="admin">Admin</option>
                         </select>
+                        
+                        <button
+                          onClick={() => {
+                            setResetPasswordUser(user);
+                            setNewPassword('');
+                            setShowResetPasswordModal(true);
+                          }}
+                          className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center space-x-1"
+                          title="Reset Password"
+                        >
+                          <Key size={16} />
+                          <span>Reset PW</span>
+                        </button>
                         
                         <button
                           onClick={() => handleToggleUserStatus(user)}

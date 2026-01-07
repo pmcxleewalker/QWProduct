@@ -1581,7 +1581,7 @@ const Admin = () => {
                                 </span>
                               )}
                               <span className="text-xs text-gray-500">
-                                Added by {todo.created_by}
+                                Added by {getUsername(todo.created_by)}
                               </span>
                             </div>
                           </div>

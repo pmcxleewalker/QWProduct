@@ -744,6 +744,141 @@ async def get_compliance_alerts(current_user: dict = Depends(get_current_admin_u
     return alerts
 
 
+# ==================== REPORTS ENDPOINTS ====================
+
+@api_router.get("/admin/reports/fleet-usage")
+async def get_fleet_usage_report(current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Get fleet usage report with booking statistics"""
+    
+    # Get all cars
+    cars = await db.cars.find({}, {"_id": 0}).to_list(100)
+    car_map = {car['id']: car for car in cars}
+    
+    # Get all bookings
+    bookings = await db.bookings.find({}, {"_id": 0}).to_list(1000)
+    
+    # Get all status updates
+    status_updates = await db.status_updates.find({}, {"_id": 0}).to_list(1000)
+    
+    # Calculate statistics per car
+    car_stats = {}
+    for car in cars:
+        car_id = car['id']
+        car_bookings = [b for b in bookings if b.get('car_id') == car_id]
+        car_statuses = [s for s in status_updates if s.get('car_id') == car_id]
+        
+        # Count bookings by status
+        approved_bookings = [b for b in car_bookings if b.get('status') == 'approved']
+        pending_bookings = [b for b in car_bookings if b.get('status') == 'pending_approval']
+        
+        # Count "In Use" status updates
+        in_use_count = len([s for s in car_statuses if s.get('status') == 'In Use'])
+        
+        car_stats[car_id] = {
+            "car_id": car_id,
+            "car_name": car['name'],
+            "registration": car['registration'],
+            "current_status": car.get('current_status', 'Unknown'),
+            "total_bookings": len(car_bookings),
+            "approved_bookings": len(approved_bookings),
+            "pending_bookings": len(pending_bookings),
+            "status_updates": len(car_statuses),
+            "in_use_count": in_use_count,
+            "is_blocked": car.get('is_blocked', False)
+        }
+    
+    # Sort cars by total bookings (most booked first)
+    sorted_by_bookings = sorted(car_stats.values(), key=lambda x: x['total_bookings'], reverse=True)
+    
+    # Sort cars by usage (in_use_count)
+    sorted_by_usage = sorted(car_stats.values(), key=lambda x: x['in_use_count'], reverse=True)
+    
+    # Get least used cars (non-zero bookings at bottom, zero at top)
+    least_used = sorted(car_stats.values(), key=lambda x: x['total_bookings'])
+    
+    # Calculate totals
+    total_bookings = sum(s['total_bookings'] for s in car_stats.values())
+    total_approved = sum(s['approved_bookings'] for s in car_stats.values())
+    total_pending = sum(s['pending_bookings'] for s in car_stats.values())
+    
+    # Get unique bookers
+    unique_users = set(b.get('user_name', '') for b in bookings if b.get('user_name'))
+    
+    return {
+        "summary": {
+            "total_vehicles": len(cars),
+            "total_bookings": total_bookings,
+            "approved_bookings": total_approved,
+            "pending_bookings": total_pending,
+            "unique_users": len(unique_users),
+            "blocked_vehicles": len([c for c in cars if c.get('is_blocked')])
+        },
+        "most_booked": sorted_by_bookings[:10],
+        "most_used": sorted_by_usage[:10],
+        "least_used": least_used[:10],
+        "all_cars": list(car_stats.values())
+    }
+
+
+@api_router.get("/admin/reports/export")
+async def export_fleet_report(current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Export fleet report as CSV"""
+    import csv
+    from io import StringIO
+    
+    # Get all cars
+    cars = await db.cars.find({}, {"_id": 0}).to_list(100)
+    
+    # Get all bookings
+    bookings = await db.bookings.find({}, {"_id": 0}).to_list(1000)
+    
+    # Get all status updates
+    status_updates = await db.status_updates.find({}, {"_id": 0}).to_list(1000)
+    
+    # Create CSV
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow([
+        'Car Name', 'Registration', 'Current Status', 'Total Bookings', 
+        'Approved Bookings', 'Pending Bookings', 'Status Updates', 
+        'In Use Count', 'Is Blocked'
+    ])
+    
+    # Data rows
+    for car in cars:
+        car_id = car['id']
+        car_bookings = [b for b in bookings if b.get('car_id') == car_id]
+        car_statuses = [s for s in status_updates if s.get('car_id') == car_id]
+        
+        approved = len([b for b in car_bookings if b.get('status') == 'approved'])
+        pending = len([b for b in car_bookings if b.get('status') == 'pending_approval'])
+        in_use = len([s for s in car_statuses if s.get('status') == 'In Use'])
+        
+        writer.writerow([
+            car['name'],
+            car['registration'],
+            car.get('current_status', 'Unknown'),
+            len(car_bookings),
+            approved,
+            pending,
+            len(car_statuses),
+            in_use,
+            'Yes' if car.get('is_blocked') else 'No'
+        ])
+    
+    # Return CSV response
+    output.seek(0)
+    from fastapi.responses import StreamingResponse
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=fleet_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"}
+    )
+
+
 # ==================== STATUS UPDATE ENDPOINTS ====================
 
 @api_router.post("/status", response_model=StatusUpdate)

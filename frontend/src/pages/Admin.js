@@ -85,9 +85,55 @@ const Admin = () => {
     is_mandatory: false,
   });
 
+  // Reports State
+  const [reportData, setReportData] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+
   useEffect(() => {
     fetchData();
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'reports') {
+      fetchReportData();
+    }
+  }, [activeTab]);
+
+  const fetchReportData = async () => {
+    setReportLoading(true);
+    try {
+      const response = await reportsAPI.getFleetUsage();
+      setReportData(response.data);
+    } catch (error) {
+      console.error('Error fetching report data:', error);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const handleExportReport = () => {
+    const token = localStorage.getItem('token');
+    const exportUrl = `${reportsAPI.exportCSV()}`;
+    
+    // Create a temporary link with authorization
+    fetch(exportUrl, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    .then(response => response.blob())
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fleet_report_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    })
+    .catch(error => console.error('Export failed:', error));
+  };
 
   const fetchData = async () => {
     try {

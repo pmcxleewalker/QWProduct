@@ -13,12 +13,14 @@ import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [liveStatus, setLiveStatus] = useState([]);
   const [complianceAlerts, setComplianceAlerts] = useState([]);
   const [pendingBookings, setPendingBookings] = useState([]);
   const [liftRequests, setLiftRequests] = useState([]);
   const [liftNotifications, setLiftNotifications] = useState([]);
   const [bookingNotifications, setBookingNotifications] = useState([]);
+  const [todos, setTodos] = useState([]);
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -27,6 +29,17 @@ const Dashboard = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [selectedBookingGroup, setSelectedBookingGroup] = useState(null);
+
+  const fetchTodos = useCallback(async () => {
+    if (user?.role === 'admin') {
+      try {
+        const response = await todoAPI.getAll();
+        setTodos(response.data);
+      } catch (error) {
+        console.error('Error fetching todos:', error);
+      }
+    }
+  }, [user?.role]);
 
   const fetchLiveStatus = async () => {
     try {

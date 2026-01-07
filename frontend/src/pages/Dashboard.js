@@ -316,7 +316,7 @@ const Dashboard = () => {
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 mt-1">
-                      Requested by <span className="font-medium">{group.created_by_email}</span> for {group.user_name}
+                      Requested by <span className="font-medium">{getUsername(group.created_by_email)}</span> for {group.user_name}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
                       Starts: {new Date(group.first_booking.start_time).toLocaleDateString('en-US', { 

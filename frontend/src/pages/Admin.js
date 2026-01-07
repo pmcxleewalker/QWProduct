@@ -436,6 +436,23 @@ const Admin = () => {
     }
   };
 
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    try {
+      await userAPI.resetPassword(resetPasswordUser.id, newPassword);
+      setSuccess(`Password reset successfully for ${getUsername(resetPasswordUser.email)}`);
+      setShowResetPasswordModal(false);
+      setResetPasswordUser(null);
+      setNewPassword('');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to reset password');
+    }
+  };
+
   const handleDownloadQR = (carId, carName) => {
     const qrUrl = carAPI.getQRCode(carId);
     const link = document.createElement('a');

@@ -7,7 +7,7 @@ import AcceptLiftModal from '../components/AcceptLiftModal';
 import LiftAcceptedNotification from '../components/LiftAcceptedNotification';
 import RejectBookingModal from '../components/RejectBookingModal';
 import BookingNotificationModal from '../components/BookingNotificationModal';
-import { RefreshCw, Clock, AlertTriangle, Check, X, Plus, ListTodo } from 'lucide-react';
+import { RefreshCw, Clock, AlertTriangle, Check, X, Plus, ListTodo, Edit2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 

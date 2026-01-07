@@ -3,6 +3,12 @@ import { useSearchParams } from 'react-router-dom';
 import { carAPI, assistanceAPI, userAPI, bookingAPI, messageAPI, todoAPI } from '../api/api';
 import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlock, Clock, Check, X, MessageSquare, ListTodo, Settings } from 'lucide-react';
 
+// Helper function to get username from email (removes @domain.com)
+const getUsername = (email) => {
+  if (!email) return '';
+  return email.split('@')[0];
+};
+
 const Admin = () => {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'cars');

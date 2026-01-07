@@ -392,7 +392,8 @@ async def invite_user(invite_data: UserInvite, current_admin: dict = Depends(get
     
     # Generate invite token
     token = generate_invite_token()
-    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+    # HARDCODED: Always use the production URL for invites
+    frontend_url = "https://cartrack-19.emergent.host"
     invite_url = f"{frontend_url}/register?token={token}"
     
     # Store invite in database

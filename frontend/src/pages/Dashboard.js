@@ -35,6 +35,15 @@ const Dashboard = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [selectedBookingGroup, setSelectedBookingGroup] = useState(null);
+  
+  // Status Edit Modal State
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [selectedCar, setSelectedCar] = useState(null);
+  const [statusForm, setStatusForm] = useState({
+    status: '',
+    notes: '',
+    location: ''
+  });
 
   const fetchTodos = useCallback(async () => {
     if (user?.role === 'admin') {

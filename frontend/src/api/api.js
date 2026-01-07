@@ -21,6 +21,12 @@ export const complianceAPI = {
   getAlerts: () => axios.get(`${API}/admin/compliance-alerts`),
 };
 
+// Reports API
+export const reportsAPI = {
+  getFleetUsage: () => axios.get(`${API}/admin/reports/fleet-usage`),
+  exportCSV: () => `${API}/admin/reports/export`,
+};
+
 // Status API
 export const statusAPI = {
   create: (data) => axios.post(`${API}/status`, data),

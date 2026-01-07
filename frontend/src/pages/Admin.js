@@ -617,6 +617,18 @@ const Admin = () => {
             </span>
           )}
         </button>
+        <button
+          onClick={() => setActiveTab('reports')}
+          data-testid="tab-reports"
+          className={`pb-4 px-4 font-medium transition-colors ${
+            activeTab === 'reports'
+              ? 'border-b-2 border-indigo-600 text-indigo-600'
+              : 'text-gray-600 hover:text-indigo-600'
+          }`}
+        >
+          <BarChart3 className="inline mr-2" size={20} />
+          Reports
+        </button>
       </div>
 
       {/* To-Do Alert Banner - Shows at top when there are pending mandatory tasks */}

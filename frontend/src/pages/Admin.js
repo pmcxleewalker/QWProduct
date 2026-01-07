@@ -1185,7 +1185,7 @@ const Admin = () => {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-bold text-gray-900">{user.email}</h3>
+                          <h3 className="text-lg font-bold text-gray-900">{getUsername(user.email)}</h3>
                           <span className="px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
                             {user.role}
                           </span>

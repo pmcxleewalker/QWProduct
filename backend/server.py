@@ -633,6 +633,44 @@ async def unblock_car(car_id: str, unblock_data: CarUnblockCreate, current_user:
     return {"message": "Car unblocked successfully", "car_id": car_id}
 
 
+# ==================== ADMIN STATUS UPDATE ENDPOINT ====================
+
+class AdminStatusUpdate(BaseModel):
+    status: str
+    notes: Optional[str] = ""
+    location: Optional[str] = ""
+
+@api_router.put("/admin/cars/{car_id}/status")
+async def admin_update_car_status(car_id: str, status_data: AdminStatusUpdate, current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Update a car's status directly"""
+    car = await db.cars.find_one({"id": car_id}, {"_id": 0})
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+    
+    # Create a status update record
+    status_obj = StatusUpdate(
+        car_id=car_id,
+        status=status_data.status,
+        notes=status_data.notes or f"Status updated by admin",
+        user_name=current_user['email'],
+        location=status_data.location or ""
+    )
+    doc = serialize_datetime(status_obj.model_dump())
+    await db.status_updates.insert_one(doc)
+    
+    # Update the car's current status
+    await db.cars.update_one(
+        {"id": car_id},
+        {"$set": {"current_status": status_data.status}}
+    )
+    
+    return {
+        "message": f"Car status updated to '{status_data.status}'",
+        "car_id": car_id,
+        "status": status_data.status
+    }
+
+
 # ==================== COMPLIANCE ALERTS ENDPOINT ====================
 
 @api_router.get("/admin/compliance-alerts")

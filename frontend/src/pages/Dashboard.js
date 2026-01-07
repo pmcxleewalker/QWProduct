@@ -11,6 +11,12 @@ import { RefreshCw, Clock, AlertTriangle, Check, X, Plus, ListTodo } from 'lucid
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+// Helper function to get username from email (removes @domain.com)
+const getUsername = (email) => {
+  if (!email) return '';
+  return email.split('@')[0];
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();

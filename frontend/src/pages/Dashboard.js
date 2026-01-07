@@ -178,6 +178,29 @@ const Dashboard = () => {
     }
   };
 
+  // Status Edit Functions
+  const handleOpenStatusModal = (car) => {
+    setSelectedCar(car);
+    setStatusForm({
+      status: car.current_status || 'Free',
+      notes: '',
+      location: car.location || ''
+    });
+    setShowStatusModal(true);
+  };
+
+  const handleUpdateStatus = async (e) => {
+    e.preventDefault();
+    try {
+      await carAPI.updateStatus(selectedCar.car_id, statusForm);
+      setShowStatusModal(false);
+      setSelectedCar(null);
+      fetchLiveStatus();
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
   const handleAcceptLiftClick = (request) => {
     setSelectedRequest(request);
     setShowAcceptModal(true);

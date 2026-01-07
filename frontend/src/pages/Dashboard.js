@@ -368,7 +368,7 @@ const Dashboard = () => {
           )}
         </div>
         <button
-          onClick={() => { fetchLiveStatus(); fetchComplianceAlerts(); fetchPendingBookings(); fetchLiftRequests(); fetchLiftNotifications(); fetchBookingNotifications(); }}
+          onClick={() => { fetchLiveStatus(); fetchComplianceAlerts(); fetchPendingBookings(); fetchLiftRequests(); fetchLiftNotifications(); fetchBookingNotifications(); fetchTodos(); }}
           data-testid="refresh-button"
           className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
@@ -376,6 +376,32 @@ const Dashboard = () => {
           <span>Refresh</span>
         </button>
       </div>
+
+      {/* Admin To-Do Alert Banner */}
+      {user?.role === 'admin' && todos.filter(t => !t.is_completed).length > 0 && (
+        <div className="mb-6 bg-teal-50 border-2 border-teal-400 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="bg-teal-500 rounded-full p-2">
+              <ListTodo size={24} className="text-white" />
+            </div>
+            <div>
+              <h3 className="font-bold text-teal-800">📋 To-Do List Reminder</h3>
+              <p className="text-sm text-teal-700">
+                You have <span className="font-bold">{todos.filter(t => !t.is_completed).length}</span> pending task(s)
+                {todos.filter(t => !t.is_completed && t.is_mandatory).length > 0 && (
+                  <span className="text-amber-600 font-medium"> ({todos.filter(t => !t.is_completed && t.is_mandatory).length} mandatory)</span>
+                )}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/admin?tab=todos')}
+            className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            View Tasks
+          </button>
+        </div>
+      )}
 
       {/* Loading State */}
       {loading && liveStatus.length === 0 ? (

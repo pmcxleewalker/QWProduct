@@ -63,6 +63,7 @@ export const userAPI = {
   update: (id, data) => axios.put(`${API}/admin/users/${id}`, data),
   delete: (id) => axios.delete(`${API}/admin/users/${id}`),
   changePassword: (data) => axios.post(`${API}/auth/change-password`, data),
+  resetPassword: (userId, newPassword) => axios.post(`${API}/admin/users/${userId}/reset-password`, { new_password: newPassword }),
 };
 
 // Admin Messages API

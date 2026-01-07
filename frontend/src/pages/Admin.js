@@ -1272,7 +1272,7 @@ const Admin = () => {
                         {getCarName(group.car_id)}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        Requested by: <span className="font-medium">{group.created_by_email}</span>
+                        Requested by: <span className="font-medium">{getUsername(group.created_by_email)}</span>
                       </p>
                       <p className="text-sm text-gray-600">
                         Booked for: <span className="font-medium">{group.user_name}</span>

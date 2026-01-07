@@ -351,7 +351,7 @@ const Dashboard = () => {
       <div className="flex justify-between items-center mb-6">
         <div>
           {/* Special greeting for Carly */}
-          {user?.email?.toLowerCase() === 'carlyodonvan@bluebirdcare.ie' ? (
+          {user?.email?.toLowerCase() === 'carlyodonovan@bluebirdcare.ie' ? (
             <>
               <h1 className="text-3xl font-bold text-gray-900 flex items-center" data-testid="dashboard-title">
                 <span className="mr-2">🐾</span>

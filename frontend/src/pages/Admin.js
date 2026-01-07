@@ -1636,7 +1636,7 @@ const Admin = () => {
                                 </span>
                               )}
                               <span className="text-xs text-gray-400">
-                                Completed by {todo.completed_by}
+                                Completed by {getUsername(todo.completed_by)}
                               </span>
                             </div>
                           </div>

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { carAPI, assistanceAPI, userAPI, bookingAPI, messageAPI, todoAPI } from '../api/api';
 import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlock, Clock, Check, X, MessageSquare, ListTodo, Settings } from 'lucide-react';
 
 const Admin = () => {
-  const [activeTab, setActiveTab] = useState('cars');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'cars');
   const [cars, setCars] = useState([]);
   const [providers, setProviders] = useState([]);
   const [users, setUsers] = useState([]);

@@ -1765,6 +1765,196 @@ const Admin = () => {
         </div>
       )}
 
+      {/* Reports Tab */}
+      {activeTab === 'reports' && (
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">Fleet Usage Reports</h2>
+            <button
+              onClick={handleExportReport}
+              className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
+              <Download size={18} />
+              <span>Export CSV</span>
+            </button>
+          </div>
+
+          {reportLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+              <p className="mt-4 text-gray-500">Loading report data...</p>
+            </div>
+          ) : reportData ? (
+            <div className="space-y-6">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="bg-white rounded-lg shadow p-4 text-center">
+                  <p className="text-3xl font-bold text-indigo-600">{reportData.summary.total_vehicles}</p>
+                  <p className="text-sm text-gray-500">Total Vehicles</p>
+                </div>
+                <div className="bg-white rounded-lg shadow p-4 text-center">
+                  <p className="text-3xl font-bold text-blue-600">{reportData.summary.total_bookings}</p>
+                  <p className="text-sm text-gray-500">Total Bookings</p>
+                </div>
+                <div className="bg-white rounded-lg shadow p-4 text-center">
+                  <p className="text-3xl font-bold text-green-600">{reportData.summary.approved_bookings}</p>
+                  <p className="text-sm text-gray-500">Approved</p>
+                </div>
+                <div className="bg-white rounded-lg shadow p-4 text-center">
+                  <p className="text-3xl font-bold text-orange-600">{reportData.summary.pending_bookings}</p>
+                  <p className="text-sm text-gray-500">Pending</p>
+                </div>
+                <div className="bg-white rounded-lg shadow p-4 text-center">
+                  <p className="text-3xl font-bold text-purple-600">{reportData.summary.unique_users}</p>
+                  <p className="text-sm text-gray-500">Unique Users</p>
+                </div>
+                <div className="bg-white rounded-lg shadow p-4 text-center">
+                  <p className="text-3xl font-bold text-red-600">{reportData.summary.blocked_vehicles}</p>
+                  <p className="text-sm text-gray-500">Blocked</p>
+                </div>
+              </div>
+
+              {/* Most Booked & Most Used */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Most Booked Cars */}
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <TrendingUp className="mr-2 text-green-600" size={20} />
+                    Most Booked Cars
+                  </h3>
+                  <div className="space-y-3">
+                    {reportData.most_booked.slice(0, 5).map((car, index) => (
+                      <div key={car.car_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                            index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-amber-600' : 'bg-gray-300'
+                          }`}>
+                            {index + 1}
+                          </span>
+                          <div>
+                            <p className="font-medium">{car.car_name}</p>
+                            <p className="text-xs text-gray-500">{car.registration}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-indigo-600">{car.total_bookings}</p>
+                          <p className="text-xs text-gray-500">bookings</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Most Used Cars (by status updates) */}
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <Car className="mr-2 text-blue-600" size={20} />
+                    Most Active Cars
+                  </h3>
+                  <div className="space-y-3">
+                    {reportData.most_used.slice(0, 5).map((car, index) => (
+                      <div key={car.car_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                            index === 0 ? 'bg-blue-500' : index === 1 ? 'bg-blue-400' : index === 2 ? 'bg-blue-300' : 'bg-gray-300'
+                          }`}>
+                            {index + 1}
+                          </span>
+                          <div>
+                            <p className="font-medium">{car.car_name}</p>
+                            <p className="text-xs text-gray-500">{car.registration}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-blue-600">{car.in_use_count}</p>
+                          <p className="text-xs text-gray-500">times used</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Least Used Cars */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                  <TrendingDown className="mr-2 text-red-600" size={20} />
+                  Least Used Cars
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {reportData.least_used.slice(0, 6).map((car) => (
+                    <div key={car.car_id} className={`p-3 rounded-lg border ${
+                      car.total_bookings === 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">{car.car_name}</p>
+                          <p className="text-xs text-gray-500">{car.registration}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-bold ${car.total_bookings === 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                            {car.total_bookings}
+                          </p>
+                          <p className="text-xs text-gray-500">bookings</p>
+                        </div>
+                      </div>
+                      {car.total_bookings === 0 && (
+                        <p className="text-xs text-red-600 mt-2">⚠️ Never booked</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Full Fleet Table */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Complete Fleet Statistics</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="text-left p-3 font-medium">Vehicle</th>
+                        <th className="text-left p-3 font-medium">Registration</th>
+                        <th className="text-center p-3 font-medium">Status</th>
+                        <th className="text-center p-3 font-medium">Total Bookings</th>
+                        <th className="text-center p-3 font-medium">Approved</th>
+                        <th className="text-center p-3 font-medium">Times Used</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportData.all_cars.map((car) => (
+                        <tr key={car.car_id} className="border-b hover:bg-gray-50">
+                          <td className="p-3 font-medium">{car.car_name}</td>
+                          <td className="p-3 text-gray-600">{car.registration}</td>
+                          <td className="p-3 text-center">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              car.is_blocked ? 'bg-purple-100 text-purple-800' :
+                              car.current_status === 'Free' ? 'bg-green-100 text-green-800' :
+                              car.current_status === 'In Use' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {car.is_blocked ? 'Blocked' : car.current_status}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center font-medium">{car.total_bookings}</td>
+                          <td className="p-3 text-center text-green-600">{car.approved_bookings}</td>
+                          <td className="p-3 text-center text-blue-600">{car.in_use_count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-white rounded-lg shadow">
+              <BarChart3 className="mx-auto text-gray-400" size={48} />
+              <p className="text-gray-500 mt-4">No report data available</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Password Reset Modal */}
       {showResetPasswordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

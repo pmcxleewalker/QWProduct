@@ -382,6 +382,33 @@ async def create_user_directly(user_data: DirectUserCreate, current_admin: dict 
     }
 
 
+class AdminPasswordReset(BaseModel):
+    new_password: str
+
+@api_router.post("/admin/users/{user_id}/reset-password")
+async def admin_reset_user_password(user_id: str, data: AdminPasswordReset, current_admin: dict = Depends(get_current_admin_user)):
+    """Admin: Reset any user's password"""
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    # Find the user
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update password
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "password_hash": get_password_hash(data.new_password),
+            "password_reset_by": current_admin['email'],
+            "password_reset_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": f"Password reset successfully for {user['email']}"}
+
+
 @api_router.post("/admin/users/invite")
 async def invite_user(invite_data: UserInvite, current_admin: dict = Depends(get_current_admin_user)):
     """Admin: Create invite link for new user"""

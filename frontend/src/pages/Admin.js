@@ -63,6 +63,11 @@ const Admin = () => {
   });
 
   const [showCreateUserForm, setShowCreateUserForm] = useState(false);
+  
+  // Password Reset State
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [resetPasswordUser, setResetPasswordUser] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
 
   const [messageForm, setMessageForm] = useState({
     title: '',

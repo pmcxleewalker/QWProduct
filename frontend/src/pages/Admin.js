@@ -527,7 +527,7 @@ const Admin = () => {
         <button
           onClick={() => setActiveTab('todos')}
           data-testid="tab-todos"
-          className={`pb-4 px-4 font-medium transition-colors ${
+          className={`pb-4 px-4 font-medium transition-colors relative ${
             activeTab === 'todos'
               ? 'border-b-2 border-teal-600 text-teal-600'
               : 'text-gray-600 hover:text-teal-600'
@@ -535,8 +535,36 @@ const Admin = () => {
         >
           <ListTodo className="inline mr-2" size={20} />
           To-Do List
+          {todos.filter(t => !t.is_completed).length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-teal-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              {todos.filter(t => !t.is_completed).length}
+            </span>
+          )}
         </button>
       </div>
+
+      {/* To-Do Alert Banner - Shows at top when there are pending mandatory tasks */}
+      {todos.filter(t => !t.is_completed && t.is_mandatory).length > 0 && (
+        <div className="mb-6 bg-amber-50 border-2 border-amber-400 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="bg-amber-400 rounded-full p-2">
+              <ListTodo size={24} className="text-white" />
+            </div>
+            <div>
+              <h3 className="font-bold text-amber-800">⚠️ Mandatory Tasks Pending</h3>
+              <p className="text-sm text-amber-700">
+                You have {todos.filter(t => !t.is_completed && t.is_mandatory).length} mandatory task(s) that need attention.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveTab('todos')}
+            className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            View Tasks
+          </button>
+        </div>
+      )}
 
       {/* Cars Tab */}
       {activeTab === 'cars' && (

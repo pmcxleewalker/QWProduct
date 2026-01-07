@@ -561,6 +561,84 @@ const Dashboard = () => {
           onDismiss={handleDismissBookingNotification}
         />
       )}
+
+      {/* Status Edit Modal - Admin Only */}
+      {showStatusModal && selectedCar && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h3 className="text-lg font-bold">Update Car Status</h3>
+              <button
+                onClick={() => { setShowStatusModal(false); setSelectedCar(null); }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateStatus} className="p-4 space-y-4">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="font-medium text-gray-900">{selectedCar.name}</p>
+                <p className="text-sm text-gray-500">{selectedCar.registration}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                <select
+                  value={statusForm.status}
+                  onChange={(e) => setStatusForm({...statusForm, status: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="Free">🟢 Free</option>
+                  <option value="In Use">🔵 In Use</option>
+                  <option value="Booked">🟡 Booked</option>
+                  <option value="Maintenance">🔧 Maintenance</option>
+                  <option value="Out of Service">🔴 Out of Service</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                <input
+                  type="text"
+                  value={statusForm.location}
+                  onChange={(e) => setStatusForm({...statusForm, location: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., Main Office, Dublin City"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                <textarea
+                  value={statusForm.notes}
+                  onChange={(e) => setStatusForm({...statusForm, notes: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="Add any notes about this status change..."
+                />
+              </div>
+              
+              <div className="flex space-x-4 pt-2">
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 font-medium"
+                >
+                  Update Status
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowStatusModal(false); setSelectedCar(null); }}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -523,46 +523,46 @@ const Admin = () => {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6" data-testid="success-message">
-          <p className="text-green-800">{success}</p>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6" data-testid="success-message">
+          <p className="text-green-800 text-sm sm:text-base">{success}</p>
         </div>
       )}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6" data-testid="error-message">
-          <p className="text-red-800">{error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6" data-testid="error-message">
+          <p className="text-red-800 text-sm sm:text-base">{error}</p>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex space-x-4 mb-6 border-b">
+      {/* Tabs - Scrollable on mobile */}
+      <div className="flex space-x-1 sm:space-x-4 mb-4 sm:mb-6 border-b overflow-x-auto pb-px -mx-3 px-3 sm:mx-0 sm:px-0">
         <button
           onClick={() => setActiveTab('cars')}
           data-testid="tab-cars"
-          className={`pb-4 px-4 font-medium transition-colors ${
+          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
             activeTab === 'cars'
               ? 'border-b-2 border-blue-600 text-blue-600'
               : 'text-gray-600 hover:text-blue-600'
           }`}
         >
-          <Car className="inline mr-2" size={20} />
-          Manage Cars
+          <Car className="inline mr-1 sm:mr-2" size={18} />
+          <span className="hidden sm:inline">Manage </span>Cars
         </button>
         <button
           onClick={() => setActiveTab('providers')}
           data-testid="tab-providers"
-          className={`pb-4 px-4 font-medium transition-colors ${
+          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
             activeTab === 'providers'
               ? 'border-b-2 border-blue-600 text-blue-600'
               : 'text-gray-600 hover:text-blue-600'
           }`}
         >
-          <Phone className="inline mr-2" size={20} />
-          Manage Providers
+          <Phone className="inline mr-1 sm:mr-2" size={18} />
+          Providers
         </button>
         <button
           onClick={() => setActiveTab('users')}
           data-testid="tab-users"
-          className={`pb-4 px-4 font-medium transition-colors ${
+          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
             activeTab === 'users'
               ? 'border-b-2 border-blue-600 text-blue-600'
               : 'text-gray-600 hover:text-blue-600'

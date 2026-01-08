@@ -452,30 +452,30 @@ const Dashboard = () => {
           <p className="text-gray-500">No cars in the fleet. Add cars from the Admin panel.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {liveStatus.map((item) => (
             <div
               key={item.car.id}
               data-testid={`car-card-${item.car.id}`}
-              className={`bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow ${
+              className={`bg-white rounded-lg shadow-md p-4 sm:p-5 hover:shadow-lg transition-shadow ${
                 item.car.is_blocked ? 'border-2 border-purple-400' : ''
               }`}
             >
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900" data-testid={`car-name-${item.car.id}`}>
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate" data-testid={`car-name-${item.car.id}`}>
                     {item.car.name}
                   </h3>
-                  <p className="text-sm text-gray-500">{item.car.registration}</p>
+                  <p className="text-xs sm:text-sm text-gray-500">{item.car.registration}</p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1 sm:space-x-2 ml-2">
                   {user?.role === 'admin' && (
                     <button
                       onClick={() => handleOpenStatusModal({...item.car, car_id: item.car.id, location: item.latest_status?.location})}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       title="Edit Status"
                     >
-                      <Edit2 size={18} />
+                      <Edit2 size={16} />
                     </button>
                   )}
                   <StatusBadge 

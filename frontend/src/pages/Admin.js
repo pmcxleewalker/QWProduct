@@ -518,8 +518,8 @@ const Admin = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6" data-testid="admin-title">Admin Panel</h1>
+    <div className="max-w-7xl mx-auto px-3 py-4 sm:px-6 lg:px-8 pb-20 sm:pb-8">
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6" data-testid="admin-title">Admin Panel</h1>
 
       {/* Success/Error Messages */}
       {success && (

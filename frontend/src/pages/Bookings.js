@@ -422,32 +422,32 @@ const Bookings = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
+    <div className="max-w-7xl mx-auto px-3 py-4 sm:px-6 lg:px-8 pb-20 sm:pb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-3 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900" data-testid="bookings-title">Car Bookings</h1>
-          <p className="text-sm text-gray-500 mt-1">Auto-updates every 30 seconds</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" data-testid="bookings-title">Car Bookings</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">Auto-updates every 30 seconds</p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto">
           {/* View Toggle */}
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode('calendar')}
-              className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm transition-colors ${
+              className={`flex items-center space-x-1 px-2 sm:px-3 py-1.5 rounded-md text-sm transition-colors ${
                 viewMode === 'calendar' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
               }`}
             >
               <Grid size={16} />
-              <span className="hidden md:inline">Calendar</span>
+              <span className="hidden sm:inline">Calendar</span>
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm transition-colors ${
+              className={`flex items-center space-x-1 px-2 sm:px-3 py-1.5 rounded-md text-sm transition-colors ${
                 viewMode === 'list' ? 'bg-white text-blue-600 shadow' : 'text-gray-600'
               }`}
             >
               <List size={16} />
-              <span className="hidden md:inline">List</span>
+              <span className="hidden sm:inline">List</span>
             </button>
           </div>
           

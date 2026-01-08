@@ -380,27 +380,27 @@ const Dashboard = () => {
       )}
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
         <div>
           {/* Special greeting for Carly */}
           {user?.email?.toLowerCase() === 'carlyodonovan@bluebirdcare.ie' ? (
             <>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center" data-testid="dashboard-title">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center" data-testid="dashboard-title">
                 <span className="mr-2">🐾</span>
                 Welcome, Carly!
                 <span className="ml-2">🐾</span>
               </h1>
-              <p className="text-sm text-gray-500 flex items-center mt-1">
-                <Clock size={14} className="mr-1" />
-                Last updated: {lastUpdated ? formatTime(lastUpdated) : 'Loading...'}
+              <p className="text-xs sm:text-sm text-gray-500 flex items-center mt-1">
+                <Clock size={12} className="mr-1" />
+                Updated: {lastUpdated ? formatTime(lastUpdated) : 'Loading...'}
               </p>
             </>
           ) : (
             <>
-              <h1 className="text-3xl font-bold text-gray-900" data-testid="dashboard-title">Fleet Status</h1>
-              <p className="text-sm text-gray-500 flex items-center mt-1">
-                <Clock size={14} className="mr-1" />
-                Last updated: {lastUpdated ? formatTime(lastUpdated) : 'Loading...'}
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" data-testid="dashboard-title">Fleet Status</h1>
+              <p className="text-xs sm:text-sm text-gray-500 flex items-center mt-1">
+                <Clock size={12} className="mr-1" />
+                Updated: {lastUpdated ? formatTime(lastUpdated) : 'Loading...'}
               </p>
             </>
           )}
@@ -408,7 +408,7 @@ const Dashboard = () => {
         <button
           onClick={() => { fetchLiveStatus(); fetchComplianceAlerts(); fetchPendingBookings(); fetchLiftRequests(); fetchLiftNotifications(); fetchBookingNotifications(); fetchTodos(); }}
           data-testid="refresh-button"
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
         >
           <RefreshCw size={18} />
           <span>Refresh</span>
@@ -417,7 +417,7 @@ const Dashboard = () => {
 
       {/* Admin To-Do Alert Banner */}
       {user?.role === 'admin' && todos.filter(t => !t.is_completed).length > 0 && (
-        <div className="mb-6 bg-teal-50 border-2 border-teal-400 rounded-lg p-4 flex items-center justify-between">
+        <div className="mb-4 sm:mb-6 bg-teal-50 border-2 border-teal-400 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center space-x-3">
             <div className="bg-teal-500 rounded-full p-2">
               <ListTodo size={24} className="text-white" />

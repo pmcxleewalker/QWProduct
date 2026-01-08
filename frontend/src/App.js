@@ -11,6 +11,7 @@ import Bookings from './pages/Bookings';
 import Assistance from './pages/Assistance';
 import Admin from './pages/Admin';
 import Navigation from './components/Navigation';
+import MobileBottomNav from './components/MobileBottomNav';
 import MessageAcknowledgmentModal from './components/MessageAcknowledgmentModal';
 import './App.css';
 
@@ -51,7 +52,7 @@ const AppContent = () => {
           element={
             <ProtectedRoute>
               <Navigation />
-              <div className="pt-14 pb-20 md:pt-0 md:pb-0">
+              <div className="pt-16 pb-20 sm:pb-4">
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/live-sheet" element={<LiveSheet />} />
@@ -67,6 +68,7 @@ const AppContent = () => {
                   />
                 </Routes>
               </div>
+              <MobileBottomNav />
             </ProtectedRoute>
           }
         />

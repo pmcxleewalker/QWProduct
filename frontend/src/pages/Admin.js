@@ -574,16 +574,16 @@ const Admin = () => {
         <button
           onClick={() => setActiveTab('approvals')}
           data-testid="tab-approvals"
-          className={`pb-4 px-4 font-medium transition-colors relative ${
+          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors relative whitespace-nowrap text-sm sm:text-base ${
             activeTab === 'approvals'
               ? 'border-b-2 border-orange-600 text-orange-600'
               : 'text-gray-600 hover:text-orange-600'
           }`}
         >
-          <Clock className="inline mr-2" size={20} />
+          <Clock className="inline mr-1 sm:mr-2" size={18} />
           Approvals
           {pendingBookings.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center text-[10px] sm:text-xs">
               {pendingBookings.length}
             </span>
           )}
@@ -591,28 +591,29 @@ const Admin = () => {
         <button
           onClick={() => setActiveTab('messages')}
           data-testid="tab-messages"
-          className={`pb-4 px-4 font-medium transition-colors ${
+          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
             activeTab === 'messages'
               ? 'border-b-2 border-purple-600 text-purple-600'
               : 'text-gray-600 hover:text-purple-600'
           }`}
         >
-          <MessageSquare className="inline mr-2" size={20} />
-          Messages
+          <MessageSquare className="inline mr-1 sm:mr-2" size={18} />
+          <span className="hidden sm:inline">Messages</span>
+          <span className="sm:hidden">Msgs</span>
         </button>
         <button
           onClick={() => setActiveTab('todos')}
           data-testid="tab-todos"
-          className={`pb-4 px-4 font-medium transition-colors relative ${
+          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors relative whitespace-nowrap text-sm sm:text-base ${
             activeTab === 'todos'
               ? 'border-b-2 border-teal-600 text-teal-600'
               : 'text-gray-600 hover:text-teal-600'
           }`}
         >
-          <ListTodo className="inline mr-2" size={20} />
-          To-Do List
+          <ListTodo className="inline mr-1 sm:mr-2" size={18} />
+          To-Do
           {todos.filter(t => !t.is_completed).length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-teal-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 bg-teal-500 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center text-[10px] sm:text-xs">
               {todos.filter(t => !t.is_completed).length}
             </span>
           )}
@@ -620,23 +621,23 @@ const Admin = () => {
         <button
           onClick={() => setActiveTab('reports')}
           data-testid="tab-reports"
-          className={`pb-4 px-4 font-medium transition-colors ${
+          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
             activeTab === 'reports'
               ? 'border-b-2 border-indigo-600 text-indigo-600'
               : 'text-gray-600 hover:text-indigo-600'
           }`}
         >
-          <BarChart3 className="inline mr-2" size={20} />
+          <BarChart3 className="inline mr-1 sm:mr-2" size={18} />
           Reports
         </button>
       </div>
 
       {/* To-Do Alert Banner - Shows at top when there are pending mandatory tasks */}
       {todos.filter(t => !t.is_completed && t.is_mandatory).length > 0 && (
-        <div className="mb-6 bg-amber-50 border-2 border-amber-400 rounded-lg p-4 flex items-center justify-between">
+        <div className="mb-4 sm:mb-6 bg-amber-50 border-2 border-amber-400 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
           <div className="flex items-center space-x-3">
             <div className="bg-amber-400 rounded-full p-2">
-              <ListTodo size={24} className="text-white" />
+              <ListTodo size={20} className="text-white" />
             </div>
             <div>
               <h3 className="font-bold text-amber-800">⚠️ Mandatory Tasks Pending</h3>

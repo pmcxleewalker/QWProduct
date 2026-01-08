@@ -265,7 +265,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-3 py-4 sm:px-6 lg:px-8">
       {/* Lift Accepted Notifications - Show as modal */}
       {liftNotifications.length > 0 && (
         <LiftAcceptedNotification
@@ -288,10 +288,10 @@ const Dashboard = () => {
 
       {/* Compliance Alerts Section - Admin Only */}
       {user?.role === 'admin' && complianceAlerts.length > 0 && (
-        <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-lg p-4">
-          <div className="flex items-center mb-3">
-            <AlertTriangle className="text-red-600 mr-2" size={24} />
-            <h2 className="text-lg font-bold text-red-800">Compliance Alerts - Action Required</h2>
+        <div className="mb-4 bg-red-50 border-2 border-red-300 rounded-lg p-3 sm:p-4">
+          <div className="flex items-center mb-2 sm:mb-3">
+            <AlertTriangle className="text-red-600 mr-2" size={20} />
+            <h2 className="text-base sm:text-lg font-bold text-red-800">Compliance Alerts</h2>
           </div>
           <div className="space-y-3">
             {complianceAlerts.map((car) => (

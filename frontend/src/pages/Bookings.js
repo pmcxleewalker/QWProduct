@@ -237,6 +237,22 @@ const Bookings = () => {
            today.getFullYear() === year;
   };
 
+  // Handle clicking on a date to show all bookings for that day
+  const handleDateClick = (day, dayBookings) => {
+    if (dayBookings.length === 0) return;
+    
+    const { year, month } = getDaysInMonth(currentDate);
+    const dateStr = new Date(year, month, day).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    setSelectedDateStr(dateStr);
+    setSelectedDateBookings(dayBookings);
+  };
+
   const renderCalendar = () => {
     const { daysInMonth, startingDay, year, month } = getDaysInMonth(currentDate);
     const days = [];
@@ -250,7 +266,7 @@ const Bookings = () => {
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDay; i++) {
       days.push(
-        <div key={`empty-${i}`} className="h-24 md:h-32 bg-gray-50 border border-gray-100"></div>
+        <div key={`empty-${i}`} className="h-20 sm:h-24 md:h-32 bg-gray-50 border border-gray-100"></div>
       );
     }
 
@@ -258,35 +274,43 @@ const Bookings = () => {
     for (let day = 1; day <= daysInMonth; day++) {
       const dayBookings = getBookingsForDate(day);
       const todayClass = isToday(day) ? 'bg-blue-50 border-blue-300' : 'bg-white';
+      const hasBookings = dayBookings.length > 0;
       
       days.push(
         <div 
           key={day} 
-          className={`h-24 md:h-32 ${todayClass} border border-gray-200 p-1 overflow-hidden hover:bg-gray-50 transition-colors`}
+          onClick={() => handleDateClick(day, dayBookings)}
+          className={`h-20 sm:h-24 md:h-32 ${todayClass} border border-gray-200 p-1 overflow-hidden hover:bg-gray-50 transition-colors ${hasBookings ? 'cursor-pointer' : ''}`}
         >
-          <div className={`text-sm font-medium mb-1 ${isToday(day) ? 'text-blue-600' : 'text-gray-700'}`}>
-            {day}
+          <div className="flex justify-between items-start">
+            <span className={`text-xs sm:text-sm font-medium ${isToday(day) ? 'text-blue-600' : 'text-gray-700'}`}>
+              {day}
+            </span>
+            {hasBookings && (
+              <span className="bg-blue-100 text-blue-700 text-[10px] sm:text-xs px-1 rounded-full">
+                {dayBookings.length}
+              </span>
+            )}
           </div>
-          <div className="space-y-0.5 overflow-y-auto max-h-16 md:max-h-24">
-            {dayBookings.slice(0, 3).map((booking, idx) => {
+          <div className="space-y-0.5 overflow-y-auto max-h-12 sm:max-h-16 md:max-h-24 mt-0.5">
+            {dayBookings.slice(0, 2).map((booking, idx) => {
               const isPending = booking.status === 'pending_approval';
               return (
                 <div 
                   key={booking.id}
-                  onClick={() => setSelectedBooking(booking)}
-                  className={`${isPending ? 'bg-gray-400' : getCarColor(booking.car_id)} text-white text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity ${isPending ? 'opacity-60' : ''}`}
+                  onClick={(e) => { e.stopPropagation(); setSelectedBooking(booking); }}
+                  className={`${isPending ? 'bg-gray-400' : getCarColor(booking.car_id)} text-white text-[10px] sm:text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity ${isPending ? 'opacity-60' : ''}`}
                   title={isPending ? "Pending admin approval" : "Click to view details"}
                 >
                   {isPending && <span className="mr-1">⏳</span>}
-                  <span className="hidden md:inline">{formatTime(booking.start_time)} </span>
+                  <span className="hidden sm:inline">{formatTime(booking.start_time)} </span>
                   {selectedCar === 'all' ? getCarName(booking.car_id) : booking.user_name}
-                  {isPending && <span className="ml-1 text-xs opacity-75">(Pending)</span>}
                 </div>
               );
             })}
-            {dayBookings.length > 3 && (
-              <div className="text-xs text-gray-500 px-1">
-                +{dayBookings.length - 3} more
+            {dayBookings.length > 2 && (
+              <div className="text-[10px] sm:text-xs text-blue-600 font-medium px-1">
+                +{dayBookings.length - 2} more
               </div>
             )}
           </div>

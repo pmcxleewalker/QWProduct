@@ -17,6 +17,8 @@ const Bookings = () => {
   const [selectedCar, setSelectedCar] = useState('all'); // 'all' or car id
   const [selectedBooking, setSelectedBooking] = useState(null); // For modal preview
   const [editingBooking, setEditingBooking] = useState(null); // For edit modal
+  const [selectedDateBookings, setSelectedDateBookings] = useState(null); // For day preview modal
+  const [selectedDateStr, setSelectedDateStr] = useState(''); // Selected date string
   
   const [formData, setFormData] = useState({
     car_id: '',

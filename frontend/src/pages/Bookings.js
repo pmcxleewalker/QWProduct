@@ -43,12 +43,14 @@ const Bookings = () => {
 
   const fetchData = async () => {
     try {
-      const [bookingsRes, carsRes] = await Promise.all([
+      const [bookingsRes, carsRes, suggestionsRes] = await Promise.all([
         bookingAPI.getAll(),
         carAPI.getAll(),
+        bookingAPI.getSuggestions(),
       ]);
       setBookings(bookingsRes.data);
       setCars(carsRes.data);
+      setSuggestions(suggestionsRes.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to load bookings');

@@ -1618,7 +1618,12 @@ const Admin = () => {
                     <input
                       type="checkbox"
                       checked={todoForm.is_mandatory}
-                      onChange={(e) => setTodoForm({ ...todoForm, is_mandatory: e.target.checked })}
+                      onChange={(e) => setTodoForm({ 
+                        ...todoForm, 
+                        is_mandatory: e.target.checked,
+                        schedule_type: e.target.checked ? todoForm.schedule_type : null,
+                        schedule_days: e.target.checked ? todoForm.schedule_days : []
+                      })}
                       className="w-5 h-5 text-amber-600 rounded"
                     />
                     <div className="flex items-center space-x-2">
@@ -1626,8 +1631,107 @@ const Admin = () => {
                       <span className="text-sm font-medium text-amber-800">Mandatory Task</span>
                     </div>
                   </label>
-                  <span className="text-xs text-gray-500">Mandatory tasks are highlighted and cannot be skipped</span>
+                  <span className="text-xs text-gray-500">Mandatory tasks auto-reset after 24 hours</span>
                 </div>
+                
+                {/* Scheduling Options - Only shown for mandatory tasks */}
+                {todoForm.is_mandatory && (
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-blue-800 mb-2">
+                        <Clock size={14} className="inline mr-1" />
+                        Schedule Type
+                      </label>
+                      <select
+                        value={todoForm.schedule_type || ''}
+                        onChange={(e) => setTodoForm({ 
+                          ...todoForm, 
+                          schedule_type: e.target.value || null,
+                          schedule_days: []
+                        })}
+                        className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                        data-testid="schedule-type-select"
+                      >
+                        <option value="">One-time (resets after 24h once completed)</option>
+                        <option value="daily">Daily (resets every 24 hours)</option>
+                        <option value="weekly">Weekly (resets on selected days)</option>
+                        <option value="monthly">Monthly (resets on selected dates)</option>
+                      </select>
+                    </div>
+                    
+                    {/* Weekly day selector */}
+                    {todoForm.schedule_type === 'weekly' && (
+                      <div>
+                        <label className="block text-sm font-medium text-blue-800 mb-2">
+                          Select Days of the Week
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {DAYS_OF_WEEK.map((day, index) => (
+                            <button
+                              key={day}
+                              type="button"
+                              onClick={() => {
+                                const newDays = todoForm.schedule_days.includes(index)
+                                  ? todoForm.schedule_days.filter(d => d !== index)
+                                  : [...todoForm.schedule_days, index];
+                                setTodoForm({ ...todoForm, schedule_days: newDays });
+                              }}
+                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                todoForm.schedule_days.includes(index)
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-white border border-blue-300 text-blue-800 hover:bg-blue-100'
+                              }`}
+                              data-testid={`day-${day.toLowerCase()}`}
+                            >
+                              {day}
+                            </button>
+                          ))}
+                        </div>
+                        {todoForm.schedule_days.length === 0 && (
+                          <p className="text-xs text-amber-600 mt-2">⚠️ Please select at least one day</p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Monthly date selector */}
+                    {todoForm.schedule_type === 'monthly' && (
+                      <div>
+                        <label className="block text-sm font-medium text-blue-800 mb-2">
+                          Select Days of the Month
+                        </label>
+                        <div className="grid grid-cols-7 gap-1">
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                            <button
+                              key={day}
+                              type="button"
+                              onClick={() => {
+                                const newDays = todoForm.schedule_days.includes(day)
+                                  ? todoForm.schedule_days.filter(d => d !== day)
+                                  : [...todoForm.schedule_days, day];
+                                setTodoForm({ ...todoForm, schedule_days: newDays });
+                              }}
+                              className={`w-8 h-8 rounded text-sm font-medium transition-colors ${
+                                todoForm.schedule_days.includes(day)
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-white border border-blue-300 text-blue-800 hover:bg-blue-100'
+                              }`}
+                              data-testid={`date-${day}`}
+                            >
+                              {day}
+                            </button>
+                          ))}
+                        </div>
+                        {todoForm.schedule_days.length === 0 && (
+                          <p className="text-xs text-amber-600 mt-2">⚠️ Please select at least one date</p>
+                        )}
+                      </div>
+                    )}
+                    
+                    <p className="text-xs text-blue-600">
+                      💡 Scheduled tasks will automatically become pending again based on the schedule.
+                    </p>
+                  </div>
+                )}
                 <div className="flex space-x-4">
                   <button
                     type="submit"

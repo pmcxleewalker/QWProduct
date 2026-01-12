@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { bookingAPI, carAPI } from '../api/api';
-import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, List, Grid, Car, X, Clock, User, MapPin, Edit } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, List, Grid, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import EditBookingModal from '../components/EditBookingModal';
 
@@ -19,6 +19,8 @@ const Bookings = () => {
   const [editingBooking, setEditingBooking] = useState(null); // For edit modal
   const [selectedDateBookings, setSelectedDateBookings] = useState(null); // For day preview modal
   const [selectedDateStr, setSelectedDateStr] = useState(''); // Selected date string
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   
   const [formData, setFormData] = useState({
     car_id: '',

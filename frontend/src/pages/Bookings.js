@@ -1102,6 +1102,9 @@ const Bookings = () => {
                 const isOwner = selectedBooking.created_by_email === user?.email;
                 const canDelete = isAdmin || isOwner;
                 const isRecurring = !!selectedBooking.recurring_group_id;
+                const seriesCount = isRecurring 
+                  ? bookings.filter(b => b.recurring_group_id === selectedBooking.recurring_group_id).length 
+                  : 0;
 
                 return (
                   <div className="space-y-3">
@@ -1110,7 +1113,7 @@ const Bookings = () => {
                       <p className="text-xs text-gray-500 text-center">
                         Created by: {selectedBooking.created_by_email}
                         {isOwner && <span className="text-blue-600 ml-1">(You)</span>}
-                        {isRecurring && <span className="text-purple-600 ml-2">(Recurring)</span>}
+                        {isRecurring && <span className="text-purple-600 ml-2">(Recurring - {seriesCount} bookings)</span>}
                       </p>
                     )}
                     
@@ -1143,9 +1146,10 @@ const Bookings = () => {
                             setSelectedBooking(null);
                           }}
                           className={`flex-1 ${isAdmin && !isOwner ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-500 hover:bg-orange-600'} text-white py-2 px-4 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2`}
+                          data-testid="delete-single-booking"
                         >
                           <Trash2 size={18} />
-                          <span>{isAdmin && !isOwner ? 'Delete' : 'Cancel Booking'}</span>
+                          <span>{isRecurring ? 'Cancel This One' : (isAdmin && !isOwner ? 'Delete' : 'Cancel')}</span>
                         </button>
                       ) : (
                         <div className="flex-1 bg-gray-200 text-gray-500 py-2 px-4 rounded-lg text-center text-sm">
@@ -1153,6 +1157,21 @@ const Bookings = () => {
                         </div>
                       )}
                     </div>
+                    
+                    {/* Delete Entire Series Button - Only for recurring bookings */}
+                    {isRecurring && canDelete && (
+                      <button
+                        onClick={() => {
+                          handleDeleteSeries(selectedBooking.recurring_group_id);
+                          setSelectedBooking(null);
+                        }}
+                        className="w-full bg-red-700 hover:bg-red-800 text-white py-2 px-4 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2"
+                        data-testid="delete-entire-series"
+                      >
+                        <Trash2 size={18} />
+                        <span>Cancel Entire Series ({seriesCount} bookings)</span>
+                      </button>
+                    )}
                   </div>
                 );
               })()}

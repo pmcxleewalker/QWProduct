@@ -816,6 +816,75 @@ const Bookings = () => {
       {/* List View */}
       {viewMode === 'list' && (
         <>
+          {/* Selection Controls */}
+          {bookings.filter(b => b.status === 'approved').length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-3 mb-4 flex flex-wrap items-center justify-between gap-2">
+              {!selectMode ? (
+                <button
+                  onClick={() => setSelectMode(true)}
+                  className="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  data-testid="enter-select-mode"
+                >
+                  <CheckSquare size={16} />
+                  <span>Select Bookings</span>
+                </button>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={toggleSelectAll}
+                    className="flex items-center space-x-2 px-3 py-1.5 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"
+                    data-testid="select-all-btn"
+                  >
+                    {selectedBookings.length === bookings.filter(b => b.status === 'approved').length ? (
+                      <>
+                        <CheckSquare size={16} />
+                        <span>Deselect All</span>
+                      </>
+                    ) : (
+                      <>
+                        <Square size={16} />
+                        <span>Select All ({bookings.filter(b => b.status === 'approved').length})</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  <span className="text-sm text-gray-500">
+                    {selectedBookings.length} selected
+                  </span>
+                  
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={selectedBookings.length === 0}
+                    className={`flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                      selectedBookings.length > 0 
+                        ? 'bg-red-500 text-white hover:bg-red-600' 
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                    data-testid="bulk-delete-btn"
+                  >
+                    <Trash2 size={16} />
+                    <span>Cancel Selected</span>
+                  </button>
+                  
+                  <button
+                    onClick={exitSelectMode}
+                    className="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    data-testid="exit-select-mode"
+                  >
+                    <XCircle size={16} />
+                    <span>Done</span>
+                  </button>
+                </div>
+              )}
+              
+              {!selectMode && (
+                <span className="text-xs text-gray-400">
+                  Tip: Use select mode to cancel multiple bookings at once
+                </span>
+              )}
+            </div>
+          )}
+
           {bookings.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-lg shadow">
               <CalendarIcon className="mx-auto text-gray-400" size={48} />
@@ -825,13 +894,38 @@ const Bookings = () => {
             <div className="space-y-4">
               {bookings.map((booking) => {
                 const isPending = booking.status === 'pending_approval';
+                const isSelected = selectedBookings.includes(booking.id);
                 return (
                   <div
                     key={booking.id}
                     data-testid={`booking-card-${booking.id}`}
-                    className={`bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow ${isPending ? 'opacity-60 border-2 border-gray-300' : ''}`}
+                    onClick={() => selectMode && !isPending && toggleBookingSelection(booking.id)}
+                    className={`bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all ${
+                      isPending ? 'opacity-60 border-2 border-gray-300' : ''
+                    } ${isSelected ? 'ring-2 ring-red-500 bg-red-50' : ''} ${
+                      selectMode && !isPending ? 'cursor-pointer' : ''
+                    }`}
                   >
                     <div className="flex justify-between items-start">
+                      {/* Selection Checkbox */}
+                      {selectMode && !isPending && (
+                        <div className="mr-4 flex items-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleBookingSelection(booking.id);
+                            }}
+                            className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                              isSelected 
+                                ? 'bg-red-500 border-red-500 text-white' 
+                                : 'border-gray-300 hover:border-red-400'
+                            }`}
+                            data-testid={`select-booking-${booking.id}`}
+                          >
+                            {isSelected && <CheckSquare size={14} />}
+                          </button>
+                        </div>
+                      )}
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <div className={`w-3 h-3 rounded-full ${isPending ? 'bg-gray-400' : getCarColor(booking.car_id)}`}></div>

@@ -32,6 +32,7 @@ export const statusAPI = {
   create: (data) => axios.post(`${API}/status`, data),
   getLive: () => axios.get(`${API}/status/live`),
   getHistory: (carId, limit = 50) => axios.get(`${API}/status/history/${carId}?limit=${limit}`),
+  getWeather: () => axios.get(`${API}/weather`),
 };
 
 // Booking API

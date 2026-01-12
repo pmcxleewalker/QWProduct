@@ -1866,10 +1866,15 @@ const Admin = () => {
                             <p className="font-medium text-gray-500 line-through">
                               {todo.title}
                             </p>
-                            <div className="flex items-center space-x-2 mt-1">
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
                               {todo.is_mandatory && (
                                 <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded">
                                   Mandatory
+                                </span>
+                              )}
+                              {formatSchedule(todo) && (
+                                <span className="bg-blue-50 text-blue-500 text-xs px-2 py-0.5 rounded">
+                                  {formatSchedule(todo)}
                                 </span>
                               )}
                               <span className="text-xs text-gray-400">

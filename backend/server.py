@@ -1139,6 +1139,112 @@ async def delete_booking(booking_id: str, current_user: dict = Depends(get_curre
     return {"message": f"Booking {action} successfully"}
 
 
+# ==================== BOOKING SUGGESTIONS ENDPOINT ====================
+
+@api_router.get("/bookings/suggestions")
+async def get_booking_suggestions(current_user: dict = Depends(get_current_user)):
+    """Get available car and time slot suggestions for the next 7 days"""
+    now = datetime.now(timezone.utc)
+    end_date = now + timedelta(days=7)
+    
+    # Get all cars that are not blocked
+    cars = await db.cars.find({"is_blocked": {"$ne": True}}, {"_id": 0}).to_list(100)
+    
+    # Get all approved bookings in the next 7 days
+    bookings = await db.bookings.find({
+        "status": "approved",
+        "start_time": {"$gte": now.isoformat(), "$lte": end_date.isoformat()}
+    }, {"_id": 0}).to_list(500)
+    
+    # Build availability info for each car
+    suggestions = []
+    
+    # Define standard working hours (8 AM to 6 PM)
+    work_start_hour = 8
+    work_end_hour = 18
+    
+    for car in cars:
+        car_id = car.get('id')
+        car_name = car.get('name', 'Unknown')
+        car_reg = car.get('registration', '')
+        
+        # Get bookings for this car
+        car_bookings = [b for b in bookings if b.get('car_id') == car_id]
+        
+        # Find free slots for the next 7 days
+        free_slots = []
+        
+        for day_offset in range(7):
+            check_date = (now + timedelta(days=day_offset)).replace(hour=0, minute=0, second=0, microsecond=0)
+            day_start = check_date.replace(hour=work_start_hour)
+            day_end = check_date.replace(hour=work_end_hour)
+            
+            # Skip if day start is in the past
+            if day_start < now:
+                day_start = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+                if day_start.hour < work_start_hour:
+                    day_start = day_start.replace(hour=work_start_hour)
+                if day_start >= day_end:
+                    continue
+            
+            # Get bookings for this day
+            day_bookings = []
+            for b in car_bookings:
+                try:
+                    b_start = datetime.fromisoformat(b['start_time'].replace('Z', '+00:00'))
+                    b_end = datetime.fromisoformat(b['end_time'].replace('Z', '+00:00'))
+                    if b_start.date() == check_date.date() or b_end.date() == check_date.date():
+                        day_bookings.append({'start': b_start, 'end': b_end})
+                except:
+                    continue
+            
+            # Sort bookings by start time
+            day_bookings.sort(key=lambda x: x['start'])
+            
+            # Find gaps between bookings
+            current_time = day_start
+            for booking in day_bookings:
+                if booking['start'] > current_time:
+                    # There's a gap before this booking
+                    gap_duration = (booking['start'] - current_time).total_seconds() / 3600
+                    if gap_duration >= 1:  # At least 1 hour slot
+                        free_slots.append({
+                            "date": check_date.strftime("%Y-%m-%d"),
+                            "day_name": check_date.strftime("%A"),
+                            "start": current_time.strftime("%H:%M"),
+                            "end": booking['start'].strftime("%H:%M"),
+                            "duration_hours": round(gap_duration, 1)
+                        })
+                current_time = max(current_time, booking['end'])
+            
+            # Check for gap after last booking
+            if current_time < day_end:
+                gap_duration = (day_end - current_time).total_seconds() / 3600
+                if gap_duration >= 1:
+                    free_slots.append({
+                        "date": check_date.strftime("%Y-%m-%d"),
+                        "day_name": check_date.strftime("%A"),
+                        "start": current_time.strftime("%H:%M"),
+                        "end": day_end.strftime("%H:%M"),
+                        "duration_hours": round(gap_duration, 1)
+                    })
+        
+        # Only include cars with available slots
+        if free_slots:
+            suggestions.append({
+                "car_id": car_id,
+                "car_name": car_name,
+                "registration": car_reg,
+                "total_free_slots": len(free_slots),
+                "free_slots": free_slots[:10]  # Limit to first 10 slots per car
+            })
+    
+    # Sort by most available
+    suggestions.sort(key=lambda x: x['total_free_slots'], reverse=True)
+    
+    return suggestions
+
+
 # ==================== RECURRING BOOKING APPROVAL ENDPOINTS ====================
 
 class BookingRejectRequest(BaseModel):

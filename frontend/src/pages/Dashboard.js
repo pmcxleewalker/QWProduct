@@ -184,6 +184,7 @@ const Dashboard = () => {
     fetchLiftNotifications();
     fetchBookingNotifications();
     fetchTodos();
+    fetchWeather(); // Fetch weather on load
     // Auto-refresh every 10 seconds for faster notifications
     const interval = setInterval(() => {
       fetchLiveStatus();
@@ -194,7 +195,12 @@ const Dashboard = () => {
       fetchBookingNotifications();
       fetchTodos();
     }, 10000);
-    return () => clearInterval(interval);
+    // Refresh weather every 30 minutes
+    const weatherInterval = setInterval(fetchWeather, 30 * 60 * 1000);
+    return () => {
+      clearInterval(interval);
+      clearInterval(weatherInterval);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 

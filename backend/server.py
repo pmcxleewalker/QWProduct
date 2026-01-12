@@ -168,11 +168,16 @@ class MessageAcknowledgment(BaseModel):
 class TodoItemCreate(BaseModel):
     title: str
     is_mandatory: bool = False
+    # Scheduling options for recurring tasks
+    schedule_type: Optional[str] = None  # 'daily', 'weekly', 'monthly', or None for one-time
+    schedule_days: Optional[List[int]] = None  # For weekly: [0-6] (Sun-Sat), For monthly: [1-31]
 
 class TodoItemUpdate(BaseModel):
     title: Optional[str] = None
     is_mandatory: Optional[bool] = None
     is_completed: Optional[bool] = None
+    schedule_type: Optional[str] = None
+    schedule_days: Optional[List[int]] = None
 
 class TodoItem(TodoItemCreate):
     model_config = ConfigDict(extra="ignore")

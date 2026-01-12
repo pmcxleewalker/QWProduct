@@ -142,6 +142,23 @@ const Bookings = () => {
     }
   };
 
+  // Delete entire recurring series
+  const handleDeleteSeries = async (recurringGroupId) => {
+    // Count bookings in series
+    const seriesBookings = bookings.filter(b => b.recurring_group_id === recurringGroupId);
+    const confirmMsg = `This will delete ALL ${seriesBookings.length} bookings in this recurring series. Are you sure?`;
+    
+    if (!window.confirm(confirmMsg)) return;
+    
+    try {
+      const result = await bookingAPI.deleteSeries(recurringGroupId);
+      setSuccess(`Deleted ${result.data.deleted_count} bookings in the series`);
+      fetchData();
+    } catch (err) {
+      setError('Failed to delete booking series');
+    }
+  };
+
   // Toggle selection of a booking for bulk operations
   const toggleBookingSelection = (bookingId) => {
     setSelectedBookings(prev => 

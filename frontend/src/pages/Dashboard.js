@@ -52,35 +52,15 @@ const Dashboard = () => {
     loading: true
   });
 
-  // Fetch weather data
+  // Fetch weather data from backend proxy
   const fetchWeather = useCallback(async () => {
     try {
-      // Using wttr.in API (free, no API key needed)
-      const [kerryRes, westCorkRes] = await Promise.all([
-        fetch('https://wttr.in/Kerry,Ireland?format=j1'),
-        fetch('https://wttr.in/West+Cork,Ireland?format=j1')
-      ]);
-      
-      const kerryData = await kerryRes.json();
-      const westCorkData = await westCorkRes.json();
+      const response = await statusAPI.getWeather();
+      const data = response.data;
       
       setWeather({
-        kerry: {
-          temp: kerryData.current_condition?.[0]?.temp_C || '--',
-          desc: kerryData.current_condition?.[0]?.weatherDesc?.[0]?.value || 'Unknown',
-          feelsLike: kerryData.current_condition?.[0]?.FeelsLikeC || '--',
-          humidity: kerryData.current_condition?.[0]?.humidity || '--',
-          windSpeed: kerryData.current_condition?.[0]?.windspeedKmph || '--',
-          code: kerryData.current_condition?.[0]?.weatherCode || '113'
-        },
-        westCork: {
-          temp: westCorkData.current_condition?.[0]?.temp_C || '--',
-          desc: westCorkData.current_condition?.[0]?.weatherDesc?.[0]?.value || 'Unknown',
-          feelsLike: westCorkData.current_condition?.[0]?.FeelsLikeC || '--',
-          humidity: westCorkData.current_condition?.[0]?.humidity || '--',
-          windSpeed: westCorkData.current_condition?.[0]?.windspeedKmph || '--',
-          code: westCorkData.current_condition?.[0]?.weatherCode || '113'
-        },
+        kerry: data.kerry,
+        westCork: data.westCork,
         loading: false
       });
     } catch (error) {

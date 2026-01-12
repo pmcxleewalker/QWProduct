@@ -69,6 +69,13 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
    - "Cancel Selected" bulk delete button
    - Visual highlighting (red border + background) for selected bookings
 
+4. **Recurring Booking Series Management**
+   - "🔄 Recurring" badge on booking cards in list view
+   - Modal shows "(Recurring - X bookings)" count
+   - "Cancel This One" - Delete single occurrence
+   - "Cancel Entire Series (X bookings)" - Delete all bookings in the series
+   - New API endpoint: `DELETE /api/bookings/series/{recurring_group_id}`
+
 ---
 
 ## Architecture

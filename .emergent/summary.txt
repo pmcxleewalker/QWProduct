@@ -1,85 +1,81 @@
-<analysis>**original_problem_statement**: The user initially requested a fleet management application called Quick Wing. The initial scope included an admin panel, user access management, and a list of breakdown providers.
+<analysis>**original_problem_statement**: The user is building a fleet management application, Quick Wing. Initially focused on admin/staff roles, vehicle tracking, and bookings, the scope has significantly expanded.
 
-Over time, this has expanded to include:
-- A full JWT authentication system with 'admin' and 'staff' roles.
-- Color-coded car statuses and manual location tracking via QR codes.
-- A Live Sheet for real-time fleet overview with an Excel export.
-- A database populated with 19 vehicles.
-- Training documentation for staff and admins.
-- Compliance Tracking: Fields for Tax, NCT, and Service due dates with dashboard alerts.
-- Car Blocking: Admins can block cars for appointments.
-- Advanced Calendar: A filterable calendar view for bookings with a preview modal.
-- Booking Permissions: Admins can delete bookings; staff can only cancel their own.
-- Recurring Bookings: Staff can request recurring bookings, which require admin approval and appear greyed out on the calendar until approved.
-- Staff Messaging Board: A blocking pop-up on login for staff to acknowledge admin announcements.
-- Mobile Responsiveness fixes.
-
-**Recent feature requests from this session:**
-1.  **Request a Lift**: A feature for staff to request a lift from colleagues, including a notification system, an I can help flow, personal dismissal of requests, and admin-only deletion.
-2.  **Admin User Creation**: Admins should be able to create user accounts directly with a default password.
-3.  **Change Password**: Users need a way to change their own password after logging in.
-4.  **Keep me logged in**: A checkbox on the login screen for persistent sessions.
-5.  **Remove Credentials from Login**: The default admin credentials should not be visible on the login page.
-6.  **Booking Notifications**: Staff must be notified when a booking request is approved or rejected. Rejections must include a reason/note.
-7.  **Recurring Booking Editing**: Admins must be able to edit a single booking within a recurring series without affecting the others, or edit all of them at once.
-8.  **Ownership/Copyright**: Update documentation and create a certificate of ownership for Lee Walker.
+Recent features requested and worked on in this session include:
+1.  **Admin To-Do List**: A new section in the admin panel for admins to create and manage a shared to-do list with tick boxes and a mandatory option.
+2.  **To-Do List Alerts**: Notifications/badges for pending to-do items on the Admin dashboard and panel.
+3.  **Advanced To-Do Features**: Mandatory tasks should automatically reset to incomplete 24 hours after completion. Add scheduling options (daily, weekly, monthly) for mandatory tasks.
+4.  **Booking Suggestions**: On the bookings page, add a section to suggest available cars and time slots.
+5.  **Admin Password Management**: Admins should be able to reset any user's password.
+6.  **Admin Fleet Status Editing**: Admins should be able to manually change a car's status (e.g., to Maintenance) from the dashboard.
+7.  **Reports Section**: A new admin section showing analytics like car booking frequency, usage statistics, and an option to export the data to CSV.
+8.  **UI/UX Improvements**:
+    *   Optimize the entire application for a mobile-first experience.
+    *   Display usernames (e.g., carly) instead of full email addresses.
+    *   On the calendar, allow clicking a date to open a modal previewing all bookings for that day.
+    *   In the admin users list, separate users into Admin and Staff lists.
+9.  **Functionality Removal**: Remove the Send Invite feature, keeping only the direct Create User option.
+10. **Critical Bug Fix**: All generated QR codes and invite links must point to the production URL, not the preview URL.
+11. **Personalization**: Customize the dashboard for user  with a special welcome message and icon.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack fleet management application with a React frontend and FastAPI backend. In addition to the previously implemented features, this session added:
--   **Request a Lift**: A complete feature allowing staff to post, accept, and manage lift requests. It includes a notification bell, a dropdown list of requests, an expandable banner UI on the dashboard, personal dismissal of requests, and admin-only permanent deletion.
--   **Enhanced User Management**:
-    -   Admins can now create user accounts directly from the admin panel with a default password, as an alternative to the invite system.
-    -   A Change Password feature is available for all users in their profile menu.
--   **Login Improvements**:
-    -   A Keep me logged in checkbox was added to the login page for session persistence.
-    -   The hardcoded default admin credentials have been removed from the login page UI.
--   **Documentation**: The training manuals and a new  file have been updated to reflect ownership by Lee Walker and include the correct application URL.
+A comprehensive full-stack fleet management application. In addition to the previously implemented features (auth, bookings, live sheet, messaging), this session added:
+-   **Admin To-Do List**: A fully functional to-do list in the admin panel with create, edit, delete, complete, and mandatory options.
+-   **To-Do List Alerts**: Admins are alerted to pending tasks via a banner on the Dashboard and a badge in the Admin Panel.
+-   **Admin Password Reset**: Admins can reset any user's password from the Users tab.
+-   **Admin Car Status Editing**: Admins can manually edit a car's status directly from the Fleet Status grid on the Dashboard.
+-   **Reports Section**: A new Reports tab in the Admin panel provides detailed analytics on fleet usage with charts, tables, and a CSV export function.
+-   **Major Mobile Optimization**: The UI has been significantly reworked for mobile devices, including a new fixed bottom navigation bar, responsive grids, and touch-friendly components.
+-   **UI Enhancements**: Emails are now displayed as short usernames. The calendar has a day-preview modal. The admin user list is now split into Administrators and Staff Members.
+-   **Invite Function Removed**: The user creation flow has been simplified to direct creation only.
+-   **Personalization**: A custom Welcome, Carly! banner with dog paw icons appears for the specified user.
+-   **URL Fix**: The backend code has been updated to **hardcode** the production URL for QR code and invite link generation to bypass persistent deployment environment issues.
 
 **Last working item**:
--   **Last item agent was working**: The agent was implementing two related features requested by the user:
-    1.  Notifying staff when their booking requests are approved or rejected (with a mandatory reason for rejection).
-    2.  Allowing admins to edit recurring bookings, with an option to edit a single event or the entire series.
-    The agent had created the backend endpoints and new frontend modal components but had not yet integrated them into the UI.
+-   **Last item agent was working**: The agent began implementing a three-part feature request:
+    1.  Make completed mandatory to-do tasks automatically reset to pending after 24 hours.
+    2.  Add scheduling options (daily, weekly, monthly) for mandatory to-do tasks.
+    3.  Create a suggestion section on the Bookings page for available cars.
+    The agent had just updated the backend Pydantic models in  to support scheduling (, , etc.) and was about to implement the auto-reset and scheduling logic.
 -   **Status**: IN PROGRESS
 -   **Agent Testing Done**: N
--   **Which testing method agent to use?**: both (Requires backend testing for the new endpoints and frontend testing for the new modals and notification flow).
+-   **Which testing method agent to use?**: both
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1**: Invalid Invite/QR Code URLs (Priority: P0)
-    -   **Description**: The user repeatedly reported that user invite links and vehicle QR codes redirect to the  URL instead of the  URL. This causes a critical data split, as actions performed on the preview environment are not reflected in the live application.
-    -   **Attempted fixes**: The agent identified that the  and  environment variables in  files were incorrect. The agent updated these files multiple times and restarted services. However, the user's last report indicates the issue persists after redeployment, suggesting a deeper configuration problem related to the deployment environment itself.
+-   **Issue 1: Invalid QR Code URLs (Recurring)** (Priority: P0)
+    -   **Description**: User repeatedly reports that QR codes, even after being re-downloaded, point to the  URL instead of the  URL. This is the most critical and persistent issue.
+    -   **Attempted fixes**: The agent tried updating  files multiple times. The latest and most direct fix was to **hardcode the correct deployed URL** into the QR code generation logic in . The user has not yet been able to verify this fix post-deployment.
     -   **Next debug checklist**:
-        1.  Verify the contents of both  and  to ensure they point to the deployed host, not the preview one.
-        2.  Check the deployment service logs to see if environment variables are being overridden during the build or deployment process.
-        3.  After confirming the  files are correct, trigger a full redeployment.
-        4.  After redeployment, log in to the *deployed* app as an admin, create a *new* invite, and inspect the generated URL to confirm it uses the correct base URL.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical blocker. Fixing it will unify the application environment, ensuring all users and data operations (invites, QR code scans) interact with the single, correct production database.
-    -   **Status**: IN PROGRESS
+        1.  Confirm with the user that they have deployed the latest changes containing the hardcoded URL fix.
+        2.  Guide the user to log into the **deployed** application.
+        3.  Instruct them to go to Admin -> Manage Cars and download a **new** QR code for one vehicle.
+        4.  Have them scan this newly downloaded QR code to verify it points to the correct URL.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical blocker preventing a core feature (vehicle status updates via QR) from working in the live environment. Fixing it is essential for the app's usability.
+    -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: both
+    -   **Should Test frontend/backend/both after fix?**: User verification first.
     -   **Blocked on other issue**: No.
--   **Issue 2**: Recurring Booking Error (Priority: P1)
-    -   **Description**: In the previous session, the user reported an error when creating a recurring booking.
-    -   **Attempted fixes**: The previous agent implemented a fix to correctly parse backend validation errors on the frontend.
-    -   **Next debug checklist**: The user has never confirmed if the fix worked. The next agent must ask the user to test creating a recurring booking to verify.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a core feature that needs to be validated before adding more functionality on top of it.
+
+-   **Issue 2: Recurring Booking Error** (Priority: P2)
+    -   **Description**: A previous fix for an error during recurring booking creation was implemented, but the user never confirmed if it was successful.
+    -   **Next debug checklist**: Ask the user to test creating a recurring booking to verify the fix.
     -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: User verification first. If it fails, then both.
+    -   **Should Test frontend/backend/both after fix?**: User verification first.
 
 **In progress Task List**:
--   **Task 1**: Implement Booking Notifications & Recurring Booking Editing (Priority: P0)
+-   **Task 1: Implement Advanced To-Do and Booking Suggestions** (Priority: P0)
     -   **Description**:
-        1.  When an admin approves or rejects a pending booking, the staff member who created it should receive a notification. Rejections must include a reason provided by the admin.
-        2.  When viewing the calendar, an admin should be able to click on a recurring booking and choose to edit either that single instance or the entire series.
-    -   **Where to resume**: The agent has already created the backend endpoints and the following frontend components: , , and . The next steps are to:
-        1.  Integrate  into the  page, so it appears when an admin clicks Reject on a pending booking.
-        2.  Implement the logic in  or  to fetch and display booking notifications for the logged-in staff user using .
-        3.  Modify the  page. When an admin clicks on a booking event in the calendar, if it's part of a recurring series, open the  to allow them to make changes.
-    -   **What will be achieved with this?**: Completes the booking approval workflow with essential user feedback and adds critical administrative control over recurring events.
+        1.  Make mandatory to-do tasks auto-reset to incomplete 24 hours after completion.
+        2.  Add UI and backend logic for scheduling mandatory tasks (e.g., specific days of the week).
+        3.  On the Bookings page, add a new section that suggests which cars are free and at what times.
+    -   **Where to resume**: The Pydantic models in  have been updated for scheduling. The next steps are:
+        1.  In , modify the  GET endpoint to implement the 24-hour auto-reset logic for mandatory tasks.
+        2.  Update the POST and PUT endpoints for todos to handle the new , , and  fields.
+        3.  In , update the To-Do List form to include UI controls for scheduling.
+        4.  Implement the car availability suggestion feature on the  page, likely requiring a new backend endpoint to calculate free slots.
     -   **Status**: IN PROGRESS
     -   **Should Test frontend/backend/both after fix?**: both
     -   **Blocked on something**: No.
@@ -87,32 +83,34 @@ A full-stack fleet management application with a React frontend and FastAPI back
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
     -   **P1: Convert Training Manuals to PDF**: Convert  and  into downloadable PDF files.
-    -   **P2: Printable QR Code Sheet**: Create a single, printable document containing the QR codes for all 19 vehicles, ensuring they all point to the correct deployed URL.
+    -   **P2: Printable QR Code Sheet**: Create a single, easily printable document containing the QR codes for all vehicles.
 -   **Future Tasks**:
     -   **P3: Complete Visual Screenshot Tutorial**: Create a screenshot-based guide for staff, as originally planned.
-    -   **P4: User Review and Feedback**: Conduct a full review with the user to gather final feedback before considering the project complete.
+    -   **P4: User Review and Feedback**: Conduct a full review with the user to gather final feedback.
 
 **Completed work in this session**
--   **Request a Lift Feature**: Fully implemented a system for staff to request, view, accept, and manage lifts. This includes backend models/endpoints and frontend components (panels, modals, notification bell/dropdown). The UI was refined based on user feedback to be more compact and user-friendly.
--   **Admin Direct User Creation**: Admins can now create new users with a default password directly from the Admin panel, bypassing the need for email invites.
--   **Change Password Functionality**: All users can now change their own password via a modal accessible from the main navigation menu.
--   **Keep me logged in**: Added a checkbox to the login form to enable persistent login sessions.
--   **Login Page Security**: Removed the display of default admin credentials from the login page UI.
--   **Documentation Updates**: Updated  and  with the new owner's name and copyright.
--   **Certificate of Ownership**: Created a new file  with the user's name.
+-   **Booking Rejection & Notification Flow**: Implemented and fixed the flow for admins to reject bookings with a mandatory reason, which immediately notifies the staff member.
+-   **Admin To-Do List**: Created a full-featured to-do list with alerts for admins.
+-   **Admin User/Car Management**: Implemented password reset for any user and manual status editing for any car.
+-   **Reports & Analytics**: Added a new Reports section with fleet usage stats and CSV export.
+-   **Mobile-First Redesign**: Overhauled the UI for mobile use, including a new bottom navigation bar.
+-   **UI/UX Polish**: Added a calendar day-preview modal, separated admin/staff lists, and changed email displays to usernames.
+-   **Personalization for 'Carly'**: Added a custom dashboard greeting and corrected the user's email address.
+-   **Removed Invite System**: Simplified user creation to a single direct-add method.
+-   **Hardcoded URL Fix**: Directly embedded the production URL in the backend to resolve the persistent QR code URL issue.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: GitHub Permissions**:
-    -   **Description**: A user-side GitHub permission issue is blocking the Save to GitHub feature. The Emergent GitHub App needs to be granted access to the user's repositories.
-    -   **Debug checklist**: User needs to go to  and authorize the Emergent app.
-    -   **Why to solve this issue and what will be achieved with this?**: Allows the user to back up their project codebase to their own GitHub account.
+    -   **Description**: User needs to grant GitHub permissions to the Emergent app for the Save to GitHub feature to work.
+    -   **Debug checklist**: User must visit  and authorize the Emergent app.
+    -   **Why to solve this issue and what will be achieved with this?**: Enables codebase backup to the user's personal GitHub account.
     -   **Should Test frontend/backend/both after fix**: N/A (Platform issue)
     -   **Is recurring issue?**: N
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork**: The issue of invite and QR code URLs pointing to the wrong environment ( vs. ) has been the most persistent and critical problem in this session.
--   **Recurrence count**: 4+ times.
--   **Status**: IN PROGRESS. This is the same as All Pending/In progress Issue list - Issue 1.
+-   **Issue recurrence in previous fork**: The Invalid QR Code/Invite URL issue.
+-   **Recurrence count**: 5+
+-   **Status**: USER VERIFICATION PENDING. The agent's final attempt was to hardcode the URL in  to make the fix independent of environment variables that may be misconfigured on deployment.
 
 **Code Architecture**
 
@@ -126,78 +124,69 @@ A full-stack fleet management application with a React frontend and FastAPI back
 -   **users**: 
 -   **cars**: 
 -   **bookings**: 
--   **lift_requests**:  (New)
--   **lift_request_dismissals**:  (New)
--   **booking_notifications**:  (New)
+-   **todos**:  (New/Modified)
+-   **booking_notifications**: 
 
 **changes in tech stack**
 None.
 
 **All files of reference**
--   : Heavily modified to add all endpoints for the Request a Lift feature, direct user creation, password changes, and booking notifications/editing.
--   : Updated to display the  and handle lift acceptance modals. Needs to be updated for booking notifications.
--   : Updated to include the lift request notification bell/dropdown and the Change Password button.
--   : Updated to replace the invite-only form with a tabbed interface for Create User (direct) and Send Invite.
--   : Updated to add the Keep me logged in checkbox and remove hardcoded credentials.
--   : Modified to handle persistent login state.
--   **New Components**: , , , , and several others related to the lift request feature.
--   **Stubbed Components**: , ,  were created but not yet integrated.
+-   : Major changes. Added endpoints for To-Do list, Reports, Admin Password Reset, and Admin Car Status Edit. Hardcoded the  for QR/invite generation.
+-   : Major changes. Added To-Do List and Reports tabs. Removed Send Invite UI. Separated user lists. Added password reset modal. Made UI mobile-responsive.
+-   : Major changes. Added admin status editing modal, To-Do list alerts, and significant mobile UI optimizations.
+-   : Modified to add the day-preview modal and mobile UI improvements.
+-   : Modified to conditionally render the new  component.
+-   : New component for mobile-only bottom navigation.
+-   : Updated with new API client functions for all new features.
 
 **Areas that need refactoring**:
--    has grown even more complex with the addition of the direct user creation form. It should be broken down into smaller components for each tab (Users, Breakdown Providers, Messages, etc.).
--    and  are now managing significant state and logic for lift requests (and soon, booking notifications). This logic could be abstracted into custom hooks (e.g., , ) to simplify the components.
+-    is extremely large and complex (approaching 2000 lines). It is critical to break it down into smaller components, one for each tab (e.g., , , ), to improve maintainability.
+-    is also becoming large. The data fetching and state management logic could be extracted into custom hooks (e.g., , ).
 
 **key api endpoints**
--   : (GET, POST) Manage lift requests.
--   : (POST) Accept a lift request and send a message.
--   : (POST) Dismiss a lift request from a user's view.
--   : (DELETE) Permanently delete a lift request (admin only).
--   : (GET) Get count of active lift requests.
--   : (GET) Get notifications for accepted lifts.
--   : (POST) Create a user account directly (admin only).
--   : (POST) Change the current user's password.
--   : (GET, DELETE) Manage booking notifications.
--   : (PUT) Edit an individual booking.
--   : (PUT) Edit all bookings in a recurring series.
+-    (GET, POST)
+-    (PUT, DELETE)
+-    (GET)
+-    (PUT)
+-    (POST)
 
 **Critical Info for New Agent**
--   **Preview vs. Deployed Environment**: This is the BIGGEST issue. The user is confused, and the application's environment variables ( files) have repeatedly been misconfigured, causing data to be sent to the wrong database. You must be extremely careful to ensure all URLs point to the **deployed** host, not the **preview** one, and guide the user to always use their final deployed URL.
--   **User Management Flow**: Admins can now create users in two ways: via the old Send Invite button or the new Create User button which sets a default password.
--   **In-Progress Feature**: The booking notification/editing feature is half-done. The backend and component stubs exist, but the main work of integrating them into the  and  pages is pending.
+-   **The QR Code URL issue is the highest priority.** The previous agent's final solution was to hardcode the production URL in . You must guide the user to **deploy** the changes and then **re-download and re-print** the QR codes from the live application. Emphasize that old, printed QR codes are static and will never work correctly. Do not attempt to change the  files again for this issue; focus on verifying the hardcoded solution.
+-   **Mobile-first approach is mandatory.** The user has stated the app will be used mostly on mobile phones. All future development and testing must prioritize the mobile experience.
+-   The user is often confused between the **preview** and **deployed** environments. Be very clear in your communication about where changes are applied (preview) and what action is needed to see them live (deployment).
 
 **documents and test reports created in this job**
--   
+None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Re-iterated request for booking rejection reasons and admin editing of recurring bookings. (Task: IN PROGRESS)
-2.  **User**: Asked for a list of users in the app. (Agent provided the list from the dev database).
-3.  **User**: Asked if they can still make changes to the app. (Agent confirmed they can).
-4.  **User**: Requested that carfleet-11 and cartrack-19 need the be the one app. (Agent called support agent).
-5.  **User**: Requested admin user creation with default password, change password feature, and keep me logged in. (Task: DONE)
-6.  **User**: Reported old QR codes direct to the wrong form. (Agent explained they point to the wrong database and recommended reprinting).
-7.  **User**: Reported invite links and QR codes still go to the preview URL. (Task: IN PROGRESS - Recurring URL issue).
-8.  **User**: Requested a  file. (Task: DONE)
-9.  **User**: Requested manual updates and saving to GitHub. (Task: Manuals updated, GitHub blocked on user permissions).
-10. **User**: Requested a new feature for when a lift request is accepted (notification to requester, message from acceptor, request removed from dashboard). (Task: DONE)
+10. **User**: Requested admin ability to edit fleet status. (DONE)
+9.  **User**: Requested reports section for admins. (DONE)
+8.  **User**: Requested the app be optimized for mobile phones. (DONE)
+7.  **User**: Requested a day-preview modal on the calendar. (DONE)
+6.  **User**: Requested advanced to-do features (auto-reset, scheduling) and booking suggestions. (IN PROGRESS)
+5.  **User**: Corrected Carly's email address. (DONE)
+4.  **User**: Requested admin access to all passwords and ability to change them. (DONE)
+3.  **User**: Requested to stop deployment. (ACKNOWLEDGED)
+2.  **User**: Requested to show only the first part of emails (usernames). (DONE)
+1.  **User**: Requested an alert for the admin To-Do list. (DONE)
 
 **Project Health Check:**
--   **Broken**: The deployment configuration is fundamentally broken. Invite links, QR codes, and potentially API calls from the deployed frontend are pointing to the wrong (preview) backend, leading to data inconsistencies and a poor user experience. This is the highest priority issue to resolve.
+-   **Broken**: The QR code functionality is perceived as broken by the user due to the environment mismatch. This is a critical user experience issue that blocks a core feature, even though a code fix has been implemented.
 -   **Mocked**: None.
 
 **3rd Party Integrations**
 None.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES. The agent used backend and frontend testing agents after the initial implementation of the Request a Lift feature.
+-   **Testing agent used after significant changes**: NO. Agent self-tested new features using  scripts for the backend and manual verification/screenshots for the frontend.
 -   **Troubleshoot agent used after agent stuck in loop**: NO.
--   **Test files created**: Test files were created by the testing subagent, but not saved permanently by the main agent.
--   **Known regressions**: None from a code perspective, but the persistent URL configuration issue is a major regression in usability.
+-   **Test files created**: None saved.
+-   **Known regressions**: The persistent QR code URL issue, which has been a regression in usability across multiple sessions.
 
 **Credentials to test flow:**
 -   **Admin**:  / 
 -   **Staff**:  / 
 
 **What agent forgot to execute**
--   The agent created the necessary modal components (, , ) for the booking notification/editing feature but did not proceed to integrate them into the  and  pages. The task was left half-finished.
--   The task to convert training manuals to PDF was not started.
--   The task to create a screenshot-based tutorial was not started.</analysis>
+-   The agent started the multi-part request for Advanced To-Do Features and Booking Suggestions but only completed the backend model changes for the to-do list. The core logic for auto-reset, scheduling, and the entire Booking Suggestions feature was not implemented.
+-   The Upcoming Tasks from the previous handoff (PDF Manuals, Printable QR Sheet) remain untouched.</analysis>

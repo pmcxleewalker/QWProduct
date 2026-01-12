@@ -13,6 +13,7 @@ import uuid
 from datetime import datetime, timezone
 import qrcode
 from io import BytesIO
+import httpx
 
 # Import auth utilities
 from auth import (

@@ -1413,10 +1413,60 @@ async def update_admin_message(message_id: str, message: AdminMessageCreate, cur
 
 @api_router.get("/admin/todos")
 async def get_todos(current_user: dict = Depends(get_current_admin_user)):
-    """Admin: Get all to-do items"""
+    """Admin: Get all to-do items with auto-reset for mandatory scheduled tasks"""
     todos = await db.todos.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    now = datetime.now(timezone.utc)
+    current_weekday = now.weekday()  # Monday=0, Sunday=6 - convert to Sunday=0 format
+    current_weekday_sunday_start = (current_weekday + 1) % 7  # Convert to Sunday=0 format
+    current_day_of_month = now.day
+    
     for todo in todos:
         deserialize_datetime(todo, ['created_at'])
+        
+        # Auto-reset logic for mandatory tasks
+        if todo.get('is_mandatory') and todo.get('is_completed') and todo.get('completed_at'):
+            completed_at_str = todo.get('completed_at')
+            try:
+                # Parse completed_at timestamp
+                if isinstance(completed_at_str, str):
+                    completed_at = datetime.fromisoformat(completed_at_str.replace('Z', '+00:00'))
+                else:
+                    completed_at = completed_at_str
+                
+                time_since_completion = now - completed_at
+                schedule_type = todo.get('schedule_type')
+                schedule_days = todo.get('schedule_days', [])
+                should_reset = False
+                
+                if schedule_type == 'daily':
+                    # Reset after 24 hours
+                    if time_since_completion >= timedelta(hours=24):
+                        should_reset = True
+                elif schedule_type == 'weekly' and schedule_days:
+                    # Reset if it's a scheduled day and >24h since completion
+                    if current_weekday_sunday_start in schedule_days and time_since_completion >= timedelta(hours=24):
+                        should_reset = True
+                elif schedule_type == 'monthly' and schedule_days:
+                    # Reset if it's a scheduled day of month and >24h since completion
+                    if current_day_of_month in schedule_days and time_since_completion >= timedelta(hours=24):
+                        should_reset = True
+                elif not schedule_type:
+                    # One-time mandatory task: reset after 24h (original behavior)
+                    if time_since_completion >= timedelta(hours=24):
+                        should_reset = True
+                
+                if should_reset:
+                    # Reset the task to incomplete
+                    await db.todos.update_one(
+                        {"id": todo['id']},
+                        {"$set": {"is_completed": False, "completed_by": None, "completed_at": None}}
+                    )
+                    todo['is_completed'] = False
+                    todo['completed_by'] = None
+                    todo['completed_at'] = None
+            except Exception as e:
+                logging.error(f"Error processing todo reset for {todo.get('id')}: {e}")
+    
     return todos
 
 @api_router.post("/admin/todos", response_model=dict)

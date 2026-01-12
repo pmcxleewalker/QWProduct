@@ -83,7 +83,11 @@ const Admin = () => {
   const [todoForm, setTodoForm] = useState({
     title: '',
     is_mandatory: false,
+    schedule_type: null, // 'daily', 'weekly', 'monthly', or null
+    schedule_days: [], // For weekly: [0-6] (Sun-Sat), For monthly: [1-31]
   });
+  
+  const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   // Reports State
   const [reportData, setReportData] = useState(null);

@@ -440,8 +440,8 @@ const Dashboard = () => {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4 sm:mb-6">
+        <div className="flex-1">
           {/* Special greetings for specific users */}
           {(() => {
             const email = user?.email?.toLowerCase() || '';
@@ -451,6 +451,7 @@ const Dashboard = () => {
             const personalizedUsers = ['carecoordinatorkwc', 'kevanfewtrell', 'pmcxleewalker'];
             const isPersonalized = personalizedUsers.includes(username);
             const isCarly = email === 'carlyodonovan@bluebirdcare.ie';
+            const isStaff = user?.role !== 'admin';
             
             if (isCarly) {
               return (
@@ -480,6 +481,19 @@ const Dashboard = () => {
                   </p>
                 </>
               );
+            } else if (isStaff) {
+              // Cleaner staff dashboard header
+              return (
+                <>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" data-testid="dashboard-title">
+                    Dashboard
+                  </h1>
+                  <p className="text-xs sm:text-sm text-gray-500 flex items-center mt-1">
+                    <Clock size={12} className="mr-1" />
+                    {lastUpdated ? formatTime(lastUpdated) : 'Loading...'}
+                  </p>
+                </>
+              );
             } else {
               return (
                 <>
@@ -493,8 +507,56 @@ const Dashboard = () => {
             }
           })()}
         </div>
+        
+        {/* Weather Widget - Only for Staff */}
+        {user?.role !== 'admin' && (
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            {/* Kerry Weather */}
+            <div className="bg-gradient-to-br from-blue-50 to-sky-100 rounded-lg px-3 py-2 shadow-sm border border-blue-200 min-w-[140px]">
+              {weather.loading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-pulse bg-blue-200 h-6 w-6 rounded-full"></div>
+                  <div className="animate-pulse bg-blue-200 h-4 w-16 rounded"></div>
+                </div>
+              ) : weather.kerry ? (
+                <div className="flex items-center space-x-2">
+                  {getWeatherIcon(weather.kerry.code)}
+                  <div>
+                    <p className="text-xs font-semibold text-blue-800">Kerry</p>
+                    <p className="text-lg font-bold text-gray-900">{weather.kerry.temp}°C</p>
+                    <p className="text-xs text-gray-600 truncate max-w-[80px]">{weather.kerry.desc}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500">Weather unavailable</p>
+              )}
+            </div>
+            
+            {/* West Cork Weather */}
+            <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg px-3 py-2 shadow-sm border border-green-200 min-w-[140px]">
+              {weather.loading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-pulse bg-green-200 h-6 w-6 rounded-full"></div>
+                  <div className="animate-pulse bg-green-200 h-4 w-16 rounded"></div>
+                </div>
+              ) : weather.westCork ? (
+                <div className="flex items-center space-x-2">
+                  {getWeatherIcon(weather.westCork.code)}
+                  <div>
+                    <p className="text-xs font-semibold text-green-800">West Cork</p>
+                    <p className="text-lg font-bold text-gray-900">{weather.westCork.temp}°C</p>
+                    <p className="text-xs text-gray-600 truncate max-w-[80px]">{weather.westCork.desc}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500">Weather unavailable</p>
+              )}
+            </div>
+          </div>
+        )}
+        
         <button
-          onClick={() => { fetchLiveStatus(); fetchComplianceAlerts(); fetchPendingBookings(); fetchLiftRequests(); fetchLiftNotifications(); fetchBookingNotifications(); fetchTodos(); }}
+          onClick={() => { fetchLiveStatus(); fetchComplianceAlerts(); fetchPendingBookings(); fetchLiftRequests(); fetchLiftNotifications(); fetchBookingNotifications(); fetchTodos(); fetchWeather(); }}
           data-testid="refresh-button"
           className="flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
         >

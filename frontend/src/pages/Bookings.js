@@ -944,7 +944,7 @@ const Bookings = () => {
                         </div>
                       )}
                       <div className="flex-1">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 flex-wrap gap-1">
                           <div className={`w-3 h-3 rounded-full ${isPending ? 'bg-gray-400' : getCarColor(booking.car_id)}`}></div>
                           <h3 className="text-lg font-bold text-gray-900">
                             {getCarName(booking.car_id)}
@@ -952,6 +952,11 @@ const Bookings = () => {
                           {isPending && (
                             <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded">
                               ⏳ Pending Approval
+                            </span>
+                          )}
+                          {booking.recurring_group_id && (
+                            <span className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded font-medium">
+                              🔄 Recurring
                             </span>
                           )}
                         </div>

@@ -1585,7 +1585,7 @@ const Admin = () => {
               onClick={() => {
                 setShowTodoForm(true);
                 setEditingTodo(null);
-                setTodoForm({ title: '', is_mandatory: false });
+                setTodoForm({ title: '', is_mandatory: false, schedule_type: null, schedule_days: [] });
               }}
               data-testid="add-todo-button"
               className="flex items-center space-x-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"

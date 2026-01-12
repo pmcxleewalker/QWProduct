@@ -382,28 +382,56 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
         <div>
-          {/* Special greeting for Carly */}
-          {user?.email?.toLowerCase() === 'carlyodonovan@bluebirdcare.ie' ? (
-            <>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center" data-testid="dashboard-title">
-                <span className="mr-2">🐾</span>
-                Welcome, Carly!
-                <span className="ml-2">🐾</span>
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-500 flex items-center mt-1">
-                <Clock size={12} className="mr-1" />
-                Updated: {lastUpdated ? formatTime(lastUpdated) : 'Loading...'}
-              </p>
-            </>
-          ) : (
-            <>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" data-testid="dashboard-title">Fleet Status</h1>
-              <p className="text-xs sm:text-sm text-gray-500 flex items-center mt-1">
-                <Clock size={12} className="mr-1" />
-                Updated: {lastUpdated ? formatTime(lastUpdated) : 'Loading...'}
-              </p>
-            </>
-          )}
+          {/* Special greetings for specific users */}
+          {(() => {
+            const email = user?.email?.toLowerCase() || '';
+            const username = email.split('@')[0];
+            
+            // Check for personalized greetings
+            const personalizedUsers = ['carecoordinatorkwc', 'kevanfewtrell', 'pmcxleewalker'];
+            const isPersonalized = personalizedUsers.includes(username);
+            const isCarly = email === 'carlyodonovan@bluebirdcare.ie';
+            
+            if (isCarly) {
+              return (
+                <>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center" data-testid="dashboard-title">
+                    <span className="mr-2">🐾</span>
+                    Welcome, Carly!
+                    <span className="ml-2">🐾</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-gray-500 flex items-center mt-1">
+                    <Clock size={12} className="mr-1" />
+                    Updated: {lastUpdated ? formatTime(lastUpdated) : 'Loading...'}
+                  </p>
+                </>
+              );
+            } else if (isPersonalized) {
+              // Get display name from username
+              const displayName = username.charAt(0).toUpperCase() + username.slice(1);
+              return (
+                <>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" data-testid="dashboard-title">
+                    Hey {displayName}!
+                  </h1>
+                  <p className="text-xs sm:text-sm text-gray-500 flex items-center mt-1">
+                    <Clock size={12} className="mr-1" />
+                    Updated: {lastUpdated ? formatTime(lastUpdated) : 'Loading...'}
+                  </p>
+                </>
+              );
+            } else {
+              return (
+                <>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" data-testid="dashboard-title">Fleet Status</h1>
+                  <p className="text-xs sm:text-sm text-gray-500 flex items-center mt-1">
+                    <Clock size={12} className="mr-1" />
+                    Updated: {lastUpdated ? formatTime(lastUpdated) : 'Loading...'}
+                  </p>
+                </>
+              );
+            }
+          })()}
         </div>
         <button
           onClick={() => { fetchLiveStatus(); fetchComplianceAlerts(); fetchPendingBookings(); fetchLiftRequests(); fetchLiftNotifications(); fetchBookingNotifications(); fetchTodos(); }}

@@ -88,6 +88,21 @@ const Admin = () => {
   });
   
   const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  // Helper function to format schedule info
+  const formatSchedule = (todo) => {
+    if (!todo.schedule_type) return null;
+    if (todo.schedule_type === 'daily') return '🔄 Daily';
+    if (todo.schedule_type === 'weekly' && todo.schedule_days?.length) {
+      const days = todo.schedule_days.sort((a, b) => a - b).map(d => DAYS_OF_WEEK[d]).join(', ');
+      return `📅 Weekly: ${days}`;
+    }
+    if (todo.schedule_type === 'monthly' && todo.schedule_days?.length) {
+      const dates = todo.schedule_days.sort((a, b) => a - b).join(', ');
+      return `📆 Monthly: ${dates}`;
+    }
+    return null;
+  };
 
   // Reports State
   const [reportData, setReportData] = useState(null);

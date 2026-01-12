@@ -1139,6 +1139,39 @@ async def delete_booking(booking_id: str, current_user: dict = Depends(get_curre
     return {"message": f"Booking {action} successfully"}
 
 
+@api_router.delete("/bookings/series/{recurring_group_id}")
+async def delete_booking_series(recurring_group_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete all bookings in a recurring series - Admins can delete any, users can only delete their own"""
+    # Get all bookings in this series
+    series_bookings = await db.bookings.find(
+        {"recurring_group_id": recurring_group_id},
+        {"_id": 0}
+    ).to_list(100)
+    
+    if not series_bookings:
+        raise HTTPException(status_code=404, detail="Recurring booking series not found")
+    
+    # Check permissions using the first booking in the series
+    first_booking = series_bookings[0]
+    is_admin = current_user.get('role') == 'admin'
+    is_owner = first_booking.get('created_by_email') == current_user['email']
+    
+    if not is_admin and not is_owner:
+        raise HTTPException(
+            status_code=403, 
+            detail="You can only cancel your own booking series. Contact an admin to delete other bookings."
+        )
+    
+    # Delete all bookings in the series
+    result = await db.bookings.delete_many({"recurring_group_id": recurring_group_id})
+    
+    action = "deleted" if is_admin else "cancelled"
+    return {
+        "message": f"Recurring booking series {action} successfully",
+        "deleted_count": result.deleted_count
+    }
+
+
 # ==================== BOOKING SUGGESTIONS ENDPOINT ====================
 
 @api_router.get("/bookings/suggestions")

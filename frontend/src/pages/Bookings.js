@@ -958,8 +958,8 @@ const Bookings = () => {
                           </p>
                         )}
                       </div>
-                      {/* Only show delete button if admin or owner */}
-                      {(user?.role === 'admin' || booking.created_by_email === user?.email) && !isPending && (
+                      {/* Only show delete button if admin or owner and not in select mode */}
+                      {!selectMode && (user?.role === 'admin' || booking.created_by_email === user?.email) && !isPending && (
                         <button
                           onClick={() => handleDelete(booking.id)}
                           data-testid={`delete-booking-${booking.id}`}

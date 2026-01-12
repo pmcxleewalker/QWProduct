@@ -259,7 +259,7 @@ const Admin = () => {
       }
       setShowTodoForm(false);
       setEditingTodo(null);
-      setTodoForm({ title: '', is_mandatory: false });
+      setTodoForm({ title: '', is_mandatory: false, schedule_type: null, schedule_days: [] });
       fetchData();
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to save to-do item');
@@ -291,6 +291,8 @@ const Admin = () => {
     setTodoForm({
       title: todo.title,
       is_mandatory: todo.is_mandatory,
+      schedule_type: todo.schedule_type || null,
+      schedule_days: todo.schedule_days || [],
     });
     setShowTodoForm(true);
   };

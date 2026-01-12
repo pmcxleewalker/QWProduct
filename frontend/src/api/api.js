@@ -40,6 +40,7 @@ export const bookingAPI = {
   getByCar: (carId) => axios.get(`${API}/bookings/car/${carId}`),
   create: (data) => axios.post(`${API}/bookings`, data),
   delete: (id) => axios.delete(`${API}/bookings/${id}`),
+  deleteSeries: (recurringGroupId) => axios.delete(`${API}/bookings/series/${recurringGroupId}`),
   getPending: () => axios.get(`${API}/admin/pending-bookings`),
   approve: (groupId) => axios.post(`${API}/admin/bookings/${groupId}/approve`),
   reject: (groupId, reason) => axios.post(`${API}/admin/bookings/${groupId}/reject`, { reason }),

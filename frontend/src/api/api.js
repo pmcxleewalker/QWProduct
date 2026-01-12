@@ -45,6 +45,7 @@ export const bookingAPI = {
   reject: (groupId, reason) => axios.post(`${API}/admin/bookings/${groupId}/reject`, { reason }),
   edit: (bookingId, data) => axios.put(`${API}/admin/bookings/${bookingId}`, data),
   editSeries: (recurrenceId, data) => axios.put(`${API}/admin/bookings/series/${recurrenceId}`, data),
+  getSuggestions: () => axios.get(`${API}/bookings/suggestions`),
 };
 
 // Booking Notifications API

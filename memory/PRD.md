@@ -26,6 +26,7 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
 - Admin approval workflow
 - **Booking Suggestions** - Shows available cars and time slots for next 7 days
 - **Bulk Booking Cancellation** - Select multiple bookings and cancel them at once
+- **Recurring Series Management** - Delete individual occurrences OR entire series
 
 ### Admin To-Do List
 - Create, edit, delete tasks

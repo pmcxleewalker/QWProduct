@@ -1298,6 +1298,49 @@ async def get_booking_suggestions(current_user: dict = Depends(get_current_user)
     return suggestions
 
 
+# ==================== WEATHER PROXY ENDPOINT ====================
+
+@api_router.get("/weather")
+async def get_weather(current_user: dict = Depends(get_current_user)):
+    """Get weather for Kerry and West Cork"""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            kerry_resp = await client.get('https://wttr.in/Kerry,Ireland?format=j1')
+            westcork_resp = await client.get('https://wttr.in/West+Cork,Ireland?format=j1')
+            
+            kerry_data = kerry_resp.json() if kerry_resp.status_code == 200 else None
+            westcork_data = westcork_resp.json() if westcork_resp.status_code == 200 else None
+            
+            result = {"kerry": None, "westCork": None}
+            
+            if kerry_data and 'current_condition' in kerry_data:
+                cc = kerry_data['current_condition'][0]
+                result['kerry'] = {
+                    "temp": cc.get('temp_C', '--'),
+                    "desc": cc.get('weatherDesc', [{}])[0].get('value', 'Unknown'),
+                    "feelsLike": cc.get('FeelsLikeC', '--'),
+                    "humidity": cc.get('humidity', '--'),
+                    "windSpeed": cc.get('windspeedKmph', '--'),
+                    "code": cc.get('weatherCode', '113')
+                }
+            
+            if westcork_data and 'current_condition' in westcork_data:
+                cc = westcork_data['current_condition'][0]
+                result['westCork'] = {
+                    "temp": cc.get('temp_C', '--'),
+                    "desc": cc.get('weatherDesc', [{}])[0].get('value', 'Unknown'),
+                    "feelsLike": cc.get('FeelsLikeC', '--'),
+                    "humidity": cc.get('humidity', '--'),
+                    "windSpeed": cc.get('windspeedKmph', '--'),
+                    "code": cc.get('weatherCode', '113')
+                }
+            
+            return result
+    except Exception as e:
+        logging.error(f"Weather API error: {e}")
+        return {"kerry": None, "westCork": None, "error": str(e)}
+
+
 # ==================== RECURRING BOOKING APPROVAL ENDPOINTS ====================
 
 class BookingRejectRequest(BaseModel):

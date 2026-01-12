@@ -506,6 +506,78 @@ const Bookings = () => {
         </div>
       )}
 
+      {/* Booking Suggestions Section */}
+      {suggestions.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-lg mb-6 overflow-hidden" data-testid="suggestions-section">
+          <button
+            onClick={() => setShowSuggestions(!showSuggestions)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-amber-100/50 transition-colors"
+          >
+            <div className="flex items-center space-x-2">
+              <Lightbulb className="text-amber-600" size={20} />
+              <span className="font-semibold text-amber-900">Available Cars & Time Slots</span>
+              <span className="bg-amber-200 text-amber-800 text-xs px-2 py-0.5 rounded-full">
+                {suggestions.length} cars available
+              </span>
+            </div>
+            {showSuggestions ? <ChevronUp className="text-amber-600" size={20} /> : <ChevronDown className="text-amber-600" size={20} />}
+          </button>
+          
+          {showSuggestions && (
+            <div className="px-4 pb-4">
+              <p className="text-xs text-amber-700 mb-3">Quick view of car availability for the next 7 days (8 AM - 6 PM)</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {suggestions.slice(0, 6).map((suggestion) => (
+                  <div 
+                    key={suggestion.car_id}
+                    className="bg-white rounded-lg p-3 border border-amber-200 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <Car className="text-amber-600" size={16} />
+                        <span className="font-medium text-gray-900 text-sm">{suggestion.car_name}</span>
+                      </div>
+                      <span className="text-xs text-gray-500">{suggestion.registration}</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {suggestion.free_slots.slice(0, 3).map((slot, idx) => (
+                        <div 
+                          key={idx}
+                          className="flex items-center justify-between bg-green-50 rounded px-2 py-1 text-xs"
+                        >
+                          <span className="font-medium text-green-800">{slot.day_name}</span>
+                          <span className="text-green-700">{slot.start} - {slot.end}</span>
+                          <span className="text-green-600 bg-green-100 px-1.5 py-0.5 rounded">{slot.duration_hours}h</span>
+                        </div>
+                      ))}
+                      {suggestion.free_slots.length > 3 && (
+                        <p className="text-xs text-gray-500 text-center">
+                          +{suggestion.free_slots.length - 3} more slots
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setFormData({ ...formData, car_id: suggestion.car_id });
+                        setShowForm(true);
+                      }}
+                      className="mt-2 w-full text-xs bg-amber-100 text-amber-800 hover:bg-amber-200 py-1.5 rounded font-medium transition-colors"
+                    >
+                      Book This Car
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {suggestions.length > 6 && (
+                <p className="text-center text-xs text-amber-700 mt-3">
+                  Showing 6 of {suggestions.length} available cars
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Booking Form */}
       {showForm && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">

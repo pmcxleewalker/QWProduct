@@ -25,6 +25,7 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
 - Recurring bookings (daily, weekly, monthly)
 - Admin approval workflow
 - **Booking Suggestions** - Shows available cars and time slots for next 7 days
+- **Bulk Booking Cancellation** - Select multiple bookings and cancel them at once
 
 ### Admin To-Do List
 - Create, edit, delete tasks
@@ -59,6 +60,14 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
    - Suggestion cards with car info, available slots, and "Book This Car" button
    - Collapsible section on Bookings page
 
+3. **Bulk Booking Cancellation**
+   - "Select Bookings" mode in List view
+   - Checkboxes on approved bookings (pending bookings cannot be selected)
+   - "Select All" / "Deselect All" toggle
+   - Selected count display
+   - "Cancel Selected" bulk delete button
+   - Visual highlighting (red border + background) for selected bookings
+
 ---
 
 ## Architecture
@@ -77,6 +86,7 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
 - `POST /api/auth/login` - User login
 - `GET/POST/PUT/DELETE /api/admin/todos` - To-Do list management
 - `GET /api/bookings/suggestions` - Car availability suggestions
+- `DELETE /api/bookings/{id}` - Delete individual booking
 - `GET /api/admin/reports/fleet-usage` - Fleet analytics
 
 ---
@@ -86,6 +96,7 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
 ### P0 (Done)
 - [x] Advanced To-Do features (auto-reset, scheduling)
 - [x] Booking suggestions on Bookings page
+- [x] Bulk booking cancellation
 
 ### P1 (Upcoming)
 - [ ] Convert Training Manuals to downloadable PDFs

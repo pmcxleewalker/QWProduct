@@ -45,6 +45,60 @@ const Dashboard = () => {
     location: ''
   });
 
+  // Weather State
+  const [weather, setWeather] = useState({
+    kerry: null,
+    westCork: null,
+    loading: true
+  });
+
+  // Fetch weather data
+  const fetchWeather = useCallback(async () => {
+    try {
+      // Using wttr.in API (free, no API key needed)
+      const [kerryRes, westCorkRes] = await Promise.all([
+        fetch('https://wttr.in/Kerry,Ireland?format=j1'),
+        fetch('https://wttr.in/West+Cork,Ireland?format=j1')
+      ]);
+      
+      const kerryData = await kerryRes.json();
+      const westCorkData = await westCorkRes.json();
+      
+      setWeather({
+        kerry: {
+          temp: kerryData.current_condition?.[0]?.temp_C || '--',
+          desc: kerryData.current_condition?.[0]?.weatherDesc?.[0]?.value || 'Unknown',
+          feelsLike: kerryData.current_condition?.[0]?.FeelsLikeC || '--',
+          humidity: kerryData.current_condition?.[0]?.humidity || '--',
+          windSpeed: kerryData.current_condition?.[0]?.windspeedKmph || '--',
+          code: kerryData.current_condition?.[0]?.weatherCode || '113'
+        },
+        westCork: {
+          temp: westCorkData.current_condition?.[0]?.temp_C || '--',
+          desc: westCorkData.current_condition?.[0]?.weatherDesc?.[0]?.value || 'Unknown',
+          feelsLike: westCorkData.current_condition?.[0]?.FeelsLikeC || '--',
+          humidity: westCorkData.current_condition?.[0]?.humidity || '--',
+          windSpeed: westCorkData.current_condition?.[0]?.windspeedKmph || '--',
+          code: westCorkData.current_condition?.[0]?.weatherCode || '113'
+        },
+        loading: false
+      });
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+      setWeather(prev => ({ ...prev, loading: false }));
+    }
+  }, []);
+
+  // Get weather icon based on weather code
+  const getWeatherIcon = (code) => {
+    const codeNum = parseInt(code);
+    if (codeNum === 113) return <Sun className="text-yellow-500" size={24} />;
+    if ([116, 119, 122].includes(codeNum)) return <Cloud className="text-gray-500" size={24} />;
+    if ([176, 263, 266, 293, 296, 299, 302, 305, 308, 311, 314, 353, 356, 359].includes(codeNum)) return <CloudRain className="text-blue-500" size={24} />;
+    if ([179, 182, 185, 227, 230, 323, 326, 329, 332, 335, 338, 350, 362, 365, 368, 371, 374, 377].includes(codeNum)) return <CloudSnow className="text-blue-300" size={24} />;
+    return <Cloud className="text-gray-400" size={24} />;
+  };
+
   const fetchTodos = useCallback(async () => {
     if (user?.role === 'admin') {
       try {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { bookingAPI, carAPI } from '../api/api';
-import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, List, Grid, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, List, Grid, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp, CheckSquare, Square, XCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import EditBookingModal from '../components/EditBookingModal';
 

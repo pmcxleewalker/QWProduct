@@ -176,6 +176,7 @@ const Bookings = () => {
       }
       setError(errorMsg);
       alert('Booking failed: ' + errorMsg); // Immediate feedback
+      window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to show error
     }
   };
 

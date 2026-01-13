@@ -48,6 +48,10 @@ export const bookingAPI = {
   edit: (bookingId, data) => axios.put(`${API}/admin/bookings/${bookingId}`, data),
   editSeries: (recurrenceId, data) => axios.put(`${API}/admin/bookings/series/${recurrenceId}`, data),
   getSuggestions: () => axios.get(`${API}/bookings/suggestions`),
+  getAvailableCars: (startTime, endTime, excludeBookingId) => 
+    axios.get(`${API}/admin/available-cars`, { 
+      params: { start_time: startTime, end_time: endTime, exclude_booking_id: excludeBookingId } 
+    }),
 };
 
 // Booking Notifications API

@@ -973,12 +973,16 @@ async def get_status_history(car_id: str, limit: int = Query(50, ge=1, le=500), 
 @api_router.post("/bookings", response_model=Booking)
 async def create_booking(booking: BookingCreate, current_user: dict = Depends(get_current_user)):
     """Create a new booking (authenticated users)"""
+    logging.info(f"Booking request: car_id={booking.car_id}, user={current_user['email']}, start={booking.start_time}, end={booking.end_time}")
+    
     car = await db.cars.find_one({"id": booking.car_id}, {"_id": 0})
     if not car:
-        raise HTTPException(status_code=404, detail="Car not found")
+        logging.error(f"Car not found: {booking.car_id}")
+        raise HTTPException(status_code=404, detail=f"Car not found: {booking.car_id}")
     
     # Check if car is blocked
     if car.get('is_blocked'):
+        logging.warning(f"Attempted booking on blocked car: {car.get('name')}")
         raise HTTPException(
             status_code=400,
             detail=f"Car is blocked for {car.get('block_reason', 'maintenance')}. Cannot create booking."

@@ -1090,11 +1090,11 @@ async def create_booking(booking: BookingCreate, current_user: dict = Depends(ge
 @api_router.get("/bookings", response_model=List[Booking])
 async def get_all_bookings(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(100, ge=1, le=500, description="Maximum number of records to return"),
+    limit: int = Query(500, ge=1, le=1000, description="Maximum number of records to return"),
     current_user: dict = Depends(get_current_user)
 ):
     """Get all bookings (authenticated users) with pagination"""
-    bookings = await db.bookings.find({}, {"_id": 0}).sort("start_time", -1).skip(skip).limit(limit).to_list(limit)
+    bookings = await db.bookings.find({}, {"_id": 0}).sort("start_time", 1).skip(skip).limit(limit).to_list(limit)
     for booking in bookings:
         deserialize_datetime(booking, ['start_time', 'end_time', 'created_at'])
     return bookings

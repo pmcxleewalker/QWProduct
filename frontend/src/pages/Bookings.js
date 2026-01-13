@@ -563,7 +563,14 @@ const Bookings = () => {
           <div className="p-3 bg-gray-50 border-t">
             <div className="flex justify-between items-center">
               <p className="text-sm text-gray-600">
-                <span className="font-medium">{bookings.filter(b => b.car_id === selectedCar).length}</span> bookings this month
+                <span className="font-medium">
+                  {bookings.filter(b => {
+                    if (b.car_id !== selectedCar) return false;
+                    const bookingDate = new Date(b.start_time);
+                    return bookingDate.getMonth() === currentDate.getMonth() && 
+                           bookingDate.getFullYear() === currentDate.getFullYear();
+                  }).length}
+                </span> bookings this month
               </p>
               <button
                 onClick={() => {

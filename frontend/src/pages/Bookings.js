@@ -338,13 +338,23 @@ const Bookings = () => {
     }
     
     return filteredBookings.filter(booking => {
+      if (!booking.start_time || !booking.end_time) return false;
+      
+      // Parse ISO dates properly
       const startDate = new Date(booking.start_time);
       const endDate = new Date(booking.end_time);
       
-      // Check if the booking overlaps with this day
+      // Check for invalid dates
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        console.warn('Invalid booking dates:', booking.id, booking.start_time, booking.end_time);
+        return false;
+      }
+      
+      // Create day boundaries in local time
       const dayStart = new Date(year, month, day, 0, 0, 0);
       const dayEnd = new Date(year, month, day, 23, 59, 59);
       
+      // Check if the booking overlaps with this day
       return startDate <= dayEnd && endDate >= dayStart;
     });
   };

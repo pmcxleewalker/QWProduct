@@ -1506,6 +1506,7 @@ class BookingUpdate(BaseModel):
     end_time: Optional[datetime] = None
     user_name: Optional[str] = None
     destination_notes: Optional[str] = None
+    car_id: Optional[str] = None  # Allow changing the car for a single occurrence
 
 @api_router.put("/admin/bookings/{booking_id}")
 async def edit_booking(booking_id: str, booking_update: BookingUpdate, current_user: dict = Depends(get_current_admin_user)):
@@ -1524,6 +1525,33 @@ async def edit_booking(booking_id: str, booking_update: BookingUpdate, current_u
     if booking_update.destination_notes is not None:
         update_data["destination_notes"] = booking_update.destination_notes
     
+    # Handle car change
+    if booking_update.car_id and booking_update.car_id != booking.get('car_id'):
+        # Verify the new car exists
+        new_car = await db.cars.find_one({"id": booking_update.car_id}, {"_id": 0})
+        if not new_car:
+            raise HTTPException(status_code=404, detail="Selected car not found")
+        if new_car.get('is_blocked'):
+            raise HTTPException(status_code=400, detail=f"Car is blocked for {new_car.get('block_reason', 'maintenance')}")
+        
+        # Check for conflicts with the new car (exclude current booking)
+        start_time = booking_update.start_time.isoformat() if booking_update.start_time else booking['start_time']
+        end_time = booking_update.end_time.isoformat() if booking_update.end_time else booking['end_time']
+        
+        conflict = await db.bookings.find_one({
+            "car_id": booking_update.car_id,
+            "id": {"$ne": booking_id},
+            "status": "approved",
+            "$or": [
+                {"start_time": {"$lt": end_time}, "end_time": {"$gt": start_time}}
+            ]
+        })
+        
+        if conflict:
+            raise HTTPException(status_code=409, detail="New car is already booked for this time period")
+        
+        update_data["car_id"] = booking_update.car_id
+    
     if update_data:
         # Mark as individually edited if part of recurring series
         if booking.get('recurring_group_id'):
@@ -1535,6 +1563,39 @@ async def edit_booking(booking_id: str, booking_update: BookingUpdate, current_u
     deserialize_datetime(updated_booking, ['start_time', 'end_time', 'created_at'])
     
     return updated_booking
+
+
+# Get available cars for a specific time slot (for car swapping)
+@api_router.get("/admin/available-cars")
+async def get_available_cars_for_slot(
+    start_time: str = Query(..., description="Start time in ISO format"),
+    end_time: str = Query(..., description="End time in ISO format"),
+    exclude_booking_id: Optional[str] = Query(None, description="Booking ID to exclude from conflict check"),
+    current_user: dict = Depends(get_current_admin_user)
+):
+    """Get cars that are available during a specific time slot"""
+    # Get all cars that are not blocked
+    all_cars = await db.cars.find({"is_blocked": {"$ne": True}}, {"_id": 0}).to_list(100)
+    
+    # Get bookings that conflict with the time slot
+    conflicting_bookings = await db.bookings.find({
+        "status": "approved",
+        "$or": [
+            {"start_time": {"$lt": end_time}, "end_time": {"$gt": start_time}}
+        ]
+    }, {"_id": 0, "car_id": 1, "id": 1}).to_list(500)
+    
+    # Filter out the excluded booking
+    if exclude_booking_id:
+        conflicting_bookings = [b for b in conflicting_bookings if b.get('id') != exclude_booking_id]
+    
+    # Get list of car IDs that are booked
+    booked_car_ids = set(b.get('car_id') for b in conflicting_bookings)
+    
+    # Filter available cars
+    available_cars = [car for car in all_cars if car.get('id') not in booked_car_ids]
+    
+    return available_cars
 
 
 class SeriesBookingUpdate(BaseModel):

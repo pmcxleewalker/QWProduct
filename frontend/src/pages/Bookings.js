@@ -159,18 +159,22 @@ const Bookings = () => {
       });
       fetchData(); // Auto-refresh calendar
     } catch (err) {
+      console.error('Booking error:', err);
       // Handle error - detail can be string or array of validation errors
+      let errorMsg = 'Failed to create booking';
       const detail = err.response?.data?.detail;
       if (typeof detail === 'string') {
-        setError(detail);
+        errorMsg = detail;
       } else if (Array.isArray(detail)) {
         // Validation errors come as array of objects
-        setError(detail.map(e => e.msg || e.message || 'Validation error').join(', '));
+        errorMsg = detail.map(e => e.msg || e.message || 'Validation error').join(', ');
       } else if (detail && typeof detail === 'object') {
-        setError(detail.msg || detail.message || 'Failed to create booking');
-      } else {
-        setError('Failed to create booking');
+        errorMsg = detail.msg || detail.message || 'Failed to create booking';
+      } else if (err.message) {
+        errorMsg = err.message;
       }
+      setError(errorMsg);
+      alert('Booking failed: ' + errorMsg); // Immediate feedback
     }
   };
 

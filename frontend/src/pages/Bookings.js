@@ -50,8 +50,9 @@ const Bookings = () => {
         carAPI.getAll(),
         bookingAPI.getSuggestions(),
       ]);
-      setBookings(bookingsRes.data);
-      setCars(carsRes.data);
+      console.log('Fetched bookings:', bookingsRes.data?.length, 'Cars:', carsRes.data?.length);
+      setBookings(bookingsRes.data || []);
+      setCars(carsRes.data || []);
       setSuggestions(suggestionsRes.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);

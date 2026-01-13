@@ -144,6 +144,7 @@ const Bookings = () => {
       
       setSuccess(successMsg);
       alert(successMsg); // Immediate feedback
+      window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to show message
       
       setShowForm(false);
       setFormData({

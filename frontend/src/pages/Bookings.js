@@ -66,12 +66,54 @@ const Bookings = () => {
     setError('');
     setSuccess('');
 
+    // Validate required fields
+    if (!formData.car_id) {
+      setError('Please select a car');
+      alert('Please select a car');
+      return;
+    }
+    if (!formData.user_name) {
+      setError('Please enter your name');
+      alert('Please enter your name');
+      return;
+    }
+    if (!formData.start_time) {
+      setError('Please select a start time');
+      alert('Please select a start time');
+      return;
+    }
+    if (!formData.end_time) {
+      setError('Please select an end time');
+      alert('Please select an end time');
+      return;
+    }
+
     try {
+      const startDate = new Date(formData.start_time);
+      const endDate = new Date(formData.end_time);
+      
+      // Validate dates
+      if (isNaN(startDate.getTime())) {
+        setError('Invalid start time');
+        alert('Invalid start time');
+        return;
+      }
+      if (isNaN(endDate.getTime())) {
+        setError('Invalid end time');
+        alert('Invalid end time');
+        return;
+      }
+      if (endDate <= startDate) {
+        setError('End time must be after start time');
+        alert('End time must be after start time');
+        return;
+      }
+
       const bookingData = {
         car_id: formData.car_id,
         user_name: formData.user_name,
-        start_time: new Date(formData.start_time).toISOString(),
-        end_time: new Date(formData.end_time).toISOString(),
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
         destination_notes: formData.destination_notes || '',
         is_recurring: false,
       };
@@ -90,16 +132,18 @@ const Bookings = () => {
         }
       }
       
+      console.log('Submitting booking:', bookingData);
       await bookingAPI.create(bookingData);
       
       const isRecurring = formData.is_recurring && formData.recurrence_type;
       const isStaff = user?.role !== 'admin';
       
-      if (isRecurring && isStaff) {
-        setSuccess('Recurring booking submitted for admin approval!');
-      } else {
-        setSuccess('Booking created successfully!');
-      }
+      const successMsg = isRecurring && isStaff 
+        ? 'Recurring booking submitted for admin approval!' 
+        : 'Booking created successfully!';
+      
+      setSuccess(successMsg);
+      alert(successMsg); // Immediate feedback
       
       setShowForm(false);
       setFormData({

@@ -137,18 +137,31 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
 
 ## Prioritized Backlog
 
+### P0 (Critical - Awaiting Action)
+- [ ] **DEPLOY TO PRODUCTION** - Booking calendar fix is in preview, needs deployment
+- [ ] Redesign "Available Cars & Time Slots" section (IN PROGRESS)
+  - New scrollable hourly cards (7am-11pm)
+  - Navigation controls (day/week/month)
+  - Show 6 cards initially, "Show More" button
+
 ### P0 (Done)
+- [x] Fish icon for pmcxleewalker user
 - [x] Advanced To-Do features (auto-reset, scheduling)
 - [x] Booking suggestions on Bookings page
 - [x] Bulk booking cancellation
+- [x] Admin car swap for recurring bookings
+- [x] Personalized dashboard greetings
+- [x] Staff weather widgets
 
 ### P1 (Upcoming)
+- [ ] Live Daily Availability Report in Admin Reports section
 - [ ] Convert Training Manuals to downloadable PDFs
 - [ ] Create printable QR code sheet for all vehicles
 
 ### P2 (Future)
 - [ ] Complete visual screenshot tutorial for staff
 - [ ] User review and feedback session
+- [ ] Refactor Bookings.js (1000+ lines) into smaller components
 
 ---
 

@@ -287,15 +287,15 @@ const Navigation = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                data-testid={`nav-${item.label.toLowerCase()}`}
+                data-testid={item.isFishIcon ? 'nav-fish' : `nav-${item.label.toLowerCase()}`}
                 className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
                   isActive(item.path)
                     ? 'text-blue-600'
                     : 'text-gray-600 hover:text-blue-600'
                 }`}
               >
-                <Icon size={24} />
-                <span className="text-xs mt-1">{item.label}</span>
+                <Icon size={item.isFishIcon ? 28 : 24} className={item.isFishIcon ? 'text-blue-500' : ''} />
+                {item.label && <span className="text-xs mt-1">{item.label}</span>}
               </Link>
             );
           })}

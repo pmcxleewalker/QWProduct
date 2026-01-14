@@ -17,9 +17,12 @@ const Navigation = () => {
   
   const isActive = (path) => location.pathname === path;
   
+  // Check if user is pmcxleewalker (show fish icon instead of "Live Sheet")
+  const isPmcxUser = user?.email?.toLowerCase().split('@')[0] === 'pmcxleewalker';
+  
   const navItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
-    { path: '/live-sheet', icon: FileSpreadsheet, label: 'Live Sheet' },
+    { path: '/live-sheet', icon: isPmcxUser ? Fish : FileSpreadsheet, label: isPmcxUser ? '' : 'Live Sheet', isFishIcon: isPmcxUser },
     { path: '/bookings', icon: Calendar, label: 'Bookings' },
     { path: '/assistance', icon: PhoneCall, label: 'Assistance' },
   ];

@@ -49,6 +49,42 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
 
 ## Completed Features (January 2025)
 
+### Session: January 14, 2025
+1. **Fish Icon for pmcxleewalker**
+   - Custom navigation for user `pmcxleewalker@quickwing.com`
+   - Shows fish icon (🐟) instead of "Live Sheet" text in navigation
+   - Icon-only display in both mobile and desktop navigation
+   - Tooltip on desktop shows "Live Sheet" on hover
+
+### Session: January 13, 2025
+1. **Admin Car Swap for Recurring Bookings**
+   - Admins can change the assigned car for individual booking occurrences
+   - Dropdown shows only cars available for that specific time slot
+   - New API endpoint: `GET /api/admin/available-cars`
+   - Modified edit modal in `/app/frontend/src/components/EditBookingModal.js`
+
+2. **Personalized Dashboard Greetings**
+   - Custom greetings for specific users (carlyodonovan, carecoordinatorkwc, kevanfewtrell, pmcxleewalker)
+   - "Welcome, Carly!" with paw emojis for Carly
+   - "Hey [Username]!" format for others
+
+3. **Staff Weather Widgets**
+   - Live weather display for Kerry and West Cork regions
+   - Backend proxy at `/api/weather` to avoid CORS issues
+   - Uses wttr.in API (no key required)
+   - Weather icons based on conditions
+
+4. **Critical Booking Calendar Fix**
+   - Fixed bug where bookings weren't appearing on calendar
+   - Issue: API limit of 100 results + descending sort excluded current month
+   - Fix: Increased limit to 500, changed to ascending sort order
+   - **STATUS: In preview, awaiting user deployment to production**
+
+5. **Enhanced Booking Form Feedback**
+   - Validation improvements
+   - Success/error alert popups
+   - Auto-scrolling to form feedback
+
 ### Session: January 12, 2025
 1. **Advanced To-Do Features**
    - Auto-reset mandatory tasks to incomplete after 24 hours

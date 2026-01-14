@@ -22,6 +22,7 @@ const Bookings = () => {
   const [selectedDateStr, setSelectedDateStr] = useState(''); // Selected date string
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [showAllCars, setShowAllCars] = useState(false); // Show more cars toggle
   const [selectMode, setSelectMode] = useState(false); // Multi-select mode
   const [selectedBookings, setSelectedBookings] = useState([]); // Selected booking IDs for bulk delete
   

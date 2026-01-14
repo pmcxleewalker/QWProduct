@@ -317,15 +317,16 @@ const Navigation = () => {
                     <Link
                       key={item.path}
                       to={item.path}
-                      data-testid={`nav-${item.label.toLowerCase()}`}
+                      data-testid={item.isFishIcon ? 'nav-fish-desktop' : `nav-${item.label.toLowerCase()}`}
                       className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
                         isActive(item.path)
                           ? 'text-blue-600 bg-blue-50'
                           : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
                       }`}
+                      title={item.isFishIcon ? 'Live Sheet' : item.label}
                     >
-                      <Icon size={20} />
-                      <span>{item.label}</span>
+                      <Icon size={item.isFishIcon ? 24 : 20} className={item.isFishIcon ? 'text-blue-500' : ''} />
+                      {item.label && <span>{item.label}</span>}
                     </Link>
                   );
                 })}

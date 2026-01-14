@@ -1302,6 +1302,139 @@ async def get_booking_suggestions(current_user: dict = Depends(get_current_user)
     return suggestions
 
 
+# ==================== DETAILED CAR AVAILABILITY ENDPOINT ====================
+
+@api_router.get("/cars/{car_id}/availability")
+async def get_car_availability(
+    car_id: str,
+    date: str = Query(None, description="Date in YYYY-MM-DD format, defaults to today"),
+    view: str = Query("day", description="View type: day, week, or month"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get detailed hourly availability for a specific car"""
+    # Get the car
+    car = await db.cars.find_one({"id": car_id}, {"_id": 0})
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+    
+    # Parse the date
+    if date:
+        try:
+            base_date = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except ValueError:
+            base_date = datetime.now(timezone.utc)
+    else:
+        base_date = datetime.now(timezone.utc)
+    
+    # Determine date range based on view
+    if view == "week":
+        days_to_check = 7
+    elif view == "month":
+        days_to_check = 30
+    else:  # day
+        days_to_check = 1
+    
+    # Working hours 7 AM to 11 PM
+    work_start_hour = 7
+    work_end_hour = 23
+    
+    # Get all bookings for this car in the date range
+    end_date = base_date + timedelta(days=days_to_check)
+    bookings = await db.bookings.find({
+        "car_id": car_id,
+        "status": "approved"
+    }, {"_id": 0}).to_list(500)
+    
+    availability = []
+    
+    for day_offset in range(days_to_check):
+        check_date = base_date + timedelta(days=day_offset)
+        day_data = {
+            "date": check_date.strftime("%Y-%m-%d"),
+            "day_name": check_date.strftime("%A"),
+            "day_short": check_date.strftime("%a"),
+            "date_display": check_date.strftime("%b %d"),
+            "hours": []
+        }
+        
+        # Get bookings for this day
+        day_bookings = []
+        for b in bookings:
+            try:
+                b_start_str = b.get('start_time', '')
+                b_end_str = b.get('end_time', '')
+                if not b_start_str or not b_end_str:
+                    continue
+                
+                if isinstance(b_start_str, str):
+                    b_start = datetime.fromisoformat(b_start_str.replace('Z', '+00:00'))
+                else:
+                    b_start = b_start_str
+                if isinstance(b_end_str, str):
+                    b_end = datetime.fromisoformat(b_end_str.replace('Z', '+00:00'))
+                else:
+                    b_end = b_end_str
+                
+                if b_start.tzinfo is None:
+                    b_start = b_start.replace(tzinfo=timezone.utc)
+                if b_end.tzinfo is None:
+                    b_end = b_end.replace(tzinfo=timezone.utc)
+                
+                # Check if booking overlaps with this day
+                day_start = check_date.replace(hour=0, minute=0, second=0, tzinfo=timezone.utc)
+                day_end = check_date.replace(hour=23, minute=59, second=59, tzinfo=timezone.utc)
+                
+                if b_start <= day_end and b_end >= day_start:
+                    day_bookings.append({
+                        'start': b_start,
+                        'end': b_end,
+                        'user_name': b.get('user_name', 'Unknown')
+                    })
+            except Exception:
+                continue
+        
+        # Generate hourly slots
+        now = datetime.now(timezone.utc)
+        for hour in range(work_start_hour, work_end_hour):
+            slot_start = check_date.replace(hour=hour, minute=0, second=0, tzinfo=timezone.utc)
+            slot_end = check_date.replace(hour=hour + 1, minute=0, second=0, tzinfo=timezone.utc)
+            
+            # Check if slot is in the past
+            if slot_end < now:
+                status = "past"
+                booked_by = None
+            else:
+                # Check if slot overlaps with any booking
+                is_booked = False
+                booked_by = None
+                for booking in day_bookings:
+                    if booking['start'] < slot_end and booking['end'] > slot_start:
+                        is_booked = True
+                        booked_by = booking['user_name']
+                        break
+                
+                status = "booked" if is_booked else "available"
+            
+            day_data["hours"].append({
+                "hour": hour,
+                "time_display": f"{hour:02d}:00",
+                "status": status,
+                "booked_by": booked_by
+            })
+        
+        availability.append(day_data)
+    
+    return {
+        "car_id": car_id,
+        "car_name": car.get('name', 'Unknown'),
+        "registration": car.get('registration', ''),
+        "is_blocked": car.get('is_blocked', False),
+        "view": view,
+        "base_date": base_date.strftime("%Y-%m-%d"),
+        "availability": availability
+    }
+
+
 # ==================== WEATHER PROXY ENDPOINT ====================
 
 @api_router.get("/weather")

@@ -77,6 +77,12 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
    - Live Sheet has new "Booked" counter alongside other status counters
    - Status resets to previous state when booking ends
 
+5. **Booking Form Updates**
+   - Renamed "Destination / Notes" to "Purpose" 
+   - Added new "Location (Eircode)" field
+   - Location entered in booking automatically shows in Live Sheet when car is booked
+   - Helper text explains the location will appear in Live Sheet
+
 ### Session: January 14, 2025
 1. **Admin Car Swap for Recurring Bookings**
    - Admins can change the assigned car for individual booking occurrences

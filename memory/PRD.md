@@ -66,9 +66,16 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
 3. **Dashboard Fleet Status Redesign**
    - Compact car cards: 5 columns on desktop (was 3)
    - Smaller, visually friendly cards with essential info only
-   - Status badges now show emoji icons (🟢 Free, 🔵 In Use, etc.)
+   - Status badges now show emoji icons (🟢 Free, 🔵 In Use, 🟡 Booked, etc.)
    - Location displayed in compact blue pill
    - Edit button moved to bottom-right corner
+
+4. **Automatic Booking Status Updates**
+   - Cars automatically show "Booked" status when there's an active booking
+   - Backend checks current time against approved booking start/end times
+   - Dashboard and Live Sheet show who booked the car (yellow highlight)
+   - Live Sheet has new "Booked" counter alongside other status counters
+   - Status resets to previous state when booking ends
 
 ### Session: January 14, 2025
 1. **Admin Car Swap for Recurring Bookings**

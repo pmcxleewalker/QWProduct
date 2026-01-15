@@ -157,9 +157,10 @@ const CarAvailabilityCard = ({ car, onBookClick }) => {
                               key={i}
                               className={`w-2 h-3 rounded-sm ${
                                 h.status === 'available' ? 'bg-green-400' : 
+                                h.status === 'recurring' ? 'bg-purple-400' :
                                 h.status === 'booked' ? 'bg-red-400' : 'bg-gray-300'
                               }`}
-                              title={`${h.time_display}: ${h.status}`}
+                              title={`${h.time_display}: ${h.status}${h.is_recurring ? ' (recurring)' : ''}`}
                             />
                           ))}
                           {day.hours?.length > 8 && <span className="text-xs text-gray-400">...</span>}

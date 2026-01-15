@@ -13,7 +13,6 @@ const Bookings = () => {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [viewMode, setViewMode] = useState('calendar'); // 'calendar' or 'list'
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedCar, setSelectedCar] = useState('all'); // 'all' or car id
   const [selectedBooking, setSelectedBooking] = useState(null); // For modal preview
@@ -23,8 +22,7 @@ const Bookings = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [showAllCars, setShowAllCars] = useState(false); // Show more cars toggle
-  const [selectMode, setSelectMode] = useState(false); // Multi-select mode
-  const [selectedBookings, setSelectedBookings] = useState([]); // Selected booking IDs for bulk delete
+  const [showCarTabs, setShowCarTabs] = useState(false); // Toggle car tabs visibility
   
   const [formData, setFormData] = useState({
     car_id: '',

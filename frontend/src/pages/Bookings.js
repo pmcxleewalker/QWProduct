@@ -841,7 +841,7 @@ const Bookings = () => {
       )}
 
       {/* Calendar View */}
-      {viewMode === 'calendar' && renderCalendar()}
+      {renderCalendar()}
 
       {/* List View */}
       {viewMode === 'list' && (

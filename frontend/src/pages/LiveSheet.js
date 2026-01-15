@@ -32,6 +32,7 @@ const LiveSheet = () => {
   const counters = {
     total: liveStatus.length,
     free: liveStatus.filter(item => item.car.current_status === 'Free' && !item.car.is_blocked).length,
+    booked: liveStatus.filter(item => item.car.current_status === 'Booked' && !item.car.is_blocked).length,
     inUse: liveStatus.filter(item => item.car.current_status === 'In Use' && !item.car.is_blocked).length,
     needsCleaning: liveStatus.filter(item => item.car.current_status === 'Needs Cleaning' && !item.car.is_blocked).length,
     needsRepair: liveStatus.filter(item => item.car.current_status === 'Needs Repair' && !item.car.is_blocked).length,

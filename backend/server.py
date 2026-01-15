@@ -1424,7 +1424,8 @@ async def get_car_availability(
                     day_bookings.append({
                         'start': b_start,
                         'end': b_end,
-                        'user_name': b.get('user_name', 'Unknown')
+                        'user_name': b.get('user_name', 'Unknown'),
+                        'is_recurring': b.get('recurring_group_id') is not None
                     })
             except Exception:
                 continue

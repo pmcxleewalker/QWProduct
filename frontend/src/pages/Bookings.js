@@ -116,7 +116,8 @@ const Bookings = () => {
         user_name: formData.user_name,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
-        destination_notes: formData.destination_notes || '',
+        purpose: formData.purpose || '',
+        location: formData.location || '',
         is_recurring: false,
       };
       
@@ -154,7 +155,8 @@ const Bookings = () => {
         user_name: '',
         start_time: '',
         end_time: '',
-        destination_notes: '',
+        purpose: '',
+        location: '',
         is_recurring: false,
         recurrence_type: '',
         recurrence_end_date: '',

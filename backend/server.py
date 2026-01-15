@@ -973,6 +973,10 @@ async def get_live_status(current_user: dict = Depends(get_current_user)):
                 item['latest_status'] = {}
             item['latest_status']['auto_status'] = 'Booked'
             item['latest_status']['booked_by'] = booking_info.get('user_name', 'Unknown')
+            # Add location from booking if available
+            booking_location = booking_info.get('location', '')
+            if booking_location:
+                item['latest_status']['location'] = booking_location
     
     # Format response to match expected structure
     result = []

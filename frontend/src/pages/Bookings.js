@@ -1130,10 +1130,16 @@ const Bookings = () => {
                             <User size={14} />
                             <span>{booking.user_name}</span>
                           </div>
-                          {booking.destination_notes && (
+                          {booking.location && (
                             <div className="flex items-center space-x-2">
-                              <MapPin size={14} />
-                              <span className="truncate">{booking.destination_notes}</span>
+                              <MapPin size={14} className="text-blue-500" />
+                              <span className="truncate text-blue-600">{booking.location}</span>
+                            </div>
+                          )}
+                          {(booking.purpose || booking.destination_notes) && (
+                            <div className="flex items-center space-x-2">
+                              <AlertCircle size={14} />
+                              <span className="truncate">{booking.purpose || booking.destination_notes}</span>
                             </div>
                           )}
                         </div>

@@ -589,7 +589,7 @@ const Dashboard = () => {
               data-testid={`car-card-${item.car.id}`}
               className={`bg-white rounded-lg shadow hover:shadow-md transition-shadow p-3 ${
                 item.car.is_blocked ? 'border-l-4 border-purple-400' : ''
-              }`}
+              } ${item.car.current_status === 'Booked' ? 'border-l-4 border-yellow-400' : ''}`}
             >
               {/* Header: Name + Status */}
               <div className="flex items-start justify-between mb-2">
@@ -607,8 +607,15 @@ const Dashboard = () => {
                 />
               </div>
 
+              {/* Show who booked the car if status is Booked */}
+              {item.car.current_status === 'Booked' && item.latest_status?.booked_by && (
+                <div className="bg-yellow-50 rounded px-2 py-1 mb-2">
+                  <p className="text-xs text-yellow-800 truncate">👤 {item.latest_status.booked_by}</p>
+                </div>
+              )}
+
               {/* Location - compact */}
-              {item.latest_status?.location && (
+              {item.latest_status?.location && item.car.current_status !== 'Booked' && (
                 <div className="bg-blue-50 rounded px-2 py-1 mb-2">
                   <p className="text-xs text-blue-800 truncate">📍 {item.latest_status.location}</p>
                 </div>
@@ -616,7 +623,7 @@ const Dashboard = () => {
 
               {/* Footer: Time + Edit */}
               <div className="flex items-center justify-between text-xs text-gray-400">
-                <span>{item.latest_status ? formatTime(item.latest_status.timestamp) : 'No update'}</span>
+                <span>{item.latest_status?.timestamp ? formatTime(item.latest_status.timestamp) : 'No update'}</span>
                 {user?.role === 'admin' && (
                   <button
                     onClick={() => handleOpenStatusModal({...item.car, car_id: item.car.id, location: item.latest_status?.location})}

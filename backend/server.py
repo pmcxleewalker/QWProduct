@@ -1772,7 +1772,8 @@ async def get_available_cars_for_slot(
 
 class SeriesBookingUpdate(BaseModel):
     user_name: Optional[str] = None
-    destination_notes: Optional[str] = None
+    purpose: Optional[str] = None
+    location: Optional[str] = None
     # Note: For series, we don't allow changing times as each booking has different times
 
 @api_router.put("/admin/bookings/series/{recurrence_id}")
@@ -1786,8 +1787,10 @@ async def edit_booking_series(recurrence_id: str, booking_update: SeriesBookingU
     update_data = {}
     if booking_update.user_name:
         update_data["user_name"] = booking_update.user_name
-    if booking_update.destination_notes is not None:
-        update_data["destination_notes"] = booking_update.destination_notes
+    if booking_update.purpose is not None:
+        update_data["purpose"] = booking_update.purpose
+    if booking_update.location is not None:
+        update_data["location"] = booking_update.location
     
     if update_data:
         result = await db.bookings.update_many(

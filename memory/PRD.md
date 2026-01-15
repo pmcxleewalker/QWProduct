@@ -49,14 +49,20 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
 
 ## Completed Features (January 2025)
 
-### Session: January 14, 2025
+### Session: January 15, 2025
 1. **Fish Icon for pmcxleewalker**
    - Custom navigation for user `pmcxleewalker@quickwing.com`
    - Shows fish icon (🐟) instead of "Live Sheet" text in navigation
    - Icon-only display in both mobile and desktop navigation
    - Tooltip on desktop shows "Live Sheet" on hover
 
-### Session: January 13, 2025
+2. **Bookings Page UI Cleanup**
+   - Removed List View toggle - now only Calendar View is available
+   - Car selector tabs are now collapsible/hidden by default
+   - Click + button to expand car tabs, - button to collapse
+   - Cleaner, more focused booking interface
+
+### Session: January 14, 2025
 1. **Admin Car Swap for Recurring Bookings**
    - Admins can change the assigned car for individual booking occurrences
    - Dropdown shows only cars available for that specific time slot

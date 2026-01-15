@@ -404,35 +404,58 @@ const Bookings = () => {
 
     return (
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        {/* Car Selector Tabs */}
-        <div className="bg-gray-100 p-2 border-b overflow-x-auto">
-          <div className="flex space-x-2 min-w-max">
-            <button
-              onClick={() => setSelectedCar('all')}
-              className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                selectedCar === 'all' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <Grid size={14} />
-              <span>All Cars</span>
-            </button>
-            {cars.filter(car => !car.is_blocked).map((car) => (
-              <button
-                key={car.id}
-                onClick={() => setSelectedCar(car.id)}
-                className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                  selectedCar === car.id 
-                    ? `${getCarColor(car.id)} text-white` 
-                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <Car size={14} />
-                <span>{car.name}</span>
-              </button>
-            ))}
-          </div>
+        {/* Car Selector Toggle Button */}
+        <div className="bg-gray-100 border-b">
+          <button
+            onClick={() => setShowCarTabs(!showCarTabs)}
+            className="w-full px-3 py-2 flex items-center justify-between hover:bg-gray-200 transition-colors"
+          >
+            <div className="flex items-center space-x-2">
+              <Car size={16} className="text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">
+                {selectedCar === 'all' ? 'All Cars' : cars.find(c => c.id === selectedCar)?.name || 'Select Car'}
+              </span>
+              {selectedCar !== 'all' && (
+                <span className={`w-3 h-3 rounded-full ${getCarColor(selectedCar)}`}></span>
+              )}
+            </div>
+            <div className={`w-6 h-6 flex items-center justify-center rounded-full ${showCarTabs ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'} transition-colors`}>
+              {showCarTabs ? <Minus size={14} /> : <Plus size={14} />}
+            </div>
+          </button>
+          
+          {/* Collapsible Car Tabs */}
+          {showCarTabs && (
+            <div className="p-2 border-t overflow-x-auto">
+              <div className="flex space-x-2 min-w-max">
+                <button
+                  onClick={() => { setSelectedCar('all'); setShowCarTabs(false); }}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                    selectedCar === 'all' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <CalendarIcon size={14} />
+                  <span>All Cars</span>
+                </button>
+                {cars.filter(car => !car.is_blocked).map((car) => (
+                  <button
+                    key={car.id}
+                    onClick={() => { setSelectedCar(car.id); setShowCarTabs(false); }}
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                      selectedCar === car.id 
+                        ? `${getCarColor(car.id)} text-white` 
+                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Car size={14} />
+                    <span>{car.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Calendar Header */}

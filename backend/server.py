@@ -1674,7 +1674,8 @@ class BookingUpdate(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     user_name: Optional[str] = None
-    destination_notes: Optional[str] = None
+    purpose: Optional[str] = None
+    location: Optional[str] = None
     car_id: Optional[str] = None  # Allow changing the car for a single occurrence
 
 @api_router.put("/admin/bookings/{booking_id}")
@@ -1691,8 +1692,10 @@ async def edit_booking(booking_id: str, booking_update: BookingUpdate, current_u
         update_data["end_time"] = booking_update.end_time.isoformat()
     if booking_update.user_name:
         update_data["user_name"] = booking_update.user_name
-    if booking_update.destination_notes is not None:
-        update_data["destination_notes"] = booking_update.destination_notes
+    if booking_update.purpose is not None:
+        update_data["purpose"] = booking_update.purpose
+    if booking_update.location is not None:
+        update_data["location"] = booking_update.location
     
     # Handle car change
     if booking_update.car_id and booking_update.car_id != booking.get('car_id'):

@@ -1439,23 +1439,31 @@ async def get_car_availability(
             if slot_end < now:
                 status = "past"
                 booked_by = None
+                is_recurring = False
             else:
                 # Check if slot overlaps with any booking
                 is_booked = False
                 booked_by = None
+                is_recurring = False
                 for booking in day_bookings:
                     if booking['start'] < slot_end and booking['end'] > slot_start:
                         is_booked = True
                         booked_by = booking['user_name']
+                        is_recurring = booking.get('is_recurring', False)
                         break
                 
-                status = "booked" if is_booked else "available"
+                # Set status: 'recurring', 'booked', or 'available'
+                if is_booked:
+                    status = "recurring" if is_recurring else "booked"
+                else:
+                    status = "available"
             
             day_data["hours"].append({
                 "hour": hour,
                 "time_display": f"{hour:02d}:00",
                 "status": status,
-                "booked_by": booked_by
+                "booked_by": booked_by,
+                "is_recurring": is_recurring
             })
         
         availability.append(day_data)

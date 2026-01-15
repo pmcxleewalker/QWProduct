@@ -83,6 +83,14 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
    - Location entered in booking automatically shows in Live Sheet when car is booked
    - Helper text explains the location will appear in Live Sheet
 
+6. **Three-Color Booking Status System**
+   - 🟢 **Free** (green) - Car is available
+   - 🔴 **Booked** (red) - Car has a one-time booking
+   - 🟣 **Recurring** (purple) - Car has a recurring booking
+   - Applied to: Car Availability Cards, Live Sheet, Dashboard
+   - Live Sheet has separate "Recurring" counter
+   - Legend on availability cards shows all three colors
+
 ### Session: January 14, 2025
 1. **Admin Car Swap for Recurring Bookings**
    - Admins can change the assigned car for individual booking occurrences

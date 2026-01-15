@@ -946,13 +946,14 @@ async def get_live_status(current_user: dict = Depends(get_current_user)):
         "status": "approved",
         "start_time": {"$lte": now.isoformat()},
         "end_time": {"$gte": now.isoformat()}
-    }, {"_id": 0, "car_id": 1, "user_name": 1, "start_time": 1, "end_time": 1, "location": 1, "purpose": 1}).to_list(1000)
+    }, {"_id": 0, "car_id": 1, "user_name": 1, "start_time": 1, "end_time": 1, "location": 1, "purpose": 1, "recurring_group_id": 1}).to_list(1000)
     
     # Create a map of car_id -> active booking info
     active_booking_map = {}
     for booking in active_bookings:
         car_id = booking.get('car_id')
         if car_id:
+            booking['is_recurring'] = booking.get('recurring_group_id') is not None
             active_booking_map[car_id] = booking
     
     # Deserialize datetime fields and update status based on active bookings
@@ -965,14 +966,18 @@ async def get_live_status(current_user: dict = Depends(get_current_user)):
         # Check if this car has an active booking right now
         car_id = item.get('id')
         if car_id and car_id in active_booking_map and not item.get('is_blocked'):
-            # Override the status to "Booked" if there's an active booking
-            item['current_status'] = 'Booked'
-            # Add booking info to latest_status for display
             booking_info = active_booking_map[car_id]
+            is_recurring = booking_info.get('is_recurring', False)
+            
+            # Override the status to "Recurring" or "Booked" based on booking type
+            item['current_status'] = 'Recurring' if is_recurring else 'Booked'
+            
+            # Add booking info to latest_status for display
             if not item.get('latest_status'):
                 item['latest_status'] = {}
-            item['latest_status']['auto_status'] = 'Booked'
+            item['latest_status']['auto_status'] = item['current_status']
             item['latest_status']['booked_by'] = booking_info.get('user_name', 'Unknown')
+            item['latest_status']['is_recurring'] = is_recurring
             # Add location from booking if available
             booking_location = booking_info.get('location', '')
             if booking_location:

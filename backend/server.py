@@ -128,7 +128,8 @@ class BookingCreate(BaseModel):
     user_name: str
     start_time: datetime
     end_time: datetime
-    destination_notes: Optional[str] = ""
+    purpose: Optional[str] = ""  # Purpose of the booking
+    location: Optional[str] = ""  # Eircode or location where car will be
     # Recurring booking fields
     is_recurring: bool = False
     recurrence_type: Optional[str] = None  # daily, weekly, monthly

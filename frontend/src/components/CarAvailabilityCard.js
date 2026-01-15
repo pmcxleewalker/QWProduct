@@ -40,6 +40,7 @@ const CarAvailabilityCard = ({ car, onBookClick }) => {
     switch (status) {
       case 'available': return 'bg-green-100 text-green-700 hover:bg-green-200';
       case 'booked': return 'bg-red-100 text-red-600';
+      case 'recurring': return 'bg-purple-100 text-purple-600';
       case 'past': return 'bg-gray-100 text-gray-400';
       default: return 'bg-gray-100 text-gray-500';
     }

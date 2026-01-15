@@ -192,7 +192,7 @@ const LiveSheet = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {liveStatus.map((item) => (
-                <tr key={item.car.id} data-testid={`row-${item.car.id}`} className={`hover:bg-gray-50 ${item.car.is_blocked ? 'bg-purple-50' : ''} ${item.car.current_status === 'Booked' ? 'bg-yellow-50' : ''}`}>
+                <tr key={item.car.id} data-testid={`row-${item.car.id}`} className={`hover:bg-gray-50 ${item.car.is_blocked ? 'bg-gray-100' : ''} ${item.car.current_status === 'Booked' ? 'bg-red-50' : ''} ${item.car.current_status === 'Recurring' ? 'bg-purple-50' : ''}`}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{item.car.name}</div>
                   </td>
@@ -225,9 +225,9 @@ const LiveSheet = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {item.car.current_status === 'Booked' && item.latest_status?.booked_by ? (
-                        <span className="flex items-center text-yellow-700">
-                          <User size={14} className="mr-1 text-yellow-600" />
+                      {(item.car.current_status === 'Booked' || item.car.current_status === 'Recurring') && item.latest_status?.booked_by ? (
+                        <span className={`flex items-center ${item.car.current_status === 'Recurring' ? 'text-purple-700' : 'text-red-700'}`}>
+                          <User size={14} className={`mr-1 ${item.car.current_status === 'Recurring' ? 'text-purple-600' : 'text-red-600'}`} />
                           {item.latest_status.booked_by}
                         </span>
                       ) : item.latest_status?.user_name ? (
@@ -242,8 +242,10 @@ const LiveSheet = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-500 max-w-xs truncate">
-                      {item.car.current_status === 'Booked' ? (
-                        <span className="text-yellow-700 font-medium">Currently booked</span>
+                      {item.car.current_status === 'Recurring' ? (
+                        <span className="text-purple-700 font-medium">🔄 Recurring booking</span>
+                      ) : item.car.current_status === 'Booked' ? (
+                        <span className="text-red-700 font-medium">Currently booked</span>
                       ) : item.latest_status?.notes || '-'}
                     </div>
                   </td>

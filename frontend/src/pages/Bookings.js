@@ -210,64 +210,6 @@ const Bookings = () => {
     }
   };
 
-  // Toggle selection of a booking for bulk operations
-  const toggleBookingSelection = (bookingId) => {
-    setSelectedBookings(prev => 
-      prev.includes(bookingId) 
-        ? prev.filter(id => id !== bookingId)
-        : [...prev, bookingId]
-    );
-  };
-
-  // Select/deselect all approved bookings
-  const toggleSelectAll = () => {
-    const approvedBookings = bookings.filter(b => b.status === 'approved');
-    if (selectedBookings.length === approvedBookings.length) {
-      setSelectedBookings([]);
-    } else {
-      setSelectedBookings(approvedBookings.map(b => b.id));
-    }
-  };
-
-  // Bulk delete selected bookings
-  const handleBulkDelete = async () => {
-    if (selectedBookings.length === 0) return;
-    
-    const confirmMsg = `Are you sure you want to cancel ${selectedBookings.length} booking${selectedBookings.length > 1 ? 's' : ''}?`;
-    if (!window.confirm(confirmMsg)) return;
-    
-    setError('');
-    let successCount = 0;
-    let failCount = 0;
-    
-    for (const bookingId of selectedBookings) {
-      try {
-        await bookingAPI.delete(bookingId);
-        successCount++;
-      } catch (err) {
-        failCount++;
-        console.error(`Failed to delete booking ${bookingId}:`, err);
-      }
-    }
-    
-    if (successCount > 0) {
-      setSuccess(`Successfully cancelled ${successCount} booking${successCount > 1 ? 's' : ''}`);
-    }
-    if (failCount > 0) {
-      setError(`Failed to cancel ${failCount} booking${failCount > 1 ? 's' : ''}`);
-    }
-    
-    setSelectedBookings([]);
-    setSelectMode(false);
-    fetchData();
-  };
-
-  // Exit select mode
-  const exitSelectMode = () => {
-    setSelectMode(false);
-    setSelectedBookings([]);
-  };
-
   const getCarName = (carId) => {
     const car = cars.find(c => c.id === carId);
     return car ? car.name : 'Unknown';

@@ -118,7 +118,7 @@ const LiveSheet = () => {
       </div>
 
       {/* Live Counters */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-4 mb-6">
         <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
           <p className="text-sm font-medium text-blue-600">Total Cars</p>
           <p className="text-3xl font-bold text-blue-900" data-testid="counter-total">{counters.total}</p>
@@ -127,6 +127,11 @@ const LiveSheet = () => {
         <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
           <p className="text-sm font-medium text-green-600">Free</p>
           <p className="text-3xl font-bold text-green-900" data-testid="counter-free">{counters.free}</p>
+        </div>
+
+        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-yellow-600">Booked</p>
+          <p className="text-3xl font-bold text-yellow-900" data-testid="counter-booked">{counters.booked}</p>
         </div>
         
         <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">

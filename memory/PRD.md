@@ -58,9 +58,17 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
 
 2. **Bookings Page UI Cleanup**
    - Removed List View toggle - now only Calendar View is available
-   - Car selector tabs are now collapsible/hidden by default
-   - Click + button to expand car tabs, - button to collapse
+   - Car selector tabs are now fully collapsible (including "All Cars")
+   - Click + button to expand car options, - button to collapse
+   - Car tabs now wrap to multiple rows for better mobile experience
    - Cleaner, more focused booking interface
+
+3. **Dashboard Fleet Status Redesign**
+   - Compact car cards: 5 columns on desktop (was 3)
+   - Smaller, visually friendly cards with essential info only
+   - Status badges now show emoji icons (🟢 Free, 🔵 In Use, etc.)
+   - Location displayed in compact blue pill
+   - Edit button moved to bottom-right corner
 
 ### Session: January 14, 2025
 1. **Admin Car Swap for Recurring Bookings**

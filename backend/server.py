@@ -946,7 +946,7 @@ async def get_live_status(current_user: dict = Depends(get_current_user)):
         "status": "approved",
         "start_time": {"$lte": now.isoformat()},
         "end_time": {"$gte": now.isoformat()}
-    }, {"_id": 0, "car_id": 1, "user_name": 1, "start_time": 1, "end_time": 1}).to_list(1000)
+    }, {"_id": 0, "car_id": 1, "user_name": 1, "start_time": 1, "end_time": 1, "location": 1, "purpose": 1}).to_list(1000)
     
     # Create a map of car_id -> active booking info
     active_booking_map = {}

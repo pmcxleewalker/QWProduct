@@ -588,8 +588,8 @@ const Dashboard = () => {
               key={item.car.id}
               data-testid={`car-card-${item.car.id}`}
               className={`bg-white rounded-lg shadow hover:shadow-md transition-shadow p-3 ${
-                item.car.is_blocked ? 'border-l-4 border-purple-400' : ''
-              } ${item.car.current_status === 'Booked' ? 'border-l-4 border-yellow-400' : ''}`}
+                item.car.is_blocked ? 'border-l-4 border-gray-400' : ''
+              } ${item.car.current_status === 'Booked' ? 'border-l-4 border-red-400' : ''} ${item.car.current_status === 'Recurring' ? 'border-l-4 border-purple-400' : ''}`}
             >
               {/* Header: Name + Status */}
               <div className="flex items-start justify-between mb-2">
@@ -607,15 +607,17 @@ const Dashboard = () => {
                 />
               </div>
 
-              {/* Show who booked the car if status is Booked */}
-              {item.car.current_status === 'Booked' && item.latest_status?.booked_by && (
-                <div className="bg-yellow-50 rounded px-2 py-1 mb-2">
-                  <p className="text-xs text-yellow-800 truncate">👤 {item.latest_status.booked_by}</p>
+              {/* Show who booked the car if status is Booked or Recurring */}
+              {(item.car.current_status === 'Booked' || item.car.current_status === 'Recurring') && item.latest_status?.booked_by && (
+                <div className={`rounded px-2 py-1 mb-2 ${item.car.current_status === 'Recurring' ? 'bg-purple-50' : 'bg-red-50'}`}>
+                  <p className={`text-xs truncate ${item.car.current_status === 'Recurring' ? 'text-purple-800' : 'text-red-800'}`}>
+                    {item.car.current_status === 'Recurring' ? '🔄' : '👤'} {item.latest_status.booked_by}
+                  </p>
                 </div>
               )}
 
               {/* Location - compact */}
-              {item.latest_status?.location && item.car.current_status !== 'Booked' && (
+              {item.latest_status?.location && item.car.current_status !== 'Booked' && item.car.current_status !== 'Recurring' && (
                 <div className="bg-blue-50 rounded px-2 py-1 mb-2">
                   <p className="text-xs text-blue-800 truncate">📍 {item.latest_status.location}</p>
                 </div>

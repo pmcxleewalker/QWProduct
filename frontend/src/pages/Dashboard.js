@@ -582,68 +582,51 @@ const Dashboard = () => {
           <p className="text-gray-500">No cars in the fleet. Add cars from the Admin panel.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
           {liveStatus.map((item) => (
             <div
               key={item.car.id}
               data-testid={`car-card-${item.car.id}`}
-              className={`bg-white rounded-lg shadow-md p-4 sm:p-5 hover:shadow-lg transition-shadow ${
-                item.car.is_blocked ? 'border-2 border-purple-400' : ''
+              className={`bg-white rounded-lg shadow hover:shadow-md transition-shadow p-3 ${
+                item.car.is_blocked ? 'border-l-4 border-purple-400' : ''
               }`}
             >
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate" data-testid={`car-name-${item.car.id}`}>
+              {/* Header: Name + Status */}
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1 min-w-0 pr-1">
+                  <h3 className="text-sm font-semibold text-gray-900 truncate" data-testid={`car-name-${item.car.id}`}>
                     {item.car.name}
                   </h3>
-                  <p className="text-xs sm:text-sm text-gray-500">{item.car.registration}</p>
+                  <p className="text-xs text-gray-400">{item.car.registration}</p>
                 </div>
-                <div className="flex items-center space-x-1 sm:space-x-2 ml-2">
-                  {user?.role === 'admin' && (
-                    <button
-                      onClick={() => handleOpenStatusModal({...item.car, car_id: item.car.id, location: item.latest_status?.location})}
-                      className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Edit Status"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                  )}
-                  <StatusBadge 
-                    status={item.car.current_status} 
-                    isBlocked={item.car.is_blocked}
-                    blockReason={item.car.block_reason}
-                  />
-                </div>
+                <StatusBadge 
+                  status={item.car.current_status} 
+                  isBlocked={item.car.is_blocked}
+                  blockReason={item.car.block_reason}
+                  compact={true}
+                />
               </div>
 
-              {item.latest_status && (
-                <div className="border-t pt-4 mt-4">
-                  {item.latest_status.location && (
-                    <div className="mb-3 bg-blue-50 rounded-lg p-3">
-                      <p className="text-sm font-medium text-blue-900">📍 {item.latest_status.location}</p>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Last updated:</span>
-                    <span className="font-medium text-gray-700">
-                      {formatTime(item.latest_status.timestamp)}
-                    </span>
-                  </div>
-                  {item.latest_status.user_name && (
-                    <div className="flex justify-between text-sm mt-2">
-                      <span className="text-gray-500">By:</span>
-                      <span className="font-medium text-gray-700">
-                        {item.latest_status.user_name}
-                      </span>
-                    </div>
-                  )}
-                  {item.latest_status.notes && (
-                    <div className="mt-3">
-                      <p className="text-sm text-gray-600 italic">&ldquo;{item.latest_status.notes}&rdquo;</p>
-                    </div>
-                  )}
+              {/* Location - compact */}
+              {item.latest_status?.location && (
+                <div className="bg-blue-50 rounded px-2 py-1 mb-2">
+                  <p className="text-xs text-blue-800 truncate">📍 {item.latest_status.location}</p>
                 </div>
               )}
+
+              {/* Footer: Time + Edit */}
+              <div className="flex items-center justify-between text-xs text-gray-400">
+                <span>{item.latest_status ? formatTime(item.latest_status.timestamp) : 'No update'}</span>
+                {user?.role === 'admin' && (
+                  <button
+                    onClick={() => handleOpenStatusModal({...item.car, car_id: item.car.id, location: item.latest_status?.location})}
+                    className="p-1 text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                    title="Edit Status"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

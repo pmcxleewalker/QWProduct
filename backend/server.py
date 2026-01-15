@@ -909,6 +909,11 @@ async def create_status_update(status_update: StatusUpdateCreate):
 @api_router.get("/status/live", response_model=List[dict])
 async def get_live_status(current_user: dict = Depends(get_current_user)):
     """Get live status of all cars (authenticated users) - Optimized with aggregation"""
+    from datetime import datetime, timezone
+    
+    # Get current time for booking checks
+    now = datetime.now(timezone.utc)
+    
     # Use aggregation pipeline to avoid N+1 query problem
     pipeline = [
         {"$project": {"_id": 0}},
@@ -935,12 +940,38 @@ async def get_live_status(current_user: dict = Depends(get_current_user)):
     
     cars_with_status = await db.cars.aggregate(pipeline).to_list(1000)
     
-    # Deserialize datetime fields
+    # Get all approved bookings that are currently active (now is between start and end time)
+    active_bookings = await db.bookings.find({
+        "status": "approved",
+        "start_time": {"$lte": now.isoformat()},
+        "end_time": {"$gte": now.isoformat()}
+    }, {"_id": 0, "car_id": 1, "user_name": 1, "start_time": 1, "end_time": 1}).to_list(1000)
+    
+    # Create a map of car_id -> active booking info
+    active_booking_map = {}
+    for booking in active_bookings:
+        car_id = booking.get('car_id')
+        if car_id:
+            active_booking_map[car_id] = booking
+    
+    # Deserialize datetime fields and update status based on active bookings
     for item in cars_with_status:
         if 'created_at' in item:
             deserialize_datetime(item, ['created_at'])
         if item.get('latest_status') and 'timestamp' in item['latest_status']:
             deserialize_datetime(item['latest_status'], ['timestamp'])
+        
+        # Check if this car has an active booking right now
+        car_id = item.get('id')
+        if car_id and car_id in active_booking_map and not item.get('is_blocked'):
+            # Override the status to "Booked" if there's an active booking
+            item['current_status'] = 'Booked'
+            # Add booking info to latest_status for display
+            booking_info = active_booking_map[car_id]
+            if not item.get('latest_status'):
+                item['latest_status'] = {}
+            item['latest_status']['auto_status'] = 'Booked'
+            item['latest_status']['booked_by'] = booking_info.get('user_name', 'Unknown')
     
     # Format response to match expected structure
     result = []

@@ -196,6 +196,10 @@ const CarAvailabilityCard = ({ car, onBookClick }) => {
             <div className="w-3 h-3 bg-red-400 rounded"></div>
             <span className="text-gray-600">Booked</span>
           </span>
+          <span className="flex items-center space-x-1">
+            <div className="w-3 h-3 bg-purple-400 rounded"></div>
+            <span className="text-gray-600">Recurring</span>
+          </span>
         </div>
         <button
           onClick={() => onBookClick(car, currentDate)}

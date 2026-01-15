@@ -6,7 +6,7 @@ const StatusBadge = ({ status, isBlocked, blockReason, compact = false }) => {
     return (
       <span
         data-testid="status-badge-blocked"
-        className={`inline-flex items-center rounded-full font-medium bg-purple-600 text-white ${
+        className={`inline-flex items-center rounded-full font-medium bg-gray-600 text-white ${
           compact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'
         }`}
       >
@@ -22,7 +22,9 @@ const StatusBadge = ({ status, isBlocked, blockReason, compact = false }) => {
       case 'In Use':
         return 'bg-red-500 text-white';
       case 'Booked':
-        return 'bg-yellow-500 text-white';
+        return 'bg-red-500 text-white';
+      case 'Recurring':
+        return 'bg-purple-500 text-white';
       case 'Maintenance':
         return 'bg-orange-500 text-white';
       case 'Out of Service':
@@ -44,7 +46,9 @@ const StatusBadge = ({ status, isBlocked, blockReason, compact = false }) => {
       case 'In Use':
         return '🔵';
       case 'Booked':
-        return '🟡';
+        return '🔴';
+      case 'Recurring':
+        return '🟣';
       case 'Maintenance':
         return '🔧';
       case 'Out of Service':

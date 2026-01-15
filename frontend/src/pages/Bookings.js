@@ -927,15 +927,28 @@ const Bookings = () => {
                 </div>
               </div>
 
-              {/* Destination */}
-              {selectedBooking.destination_notes && (
+              {/* Location (Eircode) */}
+              {selectedBooking.location && (
                 <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <MapPin className="text-purple-600" size={20} />
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <MapPin className="text-blue-600" size={20} />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Destination / Notes</p>
-                    <p className="font-semibold text-gray-900">{selectedBooking.destination_notes}</p>
+                    <p className="text-sm text-gray-500">Location (Eircode)</p>
+                    <p className="font-semibold text-gray-900">{selectedBooking.location}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Purpose */}
+              {(selectedBooking.purpose || selectedBooking.destination_notes) && (
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <AlertCircle className="text-purple-600" size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Purpose</p>
+                    <p className="font-semibold text-gray-900">{selectedBooking.purpose || selectedBooking.destination_notes}</p>
                   </div>
                 </div>
               )}

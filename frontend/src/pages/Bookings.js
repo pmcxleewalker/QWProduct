@@ -424,16 +424,16 @@ const Bookings = () => {
             </div>
           </button>
           
-          {/* Collapsible Car Tabs */}
+          {/* Collapsible Car Tabs - All options inside */}
           {showCarTabs && (
-            <div className="p-2 border-t overflow-x-auto">
-              <div className="flex space-x-2 min-w-max">
+            <div className="p-2 border-t overflow-x-auto bg-white">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => { setSelectedCar('all'); setShowCarTabs(false); }}
                   className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                     selectedCar === 'all' 
                       ? 'bg-blue-600 text-white' 
-                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
                   <CalendarIcon size={14} />
@@ -446,7 +446,7 @@ const Bookings = () => {
                     className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                       selectedCar === car.id 
                         ? `${getCarColor(car.id)} text-white` 
-                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
                     <Car size={14} />

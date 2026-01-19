@@ -1411,6 +1411,22 @@ const Admin = () => {
                     </span>
                   </div>
 
+                  {/* Purpose and Location - Quick View */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                    {(group.first_booking?.purpose || group.first_booking?.destination_notes) && (
+                      <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                        <p className="text-xs font-medium text-purple-600 mb-1">📋 Purpose</p>
+                        <p className="text-sm text-purple-900">{group.first_booking.purpose || group.first_booking.destination_notes}</p>
+                      </div>
+                    )}
+                    {group.first_booking?.location && (
+                      <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                        <p className="text-xs font-medium text-blue-600 mb-1">📍 Location (Eircode)</p>
+                        <p className="text-sm text-blue-900">{group.first_booking.location}</p>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="bg-gray-50 rounded-lg p-3 mb-4">
                     <p className="text-sm text-gray-600">
                       <span className="font-medium">First:</span>{' '}

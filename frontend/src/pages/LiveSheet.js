@@ -43,11 +43,12 @@ const LiveSheet = () => {
   const formatTime = (date) => {
     if (!date) return '-';
     const d = new Date(date);
-    return d.toLocaleString('en-US', { 
+    return d.toLocaleString('en-IE', { 
+      day: 'numeric',
       month: 'short', 
-      day: 'numeric', 
       hour: '2-digit', 
-      minute: '2-digit' 
+      minute: '2-digit',
+      hour12: false
     });
   };
 

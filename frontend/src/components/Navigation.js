@@ -379,6 +379,22 @@ const Navigation = () => {
                 {showNotifications && <NotificationDropdown />}
               </div>
               
+              {/* Push Notifications Toggle - Desktop */}
+              {isSupported && (
+                <button
+                  onClick={handlePushToggle}
+                  className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-colors text-sm ${
+                    isSubscribed 
+                      ? 'text-green-600 bg-green-50 hover:bg-green-100' 
+                      : 'text-gray-500 bg-gray-100 hover:bg-gray-200'
+                  }`}
+                  title={isSubscribed ? 'Push notifications enabled - Click to disable' : 'Enable push notifications'}
+                >
+                  {isSubscribed ? <BellRing size={16} /> : <BellOff size={16} />}
+                  <span className="hidden lg:inline">{isSubscribed ? 'Push On' : 'Push Off'}</span>
+                </button>
+              )}
+              
               <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
                 <span className="text-sm text-gray-700">{user?.email}</span>
                 {isAdmin() && (

@@ -172,6 +172,17 @@ class MessageAcknowledgment(BaseModel):
     acknowledged_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+# ==================== PUSH NOTIFICATION MODELS ====================
+
+class PushSubscription(BaseModel):
+    endpoint: str
+    keys: dict  # Contains p256dh and auth keys
+
+class PushSubscriptionCreate(BaseModel):
+    subscription: dict  # The full subscription object from browser
+    user_email: str
+
+
 # ==================== TO DO LIST MODELS ====================
 
 class TodoItemCreate(BaseModel):

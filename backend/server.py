@@ -14,6 +14,8 @@ from datetime import datetime, timezone
 import qrcode
 from io import BytesIO
 import httpx
+import json
+from pywebpush import webpush, WebPushException
 
 # Import auth utilities
 from auth import (
@@ -33,6 +35,11 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
+
+# VAPID keys for push notifications
+VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', '')
+VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
+VAPID_EMAIL = os.environ.get('VAPID_EMAIL', 'mailto:admin@quickwing.com')
 
 # Create the main app without a prefix
 app = FastAPI()

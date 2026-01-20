@@ -1224,7 +1224,7 @@ const Admin = () => {
                           </span>
                         </div>
                         <p className="text-sm text-gray-500">
-                          Joined: {new Date(user.created_at).toLocaleDateString()}
+                          Joined: {new Date(user.created_at).toLocaleDateString('en-IE')}
                         </p>
                       </div>
                       
@@ -1315,7 +1315,7 @@ const Admin = () => {
                           </span>
                         </div>
                         <p className="text-sm text-gray-500">
-                          Joined: {new Date(user.created_at).toLocaleDateString()}
+                          Joined: {new Date(user.created_at).toLocaleDateString('en-IE')}
                         </p>
                       </div>
                       

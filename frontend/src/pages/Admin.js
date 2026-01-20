@@ -1567,7 +1567,7 @@ const Admin = () => {
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">{msg.title}</h3>
                       <p className="text-xs text-gray-500">
-                        Posted {new Date(msg.created_at).toLocaleDateString()} by {getUsername(msg.created_by)}
+                        Posted {new Date(msg.created_at).toLocaleDateString('en-IE')} by {getUsername(msg.created_by)}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">

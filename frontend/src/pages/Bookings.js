@@ -233,31 +233,34 @@ const Bookings = () => {
 
   const formatDateTime = (dateStr) => {
     const date = new Date(dateStr);
-    return date.toLocaleString('en-US', {
-      month: 'short',
+    return date.toLocaleString('en-IE', {
       day: 'numeric',
+      month: 'short',
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false,
     });
   };
 
   const formatFullDateTime = (dateStr) => {
     const date = new Date(dateStr);
-    return date.toLocaleString('en-US', {
+    return date.toLocaleString('en-IE', {
       weekday: 'long',
-      year: 'numeric',
-      month: 'long',
       day: 'numeric',
+      month: 'long',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false,
     });
   };
 
   const formatTime = (dateStr) => {
     const date = new Date(dateStr);
-    return date.toLocaleTimeString('en-US', {
+    return date.toLocaleTimeString('en-IE', {
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false,
     });
   };
 

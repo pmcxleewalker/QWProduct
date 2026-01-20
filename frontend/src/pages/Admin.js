@@ -1430,7 +1430,7 @@ const Admin = () => {
                   <div className="bg-gray-50 rounded-lg p-3 mb-4">
                     <p className="text-sm text-gray-600">
                       <span className="font-medium">First:</span>{' '}
-                      {new Date(group.first_booking.start_time).toLocaleString()}
+                      {new Date(group.first_booking.start_time).toLocaleString('en-IE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
                     </p>
                     <p className="text-sm text-gray-600">
                       <span className="font-medium">Repeats:</span>{' '}

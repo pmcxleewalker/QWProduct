@@ -1843,6 +1843,16 @@ async def create_admin_message(message: AdminMessageCreate, current_user: dict =
     message_obj.created_by = current_user['email']
     doc = serialize_datetime(message_obj.model_dump())
     await db.admin_messages.insert_one(doc)
+    
+    # Send push notification to all staff
+    await send_push_notification(
+        user_roles=['staff'],
+        title="📢 " + message.title,
+        body=message.content[:100] + ('...' if len(message.content) > 100 else ''),
+        url="/",
+        tag=f"admin-message-{message_obj.id}"
+    )
+    
     return message_obj
 
 

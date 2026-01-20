@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish } from 'lucide-react';
+import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { liftRequestAPI } from '../api/api';
 import ChangePasswordModal from './ChangePasswordModal';
+import usePushNotifications from '../hooks/usePushNotifications';
 
 const Navigation = () => {
   const location = useLocation();
@@ -12,8 +13,12 @@ const Navigation = () => {
   const [liftRequests, setLiftRequests] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showPushSettings, setShowPushSettings] = useState(false);
   const notificationRef = useRef(null);
   const seenRequestIds = useRef(new Set());
+  
+  // Push notification hook
+  const { isSupported, isSubscribed, permission, subscribe, unsubscribe } = usePushNotifications(user);
   
   const isActive = (path) => location.pathname === path;
   
@@ -26,6 +31,16 @@ const Navigation = () => {
     { path: '/bookings', icon: Calendar, label: 'Bookings' },
     { path: '/assistance', icon: PhoneCall, label: 'Assistance' },
   ];
+
+  // Handle push notification toggle
+  const handlePushToggle = async () => {
+    if (isSubscribed) {
+      await unsubscribe();
+    } else {
+      await subscribe();
+    }
+    setShowPushSettings(false);
+  };
 
   // Only show Admin for admin users
   if (isAdmin()) {

@@ -824,13 +824,13 @@ const Admin = () => {
                 {(car.tax_due_date || car.nct_due_date || car.service_due_date) && (
                   <div className="mt-3 p-2 bg-gray-50 rounded-lg text-xs">
                     {car.tax_due_date && (
-                      <p className="text-gray-600">Tax: {new Date(car.tax_due_date).toLocaleDateString()}</p>
+                      <p className="text-gray-600">Tax: {new Date(car.tax_due_date).toLocaleDateString('en-IE')}</p>
                     )}
                     {car.nct_due_date && (
-                      <p className="text-gray-600">NCT: {new Date(car.nct_due_date).toLocaleDateString()}</p>
+                      <p className="text-gray-600">NCT: {new Date(car.nct_due_date).toLocaleDateString('en-IE')}</p>
                     )}
                     {car.service_due_date && (
-                      <p className="text-gray-600">Service: {new Date(car.service_due_date).toLocaleDateString()}</p>
+                      <p className="text-gray-600">Service: {new Date(car.service_due_date).toLocaleDateString('en-IE')}</p>
                     )}
                   </div>
                 )}

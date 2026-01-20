@@ -120,4 +120,11 @@ export const todoAPI = {
   delete: (id) => axios.delete(`${API}/admin/todos/${id}`),
 };
 
-export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI, liftRequestAPI, todoAPI };
+// Push Notification API
+export const pushAPI = {
+  getVapidKey: () => axios.get(`${API}/push/vapid-public-key`),
+  subscribe: (subscription, userEmail) => axios.post(`${API}/push/subscribe`, { subscription, user_email: userEmail }),
+  unsubscribe: () => axios.delete(`${API}/push/unsubscribe`),
+};
+
+export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI, liftRequestAPI, todoAPI, pushAPI };

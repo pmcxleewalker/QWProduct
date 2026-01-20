@@ -391,8 +391,8 @@ const Dashboard = () => {
                       Requested by <span className="font-medium">{getUsername(group.created_by_email)}</span> for {group.user_name}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      Starts: {new Date(group.first_booking.start_time).toLocaleDateString('en-US', { 
-                        weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                      Starts: {new Date(group.first_booking.start_time).toLocaleDateString('en-IE', { 
+                        weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false
                       })}
                     </p>
                   </div>

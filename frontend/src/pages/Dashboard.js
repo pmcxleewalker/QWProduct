@@ -295,13 +295,13 @@ const Dashboard = () => {
   const formatTime = (date) => {
     if (!date) return 'Never';
     const d = new Date(date);
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return d.toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   return (

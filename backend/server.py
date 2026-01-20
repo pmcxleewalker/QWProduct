@@ -2316,6 +2316,115 @@ async def delete_assistance_provider(provider_id: str, current_user: dict = Depe
     return {"message": "Provider deleted successfully"}
 
 
+# ==================== PUSH NOTIFICATIONS ====================
+
+@api_router.get("/push/vapid-public-key")
+async def get_vapid_public_key():
+    """Get VAPID public key for push subscription"""
+    return {"publicKey": VAPID_PUBLIC_KEY}
+
+@api_router.post("/push/subscribe")
+async def subscribe_to_push(subscription_data: PushSubscriptionCreate, current_user: dict = Depends(get_current_user)):
+    """Subscribe user to push notifications"""
+    subscription_doc = {
+        "id": str(uuid.uuid4()),
+        "user_email": current_user['email'],
+        "user_role": current_user.get('role', 'staff'),
+        "subscription": subscription_data.subscription,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Remove any existing subscription for this endpoint
+    await db.push_subscriptions.delete_many({
+        "subscription.endpoint": subscription_data.subscription.get('endpoint')
+    })
+    
+    # Save new subscription
+    await db.push_subscriptions.insert_one(subscription_doc)
+    return {"message": "Subscribed to push notifications"}
+
+@api_router.delete("/push/unsubscribe")
+async def unsubscribe_from_push(current_user: dict = Depends(get_current_user)):
+    """Unsubscribe user from push notifications"""
+    await db.push_subscriptions.delete_many({"user_email": current_user['email']})
+    return {"message": "Unsubscribed from push notifications"}
+
+async def send_push_notification(user_roles: List[str], title: str, body: str, url: str = "/", tag: str = None):
+    """Send push notification to users with specified roles"""
+    if not VAPID_PUBLIC_KEY or not VAPID_PRIVATE_KEY:
+        logging.warning("VAPID keys not configured, skipping push notification")
+        return
+    
+    # Get all subscriptions for users with the specified roles
+    subscriptions = await db.push_subscriptions.find({
+        "user_role": {"$in": user_roles}
+    }, {"_id": 0}).to_list(1000)
+    
+    notification_payload = json.dumps({
+        "title": title,
+        "body": body,
+        "icon": "/logo192.png",
+        "badge": "/logo192.png",
+        "url": url,
+        "tag": tag or str(uuid.uuid4()),
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+    
+    failed_subscriptions = []
+    
+    for sub in subscriptions:
+        try:
+            webpush(
+                subscription_info=sub['subscription'],
+                data=notification_payload,
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims={"sub": VAPID_EMAIL}
+            )
+        except WebPushException as ex:
+            logging.error(f"Push notification failed: {ex}")
+            # If subscription is invalid, mark for removal
+            if ex.response and ex.response.status_code in [404, 410]:
+                failed_subscriptions.append(sub['subscription']['endpoint'])
+        except Exception as ex:
+            logging.error(f"Push notification error: {ex}")
+    
+    # Remove invalid subscriptions
+    if failed_subscriptions:
+        await db.push_subscriptions.delete_many({
+            "subscription.endpoint": {"$in": failed_subscriptions}
+        })
+
+async def send_push_to_user(user_email: str, title: str, body: str, url: str = "/", tag: str = None):
+    """Send push notification to a specific user"""
+    if not VAPID_PUBLIC_KEY or not VAPID_PRIVATE_KEY:
+        return
+    
+    subscriptions = await db.push_subscriptions.find({
+        "user_email": user_email
+    }, {"_id": 0}).to_list(100)
+    
+    notification_payload = json.dumps({
+        "title": title,
+        "body": body,
+        "icon": "/logo192.png",
+        "badge": "/logo192.png",
+        "url": url,
+        "tag": tag or str(uuid.uuid4()),
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+    
+    for sub in subscriptions:
+        try:
+            webpush(
+                subscription_info=sub['subscription'],
+                data=notification_payload,
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims={"sub": VAPID_EMAIL}
+            )
+        except Exception as ex:
+            logging.error(f"Push notification error: {ex}")
+
+
 # Include the router in the main app
 app.include_router(api_router)
 

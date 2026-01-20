@@ -91,6 +91,14 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
    - Live Sheet has separate "Recurring" counter
    - Legend on availability cards shows all three colors
 
+7. **Push Notifications for Phones**
+   - Web Push notifications using Service Workers
+   - **"Push On/Off" toggle** in navigation bar
+   - **Lift Requests**: Admins receive notification when staff request a lift
+   - **Admin Messages**: Staff receive notification when admin posts announcement
+   - Works on mobile browsers (Android/iOS Safari)
+   - Auto-removes invalid subscriptions
+
 ### Session: January 14, 2025
 1. **Admin Car Swap for Recurring Bookings**
    - Admins can change the assigned car for individual booking occurrences

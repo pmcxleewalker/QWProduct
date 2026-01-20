@@ -2045,6 +2045,16 @@ async def create_lift_request(request: LiftRequestCreate, current_user: dict = D
     doc = serialize_datetime(lift_obj.model_dump())
     await db.lift_requests.insert_one(doc)
     
+    # Send push notification to all admins
+    requester_name = current_user['email'].split('@')[0]
+    await send_push_notification(
+        user_roles=['admin'],
+        title="🚗 Lift Request",
+        body=f"{requester_name} needs a lift from {request.pickup_location}",
+        url="/",
+        tag=f"lift-request-{lift_obj.id}"
+    )
+    
     return lift_obj
 
 

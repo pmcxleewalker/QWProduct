@@ -268,6 +268,21 @@ const Navigation = () => {
               {showNotifications && <NotificationDropdown />}
             </div>
             
+            {/* Push Notifications Toggle - Mobile */}
+            {isSupported && (
+              <button
+                onClick={handlePushToggle}
+                className={`flex items-center p-2 rounded-md transition-colors ${
+                  isSubscribed 
+                    ? 'text-green-600 hover:bg-green-50' 
+                    : 'text-gray-400 hover:bg-gray-100'
+                }`}
+                title={isSubscribed ? 'Push notifications enabled' : 'Enable push notifications'}
+              >
+                {isSubscribed ? <BellRing size={18} /> : <BellOff size={18} />}
+              </button>
+            )}
+            
             <span className="text-xs text-gray-600">{user?.email?.split('@')[0]}</span>
             {isAdmin() && (
               <span className="px-1.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 rounded">

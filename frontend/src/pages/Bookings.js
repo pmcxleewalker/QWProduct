@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { bookingAPI, carAPI } from '../api/api';
 import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp, Minus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +8,9 @@ import CarAvailabilityCard from '../components/CarAvailabilityCard';
 
 const Bookings = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const carFromQR = searchParams.get('car'); // Get car ID from QR code URL
+  
   const [bookings, setBookings] = useState([]);
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,9 +27,10 @@ const Bookings = () => {
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [showAllCars, setShowAllCars] = useState(false); // Show more cars toggle
   const [showCarTabs, setShowCarTabs] = useState(false); // Toggle car tabs visibility
+  const [qrCarName, setQrCarName] = useState(''); // Name of car from QR
   
   const [formData, setFormData] = useState({
-    car_id: '',
+    car_id: carFromQR || '',
     user_name: '',
     start_time: '',
     end_time: '',

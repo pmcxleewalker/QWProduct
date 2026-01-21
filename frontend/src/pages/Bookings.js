@@ -49,6 +49,23 @@ const Bookings = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Handle QR code car parameter - auto-select car and open booking form
+  useEffect(() => {
+    if (carFromQR && cars.length > 0) {
+      const car = cars.find(c => c.id === carFromQR);
+      if (car) {
+        setSelectedCar(carFromQR);
+        setQrCarName(car.name);
+        setFormData(prev => ({ ...prev, car_id: carFromQR }));
+        setShowForm(true);
+        // Scroll to form
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
+      }
+    }
+  }, [carFromQR, cars]);
+
   const fetchData = async () => {
     try {
       const [bookingsRes, carsRes, suggestionsRes] = await Promise.all([

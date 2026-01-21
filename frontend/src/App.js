@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import LiveSheet from './pages/LiveSheet';
-import StatusUpdate from './pages/StatusUpdate';
 import Bookings from './pages/Bookings';
 import Assistance from './pages/Assistance';
 import Admin from './pages/Admin';
@@ -14,6 +13,13 @@ import Navigation from './components/Navigation';
 import MobileBottomNav from './components/MobileBottomNav';
 import MessageAcknowledgmentModal from './components/MessageAcknowledgmentModal';
 import './App.css';
+
+// Redirect old status-update URLs to bookings page
+const StatusUpdateRedirect = () => {
+  const [searchParams] = useSearchParams();
+  const carId = searchParams.get('car');
+  return <Navigate to={carId ? `/bookings?car=${carId}` : '/bookings'} replace />;
+};
 
 // Wrapper component that handles message acknowledgment
 const AppContent = () => {
@@ -44,7 +50,8 @@ const AppContent = () => {
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/status-update" element={<StatusUpdate />} />
+        {/* Redirect old status-update URLs to bookings */}
+        <Route path="/status-update" element={<StatusUpdateRedirect />} />
         
         {/* Protected routes */}
         <Route

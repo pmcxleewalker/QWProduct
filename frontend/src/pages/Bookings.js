@@ -591,6 +591,25 @@ const Bookings = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-3 py-4 sm:px-6 lg:px-8 pb-20 sm:pb-8">
+      {/* QR Code Banner */}
+      {carFromQR && qrCarName && (
+        <div className="bg-blue-600 text-white rounded-lg p-4 mb-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Car size={24} />
+            <div>
+              <p className="font-bold text-lg">📱 Booking: {qrCarName}</p>
+              <p className="text-blue-100 text-sm">Scanned from QR code - Fill in the form below to book this car</p>
+            </div>
+          </div>
+          <button
+            onClick={() => window.history.replaceState({}, '', '/bookings')}
+            className="text-blue-200 hover:text-white"
+          >
+            <X size={20} />
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-3 sm:space-y-0">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" data-testid="bookings-title">Car Bookings</h1>

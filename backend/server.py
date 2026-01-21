@@ -906,15 +906,18 @@ async def export_fleet_report(current_user: dict = Depends(get_current_admin_use
 
 
 # ==================== STATUS UPDATE ENDPOINTS ====================
+# Note: Manual status updates are now admin-only. Live status is primarily 
+# determined by active bookings (Booked/Recurring) automatically.
 
 @api_router.post("/status", response_model=StatusUpdate)
-async def create_status_update(status_update: StatusUpdateCreate):
-    """Create a status update (public for QR code access)"""
+async def create_status_update(status_update: StatusUpdateCreate, current_user: dict = Depends(get_current_admin_user)):
+    """Create a status update (Admin only - for manual overrides when car is not booked)"""
     car = await db.cars.find_one({"id": status_update.car_id}, {"_id": 0})
     if not car:
         raise HTTPException(status_code=404, detail="Car not found")
     
     status_obj = StatusUpdate(**status_update.model_dump())
+    status_obj.user_name = current_user['email'].split('@')[0]  # Record who made the change
     doc = serialize_datetime(status_obj.model_dump())
     await db.status_updates.insert_one(doc)
     

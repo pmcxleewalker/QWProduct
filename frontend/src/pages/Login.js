@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogIn, AlertCircle } from 'lucide-react';
+import { LogIn, AlertCircle, Car } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
   const { login } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Check if this is a QR code redirect (booking with car ID)
+  const isQRRedirect = redirectUrl && redirectUrl.includes('/bookings?car=');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,7 +23,8 @@ const Login = () => {
 
     try {
       await login(formData.email, formData.password, rememberMe);
-      navigate('/');
+      // Redirect to intended destination or home
+      navigate(redirectUrl || '/');
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
     } finally {
@@ -34,6 +40,17 @@ const Login = () => {
             <h1 className="text-3xl font-bold text-blue-600 mb-2" data-testid="login-title">Quick Wing</h1>
             <p className="text-gray-600">Fleet Management System</p>
           </div>
+
+          {/* QR Code Notice Banner */}
+          {isQRRedirect && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-center">
+              <Car className="text-blue-500 mr-3 flex-shrink-0" size={24} />
+              <div>
+                <p className="text-blue-800 font-medium text-sm">📱 QR Code Scanned</p>
+                <p className="text-blue-600 text-xs">Sign in to book this car</p>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-center" data-testid="error-message">
@@ -94,7 +111,7 @@ const Login = () => {
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center space-x-2"
             >
               <LogIn size={20} />
-              <span>{loading ? 'Signing in...' : 'Sign In'}</span>
+              <span>{loading ? 'Signing in...' : isQRRedirect ? 'Sign In to Book' : 'Sign In'}</span>
             </button>
           </form>
         </div>

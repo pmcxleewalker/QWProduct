@@ -1,9 +1,10 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -14,7 +15,9 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Save the intended destination (including query params) for redirect after login
+    const redirectPath = location.pathname + location.search;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirectPath)}`} replace />;
   }
 
   if (adminOnly && user.role !== 'admin') {

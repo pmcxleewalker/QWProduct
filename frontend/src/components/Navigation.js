@@ -311,6 +311,45 @@ const Navigation = () => {
               </button>
             )}
             
+            {/* Deployment Updates - Admin only (Mobile) */}
+            {isAdmin() && (
+              <div className="relative" ref={deploymentRef}>
+                <button
+                  onClick={() => setShowDeploymentUpdates(!showDeploymentUpdates)}
+                  className="flex items-center p-2 text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                  title="Deployment Updates"
+                >
+                  <Megaphone size={18} />
+                </button>
+                {showDeploymentUpdates && (
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
+                    <div className="p-3 border-b bg-indigo-50">
+                      <h3 className="font-semibold text-indigo-900 flex items-center">
+                        <Megaphone size={16} className="mr-2" />
+                        Deployment Updates
+                      </h3>
+                      <p className="text-xs text-indigo-600 mt-1">What's new in Quick Wing</p>
+                    </div>
+                    <div className="divide-y">
+                      {deploymentUpdates.map((update, idx) => (
+                        <div key={idx} className="p-3">
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="font-medium text-gray-900 text-sm">{update.title}</span>
+                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{update.date}</span>
+                          </div>
+                          <ul className="space-y-1">
+                            {update.changes.map((change, cIdx) => (
+                              <li key={cIdx} className="text-xs text-gray-600">{change}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <span className="text-xs text-gray-600">{user?.email?.split('@')[0]}</span>
             {isAdmin() && (
               <span className="px-1.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 rounded">

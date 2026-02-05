@@ -109,6 +109,8 @@ const Admin = () => {
   const [reportLoading, setReportLoading] = useState(false);
   const [bookingsDetailReport, setBookingsDetailReport] = useState(null);
   const [bookingsDetailLoading, setBookingsDetailLoading] = useState(false);
+  const [reportStartDate, setReportStartDate] = useState('');
+  const [reportEndDate, setReportEndDate] = useState('');
 
   // Clear Bookings State
   const [showClearBookingsModal, setShowClearBookingsModal] = useState(false);
@@ -123,7 +125,7 @@ const Admin = () => {
   useEffect(() => {
     if (activeTab === 'reports') {
       fetchReportData();
-      fetchBookingsDetailReport();
+      fetchBookingsDetailReport(reportStartDate, reportEndDate);
     }
   }, [activeTab]);
 
@@ -139,10 +141,10 @@ const Admin = () => {
     }
   };
 
-  const fetchBookingsDetailReport = async () => {
+  const fetchBookingsDetailReport = async (startDate, endDate) => {
     setBookingsDetailLoading(true);
     try {
-      const response = await reportsAPI.getBookingsDetail();
+      const response = await reportsAPI.getBookingsDetail(startDate || null, endDate || null);
       setBookingsDetailReport(response.data);
     } catch (error) {
       console.error('Error fetching bookings detail:', error);

@@ -1443,40 +1443,82 @@ async def clear_bookings_by_date_range(
 
 @api_router.get("/admin/reports/bookings-detail")
 async def get_bookings_detail_report(
+    start_date: str = Query(None, description="Start date in YYYY-MM-DD format"),
+    end_date: str = Query(None, description="End date in YYYY-MM-DD format"),
     current_user: dict = Depends(get_current_admin_user)
 ):
-    """Admin: Get detailed booking report with driver names, registrations, locations, purposes, dates"""
+    """Admin: Get detailed booking report with vehicle details, booked by, times, location, purpose"""
     # Get all bookings
-    bookings = await db.bookings.find({}, {"_id": 0}).sort("start_time", -1).to_list(2000)
+    bookings = await db.bookings.find({}, {"_id": 0}).sort("start_time", -1).to_list(5000)
     
-    # Get all cars for registration lookup
+    # Get all cars for vehicle details lookup
     cars = await db.cars.find({}, {"_id": 0}).to_list(100)
     car_map = {car['id']: car for car in cars}
+    
+    # Parse date filters if provided
+    filter_start = None
+    filter_end = None
+    if start_date:
+        try:
+            filter_start = datetime.strptime(start_date, "%Y-%m-%d").replace(hour=0, minute=0, second=0, tzinfo=timezone.utc)
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            filter_end = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59, tzinfo=timezone.utc)
+        except ValueError:
+            pass
     
     report_data = []
     for booking in bookings:
         car = car_map.get(booking.get('car_id'), {})
         
-        # Parse dates
+        # Parse start and end times
         start_time = booking.get('start_time')
+        end_time = booking.get('end_time')
+        
         if isinstance(start_time, str):
             try:
                 start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
             except:
                 pass
         
+        if isinstance(end_time, str):
+            try:
+                end_time = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+            except:
+                pass
+        
+        # Apply date filter if provided
+        if filter_start and isinstance(start_time, datetime):
+            if start_time < filter_start:
+                continue
+        if filter_end and isinstance(start_time, datetime):
+            if start_time > filter_end:
+                continue
+        
+        # Format times for display (Irish locale)
+        start_time_display = start_time.strftime("%d/%m/%Y %H:%M") if isinstance(start_time, datetime) else str(start_time)[:16] if start_time else 'N/A'
+        end_time_display = end_time.strftime("%d/%m/%Y %H:%M") if isinstance(end_time, datetime) else str(end_time)[:16] if end_time else 'N/A'
+        
         report_data.append({
-            "driver_name": booking.get('user_name', 'Unknown'),
-            "registration": car.get('registration', 'N/A'),
-            "car_name": car.get('name', 'Unknown'),
+            "vehicle_name": car.get('name', 'Unknown'),
+            "vehicle_registration": car.get('registration', 'N/A'),
+            "booked_by": booking.get('user_name', 'Unknown'),
+            "start_time": start_time_display,
+            "end_time": end_time_display,
             "location": booking.get('location', ''),
             "purpose": booking.get('purpose', booking.get('destination_notes', '')),
-            "date_time": start_time.strftime("%d/%m/%Y %H:%M") if isinstance(start_time, datetime) else str(start_time)[:16] if start_time else 'N/A',
-            "status": booking.get('status', 'unknown')
+            "status": booking.get('status', 'unknown'),
+            "is_recurring": booking.get('is_recurring', False) or booking.get('recurring_group_id') is not None
         })
     
     return {
         "total_records": len(report_data),
+        "date_range": {
+            "start": start_date or "All",
+            "end": end_date or "All"
+        },
         "bookings": report_data
     }
 

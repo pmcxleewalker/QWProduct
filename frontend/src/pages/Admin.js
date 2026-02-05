@@ -2119,6 +2119,151 @@ const Admin = () => {
                   </table>
                 </div>
               </div>
+
+              {/* Daily Availability Report */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                    <CalendarIcon className="mr-2 text-indigo-600" size={20} />
+                    Live Daily Availability Report
+                  </h3>
+                  <div className="flex items-center space-x-3">
+                    <label className="text-sm text-gray-600">Date:</label>
+                    <input
+                      type="date"
+                      value={availabilityDate}
+                      onChange={handleDateChange}
+                      className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                    <button
+                      onClick={() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        setAvailabilityDate(today);
+                        fetchDailyAvailability(today);
+                      }}
+                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
+                    >
+                      Today
+                    </button>
+                  </div>
+                </div>
+
+                {dailyAvailabilityLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                    <p className="mt-2 text-sm text-gray-500">Loading availability...</p>
+                  </div>
+                ) : dailyAvailability ? (
+                  <div className="space-y-4">
+                    {/* Date Display */}
+                    <div className="text-center pb-2 border-b">
+                      <p className="text-lg font-semibold text-gray-800">{dailyAvailability.report_date_display}</p>
+                      <p className="text-xs text-gray-500">Generated at: {new Date(dailyAvailability.generated_at).toLocaleString('en-IE')}</p>
+                    </div>
+
+                    {/* Summary Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="bg-indigo-50 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-bold text-indigo-600">{dailyAvailability.summary.total_cars}</p>
+                        <p className="text-xs text-gray-600">Active Cars</p>
+                      </div>
+                      <div className="bg-green-50 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-bold text-green-600">{dailyAvailability.summary.total_available_hours}</p>
+                        <p className="text-xs text-gray-600">Available Hours</p>
+                      </div>
+                      <div className="bg-red-50 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-bold text-red-600">{dailyAvailability.summary.total_booked_hours}</p>
+                        <p className="text-xs text-gray-600">Booked Hours</p>
+                      </div>
+                      <div className="bg-blue-50 rounded-lg p-3 text-center">
+                        <p className="text-2xl font-bold text-blue-600">{dailyAvailability.summary.availability_percentage}%</p>
+                        <p className="text-xs text-gray-600">Availability Rate</p>
+                      </div>
+                    </div>
+
+                    {/* Hourly Grid Legend */}
+                    <div className="flex items-center justify-center space-x-4 text-xs">
+                      <div className="flex items-center space-x-1">
+                        <div className="w-4 h-4 rounded bg-green-100 border border-green-300"></div>
+                        <span>Available</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <div className="w-4 h-4 rounded bg-red-100 border border-red-300"></div>
+                        <span>Booked</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <div className="w-4 h-4 rounded bg-purple-100 border border-purple-300"></div>
+                        <span>Recurring</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <div className="w-4 h-4 rounded bg-gray-100 border border-gray-300"></div>
+                        <span>Past</span>
+                      </div>
+                    </div>
+
+                    {/* Availability Grid */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="text-left p-2 font-medium sticky left-0 bg-gray-50 min-w-[140px]">Car</th>
+                            {dailyAvailability.work_hours.map(hour => (
+                              <th key={hour} className="text-center p-1 font-medium min-w-[45px]">
+                                {`${hour}:00`}
+                              </th>
+                            ))}
+                            <th className="text-center p-2 font-medium min-w-[60px]">Free</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dailyAvailability.cars.map((car) => (
+                            <tr key={car.car_id} className="border-b hover:bg-gray-50">
+                              <td className="p-2 font-medium sticky left-0 bg-white">
+                                <div className="truncate max-w-[130px]" title={car.car_name}>
+                                  {car.car_name}
+                                </div>
+                                <div className="text-[10px] text-gray-400">{car.registration}</div>
+                              </td>
+                              {car.hourly_availability.map((slot) => (
+                                <td 
+                                  key={slot.hour} 
+                                  className="p-0.5 text-center"
+                                  title={slot.booked_by ? `${slot.booked_by}${slot.purpose ? ` - ${slot.purpose}` : ''}` : 'Available'}
+                                >
+                                  <div className={`w-full h-6 rounded flex items-center justify-center text-[10px] ${
+                                    slot.status === 'available' ? 'bg-green-100 text-green-700' :
+                                    slot.status === 'recurring' ? 'bg-purple-100 text-purple-700' :
+                                    slot.status === 'booked' ? 'bg-red-100 text-red-700' :
+                                    'bg-gray-100 text-gray-400'
+                                  }`}>
+                                    {slot.status === 'available' ? '✓' :
+                                     slot.status === 'past' ? '-' :
+                                     slot.is_recurring ? '🔄' : '●'}
+                                  </div>
+                                </td>
+                              ))}
+                              <td className="p-2 text-center">
+                                <span className={`font-bold ${
+                                  car.stats.available_hours > 10 ? 'text-green-600' :
+                                  car.stats.available_hours > 5 ? 'text-amber-600' :
+                                  'text-red-600'
+                                }`}>
+                                  {car.stats.available_hours}h
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <CalendarIcon className="mx-auto mb-2 text-gray-400" size={32} />
+                    <p>Select a date to view availability</p>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="text-center py-12 bg-white rounded-lg shadow">

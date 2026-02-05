@@ -182,10 +182,6 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
 
 ### P0 (Critical - Awaiting Action)
 - [ ] **DEPLOY TO PRODUCTION** - Booking calendar fix is in preview, needs deployment
-- [ ] Redesign "Available Cars & Time Slots" section (IN PROGRESS)
-  - New scrollable hourly cards (7am-11pm)
-  - Navigation controls (day/week/month)
-  - Show 6 cards initially, "Show More" button
 
 ### P0 (Done)
 - [x] Fish icon for pmcxleewalker user
@@ -195,9 +191,14 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
 - [x] Admin car swap for recurring bookings
 - [x] Personalized dashboard greetings
 - [x] Staff weather widgets
+- [x] Purple color for recurring bookings on calendar (February 2026)
+- [x] Live Daily Availability Report in Admin Reports section (February 2026)
 
 ### P1 (Upcoming)
-- [ ] Live Daily Availability Report in Admin Reports section
+- [ ] Redesign "Available Cars & Time Slots" section (Backend done, Frontend in progress)
+  - New scrollable hourly cards (7am-11pm)
+  - Navigation controls (day/week/month)
+  - Show 6 cards initially, "Show More" button
 - [ ] Convert Training Manuals to downloadable PDFs
 - [ ] Create printable QR code sheet for all vehicles
 

@@ -2024,13 +2024,13 @@ const Admin = () => {
       {activeTab === 'reports' && (
         <div>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">Fleet Usage Reports</h2>
+            <h2 className="text-xl font-bold">Fleet Reports</h2>
             <button
-              onClick={handleExportReport}
+              onClick={exportSummaryCSV}
               className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
               <Download size={18} />
-              <span>Export CSV</span>
+              <span>Export Summary CSV</span>
             </button>
           </div>
 
@@ -2041,8 +2041,8 @@ const Admin = () => {
             </div>
           ) : reportData ? (
             <div className="space-y-6">
-              {/* Summary Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {/* Summary Cards - Only 4: Total Vehicles, Total Bookings, Pending, Blocked */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-white rounded-lg shadow p-4 text-center">
                   <p className="text-3xl font-bold text-indigo-600">{reportData.summary.total_vehicles}</p>
                   <p className="text-sm text-gray-500">Total Vehicles</p>
@@ -2052,32 +2052,114 @@ const Admin = () => {
                   <p className="text-sm text-gray-500">Total Bookings</p>
                 </div>
                 <div className="bg-white rounded-lg shadow p-4 text-center">
-                  <p className="text-3xl font-bold text-green-600">{reportData.summary.approved_bookings}</p>
-                  <p className="text-sm text-gray-500">Approved</p>
-                </div>
-                <div className="bg-white rounded-lg shadow p-4 text-center">
                   <p className="text-3xl font-bold text-orange-600">{reportData.summary.pending_bookings}</p>
-                  <p className="text-sm text-gray-500">Pending</p>
-                </div>
-                <div className="bg-white rounded-lg shadow p-4 text-center">
-                  <p className="text-3xl font-bold text-purple-600">{reportData.summary.unique_users}</p>
-                  <p className="text-sm text-gray-500">Unique Users</p>
+                  <p className="text-sm text-gray-500">Pending Bookings</p>
                 </div>
                 <div className="bg-white rounded-lg shadow p-4 text-center">
                   <p className="text-3xl font-bold text-red-600">{reportData.summary.blocked_vehicles}</p>
-                  <p className="text-sm text-gray-500">Blocked</p>
+                  <p className="text-sm text-gray-500">Blocked Cars</p>
                 </div>
               </div>
 
-              {/* Most Booked & Most Used */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Most Booked Cars */}
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                    <TrendingUp className="mr-2 text-green-600" size={20} />
-                    Most Booked Cars
-                  </h3>
-                  <div className="space-y-3">
+              {/* Most Booked Cars */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                  <TrendingUp className="mr-2 text-green-600" size={20} />
+                  Most Booked Cars (Ranked)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {reportData.most_booked.slice(0, 9).map((car, index) => (
+                    <div key={car.car_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
+                          index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-amber-600' : 'bg-gray-300'
+                        }`}>
+                          {index + 1}
+                        </span>
+                        <div>
+                          <p className="font-medium text-sm">{car.car_name}</p>
+                          <p className="text-xs text-gray-500">{car.registration}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-indigo-600">{car.total_bookings}</p>
+                        <p className="text-xs text-gray-500">bookings</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bookings Detail Report */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">Booking Details Report</h3>
+                  <button
+                    onClick={exportBookingsDetailCSV}
+                    className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                  >
+                    <Download size={16} />
+                    <span>Export CSV</span>
+                  </button>
+                </div>
+                
+                {bookingsDetailLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                  </div>
+                ) : bookingsDetailReport?.bookings ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="text-left p-3 font-medium">Driver Name</th>
+                          <th className="text-left p-3 font-medium">Registration</th>
+                          <th className="text-left p-3 font-medium">Location</th>
+                          <th className="text-left p-3 font-medium">Purpose</th>
+                          <th className="text-left p-3 font-medium">Date & Time</th>
+                          <th className="text-center p-3 font-medium">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bookingsDetailReport.bookings.slice(0, 50).map((booking, index) => (
+                          <tr key={index} className="border-b hover:bg-gray-50">
+                            <td className="p-3 font-medium">{booking.driver_name}</td>
+                            <td className="p-3 text-gray-600">{booking.registration}</td>
+                            <td className="p-3 text-gray-600">{booking.location || '-'}</td>
+                            <td className="p-3 text-gray-600 max-w-xs truncate">{booking.purpose || '-'}</td>
+                            <td className="p-3 text-gray-600">{booking.date_time}</td>
+                            <td className="p-3 text-center">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                booking.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                booking.status === 'pending_approval' ? 'bg-orange-100 text-orange-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {booking.status === 'pending_approval' ? 'Pending' : booking.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {bookingsDetailReport.bookings.length > 50 && (
+                      <p className="text-center text-sm text-gray-500 mt-4">
+                        Showing 50 of {bookingsDetailReport.total_records} records. Export CSV for full data.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-500 py-4">No booking data available</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-white rounded-lg shadow">
+              <BarChart3 className="mx-auto text-gray-400" size={48} />
+              <p className="text-gray-500 mt-4">No report data available</p>
+            </div>
+          )}
+        </div>
+      )}
                     {reportData.most_booked.slice(0, 5).map((car, index) => (
                       <div key={car.car_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center space-x-3">

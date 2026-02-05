@@ -2110,42 +2110,85 @@ const Admin = () => {
 
               {/* Bookings Detail Report */}
               <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-4">
                   <h3 className="text-lg font-bold text-gray-900">Booking Details Report</h3>
-                  <button
-                    onClick={exportBookingsDetailCSV}
-                    className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
-                  >
-                    <Download size={16} />
-                    <span>Export CSV</span>
-                  </button>
+                  
+                  {/* Date Range Filter */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600">From:</label>
+                      <input
+                        type="date"
+                        value={reportStartDate}
+                        onChange={(e) => setReportStartDate(e.target.value)}
+                        className="px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600">To:</label>
+                      <input
+                        type="date"
+                        value={reportEndDate}
+                        onChange={(e) => setReportEndDate(e.target.value)}
+                        className="px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <button
+                      onClick={handleGenerateReport}
+                      className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
+                    >
+                      Generate Report
+                    </button>
+                    <button
+                      onClick={exportBookingsDetailCSV}
+                      disabled={!bookingsDetailReport?.bookings?.length}
+                      className="flex items-center space-x-2 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm disabled:opacity-50"
+                    >
+                      <Download size={16} />
+                      <span>Export CSV</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Date Range Display */}
+                {bookingsDetailReport?.date_range && (reportStartDate || reportEndDate) && (
+                  <div className="mb-4 p-2 bg-blue-50 rounded-lg text-sm text-blue-700">
+                    📅 Showing bookings from <strong>{reportStartDate || 'beginning'}</strong> to <strong>{reportEndDate || 'present'}</strong>
+                    {' '}({bookingsDetailReport.total_records} records)
+                  </div>
+                )}
                 
                 {bookingsDetailLoading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                    <p className="mt-2 text-sm text-gray-500">Loading report...</p>
                   </div>
-                ) : bookingsDetailReport?.bookings ? (
+                ) : bookingsDetailReport?.bookings?.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-gray-100">
-                          <th className="text-left p-3 font-medium">Driver Name</th>
-                          <th className="text-left p-3 font-medium">Registration</th>
-                          <th className="text-left p-3 font-medium">Location</th>
+                          <th className="text-left p-3 font-medium">Vehicle Details</th>
+                          <th className="text-left p-3 font-medium">Booked By</th>
+                          <th className="text-left p-3 font-medium">Start Time</th>
+                          <th className="text-left p-3 font-medium">End Time</th>
+                          <th className="text-left p-3 font-medium">Location (Eircode)</th>
                           <th className="text-left p-3 font-medium">Purpose</th>
-                          <th className="text-left p-3 font-medium">Date & Time</th>
                           <th className="text-center p-3 font-medium">Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {bookingsDetailReport.bookings.slice(0, 50).map((booking, index) => (
-                          <tr key={index} className="border-b hover:bg-gray-50">
-                            <td className="p-3 font-medium">{booking.driver_name}</td>
-                            <td className="p-3 text-gray-600">{booking.registration}</td>
+                        {bookingsDetailReport.bookings.slice(0, 100).map((booking, index) => (
+                          <tr key={index} className={`border-b hover:bg-gray-50 ${booking.is_recurring ? 'bg-purple-50' : ''}`}>
+                            <td className="p-3">
+                              <div className="font-medium">{booking.vehicle_name}</div>
+                              <div className="text-xs text-gray-500">{booking.vehicle_registration}</div>
+                            </td>
+                            <td className="p-3 font-medium">{booking.booked_by}</td>
+                            <td className="p-3 text-gray-600">{booking.start_time}</td>
+                            <td className="p-3 text-gray-600">{booking.end_time}</td>
                             <td className="p-3 text-gray-600">{booking.location || '-'}</td>
-                            <td className="p-3 text-gray-600 max-w-xs truncate">{booking.purpose || '-'}</td>
-                            <td className="p-3 text-gray-600">{booking.date_time}</td>
+                            <td className="p-3 text-gray-600 max-w-xs truncate" title={booking.purpose}>{booking.purpose || '-'}</td>
                             <td className="p-3 text-center">
                               <span className={`px-2 py-1 rounded text-xs font-medium ${
                                 booking.status === 'approved' ? 'bg-green-100 text-green-800' :
@@ -2154,15 +2197,23 @@ const Admin = () => {
                               }`}>
                                 {booking.status === 'pending_approval' ? 'Pending' : booking.status}
                               </span>
+                              {booking.is_recurring && (
+                                <span className="ml-1 text-purple-600" title="Recurring booking">🔄</span>
+                              )}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                    {bookingsDetailReport.bookings.length > 50 && (
+                    {bookingsDetailReport.bookings.length > 100 && (
                       <p className="text-center text-sm text-gray-500 mt-4">
-                        Showing 50 of {bookingsDetailReport.total_records} records. Export CSV for full data.
+                        Showing 100 of {bookingsDetailReport.total_records} records. Export CSV for full data.
                       </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-500 py-8">No bookings found for the selected date range</p>
+                )}
                     )}
                   </div>
                 ) : (

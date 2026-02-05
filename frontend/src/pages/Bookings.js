@@ -1142,6 +1142,7 @@ const Bookings = () => {
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {selectedDateBookings.map((booking) => {
                 const isPending = booking.status === 'pending_approval';
+                const isRecurring = booking.recurring_group_id != null;
                 const carName = getCarName(booking.car_id);
                 
                 return (
@@ -1155,17 +1156,24 @@ const Bookings = () => {
                     className={`p-3 rounded-lg border-l-4 cursor-pointer hover:shadow-md transition-shadow ${
                       isPending 
                         ? 'bg-gray-50 border-gray-400' 
+                        : isRecurring
+                        ? 'bg-purple-50 border-purple-500 shadow-sm'
                         : 'bg-white border-blue-500 shadow-sm'
                     }`}
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
-                          <Car size={16} className="text-gray-500" />
+                          <Car size={16} className={isRecurring ? 'text-purple-500' : 'text-gray-500'} />
                           <span className="font-medium text-gray-900">{carName}</span>
                           {isPending && (
                             <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded">
                               ⏳ Pending
+                            </span>
+                          )}
+                          {isRecurring && !isPending && (
+                            <span className="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded">
+                              🔄 Recurring
                             </span>
                           )}
                         </div>

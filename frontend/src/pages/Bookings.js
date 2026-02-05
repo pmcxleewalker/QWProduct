@@ -407,14 +407,18 @@ const Bookings = () => {
           <div className="space-y-0.5 overflow-y-auto max-h-12 sm:max-h-16 md:max-h-24 mt-0.5">
             {dayBookings.slice(0, 2).map((booking, idx) => {
               const isPending = booking.status === 'pending_approval';
+              const isRecurring = booking.recurring_group_id != null;
+              // Use purple for recurring, gray for pending, otherwise car color
+              const bgColor = isPending ? 'bg-gray-400' : isRecurring ? 'bg-purple-500' : getCarColor(booking.car_id);
               return (
                 <div 
                   key={booking.id}
                   onClick={(e) => { e.stopPropagation(); setSelectedBooking(booking); }}
-                  className={`${isPending ? 'bg-gray-400' : getCarColor(booking.car_id)} text-white text-[10px] sm:text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity ${isPending ? 'opacity-60' : ''}`}
-                  title={isPending ? "Pending admin approval" : "Click to view details"}
+                  className={`${bgColor} text-white text-[10px] sm:text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity ${isPending ? 'opacity-60' : ''}`}
+                  title={isPending ? "Pending admin approval" : isRecurring ? "Recurring booking - Click to view" : "Click to view details"}
                 >
                   {isPending && <span className="mr-1">⏳</span>}
+                  {isRecurring && !isPending && <span className="mr-1">🔄</span>}
                   <span className="hidden sm:inline">{formatTime(booking.start_time)} </span>
                   {selectedCar === 'all' ? getCarName(booking.car_id) : booking.user_name}
                 </div>

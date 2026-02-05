@@ -28,7 +28,7 @@ export const reportsAPI = {
   getFleetUsage: () => axios.get(`${API}/admin/reports/fleet-usage`),
   exportCSV: () => `${API}/admin/reports/export`,
   getDailyAvailability: (date) => axios.get(`${API}/admin/reports/daily-availability`, { params: { date } }),
-  getBookingsDetail: () => axios.get(`${API}/admin/reports/bookings-detail`),
+  getBookingsDetail: (startDate, endDate) => axios.get(`${API}/admin/reports/bookings-detail`, { params: { start_date: startDate, end_date: endDate } }),
   clearBookings: (startDate, endDate) => axios.delete(`${API}/admin/bookings/clear`, { params: { start_date: startDate, end_date: endDate } }),
 };
 

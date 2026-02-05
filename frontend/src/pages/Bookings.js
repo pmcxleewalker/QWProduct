@@ -311,9 +311,15 @@ const Bookings = () => {
     return filteredBookings.filter(booking => {
       if (!booking.start_time || !booking.end_time) return false;
       
-      // Parse ISO dates properly
-      const startDate = new Date(booking.start_time);
-      const endDate = new Date(booking.end_time);
+      // Parse booking dates - handle both ISO strings and date objects
+      let startDate, endDate;
+      try {
+        startDate = new Date(booking.start_time);
+        endDate = new Date(booking.end_time);
+      } catch (e) {
+        console.warn('Error parsing booking dates:', booking.id, e);
+        return false;
+      }
       
       // Check for invalid dates
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
@@ -321,12 +327,25 @@ const Bookings = () => {
         return false;
       }
       
-      // Create day boundaries in local time
-      const dayStart = new Date(year, month, day, 0, 0, 0);
-      const dayEnd = new Date(year, month, day, 23, 59, 59);
+      // Compare using just the date parts (year, month, day) to avoid timezone issues
+      // Extract the date components from the booking start time
+      const bookingStartYear = startDate.getFullYear();
+      const bookingStartMonth = startDate.getMonth();
+      const bookingStartDay = startDate.getDate();
       
-      // Check if the booking overlaps with this day
-      return startDate <= dayEnd && endDate >= dayStart;
+      const bookingEndYear = endDate.getFullYear();
+      const bookingEndMonth = endDate.getMonth();
+      const bookingEndDay = endDate.getDate();
+      
+      // Check if the calendar day falls within the booking date range
+      // A booking shows on a day if:
+      // - The booking starts on or before this day AND
+      // - The booking ends on or after this day
+      const calendarDate = new Date(year, month, day);
+      const bookingStartDate = new Date(bookingStartYear, bookingStartMonth, bookingStartDay);
+      const bookingEndDate = new Date(bookingEndYear, bookingEndMonth, bookingEndDay);
+      
+      return bookingStartDate <= calendarDate && bookingEndDate >= calendarDate;
     });
   };
 

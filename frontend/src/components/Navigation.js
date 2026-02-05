@@ -14,8 +14,33 @@ const Navigation = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showPushSettings, setShowPushSettings] = useState(false);
+  const [showDeploymentUpdates, setShowDeploymentUpdates] = useState(false);
   const notificationRef = useRef(null);
+  const deploymentRef = useRef(null);
   const seenRequestIds = useRef(new Set());
+  
+  // Deployment updates for admins - update this array when deploying new features
+  const deploymentUpdates = [
+    {
+      date: '5 Feb 2026',
+      title: 'Calendar & Reports Update',
+      changes: [
+        '✅ Recurring bookings now show in purple on calendar',
+        '✅ New Live Daily Availability Report in Admin > Reports',
+        '✅ Push notifications disabled for admin accounts'
+      ]
+    },
+    {
+      date: '15 Jan 2026',
+      title: 'Booking System Fixes',
+      changes: [
+        '✅ Fixed bookings not appearing on calendar',
+        '✅ QR codes now link directly to booking page',
+        '✅ Web push notifications for staff',
+        '✅ Irish date format (DD/MM/YYYY)'
+      ]
+    }
+  ];
   
   // Push notification hook
   const { isSupported, isSubscribed, permission, subscribe, unsubscribe } = usePushNotifications(user);

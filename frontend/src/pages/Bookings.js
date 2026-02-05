@@ -1050,7 +1050,7 @@ const Bookings = () => {
                 const isAdmin = user?.role === 'admin';
                 const isOwner = selectedBooking.created_by_email === user?.email;
                 const canDelete = isAdmin || isOwner;
-                const isRecurring = !!selectedBooking.recurring_group_id;
+                const isRecurring = selectedBooking.is_recurring === true || !!selectedBooking.recurring_group_id;
                 const seriesCount = isRecurring 
                   ? bookings.filter(b => b.recurring_group_id === selectedBooking.recurring_group_id).length 
                   : 0;
@@ -1162,7 +1162,7 @@ const Bookings = () => {
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {selectedDateBookings.map((booking) => {
                 const isPending = booking.status === 'pending_approval';
-                const isRecurring = booking.recurring_group_id != null;
+                const isRecurring = booking.is_recurring === true || !!booking.recurring_group_id;
                 const carName = getCarName(booking.car_id);
                 
                 return (

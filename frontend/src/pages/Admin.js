@@ -107,9 +107,14 @@ const Admin = () => {
   // Reports State
   const [reportData, setReportData] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
-  const [dailyAvailability, setDailyAvailability] = useState(null);
-  const [dailyAvailabilityLoading, setDailyAvailabilityLoading] = useState(false);
-  const [availabilityDate, setAvailabilityDate] = useState(new Date().toISOString().split('T')[0]);
+  const [bookingsDetailReport, setBookingsDetailReport] = useState(null);
+  const [bookingsDetailLoading, setBookingsDetailLoading] = useState(false);
+
+  // Clear Bookings State
+  const [showClearBookingsModal, setShowClearBookingsModal] = useState(false);
+  const [clearStartDate, setClearStartDate] = useState('');
+  const [clearEndDate, setClearEndDate] = useState('');
+  const [clearingBookings, setClearingBookings] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -118,7 +123,7 @@ const Admin = () => {
   useEffect(() => {
     if (activeTab === 'reports') {
       fetchReportData();
-      fetchDailyAvailability(availabilityDate);
+      fetchBookingsDetailReport();
     }
   }, [activeTab]);
 
@@ -134,22 +139,98 @@ const Admin = () => {
     }
   };
 
-  const fetchDailyAvailability = async (date) => {
-    setDailyAvailabilityLoading(true);
+  const fetchBookingsDetailReport = async () => {
+    setBookingsDetailLoading(true);
     try {
-      const response = await reportsAPI.getDailyAvailability(date);
-      setDailyAvailability(response.data);
+      const response = await reportsAPI.getBookingsDetail();
+      setBookingsDetailReport(response.data);
     } catch (error) {
-      console.error('Error fetching daily availability:', error);
+      console.error('Error fetching bookings detail:', error);
     } finally {
-      setDailyAvailabilityLoading(false);
+      setBookingsDetailLoading(false);
     }
   };
 
-  const handleDateChange = (e) => {
-    const newDate = e.target.value;
-    setAvailabilityDate(newDate);
-    fetchDailyAvailability(newDate);
+  const handleClearBookings = async () => {
+    if (!clearStartDate || !clearEndDate) {
+      setError('Please select both start and end dates');
+      return;
+    }
+    
+    if (clearStartDate > clearEndDate) {
+      setError('Start date must be before end date');
+      return;
+    }
+    
+    if (!window.confirm(`Are you sure you want to delete ALL bookings from ${clearStartDate} to ${clearEndDate}? This action cannot be undone.`)) {
+      return;
+    }
+    
+    setClearingBookings(true);
+    try {
+      const response = await reportsAPI.clearBookings(clearStartDate, clearEndDate);
+      setSuccess(response.data.message);
+      setShowClearBookingsModal(false);
+      setClearStartDate('');
+      setClearEndDate('');
+      fetchData();
+      fetchReportData();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Failed to clear bookings');
+    } finally {
+      setClearingBookings(false);
+    }
+  };
+
+  const exportBookingsDetailCSV = () => {
+    if (!bookingsDetailReport?.bookings) return;
+    
+    const headers = ['Driver Name', 'Registration', 'Car', 'Location', 'Purpose', 'Date & Time', 'Status'];
+    const rows = bookingsDetailReport.bookings.map(b => [
+      b.driver_name,
+      b.registration,
+      b.car_name,
+      b.location || '',
+      b.purpose || '',
+      b.date_time,
+      b.status
+    ]);
+    
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `bookings_report_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  const exportSummaryCSV = () => {
+    if (!reportData) return;
+    
+    const summaryData = [
+      ['Metric', 'Value'],
+      ['Total Vehicles', reportData.summary.total_vehicles],
+      ['Total Bookings', reportData.summary.total_bookings],
+      ['Pending Bookings', reportData.summary.pending_bookings],
+      ['Blocked Vehicles', reportData.summary.blocked_vehicles],
+      [''],
+      ['Most Booked Cars'],
+      ['Rank', 'Car Name', 'Registration', 'Total Bookings'],
+      ...reportData.most_booked.slice(0, 10).map((car, i) => [i + 1, car.car_name, car.registration, car.total_bookings])
+    ];
+    
+    const csvContent = summaryData
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `fleet_summary_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
   };
 
   const handleExportReport = () => {

@@ -1299,11 +1299,20 @@ async def create_booking(booking: BookingCreate, current_user: dict = Depends(ge
 @api_router.get("/bookings", response_model=List[Booking])
 async def get_all_bookings(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(500, ge=1, le=1000, description="Maximum number of records to return"),
+    limit: int = Query(2000, ge=1, le=5000, description="Maximum number of records to return"),
     current_user: dict = Depends(get_current_user)
 ):
     """Get all bookings (authenticated users) with pagination"""
-    bookings = await db.bookings.find({}, {"_id": 0}).sort("start_time", 1).skip(skip).limit(limit).to_list(limit)
+    # Get bookings from the last 6 months and all future bookings
+    # This ensures we don't miss any relevant bookings while keeping the response manageable
+    from datetime import timedelta
+    six_months_ago = datetime.now(timezone.utc) - timedelta(days=180)
+    
+    bookings = await db.bookings.find(
+        {"start_time": {"$gte": six_months_ago.isoformat()}},
+        {"_id": 0}
+    ).sort("start_time", 1).skip(skip).limit(limit).to_list(limit)
+    
     for booking in bookings:
         deserialize_datetime(booking, ['start_time', 'end_time', 'created_at'])
     return bookings

@@ -410,6 +410,8 @@ const Navigation = () => {
               <div className="flex space-x-8">
                 {navItems.map((item) => {
                   const Icon = item.icon;
+                  // For admin: show icons only for Bookings, Assistance, Admin (not Dashboard, Live Sheet)
+                  const isIconOnlyForAdmin = isAdmin() && ['Bookings', 'Assistance', 'Admin'].includes(item.label);
                   return (
                     <Link
                       key={item.path}
@@ -423,7 +425,7 @@ const Navigation = () => {
                       title={item.isFishIcon ? 'Live Sheet' : item.label}
                     >
                       <Icon size={item.isFishIcon ? 24 : 20} className={item.isFishIcon ? 'text-blue-500' : ''} />
-                      {item.label && <span>{item.label}</span>}
+                      {item.label && !isIconOnlyForAdmin && <span>{item.label}</span>}
                     </Link>
                   );
                 })}

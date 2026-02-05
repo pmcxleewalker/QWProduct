@@ -107,6 +107,9 @@ const Admin = () => {
   // Reports State
   const [reportData, setReportData] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
+  const [dailyAvailability, setDailyAvailability] = useState(null);
+  const [dailyAvailabilityLoading, setDailyAvailabilityLoading] = useState(false);
+  const [availabilityDate, setAvailabilityDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     fetchData();

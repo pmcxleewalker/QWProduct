@@ -462,6 +462,46 @@ const Navigation = () => {
                 </button>
               )}
               
+              {/* Deployment Updates - Admin only (Desktop) */}
+              {isAdmin() && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowDeploymentUpdates(!showDeploymentUpdates)}
+                    className="flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-colors text-sm text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
+                    title="Deployment Updates"
+                  >
+                    <Megaphone size={16} />
+                    <span className="hidden lg:inline">Updates</span>
+                  </button>
+                  {showDeploymentUpdates && (
+                    <div className="absolute right-0 top-full mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[500px] overflow-y-auto">
+                      <div className="p-4 border-b bg-indigo-50 sticky top-0">
+                        <h3 className="font-semibold text-indigo-900 flex items-center">
+                          <Megaphone size={18} className="mr-2" />
+                          Deployment Updates
+                        </h3>
+                        <p className="text-xs text-indigo-600 mt-1">What's new in Quick Wing</p>
+                      </div>
+                      <div className="divide-y">
+                        {deploymentUpdates.map((update, idx) => (
+                          <div key={idx} className="p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="font-medium text-gray-900">{update.title}</span>
+                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{update.date}</span>
+                            </div>
+                            <ul className="space-y-1.5">
+                              {update.changes.map((change, cIdx) => (
+                                <li key={cIdx} className="text-sm text-gray-600">{change}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
                 <span className="text-sm text-gray-700">{user?.email}</span>
                 {isAdmin() && (

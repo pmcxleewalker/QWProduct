@@ -537,10 +537,29 @@ const Bookings = () => {
           {days}
         </div>
 
-        {/* Legend - only show when viewing all cars */}
+        {/* Booking Type Legend */}
+        <div className="p-3 bg-gray-50 border-t">
+          <p className="text-xs text-gray-500 mb-2">Booking Types:</p>
+          <div className="flex flex-wrap gap-3 mb-3">
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 rounded bg-blue-500"></div>
+              <span className="text-xs text-gray-600">One-time</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 rounded bg-purple-500"></div>
+              <span className="text-xs text-gray-600">🔄 Recurring</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 rounded bg-gray-400"></div>
+              <span className="text-xs text-gray-600">⏳ Pending</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Car Legend - only show when viewing all cars */}
         {selectedCar === 'all' && (
-          <div className="p-3 bg-gray-50 border-t">
-            <p className="text-xs text-gray-500 mb-2">Car Legend:</p>
+          <div className="p-3 bg-white border-t">
+            <p className="text-xs text-gray-500 mb-2">Car Colors:</p>
             <div className="flex flex-wrap gap-2">
               {cars.filter(car => !car.is_blocked).slice(0, 6).map((car) => (
                 <div key={car.id} className="flex items-center space-x-1">
@@ -557,7 +576,7 @@ const Bookings = () => {
 
         {/* Single car stats */}
         {selectedCar !== 'all' && (
-          <div className="p-3 bg-gray-50 border-t">
+          <div className="p-3 bg-white border-t">
             <div className="flex justify-between items-center">
               <p className="text-sm text-gray-600">
                 <span className="font-medium">

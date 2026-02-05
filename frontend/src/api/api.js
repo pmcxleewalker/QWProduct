@@ -27,6 +27,7 @@ export const complianceAPI = {
 export const reportsAPI = {
   getFleetUsage: () => axios.get(`${API}/admin/reports/fleet-usage`),
   exportCSV: () => `${API}/admin/reports/export`,
+  getDailyAvailability: (date) => axios.get(`${API}/admin/reports/daily-availability`, { params: { date } }),
 };
 
 // Status API

@@ -1489,6 +1489,10 @@ async def get_bookings_detail_report(
             except:
                 pass
         
+        # Ensure timezone awareness for comparison
+        if isinstance(start_time, datetime) and start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=timezone.utc)
+        
         # Apply date filter if provided
         if filter_start and isinstance(start_time, datetime):
             if start_time < filter_start:

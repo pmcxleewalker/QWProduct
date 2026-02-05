@@ -407,7 +407,8 @@ const Bookings = () => {
           <div className="space-y-0.5 overflow-y-auto max-h-12 sm:max-h-16 md:max-h-24 mt-0.5">
             {dayBookings.slice(0, 2).map((booking, idx) => {
               const isPending = booking.status === 'pending_approval';
-              const isRecurring = booking.recurring_group_id != null;
+              // Check both is_recurring flag and recurring_group_id for robustness
+              const isRecurring = booking.is_recurring === true || (booking.recurring_group_id != null && booking.recurring_group_id !== undefined && booking.recurring_group_id !== '');
               // Use purple for recurring, gray for pending, otherwise car color
               const bgColor = isPending ? 'bg-gray-400' : isRecurring ? 'bg-purple-500' : getCarColor(booking.car_id);
               return (

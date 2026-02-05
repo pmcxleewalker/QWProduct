@@ -905,6 +905,152 @@ async def export_fleet_report(current_user: dict = Depends(get_current_admin_use
     )
 
 
+@api_router.get("/admin/reports/daily-availability")
+async def get_daily_availability_report(
+    date: str = Query(None, description="Date in YYYY-MM-DD format, defaults to today"),
+    current_user: dict = Depends(get_current_admin_user)
+):
+    """Admin: Get daily availability report showing all cars and their hourly availability"""
+    # Parse the date
+    if date:
+        try:
+            check_date = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except ValueError:
+            check_date = datetime.now(timezone.utc)
+    else:
+        check_date = datetime.now(timezone.utc)
+    
+    # Get all cars (excluding blocked)
+    cars = await db.cars.find({"is_blocked": {"$ne": True}}, {"_id": 0}).to_list(100)
+    
+    # Get all approved bookings for the date
+    start_of_day = check_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = check_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+    
+    bookings = await db.bookings.find({
+        "status": "approved"
+    }, {"_id": 0}).to_list(1000)
+    
+    # Filter bookings for this date
+    day_bookings = []
+    for booking in bookings:
+        try:
+            b_start = booking.get('start_time')
+            b_end = booking.get('end_time')
+            
+            if isinstance(b_start, str):
+                b_start = datetime.fromisoformat(b_start.replace('Z', '+00:00'))
+            if isinstance(b_end, str):
+                b_end = datetime.fromisoformat(b_end.replace('Z', '+00:00'))
+            
+            if b_start.tzinfo is None:
+                b_start = b_start.replace(tzinfo=timezone.utc)
+            if b_end.tzinfo is None:
+                b_end = b_end.replace(tzinfo=timezone.utc)
+            
+            # Check if booking overlaps with this day
+            if b_start <= end_of_day and b_end >= start_of_day:
+                day_bookings.append({
+                    **booking,
+                    'start_time_dt': b_start,
+                    'end_time_dt': b_end
+                })
+        except Exception:
+            continue
+    
+    # Working hours 7 AM to 11 PM
+    work_hours = list(range(7, 23))  # 7:00 to 22:00
+    
+    # Build availability matrix for each car
+    car_availability = []
+    for car in cars:
+        car_id = car['id']
+        car_bookings = [b for b in day_bookings if b.get('car_id') == car_id]
+        
+        hourly_status = []
+        for hour in work_hours:
+            slot_start = check_date.replace(hour=hour, minute=0, second=0, tzinfo=timezone.utc)
+            slot_end = check_date.replace(hour=hour + 1, minute=0, second=0, tzinfo=timezone.utc)
+            
+            # Check if slot is in the past
+            now = datetime.now(timezone.utc)
+            if slot_end < now:
+                hourly_status.append({
+                    "hour": hour,
+                    "time_display": f"{hour:02d}:00",
+                    "status": "past",
+                    "booked_by": None,
+                    "is_recurring": False
+                })
+            else:
+                # Check if slot overlaps with any booking
+                is_booked = False
+                booked_by = None
+                is_recurring = False
+                booking_purpose = None
+                
+                for booking in car_bookings:
+                    if booking['start_time_dt'] < slot_end and booking['end_time_dt'] > slot_start:
+                        is_booked = True
+                        booked_by = booking.get('user_name', 'Unknown')
+                        is_recurring = booking.get('is_recurring', False) or booking.get('recurring_group_id') is not None
+                        booking_purpose = booking.get('purpose', '')
+                        break
+                
+                if is_booked:
+                    hourly_status.append({
+                        "hour": hour,
+                        "time_display": f"{hour:02d}:00",
+                        "status": "recurring" if is_recurring else "booked",
+                        "booked_by": booked_by,
+                        "is_recurring": is_recurring,
+                        "purpose": booking_purpose
+                    })
+                else:
+                    hourly_status.append({
+                        "hour": hour,
+                        "time_display": f"{hour:02d}:00",
+                        "status": "available",
+                        "booked_by": None,
+                        "is_recurring": False
+                    })
+        
+        # Count availability stats
+        available_count = sum(1 for h in hourly_status if h['status'] == 'available')
+        booked_count = sum(1 for h in hourly_status if h['status'] in ['booked', 'recurring'])
+        
+        car_availability.append({
+            "car_id": car_id,
+            "car_name": car.get('name', 'Unknown'),
+            "registration": car.get('registration', ''),
+            "current_status": car.get('current_status', 'Unknown'),
+            "hourly_availability": hourly_status,
+            "stats": {
+                "available_hours": available_count,
+                "booked_hours": booked_count,
+                "total_hours": len(work_hours)
+            }
+        })
+    
+    # Summary stats
+    total_available = sum(c['stats']['available_hours'] for c in car_availability)
+    total_booked = sum(c['stats']['booked_hours'] for c in car_availability)
+    
+    return {
+        "report_date": check_date.strftime("%Y-%m-%d"),
+        "report_date_display": check_date.strftime("%A, %d %B %Y"),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "work_hours": work_hours,
+        "summary": {
+            "total_cars": len(cars),
+            "total_available_hours": total_available,
+            "total_booked_hours": total_booked,
+            "availability_percentage": round((total_available / (total_available + total_booked)) * 100, 1) if (total_available + total_booked) > 0 else 100
+        },
+        "cars": car_availability
+    }
+
+
 # ==================== STATUS UPDATE ENDPOINTS ====================
 # Note: Manual status updates are now admin-only. Live status is primarily 
 # determined by active bookings (Booked/Recurring) automatically.

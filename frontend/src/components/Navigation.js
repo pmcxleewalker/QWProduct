@@ -78,6 +78,9 @@ const Navigation = () => {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setShowNotifications(false);
       }
+      if (deploymentRef.current && !deploymentRef.current.contains(event.target)) {
+        setShowDeploymentUpdates(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);

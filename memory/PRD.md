@@ -99,6 +99,23 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
    - Works on mobile browsers (Android/iOS Safari)
    - Auto-removes invalid subscriptions
 
+### Session: February 5, 2026
+1. **Purple Color for Recurring Bookings on Calendar**
+   - Recurring bookings now show in purple on the main calendar (previously used car color)
+   - Fixed `isRecurring` check to use both `is_recurring` flag AND `recurring_group_id`
+   - Removed purple from car color palette to avoid confusion
+   - 🔄 emoji shows on recurring booking entries
+   - Purple background visible in day modal when clicking on recurring bookings
+
+2. **Live Daily Availability Report**
+   - New report in Admin > Reports tab
+   - Shows hourly availability grid for all active cars (7am-10pm)
+   - Date picker to view any day's availability
+   - Summary stats: Active Cars, Available Hours, Booked Hours, Availability Rate
+   - Color-coded grid: Green (available), Red (booked), Purple (recurring), Gray (past)
+   - Hover shows who booked the slot
+   - New API endpoint: `GET /api/admin/reports/daily-availability`
+
 ### Session: January 14, 2025
 1. **Admin Car Swap for Recurring Bookings**
    - Admins can change the assigned car for individual booking occurrences

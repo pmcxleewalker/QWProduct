@@ -116,6 +116,12 @@ Build a comprehensive fleet management application for tracking vehicles, bookin
    - Hover shows who booked the slot
    - New API endpoint: `GET /api/admin/reports/daily-availability`
 
+3. **Admin Notification System**
+   - Push notifications disabled for admin accounts (staff only)
+   - New "Updates" button in navigation for admins only
+   - Shows deployment changelog with recent fixes/features
+   - Easy way to communicate updates to admin users
+
 ### Session: January 14, 2025
 1. **Admin Car Swap for Recurring Bookings**
    - Admins can change the assigned car for individual booking occurrences

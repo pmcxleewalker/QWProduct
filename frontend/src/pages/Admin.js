@@ -118,6 +118,7 @@ const Admin = () => {
   useEffect(() => {
     if (activeTab === 'reports') {
       fetchReportData();
+      fetchDailyAvailability(availabilityDate);
     }
   }, [activeTab]);
 
@@ -131,6 +132,24 @@ const Admin = () => {
     } finally {
       setReportLoading(false);
     }
+  };
+
+  const fetchDailyAvailability = async (date) => {
+    setDailyAvailabilityLoading(true);
+    try {
+      const response = await reportsAPI.getDailyAvailability(date);
+      setDailyAvailability(response.data);
+    } catch (error) {
+      console.error('Error fetching daily availability:', error);
+    } finally {
+      setDailyAvailabilityLoading(false);
+    }
+  };
+
+  const handleDateChange = (e) => {
+    const newDate = e.target.value;
+    setAvailabilityDate(newDate);
+    fetchDailyAvailability(newDate);
   };
 
   const handleExportReport = () => {

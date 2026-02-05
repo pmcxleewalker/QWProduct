@@ -187,15 +187,17 @@ const Admin = () => {
   const exportBookingsDetailCSV = () => {
     if (!bookingsDetailReport?.bookings) return;
     
-    const headers = ['Driver Name', 'Registration', 'Car', 'Location', 'Purpose', 'Date & Time', 'Status'];
+    const headers = ['Vehicle Details', 'Registration', 'Booked By', 'Start Time', 'End Time', 'Location (Eircode)', 'Purpose', 'Status', 'Recurring'];
     const rows = bookingsDetailReport.bookings.map(b => [
-      b.driver_name,
-      b.registration,
-      b.car_name,
+      b.vehicle_name,
+      b.vehicle_registration,
+      b.booked_by,
+      b.start_time,
+      b.end_time,
       b.location || '',
       b.purpose || '',
-      b.date_time,
-      b.status
+      b.status,
+      b.is_recurring ? 'Yes' : 'No'
     ]);
     
     const csvContent = [headers, ...rows]
@@ -204,9 +206,14 @@ const Admin = () => {
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
+    const dateRange = reportStartDate && reportEndDate ? `_${reportStartDate}_to_${reportEndDate}` : '';
+    link.download = `bookings_report${dateRange}_${new Date().toISOString().split('T')[0]}.csv`;
     link.href = URL.createObjectURL(blob);
-    link.download = `bookings_report_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
+  };
+
+  const handleGenerateReport = () => {
+    fetchBookingsDetailReport(reportStartDate, reportEndDate);
   };
 
   const exportSummaryCSV = () => {

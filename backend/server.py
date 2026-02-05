@@ -1395,6 +1395,92 @@ async def delete_booking_series(recurring_group_id: str, current_user: dict = De
     }
 
 
+@api_router.delete("/admin/bookings/clear")
+async def clear_bookings_by_date_range(
+    start_date: str = Query(..., description="Start date in YYYY-MM-DD format"),
+    end_date: str = Query(..., description="End date in YYYY-MM-DD format"),
+    current_user: dict = Depends(get_current_admin_user)
+):
+    """Admin: Clear all bookings within a date range"""
+    try:
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d").replace(hour=0, minute=0, second=0, tzinfo=timezone.utc)
+        end_dt = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59, tzinfo=timezone.utc)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    
+    if start_dt > end_dt:
+        raise HTTPException(status_code=400, detail="Start date must be before end date")
+    
+    # Find bookings in the date range
+    # We need to compare against start_time field
+    bookings_to_delete = await db.bookings.find({}, {"_id": 0, "id": 1, "start_time": 1}).to_list(10000)
+    
+    ids_to_delete = []
+    for booking in bookings_to_delete:
+        try:
+            b_start = booking.get('start_time')
+            if isinstance(b_start, str):
+                b_start = datetime.fromisoformat(b_start.replace('Z', '+00:00'))
+            if b_start.tzinfo is None:
+                b_start = b_start.replace(tzinfo=timezone.utc)
+            
+            if start_dt <= b_start <= end_dt:
+                ids_to_delete.append(booking['id'])
+        except Exception:
+            continue
+    
+    if not ids_to_delete:
+        return {"message": "No bookings found in the specified date range", "deleted_count": 0}
+    
+    # Delete the bookings
+    result = await db.bookings.delete_many({"id": {"$in": ids_to_delete}})
+    
+    return {
+        "message": f"Successfully cleared {result.deleted_count} bookings from {start_date} to {end_date}",
+        "deleted_count": result.deleted_count
+    }
+
+
+@api_router.get("/admin/reports/bookings-detail")
+async def get_bookings_detail_report(
+    current_user: dict = Depends(get_current_admin_user)
+):
+    """Admin: Get detailed booking report with driver names, registrations, locations, purposes, dates"""
+    # Get all bookings
+    bookings = await db.bookings.find({}, {"_id": 0}).sort("start_time", -1).to_list(2000)
+    
+    # Get all cars for registration lookup
+    cars = await db.cars.find({}, {"_id": 0}).to_list(100)
+    car_map = {car['id']: car for car in cars}
+    
+    report_data = []
+    for booking in bookings:
+        car = car_map.get(booking.get('car_id'), {})
+        
+        # Parse dates
+        start_time = booking.get('start_time')
+        if isinstance(start_time, str):
+            try:
+                start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+            except:
+                pass
+        
+        report_data.append({
+            "driver_name": booking.get('user_name', 'Unknown'),
+            "registration": car.get('registration', 'N/A'),
+            "car_name": car.get('name', 'Unknown'),
+            "location": booking.get('location', ''),
+            "purpose": booking.get('purpose', booking.get('destination_notes', '')),
+            "date_time": start_time.strftime("%d/%m/%Y %H:%M") if isinstance(start_time, datetime) else str(start_time)[:16] if start_time else 'N/A',
+            "status": booking.get('status', 'unknown')
+        })
+    
+    return {
+        "total_records": len(report_data),
+        "bookings": report_data
+    }
+
+
 # ==================== BOOKING SUGGESTIONS ENDPOINT ====================
 
 @api_router.get("/bookings/suggestions")

@@ -1479,10 +1479,19 @@ const Admin = () => {
       {activeTab === 'approvals' && (
         <div>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">Pending Recurring Bookings</h2>
-            <span className="text-sm text-gray-500">
-              {pendingBookings.length} pending approval{pendingBookings.length !== 1 ? 's' : ''}
-            </span>
+            <div>
+              <h2 className="text-xl font-bold">Pending Recurring Bookings</h2>
+              <span className="text-sm text-gray-500">
+                {pendingBookings.length} pending approval{pendingBookings.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowClearBookingsModal(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              <Trash2 size={18} />
+              <span>Clear Bookings</span>
+            </button>
           </div>
 
           {pendingBookings.length === 0 ? (

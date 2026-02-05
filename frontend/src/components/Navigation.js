@@ -429,22 +429,24 @@ const Navigation = () => {
                 })}
               </div>
               
-              {/* Notification Bell - Desktop */}
-              <div className="relative" ref={notificationRef}>
-                <button
-                  onClick={toggleNotifications}
-                  className="relative flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-                  title="View Lift Requests"
-                >
-                  <Bell size={22} />
-                  {liftRequestCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold animate-pulse">
-                      {liftRequestCount > 9 ? '9+' : liftRequestCount}
-                    </span>
-                  )}
-                </button>
-                {showNotifications && <NotificationDropdown />}
-              </div>
+              {/* Notification Bell - Desktop (Staff only) */}
+              {!isAdmin() && (
+                <div className="relative" ref={notificationRef}>
+                  <button
+                    onClick={toggleNotifications}
+                    className="relative flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                    title="View Lift Requests"
+                  >
+                    <Bell size={22} />
+                    {liftRequestCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold animate-pulse">
+                        {liftRequestCount > 9 ? '9+' : liftRequestCount}
+                      </span>
+                    )}
+                  </button>
+                  {showNotifications && <NotificationDropdown />}
+                </div>
+              )}
               
               {/* Push Notifications Toggle - Desktop (Staff only) */}
               {isSupported && !isAdmin() && (

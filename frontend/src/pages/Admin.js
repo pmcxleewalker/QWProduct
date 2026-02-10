@@ -934,17 +934,47 @@ const Admin = () => {
                 </div>
                 <p className="text-xs text-gray-500">Status: {car.current_status}</p>
                 
+                {/* Mileage Display with Service Warning */}
+                {(car.current_mileage || car.service_due_mileage) && (
+                  <div className={`mt-3 p-2 rounded-lg text-xs ${
+                    car.current_mileage && car.service_due_mileage && car.current_mileage >= car.service_due_mileage
+                      ? 'bg-red-50 border border-red-200'
+                      : car.current_mileage && car.service_due_mileage && car.current_mileage >= (car.service_due_mileage - 500)
+                      ? 'bg-orange-50 border border-orange-200'
+                      : 'bg-blue-50'
+                  }`}>
+                    {car.current_mileage && (
+                      <p className="text-gray-700 font-medium">
+                        📍 Current: {car.current_mileage.toLocaleString()} km
+                      </p>
+                    )}
+                    {car.service_due_mileage && (
+                      <p className="text-gray-600">
+                        🔧 Service Due At: {car.service_due_mileage.toLocaleString()} km
+                      </p>
+                    )}
+                    {car.current_mileage && car.service_due_mileage && car.current_mileage >= car.service_due_mileage && (
+                      <p className="text-red-600 font-bold mt-1">⚠️ SERVICE OVERDUE!</p>
+                    )}
+                    {car.current_mileage && car.service_due_mileage && car.current_mileage >= (car.service_due_mileage - 500) && car.current_mileage < car.service_due_mileage && (
+                      <p className="text-orange-600 font-medium mt-1">⚠️ Service approaching</p>
+                    )}
+                    {car.last_mileage_update && (
+                      <p className="text-gray-400 text-[10px] mt-1">
+                        Last updated: {new Date(car.last_mileage_update).toLocaleString('en-IE')}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
                 {/* Compliance Dates Display */}
-                {(car.tax_due_date || car.nct_due_date || car.service_due_date) && (
-                  <div className="mt-3 p-2 bg-gray-50 rounded-lg text-xs">
+                {(car.tax_due_date || car.nct_due_date) && (
+                  <div className="mt-2 p-2 bg-gray-50 rounded-lg text-xs">
                     {car.tax_due_date && (
                       <p className="text-gray-600">Tax: {new Date(car.tax_due_date).toLocaleDateString('en-IE')}</p>
                     )}
                     {car.nct_due_date && (
                       <p className="text-gray-600">NCT: {new Date(car.nct_due_date).toLocaleDateString('en-IE')}</p>
-                    )}
-                    {car.service_due_date && (
-                      <p className="text-gray-600">Service: {new Date(car.service_due_date).toLocaleDateString('en-IE')}</p>
                     )}
                   </div>
                 )}

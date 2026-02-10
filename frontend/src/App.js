@@ -9,16 +9,17 @@ import LiveSheet from './pages/LiveSheet';
 import Bookings from './pages/Bookings';
 import Assistance from './pages/Assistance';
 import Admin from './pages/Admin';
+import MileageUpdate from './pages/MileageUpdate';
 import Navigation from './components/Navigation';
 import MobileBottomNav from './components/MobileBottomNav';
 import MessageAcknowledgmentModal from './components/MessageAcknowledgmentModal';
 import './App.css';
 
-// Redirect old status-update URLs to bookings page
+// Redirect old status-update URLs to mileage page
 const StatusUpdateRedirect = () => {
   const [searchParams] = useSearchParams();
   const carId = searchParams.get('car');
-  return <Navigate to={carId ? `/bookings?car=${carId}` : '/bookings'} replace />;
+  return <Navigate to={carId ? `/mileage?car=${carId}` : '/dashboard'} replace />;
 };
 
 // Wrapper component that handles message acknowledgment

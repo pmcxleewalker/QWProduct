@@ -16,6 +16,8 @@ export const carAPI = {
   updateStatus: (id, data) => axios.put(`${API}/admin/cars/${id}/status`, data),
   getAvailability: (carId, date, view = 'day') => 
     axios.get(`${API}/cars/${carId}/availability`, { params: { date, view } }),
+  updateMileage: (id, mileage) => axios.put(`${API}/cars/${id}/mileage`, { mileage }),
+  getDetails: (id) => axios.get(`${API}/cars/${id}/details`),
 };
 
 // Compliance API

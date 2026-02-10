@@ -33,7 +33,7 @@ const Admin = () => {
     current_status: 'Free',
     tax_due_date: '',
     nct_due_date: '',
-    service_due_date: '',
+    service_due_mileage: '',
   });
 
   const [blockForm, setBlockForm] = useState({

@@ -704,6 +704,71 @@ async def admin_update_car_status(car_id: str, status_data: AdminStatusUpdate, c
     }
 
 
+@api_router.put("/cars/{car_id}/mileage")
+async def update_car_mileage(
+    car_id: str,
+    mileage_data: MileageUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update car mileage (accessible via QR code scan by any authenticated user)"""
+    car = await db.cars.find_one({"id": car_id}, {"_id": 0})
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+    
+    if mileage_data.mileage < 0:
+        raise HTTPException(status_code=400, detail="Mileage cannot be negative")
+    
+    # Check if new mileage is less than current (possible odometer rollback warning)
+    current_mileage = car.get('current_mileage')
+    if current_mileage and mileage_data.mileage < current_mileage:
+        # Allow but log a warning - could be a correction
+        pass
+    
+    # Update the car's mileage
+    update_data = {
+        "current_mileage": mileage_data.mileage,
+        "last_mileage_update": datetime.now(timezone.utc).isoformat(),
+        "last_mileage_updated_by": current_user.get('email', 'Unknown')
+    }
+    
+    await db.cars.update_one(
+        {"id": car_id},
+        {"$set": update_data}
+    )
+    
+    # Check if service is due
+    service_due_mileage = car.get('service_due_mileage')
+    service_warning = None
+    if service_due_mileage and mileage_data.mileage >= service_due_mileage:
+        service_warning = f"⚠️ Service due! Current: {mileage_data.mileage} km, Service due at: {service_due_mileage} km"
+    elif service_due_mileage and mileage_data.mileage >= (service_due_mileage - 500):
+        service_warning = f"⚠️ Service approaching! Current: {mileage_data.mileage} km, Service due at: {service_due_mileage} km"
+    
+    return {
+        "message": "Mileage updated successfully",
+        "car_id": car_id,
+        "car_name": car.get('name'),
+        "current_mileage": mileage_data.mileage,
+        "service_warning": service_warning
+    }
+
+
+@api_router.get("/cars/{car_id}/details")
+async def get_car_details(car_id: str):
+    """Get car details (public endpoint for QR code scans before login)"""
+    car = await db.cars.find_one({"id": car_id}, {"_id": 0})
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found")
+    
+    return {
+        "id": car.get('id'),
+        "name": car.get('name'),
+        "registration": car.get('registration'),
+        "current_mileage": car.get('current_mileage'),
+        "last_mileage_update": car.get('last_mileage_update')
+    }
+
+
 # ==================== COMPLIANCE ALERTS ENDPOINT ====================
 
 @api_router.get("/admin/compliance-alerts")

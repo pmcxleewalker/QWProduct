@@ -96,7 +96,11 @@ class CarBase(BaseModel):
     # Compliance dates
     tax_due_date: Optional[str] = None
     nct_due_date: Optional[str] = None
-    service_due_date: Optional[str] = None
+    # Mileage tracking
+    current_mileage: Optional[int] = None
+    service_due_mileage: Optional[int] = None
+    last_mileage_update: Optional[str] = None
+    last_mileage_updated_by: Optional[str] = None
     # Blocking feature
     is_blocked: bool = False
     block_reason: Optional[str] = None  # Service, Cleaning, Other
@@ -111,6 +115,9 @@ class Car(CarBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     qr_code_url: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class MileageUpdate(BaseModel):
+    mileage: int
 
 
 # ==================== STATUS UPDATE MODELS ====================

@@ -440,7 +440,7 @@ const Admin = () => {
       }
       setShowCarForm(false);
       setEditingCar(null);
-      setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_date: '' });
+      setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_mileage: '' });
       fetchData();
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to save car');
@@ -797,7 +797,7 @@ const Admin = () => {
               onClick={() => {
                 setShowCarForm(true);
                 setEditingCar(null);
-                setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_date: '' });
+                setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_mileage: '' });
               }}
               data-testid="add-car-button"
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"

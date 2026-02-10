@@ -876,13 +876,15 @@ const Admin = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Service Due Date</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Service Due At (km)</label>
                       <input
-                        type="date"
-                        data-testid="car-service-date-input"
-                        value={carForm.service_due_date ? carForm.service_due_date.split('T')[0] : ''}
-                        onChange={(e) => setCarForm({ ...carForm, service_due_date: e.target.value })}
+                        type="number"
+                        data-testid="car-service-mileage-input"
+                        value={carForm.service_due_mileage || ''}
+                        onChange={(e) => setCarForm({ ...carForm, service_due_mileage: e.target.value ? parseInt(e.target.value) : '' })}
+                        placeholder="e.g. 50000"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        min="0"
                       />
                     </div>
                   </div>

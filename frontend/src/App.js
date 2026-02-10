@@ -66,6 +66,7 @@ const AppContent = () => {
                   <Route path="/live-sheet" element={<LiveSheet />} />
                   <Route path="/bookings" element={<Bookings />} />
                   <Route path="/assistance" element={<Assistance />} />
+                  <Route path="/mileage" element={<MileageUpdate />} />
                   <Route
                     path="/admin"
                     element={

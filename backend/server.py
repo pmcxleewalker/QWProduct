@@ -585,15 +585,15 @@ async def delete_car(car_id: str, current_user: dict = Depends(get_current_admin
 
 @api_router.get("/cars/{car_id}/qr")
 async def get_car_qr_code(car_id: str):
-    """Generate QR code for a car (public) - directs to booking page"""
+    """Generate QR code for a car (public) - directs to mileage update page"""
     car = await db.cars.find_one({"id": car_id}, {"_id": 0})
     if not car:
         raise HTTPException(status_code=404, detail="Car not found")
     
     # HARDCODED: Always use the production URL for QR codes
     frontend_url = "https://cartrack-19.emergent.host"
-    # Direct to booking page with car pre-selected
-    qr_url = f"{frontend_url}/bookings?car={car_id}"
+    # Direct to mileage update page
+    qr_url = f"{frontend_url}/mileage?car={car_id}"
     
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(qr_url)

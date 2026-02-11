@@ -934,38 +934,52 @@ const Admin = () => {
                 </div>
                 <p className="text-xs text-gray-500">Status: {car.current_status}</p>
                 
-                {/* Mileage Display with Service Warning */}
-                {(car.current_mileage || car.service_due_mileage) && (
-                  <div className={`mt-3 p-2 rounded-lg text-xs ${
-                    car.current_mileage && car.service_due_mileage && car.current_mileage >= car.service_due_mileage
-                      ? 'bg-red-50 border border-red-200'
-                      : car.current_mileage && car.service_due_mileage && car.current_mileage >= (car.service_due_mileage - 500)
-                      ? 'bg-orange-50 border border-orange-200'
-                      : 'bg-blue-50'
-                  }`}>
-                    {car.current_mileage && (
-                      <p className="text-gray-700 font-medium">
-                        📍 Current: {car.current_mileage.toLocaleString()} km
-                      </p>
-                    )}
-                    {car.service_due_mileage && (
-                      <p className="text-gray-600">
-                        🔧 Service Due At: {car.service_due_mileage.toLocaleString()} km
-                      </p>
-                    )}
-                    {car.current_mileage && car.service_due_mileage && car.current_mileage >= car.service_due_mileage && (
-                      <p className="text-red-600 font-bold mt-1">⚠️ SERVICE OVERDUE!</p>
-                    )}
-                    {car.current_mileage && car.service_due_mileage && car.current_mileage >= (car.service_due_mileage - 500) && car.current_mileage < car.service_due_mileage && (
-                      <p className="text-orange-600 font-medium mt-1">⚠️ Service approaching</p>
-                    )}
-                    {car.last_mileage_update && (
-                      <p className="text-gray-400 text-[10px] mt-1">
-                        Last updated: {new Date(car.last_mileage_update).toLocaleString('en-IE')}
-                      </p>
-                    )}
+                {/* Mileage Display - Always Visible */}
+                <div className={`mt-3 p-3 rounded-lg text-sm border ${
+                  car.current_mileage && car.service_due_mileage && car.current_mileage >= car.service_due_mileage
+                    ? 'bg-red-50 border-red-300'
+                    : car.current_mileage && car.service_due_mileage && car.current_mileage >= (car.service_due_mileage - 500)
+                    ? 'bg-orange-50 border-orange-300'
+                    : 'bg-blue-50 border-blue-200'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 font-medium">📍 Current Mileage:</span>
+                    <span className={`font-bold text-lg ${
+                      car.current_mileage && car.service_due_mileage && car.current_mileage >= car.service_due_mileage
+                        ? 'text-red-600'
+                        : car.current_mileage && car.service_due_mileage && car.current_mileage >= (car.service_due_mileage - 500)
+                        ? 'text-orange-600'
+                        : 'text-blue-600'
+                    }`}>
+                      {car.current_mileage ? `${car.current_mileage.toLocaleString()} km` : 'Not recorded'}
+                    </span>
                   </div>
-                )}
+                  
+                  {car.service_due_mileage && (
+                    <div className="flex items-center justify-between mt-1 text-xs">
+                      <span className="text-gray-500">🔧 Service Due At:</span>
+                      <span className="text-gray-700 font-medium">{car.service_due_mileage.toLocaleString()} km</span>
+                    </div>
+                  )}
+                  
+                  {car.current_mileage && car.service_due_mileage && car.current_mileage >= car.service_due_mileage && (
+                    <div className="mt-2 p-2 bg-red-100 rounded text-center">
+                      <p className="text-red-700 font-bold text-sm">⚠️ SERVICE OVERDUE!</p>
+                    </div>
+                  )}
+                  {car.current_mileage && car.service_due_mileage && car.current_mileage >= (car.service_due_mileage - 500) && car.current_mileage < car.service_due_mileage && (
+                    <div className="mt-2 p-2 bg-orange-100 rounded text-center">
+                      <p className="text-orange-700 font-semibold text-sm">⚠️ Service approaching</p>
+                    </div>
+                  )}
+                  
+                  {car.last_mileage_update && (
+                    <p className="text-gray-400 text-[10px] mt-2">
+                      Last updated: {new Date(car.last_mileage_update).toLocaleString('en-IE')}
+                      {car.last_mileage_updated_by && ` by ${car.last_mileage_updated_by}`}
+                    </p>
+                  )}
+                </div>
                 
                 {/* Compliance Dates Display */}
                 {(car.tax_due_date || car.nct_due_date) && (

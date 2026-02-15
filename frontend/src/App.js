@@ -52,7 +52,8 @@ const AppContent = () => {
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        {/* Redirect old status-update URLs to bookings */}
+        <Route path="/setup" element={<Setup />} />
+        {/* Redirect old status-update URLs to mileage */}
         <Route path="/status-update" element={<StatusUpdateRedirect />} />
         
         {/* Protected routes */}

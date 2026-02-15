@@ -404,7 +404,7 @@ const Navigation = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-blue-600">Quick Wing</h1>
+              <h1 className="text-2xl font-bold text-blue-600">{process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}</h1>
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex space-x-8">

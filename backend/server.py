@@ -382,6 +382,68 @@ class DirectUserCreate(BaseModel):
     role: str = "staff"
 
 
+class InitialSetup(BaseModel):
+    company_name: str
+    admin_email: EmailStr
+    admin_password: str
+
+
+@api_router.post("/setup/initial")
+async def initial_setup(setup_data: InitialSetup):
+    """Initial setup endpoint - only works when no admin exists (for new franchise setup)"""
+    # Check if any admin already exists
+    existing_admin = await db.users.find_one({"role": "admin"}, {"_id": 0})
+    if existing_admin:
+        raise HTTPException(
+            status_code=400, 
+            detail="Setup already completed. An admin account already exists."
+        )
+    
+    # Create the master admin account
+    admin_user = {
+        "id": str(uuid.uuid4()),
+        "email": setup_data.admin_email,
+        "password_hash": get_password_hash(setup_data.admin_password),
+        "role": "admin",
+        "is_active": True,
+        "must_change_password": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": "initial_setup"
+    }
+    
+    await db.users.insert_one(admin_user)
+    
+    # Store company settings
+    await db.settings.update_one(
+        {"key": "company"},
+        {"$set": {
+            "key": "company",
+            "name": setup_data.company_name,
+            "setup_completed": True,
+            "setup_date": datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
+    )
+    
+    return {
+        "message": "Setup completed successfully",
+        "company_name": setup_data.company_name,
+        "admin_email": setup_data.admin_email
+    }
+
+
+@api_router.get("/setup/status")
+async def get_setup_status():
+    """Check if initial setup has been completed"""
+    existing_admin = await db.users.find_one({"role": "admin"}, {"_id": 0})
+    settings = await db.settings.find_one({"key": "company"}, {"_id": 0})
+    
+    return {
+        "setup_completed": existing_admin is not None,
+        "company_name": settings.get("name") if settings else None
+    }
+
+
 @api_router.post("/admin/users/create")
 async def create_user_directly(user_data: DirectUserCreate, current_admin: dict = Depends(get_current_admin_user)):
     """Admin: Create a user account directly with a password"""

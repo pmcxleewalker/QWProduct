@@ -277,7 +277,7 @@ const Navigation = () => {
       {/* Mobile Top Header */}
       <nav className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
         <div className="flex justify-between items-center h-14 px-4">
-          <h1 className="text-xl font-bold text-blue-600">Quick Wing</h1>
+          <h1 className="text-xl font-bold text-blue-600">{process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}</h1>
           <div className="flex items-center space-x-2">
             {/* Notification Bell - Mobile */}
             <div className="relative" ref={notificationRef}>
@@ -328,7 +328,7 @@ const Navigation = () => {
                         <Megaphone size={16} className="mr-2" />
                         Deployment Updates
                       </h3>
-                      <p className="text-xs text-indigo-600 mt-1">What's new in Quick Wing</p>
+                      <p className="text-xs text-indigo-600 mt-1">What's new in {process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}</p>
                     </div>
                     <div className="divide-y">
                       {deploymentUpdates.map((update, idx) => (
@@ -484,7 +484,7 @@ const Navigation = () => {
                           <Megaphone size={18} className="mr-2" />
                           Deployment Updates
                         </h3>
-                        <p className="text-xs text-indigo-600 mt-1">What's new in Quick Wing</p>
+                        <p className="text-xs text-indigo-600 mt-1">What's new in {process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}</p>
                       </div>
                       <div className="divide-y">
                         {deploymentUpdates.map((update, idx) => (

@@ -3,6 +3,38 @@
 ## Original Problem Statement
 Build a comprehensive fleet management application for tracking vehicles, bookings, staff management, and administrative tasks for a company fleet.
 
+---
+
+## 🏢 FRANCHISE DUPLICATION GUIDE
+
+### How to Create a Copy for Another Franchise:
+
+1. **Fork this Chat** (click "Fork Chat" button in Emergent)
+   - Creates a complete copy with fresh empty database
+   - All code and features included
+
+2. **New franchise visits `/setup`** to configure:
+   - Company/Franchise Name
+   - Master Admin email & password
+
+3. **Deploy** the forked version
+   - Each franchise gets their own URL
+   - Separate database, separate users
+
+### Configurable Settings (in `/app/frontend/.env`):
+```
+REACT_APP_COMPANY_NAME=Your Franchise Name
+REACT_APP_PRIMARY_COLOR=#2563eb
+```
+
+### What Each Franchise Gets:
+- ✅ All features (bookings, QR codes, mileage tracking, reports)
+- ✅ Empty database (no pre-existing cars/users/bookings)
+- ✅ Own admin/staff user management
+- ✅ Independent deployment
+
+---
+
 ## User Personas
 1. **Admin Users** - Full access to manage cars, users, bookings, to-do lists, and reports
 2. **Staff Users** - Can book vehicles, view live status, request assistance

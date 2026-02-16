@@ -88,6 +88,63 @@ const Bookings = () => {
     }
   };
 
+  // Check for booking conflicts when car or time changes
+  const checkBookingConflicts = (carId, startTime, endTime) => {
+    if (!carId || !startTime || !endTime) {
+      setConflictWarning(null);
+      return;
+    }
+
+    try {
+      const newStart = new Date(startTime);
+      const newEnd = new Date(endTime);
+      
+      if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime())) {
+        setConflictWarning(null);
+        return;
+      }
+
+      // Find existing bookings for this car that overlap with the requested time
+      const conflictingBookings = bookings.filter(booking => {
+        if (booking.car_id !== carId) return false;
+        if (booking.status === 'rejected') return false;
+        
+        const existingStart = new Date(booking.start_time);
+        const existingEnd = new Date(booking.end_time);
+        
+        // Check for overlap: new booking starts before existing ends AND new booking ends after existing starts
+        return newStart < existingEnd && newEnd > existingStart;
+      });
+
+      if (conflictingBookings.length > 0) {
+        const conflicts = conflictingBookings.map(b => ({
+          user: b.user_name,
+          start: formatTime(b.start_time),
+          end: formatTime(b.end_time),
+          date: new Date(b.start_time).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' }),
+          status: b.status
+        }));
+        setConflictWarning({
+          carName: cars.find(c => c.id === carId)?.name || 'Unknown',
+          conflicts
+        });
+      } else {
+        setConflictWarning(null);
+      }
+    } catch (error) {
+      console.error('Error checking conflicts:', error);
+      setConflictWarning(null);
+    }
+  };
+
+  // Watch for changes in form data to check conflicts
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      checkBookingConflicts(formData.car_id, formData.start_time, formData.end_time);
+    }, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [formData.car_id, formData.start_time, formData.end_time, bookings]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');

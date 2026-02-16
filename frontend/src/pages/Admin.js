@@ -508,6 +508,7 @@ const Admin = () => {
       tax_due_date: car.tax_due_date || '',
       nct_due_date: car.nct_due_date || '',
       service_due_mileage: car.service_due_mileage || '',
+      base_location: car.base_location || '',
     });
     setShowCarForm(true);
   };

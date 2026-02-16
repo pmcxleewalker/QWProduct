@@ -148,6 +148,20 @@ REACT_APP_PRIMARY_COLOR=#2563eb
    - Uses debounced checking (300ms) for smooth UX
    - Warning disappears when conflict is resolved
 
+3. **Enhanced Admin Reports**
+   - **Date-filtered Fleet Numbers**: Summary cards (Total Bookings, Pending, etc.) now change based on selected date range
+   - **Booking Details Sub-tabs**: "List" view for data table, "Charts" view for visual analytics
+   - **Charts for Audit Data**:
+     - Bookings by Status (bar chart)
+     - Recurring vs One-time (circular badges)
+     - Bookings by Day of Week (horizontal bars)
+     - Top Bookers (ranked list)
+     - Top Booked Cars (ranked list)
+     - Bookings by Location (grouped by car base_location)
+     - Monthly Booking Trend (bar chart)
+   - **Daily Availability by Location**: Shows cars with no bookings on a specific date, grouped by Tralee/Bantry/Unassigned
+   - **Base Location field**: Added to car model for location-based reporting
+
 ### Session: February 5, 2026
 1. **Purple Color for Recurring Bookings on Calendar**
    - Recurring bookings now show in purple on the main calendar (previously used car color)

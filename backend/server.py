@@ -747,7 +747,7 @@ async def admin_update_car_status(car_id: str, status_data: AdminStatusUpdate, c
     status_obj = StatusUpdate(
         car_id=car_id,
         status=status_data.status,
-        notes=status_data.notes or f"Status updated by admin",
+        notes=status_data.notes or "Status updated by admin",
         user_name=current_user['email'],
         location=status_data.location or ""
     )

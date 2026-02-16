@@ -344,10 +344,18 @@ async def login(credentials: UserLogin):
     
     access_token = create_access_token(data={"sub": user['id']})
     
+    # Check if user is master admin
+    is_master_admin = user['email'] == MASTER_ADMIN_EMAIL
+    
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "user": {"id": user['id'], "email": user['email'], "role": user['role']}
+        "user": {
+            "id": user['id'], 
+            "email": user['email'], 
+            "role": user['role'],
+            "is_master_admin": is_master_admin
+        }
     }
 
 
@@ -357,6 +365,8 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     deserialize_datetime(current_user, ['created_at'])
     # Remove password_hash before returning
     current_user.pop('password_hash', None)
+    # Add master admin flag
+    current_user['is_master_admin'] = current_user.get('email') == MASTER_ADMIN_EMAIL
     return current_user
 
 

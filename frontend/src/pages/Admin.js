@@ -1457,48 +1457,67 @@ const Admin = () => {
                   No admin users found
                 </div>
               ) : (
-                users.filter(u => u.role === 'admin').map((user) => (
+                users.filter(u => u.role === 'admin').map((adminUser) => {
+                  const isThisMasterAdmin = adminUser.email === MASTER_ADMIN_EMAIL;
+                  return (
                   <div
-                    key={user.id}
-                    data-testid={`user-card-${user.id}`}
-                    className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500"
+                    key={adminUser.id}
+                    data-testid={`user-card-${adminUser.id}`}
+                    className={`bg-white rounded-lg shadow-md p-6 border-l-4 ${
+                      isThisMasterAdmin ? 'border-yellow-500 bg-gradient-to-r from-yellow-50 to-white' : 'border-purple-500'
+                    }`}
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-bold text-gray-900">{getUsername(user.email)}</h3>
-                          <span className="px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-800">
-                            {user.role}
+                          {isThisMasterAdmin && (
+                            <Crown size={20} className="text-yellow-500" />
+                          )}
+                          <h3 className="text-lg font-bold text-gray-900">{getUsername(adminUser.email)}</h3>
+                          <span className={`px-2 py-1 text-xs font-medium rounded ${
+                            isThisMasterAdmin 
+                              ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 border border-amber-300'
+                              : 'bg-purple-100 text-purple-800'
+                          }`}>
+                            {isThisMasterAdmin ? '👑 Master Admin' : adminUser.role}
                           </span>
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded ${
-                              user.is_active
+                              adminUser.is_active
                                 ? 'bg-green-100 text-green-800'
                                 : 'bg-red-100 text-red-800'
                             }`}
                           >
-                            {user.is_active ? 'Active' : 'Inactive'}
+                            {adminUser.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </div>
                         <p className="text-sm text-gray-500">
-                          Joined: {new Date(user.created_at).toLocaleDateString('en-IE')}
+                          Joined: {new Date(adminUser.created_at).toLocaleDateString('en-IE')}
                         </p>
+                        {isThisMasterAdmin && (
+                          <p className="text-xs text-amber-600 mt-1 flex items-center">
+                            <ShieldAlert size={12} className="mr-1" />
+                            Master Admin has elevated permissions over all users
+                          </p>
+                        )}
                       </div>
                       
                       <div className="flex space-x-2">
-                        <select
-                          value={user.role}
-                          onChange={(e) => handleChangeUserRole(user, e.target.value)}
-                          data-testid={`role-select-${user.id}`}
-                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="staff">Staff</option>
-                          <option value="admin">Admin</option>
-                        </select>
+                        {!isThisMasterAdmin && (
+                          <select
+                            value={adminUser.role}
+                            onChange={(e) => handleChangeUserRole(adminUser, e.target.value)}
+                            data-testid={`role-select-${adminUser.id}`}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="staff">Staff</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        )}
                         
                         <button
                           onClick={() => {
-                            setResetPasswordUser(user);
+                            setResetPasswordUser(adminUser);
                             setNewPassword('');
                             setShowResetPasswordModal(true);
                           }}

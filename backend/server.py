@@ -576,16 +576,76 @@ async def update_user(user_id: str, user_update: UserUpdate, current_admin: dict
 
 @api_router.delete("/admin/users/{user_id}")
 async def delete_user(user_id: str, current_admin: dict = Depends(get_current_admin_user)):
-    """Admin: Deactivate user"""
+    """Admin: Deactivate staff user (admin deletion requires master admin)"""
     # Prevent admin from deleting themselves
     if user_id == current_admin['id']:
         raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    # Check if target user is an admin
+    target_user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # If target is an admin, only master admin can delete them
+    if target_user.get('role') == 'admin':
+        if current_admin.get('email') != MASTER_ADMIN_EMAIL:
+            raise HTTPException(
+                status_code=403, 
+                detail="Only Master Admin can delete admin accounts. Please contact Carly O'Donovan."
+            )
+    
+    # Cannot delete the master admin
+    if target_user.get('email') == MASTER_ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Cannot delete the Master Admin account")
     
     result = await db.users.update_one({"id": user_id}, {"$set": {"is_active": False}})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     
     return {"message": "User deactivated successfully"}
+
+
+@api_router.post("/admin/users/{user_id}/delete-admin")
+async def delete_admin_user(user_id: str, request: AdminDeleteRequest, current_admin: dict = Depends(get_current_admin_user)):
+    """Master Admin only: Delete an admin user with password verification"""
+    # Only master admin can use this endpoint
+    if current_admin.get('email') != MASTER_ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Only Master Admin can delete admin accounts")
+    
+    # Verify master admin's password
+    master_admin = await db.users.find_one({"email": MASTER_ADMIN_EMAIL}, {"_id": 0})
+    if not master_admin or not verify_password(request.master_admin_password, master_admin.get('password_hash', '')):
+        raise HTTPException(status_code=401, detail="Invalid Master Admin password")
+    
+    # Check target user
+    target_user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Cannot delete self
+    if user_id == current_admin['id']:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    # Cannot delete master admin
+    if target_user.get('email') == MASTER_ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Cannot delete the Master Admin account")
+    
+    # Deactivate the admin
+    result = await db.users.update_one({"id": user_id}, {"$set": {"is_active": False}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"message": f"Admin user {target_user.get('email')} has been deactivated"}
+
+
+@api_router.get("/admin/master-admin-check")
+async def check_master_admin(current_user: dict = Depends(get_current_user)):
+    """Check if current user is the master admin"""
+    is_master = current_user.get('email') == MASTER_ADMIN_EMAIL
+    return {
+        "is_master_admin": is_master,
+        "master_admin_email": MASTER_ADMIN_EMAIL if is_master else None
+    }
 
 
 # ==================== CAR ENDPOINTS (Protected) ====================

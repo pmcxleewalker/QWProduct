@@ -980,6 +980,16 @@ async def get_fleet_usage_report(
     # Get unique bookers
     unique_users = set(b.get('user_name', '') for b in bookings if b.get('user_name'))
     
+    # Group cars by base_location for location-based stats
+    location_stats = {}
+    for car in cars:
+        loc = car.get('base_location') or 'Unassigned'
+        if loc not in location_stats:
+            location_stats[loc] = {'total': 0, 'blocked': 0, 'booked': 0}
+        location_stats[loc]['total'] += 1
+        if car.get('is_blocked'):
+            location_stats[loc]['blocked'] += 1
+    
     return {
         "summary": {
             "total_vehicles": len(cars),
@@ -992,7 +1002,147 @@ async def get_fleet_usage_report(
         "most_booked": sorted_by_bookings[:10],
         "most_used": sorted_by_usage[:10],
         "least_used": least_used[:10],
-        "all_cars": list(car_stats.values())
+        "all_cars": list(car_stats.values()),
+        "location_stats": location_stats,
+        "date_range": {
+            "start": start_date,
+            "end": end_date
+        } if start_date or end_date else None
+    }
+
+
+@api_router.get("/admin/reports/cars-without-bookings")
+async def get_cars_without_bookings(
+    date: str = Query(..., description="Date to check for bookings (YYYY-MM-DD)"),
+    current_user: dict = Depends(get_current_admin_user)
+):
+    """Admin: Get cars that have no bookings on a specific date, grouped by location"""
+    
+    # Get all active (non-blocked) cars
+    cars = await db.cars.find({"is_blocked": {"$ne": True}}, {"_id": 0}).to_list(100)
+    
+    # Get all approved bookings for the specified date
+    start_of_day = f"{date}T00:00:00"
+    end_of_day = f"{date}T23:59:59"
+    
+    bookings = await db.bookings.find({
+        "status": "approved",
+        "$or": [
+            {"start_time": {"$gte": start_of_day, "$lte": end_of_day}},
+            {"end_time": {"$gte": start_of_day, "$lte": end_of_day}},
+            {"start_time": {"$lte": start_of_day}, "end_time": {"$gte": end_of_day}}
+        ]
+    }, {"_id": 0, "car_id": 1}).to_list(500)
+    
+    # Get car IDs that have bookings
+    booked_car_ids = set(b['car_id'] for b in bookings)
+    
+    # Find cars without bookings, grouped by location
+    cars_by_location = {}
+    for car in cars:
+        if car['id'] not in booked_car_ids:
+            location = car.get('base_location') or 'Unassigned'
+            if location not in cars_by_location:
+                cars_by_location[location] = []
+            cars_by_location[location].append({
+                'id': car['id'],
+                'name': car['name'],
+                'registration': car['registration'],
+                'current_status': car.get('current_status', 'Unknown')
+            })
+    
+    return {
+        "date": date,
+        "cars_by_location": cars_by_location,
+        "total_available": sum(len(cars) for cars in cars_by_location.values()),
+        "locations": list(cars_by_location.keys())
+    }
+
+
+@api_router.get("/admin/reports/booking-charts")
+async def get_booking_charts_data(
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    current_user: dict = Depends(get_current_admin_user)
+):
+    """Admin: Get booking data aggregated for charts and audit purposes"""
+    
+    # Build query
+    query = {}
+    if start_date or end_date:
+        date_filter = {}
+        if start_date:
+            date_filter["$gte"] = f"{start_date}T00:00:00"
+        if end_date:
+            date_filter["$lte"] = f"{end_date}T23:59:59"
+        if date_filter:
+            query["start_time"] = date_filter
+    
+    # Get bookings
+    bookings = await db.bookings.find(query, {"_id": 0}).to_list(5000)
+    cars = await db.cars.find({}, {"_id": 0}).to_list(100)
+    car_map = {car['id']: car for car in cars}
+    
+    # Bookings by status
+    status_counts = {}
+    for b in bookings:
+        status = b.get('status', 'unknown')
+        status_counts[status] = status_counts.get(status, 0) + 1
+    
+    # Bookings by car
+    car_counts = {}
+    for b in bookings:
+        car_id = b.get('car_id')
+        car_name = car_map.get(car_id, {}).get('name', 'Unknown')
+        car_counts[car_name] = car_counts.get(car_name, 0) + 1
+    
+    # Bookings by user
+    user_counts = {}
+    for b in bookings:
+        user = b.get('user_name', 'Unknown')
+        user_counts[user] = user_counts.get(user, 0) + 1
+    
+    # Bookings by day of week
+    day_counts = {i: 0 for i in range(7)}
+    day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    for b in bookings:
+        try:
+            start = datetime.fromisoformat(b['start_time'].replace('Z', '+00:00'))
+            day_counts[start.weekday()] = day_counts.get(start.weekday(), 0) + 1
+        except:
+            pass
+    
+    # Bookings over time (by month)
+    monthly_counts = {}
+    for b in bookings:
+        try:
+            start = datetime.fromisoformat(b['start_time'].replace('Z', '+00:00'))
+            month_key = start.strftime('%Y-%m')
+            monthly_counts[month_key] = monthly_counts.get(month_key, 0) + 1
+        except:
+            pass
+    
+    # Recurring vs one-time
+    recurring_count = len([b for b in bookings if b.get('is_recurring') or b.get('recurring_group_id')])
+    one_time_count = len(bookings) - recurring_count
+    
+    # Bookings by location (base_location of car)
+    location_counts = {}
+    for b in bookings:
+        car_id = b.get('car_id')
+        location = car_map.get(car_id, {}).get('base_location') or 'Unassigned'
+        location_counts[location] = location_counts.get(location, 0) + 1
+    
+    return {
+        "total_bookings": len(bookings),
+        "date_range": {"start": start_date, "end": end_date},
+        "by_status": [{"status": k, "count": v} for k, v in sorted(status_counts.items(), key=lambda x: -x[1])],
+        "by_car": [{"car": k, "count": v} for k, v in sorted(car_counts.items(), key=lambda x: -x[1])[:15]],
+        "by_user": [{"user": k, "count": v} for k, v in sorted(user_counts.items(), key=lambda x: -x[1])[:15]],
+        "by_day_of_week": [{"day": day_names[i], "count": day_counts.get(i, 0)} for i in range(7)],
+        "by_month": [{"month": k, "count": v} for k, v in sorted(monthly_counts.items())],
+        "recurring_vs_onetime": {"recurring": recurring_count, "one_time": one_time_count},
+        "by_location": [{"location": k, "count": v} for k, v in sorted(location_counts.items(), key=lambda x: -x[1])]
     }
 
 

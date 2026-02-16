@@ -861,6 +861,38 @@ const Bookings = () => {
       {showForm && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-bold mb-4">Create New Booking</h2>
+          
+          {/* Booking Conflict Warning */}
+          {conflictWarning && (
+            <div className="bg-orange-50 border border-orange-300 rounded-lg p-4 mb-4" data-testid="conflict-warning">
+              <div className="flex items-start space-x-3">
+                <AlertTriangle className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-orange-800">⚠️ Booking Conflict Detected</h4>
+                  <p className="text-sm text-orange-700 mt-1">
+                    <strong>{conflictWarning.carName}</strong> has overlapping booking(s) for this time:
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {conflictWarning.conflicts.map((conflict, idx) => (
+                      <li key={idx} className="text-sm text-orange-700 flex items-center space-x-2">
+                        <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
+                        <span>
+                          <strong>{conflict.user}</strong> on {conflict.date}: {conflict.start} - {conflict.end}
+                          {conflict.status === 'pending_approval' && (
+                            <span className="ml-2 text-xs bg-yellow-200 text-yellow-800 px-1.5 py-0.5 rounded">Pending</span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-orange-600 mt-2">
+                    💡 Consider choosing a different time or car to avoid scheduling conflicts.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>

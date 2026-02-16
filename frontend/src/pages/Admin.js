@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { carAPI, assistanceAPI, userAPI, bookingAPI, messageAPI, todoAPI, reportsAPI } from '../api/api';
 import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlock, Clock, Check, X, MessageSquare, ListTodo, Settings, Key, BarChart3, Download, TrendingUp, TrendingDown, Calendar as CalendarIcon, PieChart, List, MapPin, AlertCircle, Crown, ShieldAlert } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 // Helper function to get username from email (removes @domain.com)
 const getUsername = (email) => {
@@ -11,6 +12,7 @@ const getUsername = (email) => {
 
 const Admin = () => {
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'cars');
   const [cars, setCars] = useState([]);
   const [providers, setProviders] = useState([]);

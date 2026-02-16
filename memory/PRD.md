@@ -237,9 +237,10 @@ REACT_APP_PRIMARY_COLOR=#2563eb
 
 ### P0 (Critical - Awaiting Action)
 - [ ] **DEPLOY TO PRODUCTION** - Booking calendar fix is in preview, needs deployment
-- [ ] **"My Bookings" Tab** - Add a tab on `/bookings` page showing only logged-in user's bookings on calendar (for staff & admin)
 
 ### P0 (Done)
+- [x] **"My Bookings" Tab** - Added tab on `/bookings` page showing only logged-in user's bookings (February 2026)
+- [x] **Booking Conflict Alert System** - Real-time warning when booking overlaps with existing bookings (February 2026)
 - [x] Fish icon for pmcxleewalker user
 - [x] Advanced To-Do features (auto-reset, scheduling)
 - [x] Booking suggestions on Bookings page

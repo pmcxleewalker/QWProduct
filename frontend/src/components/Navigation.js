@@ -367,10 +367,19 @@ const Navigation = () => {
               </div>
             )}
             
-            <span className="text-xs text-gray-600">{user?.email?.split('@')[0]}</span>
+            <div className="flex items-center space-x-1">
+              {isMasterAdmin && (
+                <Crown size={16} className="text-yellow-500" title="Master Admin" />
+              )}
+              <span className="text-xs text-gray-600">{user?.email?.split('@')[0]}</span>
+            </div>
             {isAdmin() && (
-              <span className="px-1.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 rounded">
-                Admin
+              <span className={`px-1.5 py-0.5 text-xs font-medium rounded ${
+                isMasterAdmin 
+                  ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 border border-amber-300'
+                  : 'bg-purple-100 text-purple-800'
+              }`}>
+                {isMasterAdmin ? '👑 Master Admin' : 'Admin'}
               </span>
             )}
             <button

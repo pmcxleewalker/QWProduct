@@ -162,6 +162,15 @@ REACT_APP_PRIMARY_COLOR=#2563eb
    - **Daily Availability by Location**: Shows cars with no bookings on a specific date, grouped by Tralee/Bantry/Unassigned
    - **Base Location field**: Added to car model for location-based reporting
 
+4. **Master Admin Role for Carly O'Donovan**
+   - **Master Admin**: carlyodonovan@bluebirdcare.ie has elevated permissions
+   - **Crown Icon**: Displayed in navigation header and user management
+   - **Protected Actions**: 
+     - Only Master Admin can delete other admin accounts
+     - Requires Master Admin password confirmation for admin deletion
+     - Cannot modify or delete the Master Admin account
+   - **Visual Distinction**: Golden badge and styling for Master Admin in user list
+
 ### Session: February 5, 2026
 1. **Purple Color for Recurring Bookings on Calendar**
    - Recurring bookings now show in purple on the main calendar (previously used car color)

@@ -2795,6 +2795,72 @@ const Admin = () => {
         </div>
       )}
 
+      {/* Admin Delete Confirmation Modal - Master Admin Only */}
+      {showAdminDeleteModal && adminToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <ShieldAlert className="text-red-600" size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-red-600">Delete Admin Account</h3>
+                <p className="text-sm text-gray-500">Master Admin Authorization Required</p>
+              </div>
+            </div>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-amber-800">
+                You are about to delete the admin account: <br />
+                <span className="font-bold">{adminToDelete.email}</span>
+              </p>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              To confirm this action, please enter your Master Admin password:
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Crown size={14} className="inline mr-1 text-yellow-500" />
+                  Master Admin Password *
+                </label>
+                <input
+                  type="password"
+                  value={masterAdminPassword}
+                  onChange={(e) => setMasterAdminPassword(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                  placeholder="Enter your password to confirm"
+                  required
+                />
+              </div>
+              
+              <div className="flex space-x-4">
+                <button
+                  onClick={handleDeleteAdminConfirm}
+                  disabled={!masterAdminPassword}
+                  className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  Confirm Delete
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAdminDeleteModal(false);
+                    setAdminToDelete(null);
+                    setMasterAdminPassword('');
+                  }}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Clear Bookings Modal */}
       {showClearBookingsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

@@ -908,15 +908,30 @@ async def get_compliance_alerts(current_user: dict = Depends(get_current_admin_u
 # ==================== REPORTS ENDPOINTS ====================
 
 @api_router.get("/admin/reports/fleet-usage")
-async def get_fleet_usage_report(current_user: dict = Depends(get_current_admin_user)):
-    """Admin: Get fleet usage report with booking statistics"""
+async def get_fleet_usage_report(
+    start_date: Optional[str] = Query(None, description="Filter bookings from this date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="Filter bookings until this date (YYYY-MM-DD)"),
+    current_user: dict = Depends(get_current_admin_user)
+):
+    """Admin: Get fleet usage report with booking statistics, optionally filtered by date range"""
     
     # Get all cars
     cars = await db.cars.find({}, {"_id": 0}).to_list(100)
     car_map = {car['id']: car for car in cars}
     
-    # Get all bookings
-    bookings = await db.bookings.find({}, {"_id": 0}).to_list(1000)
+    # Build booking query with optional date filter
+    booking_query = {}
+    if start_date or end_date:
+        date_filter = {}
+        if start_date:
+            date_filter["$gte"] = f"{start_date}T00:00:00"
+        if end_date:
+            date_filter["$lte"] = f"{end_date}T23:59:59"
+        if date_filter:
+            booking_query["start_time"] = date_filter
+    
+    # Get bookings (filtered if dates provided)
+    bookings = await db.bookings.find(booking_query, {"_id": 0}).to_list(5000)
     
     # Get all status updates
     status_updates = await db.status_updates.find({}, {"_id": 0}).to_list(1000)

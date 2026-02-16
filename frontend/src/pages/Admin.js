@@ -34,6 +34,7 @@ const Admin = () => {
     tax_due_date: '',
     nct_due_date: '',
     service_due_mileage: '',
+    base_location: '',
   });
 
   const [blockForm, setBlockForm] = useState({

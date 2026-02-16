@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { carAPI, assistanceAPI, userAPI, bookingAPI, messageAPI, todoAPI, reportsAPI } from '../api/api';
-import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlock, Clock, Check, X, MessageSquare, ListTodo, Settings, Key, BarChart3, Download, TrendingUp, TrendingDown, Calendar as CalendarIcon } from 'lucide-react';
+import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlock, Clock, Check, X, MessageSquare, ListTodo, Settings, Key, BarChart3, Download, TrendingUp, TrendingDown, Calendar as CalendarIcon, PieChart, List, MapPin, AlertCircle } from 'lucide-react';
 
 // Helper function to get username from email (removes @domain.com)
 const getUsername = (email) => {

@@ -237,6 +237,7 @@ REACT_APP_PRIMARY_COLOR=#2563eb
 
 ### P0 (Critical - Awaiting Action)
 - [ ] **DEPLOY TO PRODUCTION** - Booking calendar fix is in preview, needs deployment
+- [ ] **"My Bookings" Tab** - Add a tab on `/bookings` page showing only logged-in user's bookings on calendar (for staff & admin)
 
 ### P0 (Done)
 - [x] Fish icon for pmcxleewalker user

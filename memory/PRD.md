@@ -272,6 +272,7 @@ REACT_APP_PRIMARY_COLOR=#2563eb
 ### P0 (Done)
 - [x] **"My Bookings" Tab** - Added tab on `/bookings` page showing only logged-in user's bookings (February 2026)
 - [x] **Booking Conflict Alert System** - Real-time warning when booking overlaps with existing bookings (February 2026)
+- [x] **Enhanced Admin Reports** - Date-filtered numbers, Charts sub-tab, Daily availability by location (February 2026)
 - [x] Fish icon for pmcxleewalker user
 - [x] Advanced To-Do features (auto-reset, scheduling)
 - [x] Booking suggestions on Bookings page

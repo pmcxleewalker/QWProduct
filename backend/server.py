@@ -499,7 +499,7 @@ class AdminPasswordReset(BaseModel):
 
 @api_router.post("/admin/users/{user_id}/reset-password")
 async def admin_reset_user_password(user_id: str, data: AdminPasswordReset, current_admin: dict = Depends(get_current_admin_user)):
-    """Admin: Reset any user's password"""
+    """Admin: Reset any user's password (except Master Admin unless you ARE Master Admin)"""
     if len(data.new_password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
     
@@ -507,6 +507,14 @@ async def admin_reset_user_password(user_id: str, data: AdminPasswordReset, curr
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Only Master Admin can reset Master Admin's password
+    if user.get('email') == MASTER_ADMIN_EMAIL:
+        if current_admin.get('email') != MASTER_ADMIN_EMAIL:
+            raise HTTPException(
+                status_code=403, 
+                detail="Only Master Admin can change their own password"
+            )
     
     # Update password
     await db.users.update_one(

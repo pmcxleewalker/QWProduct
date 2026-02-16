@@ -27,11 +27,23 @@ export const complianceAPI = {
 
 // Reports API
 export const reportsAPI = {
-  getFleetUsage: () => axios.get(`${API}/admin/reports/fleet-usage`),
+  getFleetUsage: (startDate, endDate) => {
+    const params = {};
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    return axios.get(`${API}/admin/reports/fleet-usage`, { params });
+  },
   exportCSV: () => `${API}/admin/reports/export`,
   getDailyAvailability: (date) => axios.get(`${API}/admin/reports/daily-availability`, { params: { date } }),
   getBookingsDetail: (startDate, endDate) => axios.get(`${API}/admin/reports/bookings-detail`, { params: { start_date: startDate, end_date: endDate } }),
   clearBookings: (startDate, endDate) => axios.delete(`${API}/admin/bookings/clear`, { params: { start_date: startDate, end_date: endDate } }),
+  getCarsWithoutBookings: (date) => axios.get(`${API}/admin/reports/cars-without-bookings`, { params: { date } }),
+  getBookingCharts: (startDate, endDate) => {
+    const params = {};
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    return axios.get(`${API}/admin/reports/booking-charts`, { params });
+  },
 };
 
 // Status API

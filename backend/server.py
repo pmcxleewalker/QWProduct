@@ -50,6 +50,9 @@ api_router = APIRouter(prefix="/api")
 
 # ==================== AUTHENTICATION MODELS ====================
 
+# Master Admin email - has elevated permissions
+MASTER_ADMIN_EMAIL = "carlyodonovan@bluebirdcare.ie"
+
 class UserBase(BaseModel):
     email: EmailStr
     role: str = "staff"  # admin or staff
@@ -67,6 +70,7 @@ class User(UserBase):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     is_active: bool = True
+    is_master_admin: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserInvite(BaseModel):
@@ -76,6 +80,9 @@ class UserInvite(BaseModel):
 class UserUpdate(BaseModel):
     role: Optional[str] = None
     is_active: Optional[bool] = None
+
+class AdminDeleteRequest(BaseModel):
+    master_admin_password: str
 
 class Token(BaseModel):
     access_token: str

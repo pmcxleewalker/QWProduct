@@ -1528,29 +1528,39 @@ const Admin = () => {
                           <span>Reset PW</span>
                         </button>
                         
-                        <button
-                          onClick={() => handleToggleUserStatus(user)}
-                          data-testid={`toggle-status-${user.id}`}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                            user.is_active
-                              ? 'bg-amber-600 text-white hover:bg-amber-700'
-                              : 'bg-green-600 text-white hover:bg-green-700'
-                          }`}
-                        >
-                          {user.is_active ? 'Deactivate' : 'Activate'}
-                        </button>
-                        
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          data-testid={`delete-user-${user.id}`}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
-                        >
-                          <Trash2 size={16} className="inline" />
-                        </button>
+                        {!isThisMasterAdmin && (
+                          <>
+                            <button
+                              onClick={() => handleToggleUserStatus(adminUser)}
+                              data-testid={`toggle-status-${adminUser.id}`}
+                              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                                adminUser.is_active
+                                  ? 'bg-amber-600 text-white hover:bg-amber-700'
+                                  : 'bg-green-600 text-white hover:bg-green-700'
+                              }`}
+                            >
+                              {adminUser.is_active ? 'Deactivate' : 'Activate'}
+                            </button>
+                            
+                            <button
+                              onClick={() => handleDeleteUser(adminUser.id, adminUser)}
+                              data-testid={`delete-user-${adminUser.id}`}
+                              className={`px-4 py-2 rounded-lg text-sm flex items-center space-x-1 ${
+                                isMasterAdmin 
+                                  ? 'bg-red-600 text-white hover:bg-red-700'
+                                  : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                              }`}
+                              title={isMasterAdmin ? 'Delete Admin' : 'Only Master Admin can delete admins'}
+                            >
+                              <Trash2 size={16} />
+                              {!isMasterAdmin && <span className="text-xs">🔒</span>}
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
-                ))
+                )})
               )}
             </div>
           </div>

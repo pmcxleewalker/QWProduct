@@ -927,6 +927,20 @@ const Admin = () => {
                         min="0"
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Base Location</label>
+                      <select
+                        data-testid="car-base-location-select"
+                        value={carForm.base_location || ''}
+                        onChange={(e) => setCarForm({ ...carForm, base_location: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select Location</option>
+                        <option value="Tralee">Tralee</option>
+                        <option value="Bantry">Bantry</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">Used for location-based reports</p>
+                    </div>
                   </div>
                 </div>
 

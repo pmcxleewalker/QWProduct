@@ -245,7 +245,14 @@ const Admin = () => {
   };
 
   const handleGenerateReport = () => {
+    fetchReportData(reportStartDate, reportEndDate);
     fetchBookingsDetailReport(reportStartDate, reportEndDate);
+    fetchBookingChartsData(reportStartDate, reportEndDate);
+  };
+
+  const handleDailyReportDateChange = (date) => {
+    setDailyReportDate(date);
+    fetchCarsWithoutBookings(date);
   };
 
   const exportSummaryCSV = () => {

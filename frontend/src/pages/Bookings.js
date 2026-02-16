@@ -29,6 +29,8 @@ const Bookings = () => {
   const [showCarTabs, setShowCarTabs] = useState(false); // Toggle car tabs visibility
   const [qrCarName, setQrCarName] = useState(''); // Name of car from QR
   const [viewMode, setViewMode] = useState('all'); // 'all' or 'my' bookings
+  const [conflictWarning, setConflictWarning] = useState(null); // Booking conflict alert
+  const [checkingConflicts, setCheckingConflicts] = useState(false); // Loading state for conflict check
   
   const [formData, setFormData] = useState({
     car_id: carFromQR || '',

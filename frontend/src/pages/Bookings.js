@@ -577,7 +577,7 @@ const Bookings = () => {
         </div>
 
         {/* Calendar Header */}
-        <div className={`${selectedCarInfo ? getCarColor(selectedCarInfo.id) : 'bg-blue-600'} text-white p-4`}>
+        <div className={`${viewMode === 'my' ? 'bg-indigo-600' : selectedCarInfo ? getCarColor(selectedCarInfo.id) : 'bg-blue-600'} text-white p-4`}>
           <div className="flex justify-between items-center">
             <button 
               onClick={prevMonth}
@@ -587,10 +587,13 @@ const Bookings = () => {
             </button>
             <div className="text-center">
               <h2 className="text-xl font-bold">
-                {selectedCarInfo ? `${selectedCarInfo.name} - ` : ''}{monthNames[month]} {year}
+                {viewMode === 'my' ? '👤 My Bookings - ' : ''}{selectedCarInfo ? `${selectedCarInfo.name} - ` : ''}{monthNames[month]} {year}
               </h2>
               {selectedCarInfo && (
                 <p className="text-sm opacity-80">{selectedCarInfo.registration}</p>
+              )}
+              {viewMode === 'my' && user?.email && (
+                <p className="text-sm opacity-80">{user.email}</p>
               )}
               <button 
                 onClick={goToToday}

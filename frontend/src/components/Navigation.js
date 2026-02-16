@@ -536,9 +536,18 @@ const Navigation = () => {
                 {/* Show email only for staff */}
                 {!isAdmin() && <span className="text-sm text-gray-700">{user?.email}</span>}
                 {isAdmin() && (
-                  <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded">
-                    Admin
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    {isMasterAdmin && (
+                      <Crown size={20} className="text-yellow-500" title="Master Admin" />
+                    )}
+                    <span className={`px-2 py-1 text-xs font-medium rounded ${
+                      isMasterAdmin 
+                        ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 border border-amber-300'
+                        : 'bg-purple-100 text-purple-800'
+                    }`}>
+                      {isMasterAdmin ? '👑 Master Admin' : 'Admin'}
+                    </span>
+                  </div>
                 )}
                 {/* Show change password only for staff */}
                 {!isAdmin() && (

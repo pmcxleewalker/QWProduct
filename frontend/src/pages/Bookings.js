@@ -368,6 +368,11 @@ const Bookings = () => {
       filteredBookings = bookings.filter(b => b.car_id === selectedCar);
     }
     
+    // Filter by "My Bookings" if viewMode is 'my'
+    if (viewMode === 'my' && user?.email) {
+      filteredBookings = filteredBookings.filter(b => b.created_by_email === user.email);
+    }
+    
     return filteredBookings.filter(booking => {
       if (!booking.start_time || !booking.end_time) return false;
       

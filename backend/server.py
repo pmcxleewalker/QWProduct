@@ -565,6 +565,8 @@ async def list_users(
     users = await db.users.find({}, {"_id": 0, "password_hash": 0}).skip(skip).limit(limit).to_list(limit)
     for user in users:
         deserialize_datetime(user, ['created_at'])
+        # Add master admin flag
+        user['is_master_admin'] = user.get('email') == MASTER_ADMIN_EMAIL
     return users
 
 
@@ -575,12 +577,17 @@ async def update_user(user_id: str, user_update: UserUpdate, current_admin: dict
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Cannot modify master admin's role
+    if user.get('email') == MASTER_ADMIN_EMAIL and user_update.role:
+        raise HTTPException(status_code=403, detail="Cannot modify Master Admin's role")
+    
     update_data = user_update.model_dump(exclude_unset=True)
     if update_data:
         await db.users.update_one({"id": user_id}, {"$set": update_data})
     
     updated_user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
     deserialize_datetime(updated_user, ['created_at'])
+    updated_user['is_master_admin'] = updated_user.get('email') == MASTER_ADMIN_EMAIL
     return updated_user
 
 

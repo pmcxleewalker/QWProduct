@@ -736,6 +736,39 @@ const Bookings = () => {
         </div>
       </div>
 
+      {/* View Mode Toggle: All Bookings / My Bookings */}
+      <div className="flex items-center space-x-2 mb-4 bg-gray-100 rounded-lg p-1 w-fit" data-testid="view-mode-toggle">
+        <button
+          onClick={() => setViewMode('all')}
+          data-testid="all-bookings-tab"
+          className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            viewMode === 'all'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          <Users size={16} />
+          <span>All Bookings</span>
+        </button>
+        <button
+          onClick={() => setViewMode('my')}
+          data-testid="my-bookings-tab"
+          className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            viewMode === 'my'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          <User size={16} />
+          <span>My Bookings</span>
+          {user?.email && (
+            <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full ml-1">
+              {bookings.filter(b => b.created_by_email === user.email).length}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Success/Error Messages */}
       {success && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6" data-testid="success-message">

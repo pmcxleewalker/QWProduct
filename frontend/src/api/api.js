@@ -95,8 +95,10 @@ export const userAPI = {
   getAll: () => axios.get(`${API}/admin/users`),
   update: (id, data) => axios.put(`${API}/admin/users/${id}`, data),
   delete: (id) => axios.delete(`${API}/admin/users/${id}`),
+  deleteAdmin: (id, masterAdminPassword) => axios.post(`${API}/admin/users/${id}/delete-admin`, { master_admin_password: masterAdminPassword }),
   changePassword: (data) => axios.post(`${API}/auth/change-password`, data),
   resetPassword: (userId, newPassword) => axios.post(`${API}/admin/users/${userId}/reset-password`, { new_password: newPassword }),
+  checkMasterAdmin: () => axios.get(`${API}/admin/master-admin-check`),
 };
 
 // Admin Messages API

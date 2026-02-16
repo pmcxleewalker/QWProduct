@@ -130,20 +130,46 @@ const Admin = () => {
 
   useEffect(() => {
     if (activeTab === 'reports') {
-      fetchReportData();
+      fetchReportData(reportStartDate, reportEndDate);
       fetchBookingsDetailReport(reportStartDate, reportEndDate);
+      fetchBookingChartsData(reportStartDate, reportEndDate);
+      fetchCarsWithoutBookings(dailyReportDate);
     }
   }, [activeTab]);
 
-  const fetchReportData = async () => {
+  const fetchReportData = async (startDate, endDate) => {
     setReportLoading(true);
     try {
-      const response = await reportsAPI.getFleetUsage();
+      const response = await reportsAPI.getFleetUsage(startDate || null, endDate || null);
       setReportData(response.data);
     } catch (error) {
       console.error('Error fetching report data:', error);
     } finally {
       setReportLoading(false);
+    }
+  };
+
+  const fetchBookingChartsData = async (startDate, endDate) => {
+    setChartsLoading(true);
+    try {
+      const response = await reportsAPI.getBookingCharts(startDate || null, endDate || null);
+      setBookingChartsData(response.data);
+    } catch (error) {
+      console.error('Error fetching charts data:', error);
+    } finally {
+      setChartsLoading(false);
+    }
+  };
+
+  const fetchCarsWithoutBookings = async (date) => {
+    setDailyReportLoading(true);
+    try {
+      const response = await reportsAPI.getCarsWithoutBookings(date);
+      setCarsWithoutBookings(response.data);
+    } catch (error) {
+      console.error('Error fetching cars without bookings:', error);
+    } finally {
+      setDailyReportLoading(false);
     }
   };
 

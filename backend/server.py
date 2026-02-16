@@ -93,6 +93,7 @@ class CarBase(BaseModel):
     name: str
     registration: str
     current_status: str = "Free"
+    base_location: Optional[str] = None  # Tralee, Bantry, or other base location
     # Compliance dates
     tax_due_date: Optional[str] = None
     nct_due_date: Optional[str] = None

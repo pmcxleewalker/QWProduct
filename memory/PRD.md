@@ -131,6 +131,23 @@ REACT_APP_PRIMARY_COLOR=#2563eb
    - Works on mobile browsers (Android/iOS Safari)
    - Auto-removes invalid subscriptions
 
+### Session: February 16, 2026
+1. **"My Bookings" Tab**
+   - New toggle tabs: "All Bookings" and "My Bookings" on the `/bookings` page
+   - "My Bookings" filters calendar to show only logged-in user's bookings
+   - Badge shows count of user's total bookings (e.g., "33")
+   - Calendar header changes to indigo/purple with "👤 My Bookings - [Month]" text
+   - Shows user email below the month name
+   - Works for both staff and admin accounts
+
+2. **Booking Conflict Alert System**
+   - Real-time conflict detection when creating new bookings
+   - Orange warning banner appears when selected car+time overlaps with existing bookings
+   - Shows: car name, conflicting user name, date, time range, and booking status
+   - Helpful tip: "💡 Consider choosing a different time or car to avoid scheduling conflicts"
+   - Uses debounced checking (300ms) for smooth UX
+   - Warning disappears when conflict is resolved
+
 ### Session: February 5, 2026
 1. **Purple Color for Recurring Bookings on Calendar**
    - Recurring bookings now show in purple on the main calendar (previously used car color)

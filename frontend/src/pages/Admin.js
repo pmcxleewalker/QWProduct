@@ -111,6 +111,12 @@ const Admin = () => {
   const [bookingsDetailLoading, setBookingsDetailLoading] = useState(false);
   const [reportStartDate, setReportStartDate] = useState('');
   const [reportEndDate, setReportEndDate] = useState('');
+  const [bookingChartsData, setBookingChartsData] = useState(null);
+  const [chartsLoading, setChartsLoading] = useState(false);
+  const [bookingsDetailSubTab, setBookingsDetailSubTab] = useState('list'); // 'list' or 'charts'
+  const [carsWithoutBookings, setCarsWithoutBookings] = useState(null);
+  const [dailyReportDate, setDailyReportDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dailyReportLoading, setDailyReportLoading] = useState(false);
 
   // Clear Bookings State
   const [showClearBookingsModal, setShowClearBookingsModal] = useState(false);

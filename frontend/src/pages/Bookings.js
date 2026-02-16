@@ -28,6 +28,7 @@ const Bookings = () => {
   const [showAllCars, setShowAllCars] = useState(false); // Show more cars toggle
   const [showCarTabs, setShowCarTabs] = useState(false); // Toggle car tabs visibility
   const [qrCarName, setQrCarName] = useState(''); // Name of car from QR
+  const [viewMode, setViewMode] = useState('all'); // 'all' or 'my' bookings
   
   const [formData, setFormData] = useState({
     car_id: carFromQR || '',

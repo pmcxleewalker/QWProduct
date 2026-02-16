@@ -689,6 +689,30 @@ const Bookings = () => {
             </div>
           </div>
         )}
+
+        {/* My Bookings Stats - show when in My Bookings view */}
+        {viewMode === 'my' && user?.email && (
+          <div className="p-3 bg-indigo-50 border-t">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-indigo-700">
+                <span className="font-medium">
+                  {bookings.filter(b => {
+                    if (b.created_by_email !== user.email) return false;
+                    const bookingDate = new Date(b.start_time);
+                    return bookingDate.getMonth() === currentDate.getMonth() && 
+                           bookingDate.getFullYear() === currentDate.getFullYear();
+                  }).length}
+                </span> of your bookings this month
+              </p>
+              <button
+                onClick={() => setViewMode('all')}
+                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                View All Bookings →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };

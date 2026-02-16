@@ -1519,29 +1519,27 @@ const Admin = () => {
                         )}
                         
                         {/* Reset Password - Only Master Admin can reset Master Admin's password */}
-                        {(isMasterAdmin || !isThisMasterAdmin) && (
-                          <button
-                            onClick={() => {
-                              if (isThisMasterAdmin && !isMasterAdmin) {
-                                setError('Only Master Admin can change their own password');
-                                return;
-                              }
-                              setResetPasswordUser(adminUser);
-                              setNewPassword('');
-                              setShowResetPasswordModal(true);
-                            }}
-                            className={`px-3 py-2 rounded-lg text-sm flex items-center space-x-1 ${
-                              isThisMasterAdmin && !isMasterAdmin
-                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                : 'bg-blue-600 text-white hover:bg-blue-700'
-                            }`}
-                            title={isThisMasterAdmin && !isMasterAdmin ? 'Only Master Admin can change their own password' : 'Reset Password'}
-                          >
-                            <Key size={16} />
-                            <span>Reset PW</span>
-                            {isThisMasterAdmin && !isMasterAdmin && <span className="text-xs">🔒</span>}
-                          </button>
-                        )}
+                        <button
+                          onClick={() => {
+                            if (isThisMasterAdmin && !isMasterAdmin) {
+                              setError('Only Master Admin can change their own password');
+                              return;
+                            }
+                            setResetPasswordUser(adminUser);
+                            setNewPassword('');
+                            setShowResetPasswordModal(true);
+                          }}
+                          className={`px-3 py-2 rounded-lg text-sm flex items-center space-x-1 ${
+                            isThisMasterAdmin && !isMasterAdmin
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                          }`}
+                          title={isThisMasterAdmin && !isMasterAdmin ? 'Only Master Admin can change their own password' : 'Reset Password'}
+                        >
+                          <Key size={16} />
+                          <span>Reset PW</span>
+                          {isThisMasterAdmin && !isMasterAdmin && <span className="text-xs">🔒</span>}
+                        </button>
                         
                         {!isThisMasterAdmin && (
                           <>

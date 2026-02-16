@@ -70,6 +70,13 @@ const Admin = () => {
   const [resetPasswordUser, setResetPasswordUser] = useState(null);
   const [newPassword, setNewPassword] = useState('');
 
+  // Master Admin State
+  const MASTER_ADMIN_EMAIL = 'carlyodonovan@bluebirdcare.ie';
+  const [showAdminDeleteModal, setShowAdminDeleteModal] = useState(false);
+  const [adminToDelete, setAdminToDelete] = useState(null);
+  const [masterAdminPassword, setMasterAdminPassword] = useState('');
+  const isMasterAdmin = user?.email === MASTER_ADMIN_EMAIL;
+
   const [messageForm, setMessageForm] = useState({
     title: '',
     content: '',

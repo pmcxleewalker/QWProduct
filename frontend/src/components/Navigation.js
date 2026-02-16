@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Megaphone } from 'lucide-react';
+import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Megaphone, Crown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { liftRequestAPI } from '../api/api';
 import ChangePasswordModal from './ChangePasswordModal';
 import usePushNotifications from '../hooks/usePushNotifications';
+
+// Master Admin email
+const MASTER_ADMIN_EMAIL = 'carlyodonovan@bluebirdcare.ie';
 
 const Navigation = () => {
   const location = useLocation();
@@ -19,8 +22,22 @@ const Navigation = () => {
   const deploymentRef = useRef(null);
   const seenRequestIds = useRef(new Set());
   
+  // Check if current user is master admin
+  const isMasterAdmin = user?.email === MASTER_ADMIN_EMAIL;
+  
   // Deployment updates for admins - update this array when deploying new features
   const deploymentUpdates = [
+    {
+      date: '16 Feb 2026',
+      title: 'Master Admin & Reports Update',
+      changes: [
+        '👑 Master Admin role for Carly O\'Donovan',
+        '📊 Enhanced reports with date filtering',
+        '📈 Charts view in Booking Details Report',
+        '📅 Daily availability by location (Tralee/Bantry)',
+        '⚠️ Booking conflict alerts when creating bookings'
+      ]
+    },
     {
       date: '5 Feb 2026',
       title: 'Calendar & Reports Update',

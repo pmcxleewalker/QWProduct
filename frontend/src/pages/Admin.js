@@ -651,15 +651,52 @@ const Admin = () => {
     }
   };
 
-  const handleDeleteUser = async (id) => {
+  const handleDeleteUser = async (userId, targetUser = null) => {
+    // Find the target user if not provided
+    const userToDelete = targetUser || users.find(u => u.id === userId);
+    
+    // Check if target is master admin - cannot delete
+    if (userToDelete?.email === MASTER_ADMIN_EMAIL) {
+      setError('Cannot delete the Master Admin account');
+      return;
+    }
+    
+    // If target is an admin, require master admin approval
+    if (userToDelete?.role === 'admin') {
+      if (!isMasterAdmin) {
+        setError('Only Master Admin (Carly O\'Donovan) can delete admin accounts');
+        return;
+      }
+      // Show the admin delete modal for password confirmation
+      setAdminToDelete(userToDelete);
+      setShowAdminDeleteModal(true);
+      return;
+    }
+    
+    // For staff users, proceed with normal deletion
     if (!window.confirm('Are you sure you want to deactivate this user?')) return;
     
     try {
-      await userAPI.delete(id);
+      await userAPI.delete(userId);
       setSuccess('User deactivated successfully');
       fetchData();
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to deactivate user');
+    }
+  };
+
+  const handleDeleteAdminConfirm = async () => {
+    if (!adminToDelete) return;
+    
+    try {
+      await userAPI.deleteAdmin(adminToDelete.id, masterAdminPassword);
+      setSuccess(`Admin ${adminToDelete.email} has been deactivated`);
+      setShowAdminDeleteModal(false);
+      setAdminToDelete(null);
+      setMasterAdminPassword('');
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to delete admin. Check your password.');
     }
   };
 

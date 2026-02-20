@@ -43,7 +43,7 @@ const AppContent = () => {
   };
 
   return (
-    <div className="App min-h-screen bg-gray-50">
+    <div className="App min-h-screen bg-gray-50 flex flex-col">
       {/* Blocking Message Acknowledgment Modal - Must acknowledge before using app */}
       {showModal && isAuthenticated && (
         <MessageAcknowledgmentModal onComplete={handleAcknowledgmentComplete} />
@@ -63,7 +63,7 @@ const AppContent = () => {
           element={
             <ProtectedRoute>
               <Navigation />
-              <div className="pt-16 pb-20 sm:pb-4">
+              <div className="pt-16 pb-20 sm:pb-4 flex-grow">
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/live-sheet" element={<LiveSheet />} />
@@ -80,6 +80,7 @@ const AppContent = () => {
                   />
                 </Routes>
               </div>
+              <Footer />
               <MobileBottomNav />
             </ProtectedRoute>
           }

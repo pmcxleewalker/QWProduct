@@ -13,6 +13,7 @@ import MileageUpdate from './pages/MileageUpdate';
 import Setup from './pages/Setup';
 import Navigation from './components/Navigation';
 import MobileBottomNav from './components/MobileBottomNav';
+import Footer from './components/Footer';
 import MessageAcknowledgmentModal from './components/MessageAcknowledgmentModal';
 import './App.css';
 

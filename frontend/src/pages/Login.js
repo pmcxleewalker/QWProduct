@@ -115,6 +115,12 @@ const Login = () => {
             </button>
           </form>
         </div>
+        
+        {/* Copyright Footer */}
+        <div className="text-center mt-6 text-sm text-gray-500">
+          <p>© {new Date().getFullYear()} Lee Walker. All Rights Reserved.</p>
+          <p className="text-xs mt-1">Proprietary Software</p>
+        </div>
       </div>
     </div>
   );

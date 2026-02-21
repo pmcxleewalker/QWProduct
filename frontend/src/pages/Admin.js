@@ -480,11 +480,20 @@ const Admin = () => {
     setSuccess('');
 
     try {
+      // Prepare form data - convert empty strings to null for optional fields
+      const submitData = {
+        ...carForm,
+        tax_due_date: carForm.tax_due_date || null,
+        nct_due_date: carForm.nct_due_date || null,
+        service_due_mileage: carForm.service_due_mileage ? parseInt(carForm.service_due_mileage) : null,
+        base_location: carForm.base_location || null,
+      };
+
       if (editingCar) {
-        await carAPI.update(editingCar.id, carForm);
+        await carAPI.update(editingCar.id, submitData);
         setSuccess('Car updated successfully!');
       } else {
-        await carAPI.create(carForm);
+        await carAPI.create(submitData);
         setSuccess('Car created successfully!');
       }
       setShowCarForm(false);

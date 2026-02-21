@@ -39,6 +39,7 @@ const Bookings = () => {
     end_time: '',
     purpose: '',
     location: '',
+    is_double_up_call: false,
     is_recurring: false,
     recurrence_type: '',
     recurrence_end_date: '',

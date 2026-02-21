@@ -55,6 +55,7 @@ const AppContent = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/setup" element={<Setup />} />
+        <Route path="/terms" element={<TermsOfService />} />
         {/* Redirect old status-update URLs to mileage */}
         <Route path="/status-update" element={<StatusUpdateRedirect />} />
         

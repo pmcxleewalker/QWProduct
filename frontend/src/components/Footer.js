@@ -1,5 +1,6 @@
 import React from 'react';
-import { Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Shield, FileText } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -12,8 +13,17 @@ const Footer = () => {
             <Shield size={16} className="text-blue-600" />
             <span>© {currentYear} Lee Walker. All Rights Reserved.</span>
           </div>
-          <div className="text-xs text-gray-500">
-            Quick Wing Fleet Management System | Proprietary Software
+          <div className="flex items-center space-x-4">
+            <span className="text-xs text-gray-500">
+              Quick Wing Fleet Management System | Proprietary Software
+            </span>
+            <Link 
+              to="/terms" 
+              className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800"
+            >
+              <FileText size={12} className="mr-1" />
+              Terms
+            </Link>
           </div>
         </div>
       </div>

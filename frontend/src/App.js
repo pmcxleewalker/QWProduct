@@ -11,6 +11,7 @@ import Assistance from './pages/Assistance';
 import Admin from './pages/Admin';
 import MileageUpdate from './pages/MileageUpdate';
 import Setup from './pages/Setup';
+import TermsOfService from './pages/TermsOfService';
 import Navigation from './components/Navigation';
 import MobileBottomNav from './components/MobileBottomNav';
 import Footer from './components/Footer';

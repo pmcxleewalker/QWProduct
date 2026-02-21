@@ -2012,11 +2012,16 @@ async def get_bookings_detail_report(
             "location": booking.get('location', ''),
             "purpose": booking.get('purpose', booking.get('destination_notes', '')),
             "status": booking.get('status', 'unknown'),
-            "is_recurring": booking.get('is_recurring', False) or booking.get('recurring_group_id') is not None
+            "is_recurring": booking.get('is_recurring', False) or booking.get('recurring_group_id') is not None,
+            "is_double_up_call": booking.get('is_double_up_call', False)
         })
+    
+    # Count double-up calls
+    double_up_count = len([r for r in report_data if r.get('is_double_up_call', False)])
     
     return {
         "total_records": len(report_data),
+        "double_up_calls": double_up_count,
         "date_range": {
             "start": start_date or "All",
             "end": end_date or "All"

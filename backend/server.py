@@ -152,6 +152,7 @@ class BookingCreate(BaseModel):
     end_time: datetime
     purpose: Optional[str] = ""  # Purpose of the booking
     location: Optional[str] = ""  # Eircode or location where car will be
+    is_double_up_call: bool = False  # Double up call indicator for reports
     # Recurring booking fields
     is_recurring: bool = False
     recurrence_type: Optional[str] = None  # daily, weekly, monthly

@@ -489,10 +489,20 @@ const Admin = () => {
       }
       setShowCarForm(false);
       setEditingCar(null);
-      setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_mileage: '' });
+      setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_mileage: '', base_location: '' });
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to save car');
+      // Handle validation errors properly
+      const errorDetail = err.response?.data?.detail;
+      if (Array.isArray(errorDetail)) {
+        // Pydantic validation error - extract message
+        const messages = errorDetail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ');
+        setError(messages || 'Validation error');
+      } else if (typeof errorDetail === 'object') {
+        setError(errorDetail.msg || errorDetail.message || JSON.stringify(errorDetail));
+      } else {
+        setError(errorDetail || 'Failed to save car');
+      }
     }
   };
 

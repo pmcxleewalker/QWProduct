@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogIn, AlertCircle, Car } from 'lucide-react';
+import { LogIn, AlertCircle, Car, FileText } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();

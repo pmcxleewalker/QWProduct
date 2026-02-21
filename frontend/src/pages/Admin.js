@@ -317,6 +317,38 @@ const Admin = () => {
     .catch(error => console.error('Export failed:', error));
   };
 
+  const exportDailyAvailabilityCSV = () => {
+    if (!carsWithoutBookings?.all_cars) return;
+    
+    const headers = ['Car Name', 'Registration', 'Location', 'Free Hours', 'Utilization %', 'Total Bookings', 'Status'];
+    const rows = carsWithoutBookings.all_cars.map(car => [
+      car.name,
+      car.registration,
+      car.location,
+      car.free_hours,
+      car.utilization_percent,
+      car.total_bookings,
+      car.is_fully_free ? 'Fully Free' : car.free_minutes === 0 ? 'Fully Booked' : 'Partial'
+    ]);
+    
+    const csvContent = [
+      [`Daily Availability Report - ${carsWithoutBookings.date}`],
+      [`Total Cars: ${carsWithoutBookings.total_cars}, Fully Free: ${carsWithoutBookings.total_available}, Partially Free: ${carsWithoutBookings.total_partially_free}, Fully Booked: ${carsWithoutBookings.total_fully_booked}`],
+      [],
+      headers,
+      ...rows
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `daily_availability_${carsWithoutBookings.date}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const fetchData = async () => {
     try {
       const promises = [

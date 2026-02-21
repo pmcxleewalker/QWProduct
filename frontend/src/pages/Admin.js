@@ -127,6 +127,8 @@ const Admin = () => {
   const [carsWithoutBookings, setCarsWithoutBookings] = useState(null);
   const [dailyReportDate, setDailyReportDate] = useState(new Date().toISOString().split('T')[0]);
   const [dailyReportLoading, setDailyReportLoading] = useState(false);
+  const [dailyAvailabilityTab, setDailyAvailabilityTab] = useState('overview'); // overview, by-location, timeline, trends
+  const [bookingDetailsCollapsed, setBookingDetailsCollapsed] = useState(false);
 
   // Clear Bookings State
   const [showClearBookingsModal, setShowClearBookingsModal] = useState(false);

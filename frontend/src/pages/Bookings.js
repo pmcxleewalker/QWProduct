@@ -1017,6 +1017,22 @@ const Bookings = () => {
               </div>
             </div>
 
+            {/* Double Up Call Checkbox */}
+            <div className="flex items-center space-x-3 py-3 px-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <input
+                type="checkbox"
+                id="is_double_up_call"
+                data-testid="booking-double-up"
+                checked={formData.is_double_up_call}
+                onChange={(e) => setFormData({ ...formData, is_double_up_call: e.target.checked })}
+                className="w-5 h-5 text-amber-600 rounded focus:ring-amber-500"
+              />
+              <label htmlFor="is_double_up_call" className="text-sm font-medium text-amber-800">
+                👥 Double up call?
+              </label>
+              <span className="text-xs text-amber-600">(Check if this is a shared/double up visit)</span>
+            </div>
+
             {/* Recurring Booking Section */}
             <div className="border-t pt-4 mt-4">
               <div className="flex items-center space-x-2 mb-4">

@@ -120,6 +120,13 @@ const Login = () => {
         <div className="text-center mt-6 text-sm text-gray-500">
           <p>© {new Date().getFullYear()} Lee Walker. All Rights Reserved.</p>
           <p className="text-xs mt-1">Proprietary Software</p>
+          <Link 
+            to="/terms" 
+            className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 mt-2"
+          >
+            <FileText size={12} className="mr-1" />
+            Terms of Service
+          </Link>
         </div>
       </div>
     </div>

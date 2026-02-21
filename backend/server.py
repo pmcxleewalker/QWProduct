@@ -1125,9 +1125,133 @@ async def get_cars_without_bookings(
             {"end_time": {"$gte": start_of_day, "$lte": end_of_day}},
             {"start_time": {"$lte": start_of_day}, "end_time": {"$gte": end_of_day}}
         ]
-    }, {"_id": 0, "car_id": 1}).to_list(500)
+    }, {"_id": 0}).to_list(500)
     
-    # Get car IDs that have bookings
+    # Create car map for quick lookup
+    car_map = {car['id']: car for car in cars}
+    
+    # Calculate availability for each car
+    car_availability = {}
+    for car in cars:
+        car_id = car['id']
+        car_bookings = [b for b in bookings if b.get('car_id') == car_id]
+        
+        # Calculate free time slots (assume 8am-6pm working hours = 10 hours = 600 minutes)
+        working_start = 8 * 60  # 8:00 AM in minutes
+        working_end = 18 * 60   # 6:00 PM in minutes
+        total_working_minutes = working_end - working_start
+        
+        # Calculate booked minutes
+        booked_minutes = 0
+        booked_slots = []
+        for booking in car_bookings:
+            try:
+                b_start = datetime.fromisoformat(booking['start_time'].replace('Z', '+00:00'))
+                b_end = datetime.fromisoformat(booking['end_time'].replace('Z', '+00:00'))
+                
+                # Convert to minutes from midnight
+                start_mins = b_start.hour * 60 + b_start.minute
+                end_mins = b_end.hour * 60 + b_end.minute
+                
+                # Clip to working hours
+                start_mins = max(start_mins, working_start)
+                end_mins = min(end_mins, working_end)
+                
+                if end_mins > start_mins:
+                    booked_minutes += (end_mins - start_mins)
+                    booked_slots.append({
+                        'start': f"{start_mins // 60:02d}:{start_mins % 60:02d}",
+                        'end': f"{end_mins // 60:02d}:{end_mins % 60:02d}",
+                        'user': booking.get('user_name', 'Unknown'),
+                        'is_double_up': booking.get('is_double_up_call', False)
+                    })
+            except:
+                pass
+        
+        free_minutes = total_working_minutes - booked_minutes
+        location = car.get('base_location') or 'Unassigned'
+        
+        car_availability[car_id] = {
+            'id': car_id,
+            'name': car['name'],
+            'registration': car['registration'],
+            'location': location,
+            'total_bookings': len(car_bookings),
+            'booked_minutes': booked_minutes,
+            'free_minutes': free_minutes,
+            'free_hours': round(free_minutes / 60, 1),
+            'utilization_percent': round((booked_minutes / total_working_minutes) * 100, 1) if total_working_minutes > 0 else 0,
+            'is_fully_free': len(car_bookings) == 0,
+            'booked_slots': booked_slots,
+            'current_status': car.get('current_status', 'Unknown')
+        }
+    
+    # Group by location
+    cars_by_location = {}
+    for car_data in car_availability.values():
+        loc = car_data['location']
+        if loc not in cars_by_location:
+            cars_by_location[loc] = []
+        cars_by_location[loc].append(car_data)
+    
+    # Calculate location summaries
+    location_summaries = {}
+    for loc, loc_cars in cars_by_location.items():
+        fully_free = [c for c in loc_cars if c['is_fully_free']]
+        partially_free = [c for c in loc_cars if not c['is_fully_free'] and c['free_minutes'] > 0]
+        fully_booked = [c for c in loc_cars if c['free_minutes'] == 0]
+        total_free_hours = sum(c['free_hours'] for c in loc_cars)
+        avg_utilization = sum(c['utilization_percent'] for c in loc_cars) / len(loc_cars) if loc_cars else 0
+        
+        location_summaries[loc] = {
+            'total_cars': len(loc_cars),
+            'fully_free': len(fully_free),
+            'partially_free': len(partially_free),
+            'fully_booked': len(fully_booked),
+            'total_free_hours': round(total_free_hours, 1),
+            'avg_utilization': round(avg_utilization, 1)
+        }
+    
+    # Time slot analysis (hourly breakdown)
+    time_slots = {}
+    for hour in range(8, 18):  # 8am to 6pm
+        slot_key = f"{hour:02d}:00"
+        slot_start = hour * 60
+        slot_end = (hour + 1) * 60
+        
+        free_cars = 0
+        booked_cars = 0
+        for car_data in car_availability.values():
+            is_booked_this_hour = False
+            for slot in car_data['booked_slots']:
+                slot_start_mins = int(slot['start'].split(':')[0]) * 60 + int(slot['start'].split(':')[1])
+                slot_end_mins = int(slot['end'].split(':')[0]) * 60 + int(slot['end'].split(':')[1])
+                if slot_start_mins < slot_end and slot_end_mins > slot_start:
+                    is_booked_this_hour = True
+                    break
+            if is_booked_this_hour:
+                booked_cars += 1
+            else:
+                free_cars += 1
+        
+        time_slots[slot_key] = {
+            'free': free_cars,
+            'booked': booked_cars,
+            'total': len(cars)
+        }
+    
+    return {
+        "date": date,
+        "cars_by_location": cars_by_location,
+        "location_summaries": location_summaries,
+        "time_slots": time_slots,
+        "total_cars": len(cars),
+        "total_available": len([c for c in car_availability.values() if c['is_fully_free']]),
+        "total_partially_free": len([c for c in car_availability.values() if not c['is_fully_free'] and c['free_minutes'] > 0]),
+        "total_fully_booked": len([c for c in car_availability.values() if c['free_minutes'] == 0]),
+        "locations": list(cars_by_location.keys()),
+        "all_cars": list(car_availability.values())
+    }
     booked_car_ids = set(b['car_id'] for b in bookings)
     
     # Find cars without bookings, grouped by location

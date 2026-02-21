@@ -1252,30 +1252,6 @@ async def get_cars_without_bookings(
         "locations": list(cars_by_location.keys()),
         "all_cars": list(car_availability.values())
     }
-    booked_car_ids = set(b['car_id'] for b in bookings)
-    
-    # Find cars without bookings, grouped by location
-    cars_by_location = {}
-    for car in cars:
-        if car['id'] not in booked_car_ids:
-            location = car.get('base_location') or 'Unassigned'
-            if location not in cars_by_location:
-                cars_by_location[location] = []
-            cars_by_location[location].append({
-                'id': car['id'],
-                'name': car['name'],
-                'registration': car['registration'],
-                'current_status': car.get('current_status', 'Unknown')
-            })
-    
-    return {
-        "date": date,
-        "cars_by_location": cars_by_location,
-        "total_available": sum(len(cars) for cars in cars_by_location.values()),
-        "locations": list(cars_by_location.keys())
-    }
-
-
 @api_router.get("/admin/reports/booking-charts")
 async def get_booking_charts_data(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
@@ -1305,6 +1281,10 @@ async def get_booking_charts_data(
     for b in bookings:
         status = b.get('status', 'unknown')
         status_counts[status] = status_counts.get(status, 0) + 1
+    
+    # Double up call stats
+    double_up_count = len([b for b in bookings if b.get('is_double_up_call', False)])
+    single_call_count = len(bookings) - double_up_count
     
     # Bookings by car
     car_counts = {}

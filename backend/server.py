@@ -1339,6 +1339,7 @@ async def get_booking_charts_data(
         "by_day_of_week": [{"day": day_names[i], "count": day_counts.get(i, 0)} for i in range(7)],
         "by_month": [{"month": k, "count": v} for k, v in sorted(monthly_counts.items())],
         "recurring_vs_onetime": {"recurring": recurring_count, "one_time": one_time_count},
+        "double_up_calls": {"double_up": double_up_count, "single": single_call_count},
         "by_location": [{"location": k, "count": v} for k, v in sorted(location_counts.items(), key=lambda x: -x[1])]
     }
 

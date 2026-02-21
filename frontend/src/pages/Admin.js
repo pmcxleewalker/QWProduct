@@ -2396,22 +2396,54 @@ const Admin = () => {
                 </div>
               </div>
 
-              {/* Daily Report - Cars without bookings by location */}
+              {/* Daily Report - Cars availability by location - ENHANCED */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                   <h3 className="text-lg font-bold text-gray-900 flex items-center">
                     <MapPin className="mr-2 text-blue-600" size={20} />
-                    Daily Availability by Location
+                    Daily Availability Report
                   </h3>
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm text-gray-600">Date:</label>
-                    <input
-                      type="date"
-                      value={dailyReportDate}
-                      onChange={(e) => handleDailyReportDateChange(e.target.value)}
-                      className="px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                    />
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600">Date:</label>
+                      <input
+                        type="date"
+                        value={dailyReportDate}
+                        onChange={(e) => handleDailyReportDateChange(e.target.value)}
+                        className="px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <button
+                      onClick={exportDailyAvailabilityCSV}
+                      disabled={!carsWithoutBookings?.all_cars}
+                      className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm disabled:opacity-50"
+                    >
+                      <Download size={14} />
+                      <span>CSV</span>
+                    </button>
                   </div>
+                </div>
+
+                {/* Multi-tab navigation */}
+                <div className="flex flex-wrap gap-1 mb-4 bg-gray-100 rounded-lg p-1">
+                  {[
+                    { id: 'overview', label: '📊 Overview', icon: PieChart },
+                    { id: 'by-location', label: '📍 By Location', icon: MapPin },
+                    { id: 'timeline', label: '⏰ Timeline', icon: Clock },
+                    { id: 'details', label: '📋 Details', icon: List },
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setDailyAvailabilityTab(tab.id)}
+                      className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        dailyAvailabilityTab === tab.id
+                          ? 'bg-white text-blue-600 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
                 </div>
                 
                 {dailyReportLoading ? (
@@ -2420,149 +2452,350 @@ const Admin = () => {
                   </div>
                 ) : carsWithoutBookings ? (
                   <div>
-                    <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-700">
-                        📅 <strong>{carsWithoutBookings.date}</strong> - <strong>{carsWithoutBookings.total_available}</strong> cars available (no bookings)
-                      </p>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {/* Tralee */}
-                      <div className="border rounded-lg p-4">
-                        <h4 className="font-bold text-gray-900 mb-3 flex items-center">
-                          <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                          Tralee
-                          <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
-                            {carsWithoutBookings.cars_by_location?.Tralee?.length || 0} available
-                          </span>
-                        </h4>
-                        {carsWithoutBookings.cars_by_location?.Tralee?.length > 0 ? (
-                          <div className="space-y-2">
-                            {carsWithoutBookings.cars_by_location.Tralee.map(car => (
-                              <div key={car.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                <div>
-                                  <p className="font-medium text-sm">{car.name}</p>
-                                  <p className="text-xs text-gray-500">{car.registration}</p>
-                                </div>
-                                <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
-                                  {car.current_status}
-                                </span>
-                              </div>
-                            ))}
+                    {/* Overview Tab - Pie Chart & Summary */}
+                    {dailyAvailabilityTab === 'overview' && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                          <div className="bg-blue-50 rounded-lg p-4 text-center">
+                            <p className="text-3xl font-bold text-blue-600">{carsWithoutBookings.total_cars}</p>
+                            <p className="text-sm text-blue-700">Total Fleet</p>
                           </div>
-                        ) : (
-                          <p className="text-sm text-gray-500 italic">All Tralee cars are booked on this date</p>
-                        )}
-                      </div>
-
-                      {/* Bantry */}
-                      <div className="border rounded-lg p-4">
-                        <h4 className="font-bold text-gray-900 mb-3 flex items-center">
-                          <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-                          Bantry
-                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
-                            {carsWithoutBookings.cars_by_location?.Bantry?.length || 0} available
-                          </span>
-                        </h4>
-                        {carsWithoutBookings.cars_by_location?.Bantry?.length > 0 ? (
-                          <div className="space-y-2">
-                            {carsWithoutBookings.cars_by_location.Bantry.map(car => (
-                              <div key={car.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                <div>
-                                  <p className="font-medium text-sm">{car.name}</p>
-                                  <p className="text-xs text-gray-500">{car.registration}</p>
-                                </div>
-                                <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                                  {car.current_status}
-                                </span>
-                              </div>
-                            ))}
+                          <div className="bg-green-50 rounded-lg p-4 text-center">
+                            <p className="text-3xl font-bold text-green-600">{carsWithoutBookings.total_available}</p>
+                            <p className="text-sm text-green-700">Fully Free</p>
                           </div>
-                        ) : (
-                          <p className="text-sm text-gray-500 italic">All Bantry cars are booked on this date</p>
-                        )}
-                      </div>
-
-                      {/* Other/Unassigned */}
-                      {carsWithoutBookings.cars_by_location?.Unassigned?.length > 0 && (
-                        <div className="border rounded-lg p-4 lg:col-span-2">
-                          <h4 className="font-bold text-gray-900 mb-3 flex items-center">
-                            <span className="w-3 h-3 bg-gray-500 rounded-full mr-2"></span>
-                            Unassigned Location
-                            <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-800 text-xs rounded-full">
-                              {carsWithoutBookings.cars_by_location.Unassigned.length} available
-                            </span>
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {carsWithoutBookings.cars_by_location.Unassigned.map(car => (
-                              <div key={car.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                <div>
-                                  <p className="font-medium text-sm">{car.name}</p>
-                                  <p className="text-xs text-gray-500">{car.registration}</p>
-                                </div>
-                                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
-                                  {car.current_status}
-                                </span>
-                              </div>
-                            ))}
+                          <div className="bg-amber-50 rounded-lg p-4 text-center">
+                            <p className="text-3xl font-bold text-amber-600">{carsWithoutBookings.total_partially_free}</p>
+                            <p className="text-sm text-amber-700">Partially Free</p>
                           </div>
-                          <p className="text-xs text-orange-600 mt-2">
-                            <AlertCircle size={12} className="inline mr-1" />
-                            Set base location in "Manage Cars" tab
-                          </p>
+                          <div className="bg-red-50 rounded-lg p-4 text-center">
+                            <p className="text-3xl font-bold text-red-600">{carsWithoutBookings.total_fully_booked}</p>
+                            <p className="text-sm text-red-700">Fully Booked</p>
+                          </div>
                         </div>
-                      )}
-                    </div>
+
+                        {/* Pie Chart Visualization */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <div className="border rounded-lg p-4">
+                            <h4 className="font-bold text-gray-900 mb-4">🥧 Fleet Availability</h4>
+                            <div className="flex items-center justify-center">
+                              <div className="relative w-48 h-48">
+                                {/* Simple CSS pie chart */}
+                                <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                                  {(() => {
+                                    const total = carsWithoutBookings.total_cars || 1;
+                                    const free = (carsWithoutBookings.total_available / total) * 100;
+                                    const partial = (carsWithoutBookings.total_partially_free / total) * 100;
+                                    const booked = (carsWithoutBookings.total_fully_booked / total) * 100;
+                                    let offset = 0;
+                                    
+                                    return (
+                                      <>
+                                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="#22c55e" strokeWidth="20"
+                                          strokeDasharray={`${free * 2.51} ${251 - free * 2.51}`}
+                                          strokeDashoffset={-offset * 2.51} />
+                                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f59e0b" strokeWidth="20"
+                                          strokeDasharray={`${partial * 2.51} ${251 - partial * 2.51}`}
+                                          strokeDashoffset={-(offset + free) * 2.51} />
+                                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="#ef4444" strokeWidth="20"
+                                          strokeDasharray={`${booked * 2.51} ${251 - booked * 2.51}`}
+                                          strokeDashoffset={-(offset + free + partial) * 2.51} />
+                                      </>
+                                    );
+                                  })()}
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="text-center">
+                                    <p className="text-2xl font-bold text-gray-800">{carsWithoutBookings.total_cars}</p>
+                                    <p className="text-xs text-gray-500">Total</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            {/* Legend */}
+                            <div className="flex justify-center gap-4 mt-4">
+                              <div className="flex items-center gap-1">
+                                <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                                <span className="text-xs">Free ({carsWithoutBookings.total_available})</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="w-3 h-3 bg-amber-500 rounded-full"></span>
+                                <span className="text-xs">Partial ({carsWithoutBookings.total_partially_free})</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="w-3 h-3 bg-red-500 rounded-full"></span>
+                                <span className="text-xs">Booked ({carsWithoutBookings.total_fully_booked})</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Location Summary */}
+                          <div className="border rounded-lg p-4">
+                            <h4 className="font-bold text-gray-900 mb-4">📍 By Location Summary</h4>
+                            <div className="space-y-3">
+                              {carsWithoutBookings.location_summaries && Object.entries(carsWithoutBookings.location_summaries).map(([loc, stats]) => (
+                                <div key={loc} className="p-3 bg-gray-50 rounded-lg">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="font-medium">{loc}</span>
+                                    <span className="text-xs bg-gray-200 px-2 py-0.5 rounded">{stats.total_cars} cars</span>
+                                  </div>
+                                  <div className="flex gap-2 text-xs">
+                                    <span className="text-green-600">✓ {stats.fully_free} free</span>
+                                    <span className="text-amber-600">◐ {stats.partially_free} partial</span>
+                                    <span className="text-red-600">✗ {stats.fully_booked} booked</span>
+                                  </div>
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <span className="text-xs text-gray-500">Utilization:</span>
+                                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${stats.avg_utilization}%` }}></div>
+                                    </div>
+                                    <span className="text-xs font-medium">{stats.avg_utilization}%</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* By Location Tab */}
+                    {dailyAvailabilityTab === 'by-location' && (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {['Tralee', 'Bantry', 'Unassigned'].map(location => {
+                          const locationCars = carsWithoutBookings.cars_by_location?.[location] || [];
+                          const colorClass = location === 'Tralee' ? 'green' : location === 'Bantry' ? 'blue' : 'gray';
+                          
+                          return (
+                            <div key={location} className={`border rounded-lg p-4 ${location === 'Unassigned' && locationCars.length > 0 ? 'lg:col-span-2' : ''}`}>
+                              <h4 className="font-bold text-gray-900 mb-3 flex items-center">
+                                <span className={`w-3 h-3 bg-${colorClass}-500 rounded-full mr-2`}></span>
+                                {location}
+                                <span className={`ml-2 px-2 py-0.5 bg-${colorClass}-100 text-${colorClass}-800 text-xs rounded-full`}>
+                                  {locationCars.length} cars
+                                </span>
+                              </h4>
+                              {locationCars.length > 0 ? (
+                                <div className={`grid ${location === 'Unassigned' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-2`}>
+                                  {locationCars.map(car => (
+                                    <div key={car.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                      <div>
+                                        <p className="font-medium text-sm">{car.name}</p>
+                                        <p className="text-xs text-gray-500">{car.registration}</p>
+                                      </div>
+                                      <div className="text-right">
+                                        <span className={`text-xs px-2 py-1 rounded ${
+                                          car.is_fully_free ? 'bg-green-100 text-green-700' :
+                                          car.free_minutes === 0 ? 'bg-red-100 text-red-700' :
+                                          'bg-amber-100 text-amber-700'
+                                        }`}>
+                                          {car.free_hours}h free
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-500 italic">No cars in {location}</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Timeline Tab - Hourly Availability */}
+                    {dailyAvailabilityTab === 'timeline' && carsWithoutBookings.time_slots && (
+                      <div>
+                        <h4 className="font-bold text-gray-900 mb-4">⏰ Hourly Availability (8am - 6pm)</h4>
+                        <div className="overflow-x-auto">
+                          <div className="flex gap-1 min-w-max">
+                            {Object.entries(carsWithoutBookings.time_slots).map(([time, data]) => {
+                              const freePercent = (data.free / data.total) * 100;
+                              return (
+                                <div key={time} className="flex flex-col items-center w-16">
+                                  <div className="h-32 w-10 bg-gray-200 rounded-t relative flex flex-col-reverse overflow-hidden">
+                                    <div 
+                                      className="bg-green-500 w-full transition-all"
+                                      style={{ height: `${freePercent}%` }}
+                                    ></div>
+                                    <div 
+                                      className="bg-red-400 w-full"
+                                      style={{ height: `${100 - freePercent}%` }}
+                                    ></div>
+                                  </div>
+                                  <div className="text-xs font-medium mt-1">{time}</div>
+                                  <div className="text-xs text-green-600">{data.free} free</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div className="flex justify-center gap-6 mt-4">
+                          <div className="flex items-center gap-1">
+                            <span className="w-3 h-3 bg-green-500 rounded"></span>
+                            <span className="text-xs">Available</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-3 h-3 bg-red-400 rounded"></span>
+                            <span className="text-xs">Booked</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Details Tab - All Cars with Info */}
+                    {dailyAvailabilityTab === 'details' && (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-gray-100">
+                              <th className="text-left p-2">Car</th>
+                              <th className="text-left p-2">Location</th>
+                              <th className="text-center p-2">Free Hours</th>
+                              <th className="text-center p-2">Utilization</th>
+                              <th className="text-center p-2">Bookings</th>
+                              <th className="text-center p-2">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {carsWithoutBookings.all_cars?.sort((a, b) => b.free_hours - a.free_hours).map(car => (
+                              <tr key={car.id} className="border-b hover:bg-gray-50">
+                                <td className="p-2">
+                                  <div className="font-medium">{car.name}</div>
+                                  <div className="text-xs text-gray-500">{car.registration}</div>
+                                </td>
+                                <td className="p-2">{car.location}</td>
+                                <td className="p-2 text-center font-medium">{car.free_hours}h</td>
+                                <td className="p-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-16">
+                                      <div className={`h-2 rounded-full ${
+                                        car.utilization_percent > 80 ? 'bg-red-500' :
+                                        car.utilization_percent > 50 ? 'bg-amber-500' : 'bg-green-500'
+                                      }`} style={{ width: `${car.utilization_percent}%` }}></div>
+                                    </div>
+                                    <span className="text-xs">{car.utilization_percent}%</span>
+                                  </div>
+                                </td>
+                                <td className="p-2 text-center">{car.total_bookings}</td>
+                                <td className="p-2 text-center">
+                                  <span className={`px-2 py-1 rounded text-xs ${
+                                    car.is_fully_free ? 'bg-green-100 text-green-700' :
+                                    car.free_minutes === 0 ? 'bg-red-100 text-red-700' :
+                                    'bg-amber-100 text-amber-700'
+                                  }`}>
+                                    {car.is_fully_free ? 'Free' : car.free_minutes === 0 ? 'Booked' : 'Partial'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-gray-500 text-center py-4">Select a date to see car availability</p>
                 )}
               </div>
 
-              {/* Booking Details Report with Sub-tabs */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-4">
-                  <h3 className="text-lg font-bold text-gray-900">Booking Details Report</h3>
-                  
-                  {/* Sub-tabs: List vs Charts */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex bg-gray-100 rounded-lg p-1">
-                      <button
-                        onClick={() => setBookingsDetailSubTab('list')}
-                        className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                          bookingsDetailSubTab === 'list'
-                            ? 'bg-white text-indigo-600 shadow-sm'
-                            : 'text-gray-600 hover:text-gray-800'
-                        }`}
-                      >
-                        <List size={16} />
-                        <span>List</span>
-                      </button>
-                      <button
-                        onClick={() => setBookingsDetailSubTab('charts')}
-                        className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                          bookingsDetailSubTab === 'charts'
-                            ? 'bg-white text-indigo-600 shadow-sm'
-                            : 'text-gray-600 hover:text-gray-800'
-                        }`}
-                      >
-                        <PieChart size={16} />
-                        <span>Charts</span>
-                      </button>
-                    </div>
-                    
-                    {bookingsDetailSubTab === 'list' && (
-                      <button
-                        onClick={exportBookingsDetailCSV}
-                        disabled={!bookingsDetailReport?.bookings?.length}
-                        className="flex items-center space-x-2 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm disabled:opacity-50"
-                      >
-                        <Download size={16} />
-                        <span>Export CSV</span>
-                      </button>
+              {/* Booking Details Report with Sub-tabs - COLLAPSIBLE */}
+              <div className="bg-white rounded-lg shadow-md">
+                <div 
+                  className="flex justify-between items-center p-6 cursor-pointer hover:bg-gray-50"
+                  onClick={() => setBookingDetailsCollapsed(!bookingDetailsCollapsed)}
+                >
+                  <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                    <BarChart3 className="mr-2 text-indigo-600" size={20} />
+                    Booking Details Report
+                    {bookingsDetailReport && (
+                      <span className="ml-2 text-sm font-normal text-gray-500">
+                        ({bookingsDetailReport.total_records} records)
+                      </span>
                     )}
+                  </h3>
+                  <div className="flex items-center gap-4">
+                    {bookingsDetailReport?.double_up_calls > 0 && (
+                      <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded">
+                        👥 {bookingsDetailReport.double_up_calls} Double-up calls
+                      </span>
+                    )}
+                    {bookingDetailsCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
                   </div>
                 </div>
+
+                {!bookingDetailsCollapsed && (
+                  <div className="p-6 pt-0">
+                    {/* Date Range Selector for Booking Details */}
+                    <div className="flex flex-wrap items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm text-gray-600">From:</label>
+                        <input
+                          type="date"
+                          value={reportStartDate}
+                          onChange={(e) => setReportStartDate(e.target.value)}
+                          className="px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm text-gray-600">To:</label>
+                        <input
+                          type="date"
+                          value={reportEndDate}
+                          onChange={(e) => setReportEndDate(e.target.value)}
+                          className="px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          fetchBookingsDetailReport(reportStartDate, reportEndDate);
+                          fetchBookingChartsData(reportStartDate, reportEndDate);
+                        }}
+                        className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
+                      >
+                        Filter
+                      </button>
+                    </div>
+
+                    {/* Sub-tabs: List vs Charts */}
+                    <div className="flex items-center justify-between gap-2 mb-4">
+                      <div className="flex bg-gray-100 rounded-lg p-1">
+                        <button
+                          onClick={() => setBookingsDetailSubTab('list')}
+                          className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            bookingsDetailSubTab === 'list'
+                              ? 'bg-white text-indigo-600 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-800'
+                          }`}
+                        >
+                          <List size={16} />
+                          <span>List</span>
+                        </button>
+                        <button
+                          onClick={() => setBookingsDetailSubTab('charts')}
+                          className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            bookingsDetailSubTab === 'charts'
+                              ? 'bg-white text-indigo-600 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-800'
+                          }`}
+                        >
+                          <PieChart size={16} />
+                          <span>Charts</span>
+                        </button>
+                      </div>
+                      
+                      {bookingsDetailSubTab === 'list' && (
+                        <button
+                          onClick={exportBookingsDetailCSV}
+                          disabled={!bookingsDetailReport?.bookings?.length}
+                          className="flex items-center space-x-2 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm disabled:opacity-50"
+                        >
+                          <Download size={16} />
+                          <span>Export CSV</span>
+                        </button>
+                      )}
+                    </div>
 
                 {/* List View */}
                 {bookingsDetailSubTab === 'list' && (
@@ -2581,14 +2814,15 @@ const Admin = () => {
                               <th className="text-left p-3 font-medium">Booked By</th>
                               <th className="text-left p-3 font-medium">Start Time</th>
                               <th className="text-left p-3 font-medium">End Time</th>
-                              <th className="text-left p-3 font-medium">Location (Eircode)</th>
+                              <th className="text-left p-3 font-medium">Location</th>
                               <th className="text-left p-3 font-medium">Purpose</th>
+                              <th className="text-center p-3 font-medium">Type</th>
                               <th className="text-center p-3 font-medium">Status</th>
                             </tr>
                           </thead>
                           <tbody>
                             {bookingsDetailReport.bookings.slice(0, 100).map((booking, index) => (
-                              <tr key={index} className={`border-b hover:bg-gray-50 ${booking.is_recurring ? 'bg-purple-50' : ''}`}>
+                              <tr key={index} className={`border-b hover:bg-gray-50 ${booking.is_recurring ? 'bg-purple-50' : ''} ${booking.is_double_up_call ? 'bg-amber-50' : ''}`}>
                                 <td className="p-3">
                                   <div className="font-medium">{booking.vehicle_name}</div>
                                   <div className="text-xs text-gray-500">{booking.vehicle_registration}</div>
@@ -2599,6 +2833,15 @@ const Admin = () => {
                                 <td className="p-3 text-gray-600">{booking.location || '-'}</td>
                                 <td className="p-3 text-gray-600 max-w-xs truncate" title={booking.purpose}>{booking.purpose || '-'}</td>
                                 <td className="p-3 text-center">
+                                  {booking.is_double_up_call && (
+                                    <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs mr-1" title="Double up call">👥</span>
+                                  )}
+                                  {booking.is_recurring && (
+                                    <span className="text-purple-600" title="Recurring booking">🔄</span>
+                                  )}
+                                  {!booking.is_double_up_call && !booking.is_recurring && '-'}
+                                </td>
+                                <td className="p-3 text-center">
                                   <span className={`px-2 py-1 rounded text-xs font-medium ${
                                     booking.status === 'approved' ? 'bg-green-100 text-green-800' :
                                     booking.status === 'pending_approval' ? 'bg-orange-100 text-orange-800' :
@@ -2606,9 +2849,6 @@ const Admin = () => {
                                   }`}>
                                     {booking.status === 'pending_approval' ? 'Pending' : booking.status}
                                   </span>
-                                  {booking.is_recurring && (
-                                    <span className="ml-1 text-purple-600" title="Recurring booking">🔄</span>
-                                  )}
                                 </td>
                               </tr>
                             ))}
@@ -2672,6 +2912,25 @@ const Admin = () => {
                                   </div>
                                 </div>
                               ))}
+                            </div>
+                          </div>
+
+                          {/* Double Up Calls */}
+                          <div className="border rounded-lg p-4">
+                            <h4 className="font-bold text-gray-900 mb-4">👥 Double Up Calls</h4>
+                            <div className="flex items-center justify-center space-x-8">
+                              <div className="text-center">
+                                <div className="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
+                                  <span className="text-2xl font-bold text-amber-600">{bookingChartsData.double_up_calls?.double_up || 0}</span>
+                                </div>
+                                <p className="text-sm text-gray-600 mt-2">Double Up</p>
+                              </div>
+                              <div className="text-center">
+                                <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
+                                  <span className="text-2xl font-bold text-blue-600">{bookingChartsData.double_up_calls?.single || 0}</span>
+                                </div>
+                                <p className="text-sm text-gray-600 mt-2">Single</p>
+                              </div>
                             </div>
                           </div>
 
@@ -2756,54 +3015,14 @@ const Admin = () => {
                               ))}
                             </div>
                           </div>
-
-                          {/* Bookings by Location */}
-                          <div className="border rounded-lg p-4">
-                            <h4 className="font-bold text-gray-900 mb-4">📍 Bookings by Location</h4>
-                            <div className="space-y-3">
-                              {bookingChartsData.by_location.map((item, idx) => (
-                                <div key={idx} className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-2">
-                                    <span className={`w-3 h-3 rounded-full ${
-                                      item.location === 'Tralee' ? 'bg-green-500' :
-                                      item.location === 'Bantry' ? 'bg-blue-500' : 'bg-gray-500'
-                                    }`}></span>
-                                    <span className="text-sm">{item.location}</span>
-                                  </div>
-                                  <span className="text-sm font-medium">{item.count} bookings</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
                         </div>
-
-                        {/* Monthly Trend */}
-                        {bookingChartsData.by_month.length > 0 && (
-                          <div className="border rounded-lg p-4">
-                            <h4 className="font-bold text-gray-900 mb-4">📈 Monthly Booking Trend</h4>
-                            <div className="flex items-end space-x-2 h-40 overflow-x-auto">
-                              {bookingChartsData.by_month.map((item, idx) => {
-                                const maxCount = Math.max(...bookingChartsData.by_month.map(m => m.count));
-                                const height = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-                                return (
-                                  <div key={idx} className="flex flex-col items-center min-w-12">
-                                    <span className="text-xs text-gray-600 mb-1">{item.count}</span>
-                                    <div
-                                      className="w-8 bg-indigo-500 rounded-t"
-                                      style={{ height: `${Math.max(height, 5)}%` }}
-                                    ></div>
-                                    <span className="text-xs text-gray-500 mt-1 rotate-45 origin-left">{item.month}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     ) : (
                       <p className="text-center text-gray-500 py-8">No chart data available</p>
                     )}
                   </>
+                )}
+                  </div>
                 )}
               </div>
             </div>

@@ -279,6 +279,12 @@ REACT_APP_PRIMARY_COLOR=#2563eb
 - [ ] **DEPLOY TO PRODUCTION** - Booking calendar fix is in preview, needs deployment
 
 ### P0 (Done)
+- [x] **Staff Location Map** - "Google Maps" style feature for admins to see live staff locations via GPS (February 2026)
+  - Admin can view Staff Map tab in Admin Panel
+  - Leaflet.js map with real-time staff markers
+  - Auto-refresh every 30 seconds
+  - Staff can enable/disable location sharing from Dashboard
+  - Shows active staff with green markers, inactive users listed separately
 - [x] **"My Bookings" Tab** - Added tab on `/bookings` page showing only logged-in user's bookings (February 2026)
 - [x] **Booking Conflict Alert System** - Real-time warning when booking overlaps with existing bookings (February 2026)
 - [x] **Enhanced Admin Reports** - Date-filtered numbers, Charts sub-tab, Daily availability by location (February 2026)
@@ -294,20 +300,23 @@ REACT_APP_PRIMARY_COLOR=#2563eb
 - [x] Live Daily Availability Report in Admin Reports section (February 2026)
 
 ### P1 (Upcoming)
-- [ ] Redesign "Available Cars & Time Slots" section (Backend done, Frontend in progress)
-  - New scrollable hourly cards (7am-11pm)
-  - Navigation controls (day/week/month)
-  - Show 6 cards initially, "Show More" button
+- [ ] **Booking Edit Permissions**
+  - Staff can edit their own individual and recurring bookings
+  - Staff can retrospectively add "Double up call" to past bookings
+  - Admins can edit recurring bookings (single instance vs. entire series)
+  - Comments on rejected recurring bookings back to staff
 - [ ] Convert Training Manuals to downloadable PDFs
 - [ ] Create printable QR code sheet for all vehicles
 
 ### P2 (Future)
+- [ ] Redesign "Available Cars & Time Slots" section (Backend done, Frontend pending)
 - [ ] Complete visual screenshot tutorial for staff
-- [ ] User review and feedback session
-- [ ] Refactor Bookings.js (1000+ lines) into smaller components
+- [ ] Refactor Bookings.js and Admin.js into smaller components
+- [ ] Documentation for Franchise Setup
 
 ---
 
 ## Test Credentials
+- **Master Admin**: carlyodonovan@bluebirdcare.ie / carly123
 - **Admin**: admin@quickwing.com / admin123
 - **Staff**: staff@quickwing.com / staff123

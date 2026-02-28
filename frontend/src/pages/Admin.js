@@ -906,6 +906,18 @@ const Admin = () => {
           <BarChart3 className="inline mr-1 sm:mr-2" size={18} />
           Reports
         </button>
+        <button
+          onClick={() => setActiveTab('staffmap')}
+          data-testid="tab-staffmap"
+          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
+            activeTab === 'staffmap'
+              ? 'border-b-2 border-emerald-600 text-emerald-600'
+              : 'text-gray-600 hover:text-emerald-600'
+          }`}
+        >
+          <Map className="inline mr-1 sm:mr-2" size={18} />
+          <span className="hidden sm:inline">Staff </span>Map
+        </button>
       </div>
 
       {/* To-Do Alert Banner - Shows at top when there are pending mandatory tasks */}

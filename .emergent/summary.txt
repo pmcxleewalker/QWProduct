@@ -1,42 +1,44 @@
-<analysis>**original_problem_statement**: The user is building a fleet management application, Quick Wing. The initial scope included admin/staff roles, vehicle tracking, and bookings.
+<analysis>**original_problem_statement**: The user is building Quick Wing, a comprehensive fleet management application. The project has evolved to include a wide range of advanced functionalities.
 
-The project has since expanded significantly with numerous feature requests, including:
-1.  **Admin To-Do List**: A shared to-do list with advanced features like mandatory tasks, scheduling (daily, weekly, monthly), and auto-resetting of completed mandatory tasks after 24 hours.
-2.  **Booking Suggestions**: An interface to suggest available cars and time slots to users. The user has requested a significant redesign of this feature.
-3.  **Admin Management**: Admins can reset user passwords, manually edit car statuses, and manage bookings.
-4.  **Reports Section**: An admin section for analytics, including a new request for a live daily car availability report.
-5.  **UI/UX Improvements**:
-    *   Mobile-first optimization.
-    *   Displaying usernames instead of full emails.
-    *   Calendar enhancements, including ensuring bookings are visible.
-    *   Personalized dashboard greetings for specific users (carlyodonovan, carecoordinatorkwc, KevanFewtrell, PMCXleewalker).
-    *   Replacing text with an icon for a specific user ().
-    *   A cleaned-up staff dashboard with local weather widgets for Kerry and West Cork.
-6.  **Booking Management**:
-    *   Bulk cancellation of approved bookings.
-    *   Ability to delete individual bookings or an entire series of recurring bookings.
-    *   Ability for admins to swap the car for a single occurrence within a recurring booking series.
-7.  **Bug Fixes**:
-    *   Resolving an issue where QR codes pointed to the wrong URL (Confirmed fixed by user).
-    *   Resolving a critical issue where the booking system appeared non-functional on the deployed production site. The root cause was identified and fixed in the preview environment but awaits deployment.
+Recent user requests include:
+1.  **My Bookings Tab**: A new tab on the bookings page for users to see a calendar of only their own bookings. (Implemented)
+2.  **Booking Conflict Alert**: A system to warn users if they try to book a car that is already reserved for an overlapping time. (Implemented)
+3.  **Admin Reports Enhancement**:
+    *   Sub-tabs in the Booking Details report for a list view and a new Graphs and Charts view for data audits.
+    *   Fleet report summary cards should update based on selected calendar dates.
+    *   A Daily Report showing cars available in specific locations (Tralee/Bantry) that have no bookings, including available times and trends, presented as a pie chart with CSV export.
+    *   The Booking Details Report needs a from/to date selection and should be collapsible.
+4.  **Master Admin Role**: A Master Admin (carlyodonovan) with a crown icon who has ultimate permissions. Other admins cannot delete other admin accounts without the Master Admin's password. Only the Master Admin can change their own password. The Master Admin can change all account types, while regular admins can manage all except the Master Admin.
+5.  **Copyright and Legal Docs**:
+    *   Add a copyright footer to the application for Lee Walker.
+    *   Add a Terms of Service document and link to it from the login page and footer.
+6.  **Add a Car Bug**: Users reported that the Add a Car feature was not working. (Fixed)
+7.  **Double Up Call Feature**:
+    *   A non-mandatory checkbox on the booking form: Double up call?.
+    *   This data must be integrated into reports.
+8.  **Booking Edit Permissions**:
+    *   Staff should be able to edit their own individual and recurring bookings.
+    *   Staff should be able to retrospectively add the Double up call check to their past bookings.
+    *   Admins should be able to edit a recurring booking as a single instance or as a whole series.
+    *   Rejected recurring bookings must provide a comment back to the staff member who made the booking.
+9.  **Live Staff Location Map**: A Google Maps style feature where admins can see the live location of staff members on a map, using GPS from their mobile phones.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack fleet management application with authentication, vehicle and user management, a live status sheet, and a comprehensive booking system.
-
-Work completed in this session includes:
--   **Advanced To-Do List**: Fully implemented with auto-reset logic and daily, weekly, and monthly scheduling options in the Admin panel.
--   **Bulk Booking Cancellation**: A Select Mode has been added to the Bookings page list view, allowing admins to select and delete multiple approved bookings at once.
--   **Recurring Booking Deletion**: In the booking details modal, admins now have separate buttons to Cancel This One (single occurrence) or Cancel Entire Series.
--   **Admin Car Swap**: In the booking edit modal, admins can now swap the assigned vehicle for a single booking occurrence by selecting from a dropdown of available cars for that specific time slot.
--   **Personalized Dashboards**: Custom greetings (Hey [Username]! or Welcome, Carly!) are now displayed for specific users.
--   **Staff Weather Widget**: The staff dashboard has been cleaned up and now displays live weather for Kerry and West Cork, fetched via a backend proxy to avoid CORS issues.
--   **Critical Booking Calendar Fix**: A major bug preventing bookings from appearing on the calendar in the deployed environment was fixed. The issue was an API limit of 100 results combined with a descending sort order, which omitted bookings from the current month. The fix involved increasing the limit and changing the sort order. **This fix is in the preview environment and awaits user deployment.**
--   **Booking Form Feedback**: The booking creation form was enhanced with better validation, success/error alert popups, and auto-scrolling to ensure users receive clear feedback on submission.
+A full-stack fleet management application (React frontend, FastAPI backend, MongoDB) with the following features:
+-   **User Roles**: Master Admin, Admin, and Staff with tiered permissions. The Master Admin () has supreme privileges.
+-   **Vehicle & User Management**: Full CRUD for cars and users, including the ability to set a  (e.g., Tralee, Bantry) for each car.
+-   **Booking System**: A comprehensive booking calendar with a My Bookings view, real-time conflict detection alerts, and a Double up call? checkbox.
+-   **Advanced Admin Dashboard**:
+    -   A heavily enhanced, multi-tab **Reports** section with date-range filters that update summary cards.
+    -   A **Booking Details Report** with collapsible UI, date filters, CSV export, and sub-tabs for a detailed list and a comprehensive charts/graphs view (Bookings by Status, Day of Week, Top Bookers, etc.).
+    -   A **Daily Availability Report** with multiple tabs (Overview, By Location, Timeline), pie charts, and CSV export to show which cars are free.
+-   **Franchise & Legal**: The application is franchise-ready (configurable company name) and includes a copyright footer for Lee Walker and a full Terms of Service page.
+-   **Other Features**: Mileage tracking, QR code integration, push notifications, and a changelog system.
 
 **Last working item**:
--   **Last item agent was working**: The user requested to replace the words live sheet with a fish icon on the dashboard specifically for the admin user .
+-   **Last item agent was working**: The user requested a Google Maps style feature to track staff locations via mobile GPS. The agent acknowledged the request and planned to use the Leaflet.js library for the map interface.
 -   **Status**: NOT STARTED
 -   **Agent Testing Done**: N
 -   **Which testing method agent to use?**: screenshot tool
@@ -44,148 +46,155 @@ Work completed in this session includes:
 
 **All Pending/In progress Issue list**:
 -   **Issue 1: Booking System Unreliability on Deployed URL (Recurring)** (Priority: P0)
-    -   **Description**: The user repeatedly reports that on the deployed production URL, new bookings are not created and/or do not appear on the calendar, making the system seem broken. The agent has verified functionality is working correctly on the preview URL.
-    -   **Attempted fixes**: The agent identified the root cause: the  endpoint was limited to 100 results and sorted by the newest date first, causing bookings in the current (earlier) month to be excluded. A fix was implemented in  to increase the limit to 500 and sort by the earliest date first. This fix exists in the preview environment.
-    -   **Next debug checklist**:
-        1.  The next agent MUST guide the user to **deploy the latest changes**. This is the only way to resolve the issue on the production site.
-        2.  After deployment is confirmed, instruct the user to clear their browser cache.
-        3.  Ask the user to test both creating a new booking and viewing the calendar on the production URL to confirm the fix.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical blocker rendering the application's core feature unusable for all users on the live site.
-    -   **Status**: USER VERIFICATION PENDING (Blocked on user deploying the code).
-    -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: User verification on the deployed site is the primary test.
-
--   **Issue 2: Recurring Booking Error** (Priority: P2)
-    -   **Description**: From a previous session, a fix was implemented for an error during recurring booking creation, but the user never confirmed if it was successful.
-    -   **Next debug checklist**: Ask the user to test creating a recurring booking to verify the original fix.
+    -   **Description**: A critical, session-long issue where the user may report bugs on the production URL that are already fixed on the preview URL.
+    -   **Next debug checklist**: Before investigating any user-reported bug, the next agent MUST first confirm with the user that they have deployed the latest changes and are testing on the correct, updated URL.
+    -   **Why fix this issue and what will be achieved with the fix?**: Prevents wasted time re-fixing already-solved issues and aligns user testing with the current state of the code.
     -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: User verification.
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: User verification on the deployed production site.
 
 **In progress Task List**:
--   **Task 1: Redesign 'Available Cars & Time Slots' Section** (Priority: P0)
-    -   **Description**: User wants a complete redesign of the booking suggestions section based on a provided image. This involves creating individual, scrollable cards for each car, showing hourly availability (7am-11pm) with navigation controls (day/week/month). The UI should show 6 cards initially, with a Show More button to reveal the rest.
-    -   **Where to resume**: The agent has already created a new backend endpoint () for hourly slots, a new frontend API function, and a new component file at . The next step is to fully implement the UI and logic within  to fetch and display the scrollable hourly time slots and navigation buttons. Then, integrate and render these cards correctly in , including the Show More functionality.
-    -   **Status**: IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?**: both
-    -   **Blocked on something**: No.
-
--   **Task 2: Live Daily Availability Report** (Priority: P1)
-    -   **Description**: As a follow-up to the availability card redesign, the user wants a live document report in admin reports so admins can see a daily overview of car availability.
-    -   **Where to resume**: This task has not been started. The agent should plan to add a new view/component to the Reports tab in  and create a corresponding backend endpoint in  to aggregate and return the daily availability data.
-    -   **Status**: NOT STARTED
-    -   **Should Test frontend/backend/both after fix?**: both
-    -   **Blocked on something**: No.
+-   None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **P0: Add Fish Icon for **: The user's latest request is to replace the text live sheet with a fish icon on the dashboard for the user . This should be handled first. File: .
-    -   **P1: Convert Training Manuals to PDF**: Convert  and  into downloadable PDF files.
-    -   **P2: Printable QR Code Sheet**: Create a single, easily printable document containing the QR codes for all vehicles.
+    -   **P0: Implement Staff Location Map**: Build the Google Maps style feature using mobile GPS data and Leaflet.js to display staff locations for admins. This will involve frontend map components and backend endpoints to receive and store location data.
+    -   **P1: Implement Booking Edit Features**:
+        -   Allow staff to edit their own individual and recurring bookings.
+        -   Allow admins to edit recurring bookings (single instance vs. entire series).
+        -   Implement a mechanism for adding comments to rejected recurring bookings.
+        -   File/Method References:  (booking endpoints),  (UI modals and logic).
+    -   **P2: Convert Training Manuals to PDF**: Convert  and  into downloadable PDF files.
 -   **Future Tasks**:
-    -   **P3: Complete Visual Screenshot Tutorial**: Create a screenshot-based guide for staff.
-    -   **P4: User Review and Feedback**: Conduct a full review with the user to gather final feedback.
+    -   **P3: Printable QR Code Sheet**: Create a single, printable document containing the QR codes for all vehicles.
+    -   **P4: Create Documentation for Franchise Setup**: Document the  page and  configuration.
+    -   **P5: Refactor Large Components**: Break down the monolithic  and  files into smaller, manageable components.
 
 **Completed work in this session**
--   Advanced To-Do scheduling and auto-reset functionality.
--   Bulk booking cancellation feature with multi-select UI.
--   Recurring booking deletion options (single vs. entire series).
--   Admin ability to swap cars on individual recurring booking instances.
--   Personalized dashboard greetings for multiple users.
--   Staff dashboard cleanup with integrated local weather widgets.
--   Critical fix for the booking calendar not showing bookings on the deployed site (API limit/sort order).
--   Enhanced user feedback on the booking form (validation, alerts, auto-scroll).
+-   **Master Admin Feature**:
+    -   Implemented a  flag on the  model.
+    -   Created user  as the Master Admin.
+    -   Added a crown icon (👑) and special UI styling in the navigation and user list for the Master Admin.
+    -   Enforced strict permissions: only Master Admin can delete other admins or change their own password.
+-   **Enhanced Admin Reports**:
+    -   Added date filters that dynamically update summary cards.
+    -   Created a Booking Details Report with sub-tabs for a list view and a comprehensive charts view.
+    -   Built a Daily Availability report with pie charts, location filtering (Tralee/Bantry), and CSV export.
+-   **My Bookings Tab & Conflict Alerts**:
+    -   Added a toggle on the  page for users to view only their bookings.
+    -   Implemented a real-time warning system to prevent double-booking cars.
+-   **Double Up Call Feature**:
+    -   Added  checkbox to the booking form.
+    -   Integrated this data into backend report generation and frontend chart displays.
+-   **Bug Fix: Add Car Functionality**:
+    -   Diagnosed and fixed a bug where submitting the Add Car form with an empty  field caused a 422 validation error. The fix ensures empty optional number fields are sent as .
+-   **Copyright and Legal Documents**:
+    -   Created a new  component and added a copyright notice for Lee Walker throughout the app.
+    -   Created a  page with placeholder legal text and a  file. Linked the ToS from the login page and footer.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: GitHub Permissions**:
-    -   **Description**: User needs to grant GitHub permissions to the Emergent app for the Save to GitHub feature to work.
+    -   **Description**: A carry-over issue where the user needs to grant GitHub permissions for the Save to GitHub feature to work.
     -   **Debug checklist**: User must visit  and authorize the Emergent app.
-    -   **Why to solve this issue and what will be achieved with this?**: Enables codebase backup to the user's personal GitHub account.
-    -   **Should Test frontend/backend/both after fix**: N/A (Platform issue)
-    -   **Is recurring issue?**: N
+    -   **Why to solve this issue and what will be achieved with this?**: Enables codebase backup and versioning.
+    -   **Should Test frontend/backend/both after fix?**: N/A
+    -   **Is recurring issue?**: Y
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork**: Invalid QR Code/Invite URL issue.
--   **Recurrence count**: 5+
--   **Status**: RESOLVED. User confirmed in the chat that QR codes are working perfectly after the hardcoded URL fix.
+-   **Issue recurrence in previous fork**: Booking System Unreliability on Deployed URL.
+-   **Recurrence count**: 3+ times in the previous session.
+-   **Status**: USER VERIFICATION PENDING (Awaiting user deployment for any future issues).
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend**: FastAPI, MongoDB (), Pydantic, JWT,  for proxying.
--   **Frontend**: React, React Router, Axios, TailwindCSS,  for icons.
--   **Architecture**: Full-stack monolith (React SPA + FastAPI backend).
+-   **Role-Based Access Control (RBAC)**: Advanced permissions implemented for the Master Admin role, requiring backend checks for sensitive operations like user deletion.
+-   **Complex State Management (React)**: The  component now manages a large number of states for various reports, date filters, and sub-tabs.
+-   **Data Visualization**: Implemented charts (bar, pie) using a charting library in React to visualize booking data.
+-   **Pydantic Validation**: Handled a frontend bug caused by a Pydantic  on the backend by ensuring correct data types ( vs. empty string) are sent from the client.
+-   **API Design**: Created new, complex endpoints for generating aggregated report data (e.g., ).
+-   **Map Integration (Planned)**: Leaflet.js is the chosen library for the upcoming map feature.
 
 **key DB schema**
--   **users**: 
--   **cars**: 
--   **bookings**: 
--   **todos**:  (Modified)
+-   **users**: Modified to include .
+-   **cars**: Modified to include .
+-   **bookings**: Modified to include .
 
 **changes in tech stack**
--   Added  to the backend to act as a server-side proxy for the weather API.
+-   None, but Leaflet.js is planned for the next feature.
 
 **All files of reference**
--   : Major changes. Added endpoints for advanced todos, weather proxy, car availability (for swapping and new suggestion UI), and deleting recurring series. Modified the main  endpoint to fix the calendar visibility bug.
--   : Major changes. Added complex state and UI for bulk booking selection/deletion. Implemented logic for deleting recurring series. Integrated the new car swap modal. Started implementation of the new  section. Enhanced form submission with validation and feedback.
--   : Modified to add advanced scheduling UI (daily, weekly, monthly selectors) to the To-Do list form.
--   : Modified to add personalized greetings for several users and to display the new weather widgets for staff accounts.
--   : Overwritten/Heavily modified to support fetching and displaying available cars for a time slot, allowing an admin to swap the car for a booking.
--   : New file created to house the logic for the redesigned car suggestion cards. Implementation is in progress.
--   : Updated with new API functions for weather, car availability, and deleting recurring booking series.
+-   : Major changes to add Master Admin logic, new reporting endpoints, and update booking/user models.
+-   : Became extremely large. Contains logic for all new reports, charts, date filters, Master Admin UI, and the Add Car bug fix.
+-   : Contains logic for the My Bookings view, conflict alert, and Double up call checkbox.
+-   : Updated to display the crown icon and Master Admin title.
+-   : New file for the copyright and legal links.
+-   : New page displaying the terms of service.
+-   : New file containing license text.
+-   : Updated to include the new  route and render the .
 
 **Areas that need refactoring**:
--    remains extremely large and would benefit from being broken down into smaller components for each tab.
--    has grown even larger (over 1000 lines) with the addition of bulk selection, recurring delete logic, and the new availability section. It is now critical to refactor this page. The calendar logic, booking list logic, and new availability section should each be extracted into their own components and custom hooks.
+-   : This file is now critically oversized and complex. It handles user management, car management, approvals, and multiple complex, stateful reports. It urgently needs to be broken down into smaller components (e.g., , , ).
+-   : This file is also very large and could be broken down, especially the booking form and calendar rendering logic.
 
 **key api endpoints**
--   : (Modified) Handles schedule updates.
--   : (New) Deletes an entire series of recurring bookings.
--   : (New) Proxies weather data from .
--   : (New) Gets available cars for a specific time slot (for car swapping).
--   : (Modified) Now accepts  for swapping.
--   : (New) Gets detailed hourly availability for a car.
--   : (Modified) Limit increased to 500 and sort order changed to ascending to fix calendar bug.
+-   : (New) Secure endpoint for Master Admin to delete other admins, requiring password verification.
+-   : (New) Provides detailed data on car availability for a given day, including free time slots.
+-   : (Modified) Now accepts  and  query parameters.
+-   : (Modified) Now includes  data.
+-   : (Modified) Now includes  in the response.
+-   : (Modified) Response now includes  status.
+-   : (Modified) Protected to prevent changing the Master Admin's role.
+-   : (Modified) Protected to prevent regular admins from resetting the Master Admin's password.
 
 **Critical Info for New Agent**
--   **Deployment is the #1 Blocker:** The user's primary frustration (booking system not working) is due to fixes being on the preview environment but not the production/deployed one. Your first priority should be to clearly explain this and guide the user to click the Deploy button. Do not investigate the booking system bug further until the user has confirmed they have deployed the latest changes.
--   **Handle the Fish Icon Request First:** The user's very last message was a small, quick UI change. Addressing this first will be a quick win and build trust before tackling the larger, in-progress tasks.
--   **The Available Cars redesign is a large task.** The user has a very specific vision. Refer to the user's image and messages. The backend endpoint is partially done, but the frontend component  needs significant work to build the UI with scrolling hourly slots and navigation.
+-   **Master Admin**: The user  is the Master Admin with special powers. All user management UI and backend logic must respect these permissions.
+-   **Deployment Blocker**: Before debugging user-reported issues, ALWAYS confirm they have deployed the latest code and are not testing an outdated production version. This has been a recurring problem.
+-   **Monolithic Components**: Be extremely cautious when editing . It is very large and prone to side effects. A refactor should be proposed as a future task after completing the user's immediate requests.
+-   **Report Complexity**: The reports are now highly complex, with interdependent state variables for dates and filters. Trace data flow carefully from the backend API through the frontend state to the UI rendering.
 
 **documents and test reports created in this job**
--   /app/memory/PRD.md
--   /app/test_reports/iteration_2.json
+-    (Updated multiple times)
+-    (For My Bookings and conflict alert features)
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
--   **10. please check the booking system, staff and admin are reporting bookings not working...**: User reports the core booking feature is broken. (Status: Fix implemented in preview, pending deployment).
--   **9. booking doesnt appear , no confirmation or failed message"**: User provides detail that the UI gives no feedback. (Status: Fix for UI feedback implemented in preview, pending deployment).
--   **8. "booking system is still not working"**: User reiterates the booking system is broken after the UI feedback fix was implemented in preview.
--   **7. "it needs to be on this url..."**: User confirms the issue is on the deployed production URL, not the preview URL.
--   **6. "please allow bookings to show on the car calendars"**: User reports bookings are not showing on the calendar. (Status: Root cause of API limit/sort order found and fixed in preview, pending deployment).
--   **5. "Im not seeing them on the All calendar and on the individual cars calendar**: User confirms the calendar is empty for them.
--   **4. The app tells me there are 48 bookings this month, but there is nothing on the calendar... please check on this link...**: User provides specific details and the production URL, confirming the discrepancy between booking counts and calendar display.
--   **3. Admin to have ability to change car in requested car reoccurring bookings...**: User requests the car swap feature. (Status: COMPLETED).
--   **2. User provides image and detailed request for redesigning the 'Available Cars' section**: A major feature request. (Status: IN PROGRESS).
--   **1. In Quick Wing, for admin account pmcxleewalker please but an icon of a fish instead of the live sheet words**: The latest, small UI request. (Status: NOT STARTED).
+-   **10. please add this to all of my deployed apps**: User asked to apply the copyright footer to other apps. Agent clarified it can only modify the current app. (Status: Answered)
+-   **9. Addi license terms and a Terms of Service document...**: User requested a ToS page. (Status: COMPLETED)
+-   **8. admins have mentioned the add a car feature hasnt been working..."**: User reported a bug with adding new cars. (Status: COMPLETED/FIXED)
+-   **7. "when a car is being booked, I want a check box that asks the staff, Double up call?..."**: User requested the double-up feature and major report enhancements. (Status: PARTIALLY COMPLETED - Double up checkbox and some reports done, but more requested in same message)
+-   **6. "url for this app?"**: User asked for the URL. (Status: Answered)
+-   **5. "changes to be made, staff can edit each of their own individual bookings..."**: User requested several complex booking edit permissions. (Status: NOT STARTED)
+-   **4. "URL for this app"**: User asked for the URL. (Status: Answered)
+-   **3. "Please make a google maps style feature..."**: User requested a live staff location tracking map. (Status: NOT STARTED - This is the current `last working item`)
+-   **2. "Addi license terms and a Terms of Service document..."**: Repeated request.
+-   **1. "admins have mentioned the add a car feature hasnt been working...**: Repeated request.
 
 **Project Health Check:**
--   **Broken**: The core booking functionality is non-operational for users on the production site () because the latest code with critical fixes has not been deployed. This is the highest priority issue to resolve.
--   **Mocked**: None.
+-   **Broken**: The user's live production site is likely significantly outdated, missing numerous critical features and bug fixes.
+-   **Mocked**: The new Terms of Service page contains placeholder legal text and requires review by a qualified attorney.
 
 **3rd Party Integrations**
--   **wttr.in**: Used for fetching weather data. It is proxied through the backend at the  endpoint to avoid frontend CORS issues. No API key is required.
+-   **wttr.in**: Fetches weather data. No key required.
+-   **Web Push (pywebpush)**: Sends push notifications.
+-   **Leaflet.js**: (Planned) For displaying the staff location map. Free, no API key required.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES, for the initial To-Do and Booking Suggestion features.
--   **Troubleshoot agent used after agent stuck in loop**: NO.
+-   **Testing agent used after significant changes**: YES, for the My Bookings feature.
+-   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
--   **Known regressions**: The booking system failure on the deployed URL is a major regression in user experience, although the code itself is fixed in the preview environment.
+-   **Known regressions**: None in the preview environment. The main regression exists on the user's outdated production deployment.
 
 **Credentials to test flow:**
--   **Admin**:  / 
--   **Staff**:  / 
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| 👑 Master Admin |  |  |
+| Admin |  |  |
+| Admin |  | *(unknown, can be reset)* |
+| Staff |  |  |
 
 **What agent forgot to execute**
--   The live document report for daily car availability, which was part of the user's request for the redesigned availability section, has not been started.
--   The Upcoming Tasks from the previous handoff session (PDF training manuals, printable QR code sheet) have not been addressed.</analysis>
+-   The agent has a backlog of user requests that were acknowledged but not started:
+    1.  The full set of **booking edit permissions** (staff editing their own, admin editing recurring, comments on rejection).
+    2.  The older tasks from the previous handoff: creating **PDF training manuals** and a **printable QR code sheet**.</analysis>

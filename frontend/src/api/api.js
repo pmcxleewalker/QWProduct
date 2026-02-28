@@ -146,4 +146,12 @@ export const pushAPI = {
   unsubscribe: () => axios.delete(`${API}/push/unsubscribe`),
 };
 
-export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI, liftRequestAPI, todoAPI, pushAPI };
+// Staff Location API
+export const locationAPI = {
+  updateLocation: (data) => axios.post(`${API}/location/update`, data),
+  stopSharing: () => axios.post(`${API}/location/stop-sharing`),
+  getMyStatus: () => axios.get(`${API}/location/my-status`),
+  getAllStaffLocations: () => axios.get(`${API}/admin/staff-locations`),
+};
+
+export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI, liftRequestAPI, todoAPI, pushAPI, locationAPI };

@@ -3239,6 +3239,117 @@ async def send_push_to_user(user_email: str, title: str, body: str, url: str = "
             logging.error(f"Push notification error: {ex}")
 
 
+# ==================== STAFF LOCATION TRACKING ENDPOINTS ====================
+
+class StaffLocationUpdate(BaseModel):
+    latitude: float
+    longitude: float
+    accuracy: Optional[float] = None  # GPS accuracy in meters
+    heading: Optional[float] = None   # Direction of travel (degrees from north)
+    speed: Optional[float] = None     # Speed in m/s
+
+class StaffLocation(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_email: str
+    user_name: str
+    latitude: float
+    longitude: float
+    accuracy: Optional[float] = None
+    heading: Optional[float] = None
+    speed: Optional[float] = None
+    is_sharing: bool = True
+    last_updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@api_router.post("/location/update")
+async def update_staff_location(location: StaffLocationUpdate, current_user: dict = Depends(get_current_user)):
+    """Update current user's location (staff members can share their location)"""
+    user_email = current_user.get('email', '')
+    user_name = user_email.split('@')[0] if user_email else 'Unknown'
+    
+    location_data = {
+        "user_id": current_user['id'],
+        "user_email": user_email,
+        "user_name": user_name,
+        "latitude": location.latitude,
+        "longitude": location.longitude,
+        "accuracy": location.accuracy,
+        "heading": location.heading,
+        "speed": location.speed,
+        "is_sharing": True,
+        "last_updated": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Upsert - update existing or insert new
+    await db.staff_locations.update_one(
+        {"user_id": current_user['id']},
+        {"$set": location_data},
+        upsert=True
+    )
+    
+    return {"message": "Location updated successfully"}
+
+
+@api_router.post("/location/stop-sharing")
+async def stop_sharing_location(current_user: dict = Depends(get_current_user)):
+    """Stop sharing location"""
+    await db.staff_locations.update_one(
+        {"user_id": current_user['id']},
+        {"$set": {"is_sharing": False}}
+    )
+    return {"message": "Location sharing stopped"}
+
+
+@api_router.get("/location/my-status")
+async def get_my_location_status(current_user: dict = Depends(get_current_user)):
+    """Get current user's location sharing status"""
+    location = await db.staff_locations.find_one(
+        {"user_id": current_user['id']}, 
+        {"_id": 0}
+    )
+    return {
+        "is_sharing": location.get('is_sharing', False) if location else False,
+        "last_updated": location.get('last_updated') if location else None
+    }
+
+
+@api_router.get("/admin/staff-locations")
+async def get_all_staff_locations(current_user: dict = Depends(get_current_admin_user)):
+    """Admin: Get all staff locations who are actively sharing"""
+    # Only return locations that are actively being shared and updated within last 30 minutes
+    thirty_minutes_ago = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+    
+    locations = await db.staff_locations.find({
+        "is_sharing": True,
+        "last_updated": {"$gte": thirty_minutes_ago}
+    }, {"_id": 0}).to_list(500)
+    
+    # Also get users who have stopped sharing or haven't updated recently
+    all_users = await db.users.find({"is_active": True}, {"_id": 0, "id": 1, "email": 1, "role": 1}).to_list(500)
+    active_user_ids = set(loc['user_id'] for loc in locations)
+    
+    # Find users not currently sharing
+    inactive_users = []
+    for user in all_users:
+        if user['id'] not in active_user_ids:
+            inactive_users.append({
+                "user_id": user['id'],
+                "user_email": user['email'],
+                "user_name": user['email'].split('@')[0],
+                "is_sharing": False,
+                "role": user.get('role', 'staff')
+            })
+    
+    return {
+        "active_locations": locations,
+        "inactive_users": inactive_users,
+        "total_active": len(locations),
+        "total_inactive": len(inactive_users)
+    }
+
+
 # Include the router in the main app
 app.include_router(api_router)
 

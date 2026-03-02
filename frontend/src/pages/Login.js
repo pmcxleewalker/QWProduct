@@ -23,8 +23,12 @@ const Login = () => {
     try {
       const result = await login(formData.email, formData.password, rememberMe);
       
+      console.log('Login result:', result);
+      console.log('User role:', result.user?.role);
+      
       // Check if user is platform admin (no tenants needed)
       if (result.user?.role === 'super_admin' || result.user?.role === 'master_admin') {
+        console.log('Redirecting to platform...');
         navigate('/platform');
         return;
       }

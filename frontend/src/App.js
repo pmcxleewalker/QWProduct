@@ -123,7 +123,7 @@ const AppContent = () => {
 
       <Routes>
         {/* Public routes */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<LoginRedirect />} />
         <Route path="/register" element={<Register />} />
         <Route path="/setup" element={<Setup />} />
         <Route path="/terms" element={<TermsOfService />} />

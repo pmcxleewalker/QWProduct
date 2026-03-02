@@ -118,9 +118,8 @@ class TestTenantIsolation:
             response = await client.post(
                 f"{BASE_URL}/vehicles",
                 json={
-                    "registration": "TEST-A-001",
-                    "make": "Toyota",
-                    "model": "Corolla"
+                    "name": "Vehicle A",
+                    "registration": "TEST-A-001"
                 },
                 headers=headers_a
             )
@@ -133,9 +132,8 @@ class TestTenantIsolation:
             response = await client.post(
                 f"{BASE_URL}/vehicles",
                 json={
-                    "registration": "TEST-B-001",
-                    "make": "Honda",
-                    "model": "Civic"
+                    "name": "Vehicle B",
+                    "registration": "TEST-B-001"
                 },
                 headers=headers_b
             )

@@ -119,9 +119,24 @@ export const AuthProvider = ({ children }) => {
       };
     } catch (error) {
       console.error('Login error:', error);
+      // Ensure error is always a string
+      let errorMsg = 'Login failed';
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMsg = detail;
+        } else if (Array.isArray(detail)) {
+          // Pydantic validation errors come as array
+          errorMsg = detail.map(e => e.msg || e.message || String(e)).join(', ');
+        } else if (typeof detail === 'object') {
+          errorMsg = detail.msg || detail.message || JSON.stringify(detail);
+        }
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
       return { 
         success: false, 
-        error: error.response?.data?.detail || 'Login failed' 
+        error: errorMsg
       };
     }
   };

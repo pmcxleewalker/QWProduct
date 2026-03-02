@@ -47,15 +47,17 @@ const PlatformAdmin = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [tenantsRes, statsRes, logsRes] = await Promise.all([
+      const [tenantsRes, statsRes, logsRes, usersRes] = await Promise.all([
         axios.get(`${API}/platform/tenants`),
         axios.get(`${API}/platform/stats`),
-        axios.get(`${API}/platform/audit-log?limit=50`)
+        axios.get(`${API}/platform/audit-log?limit=50`),
+        axios.get(`${API}/platform/users`)
       ]);
       
       setTenants(tenantsRes.data.tenants || []);
       setStats(statsRes.data);
       setAuditLogs(logsRes.data.events || []);
+      setAllUsers(usersRes.data.users || []);
     } catch (err) {
       setError('Failed to load platform data');
       console.error(err);

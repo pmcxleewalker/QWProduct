@@ -43,7 +43,11 @@ const Dashboard = () => {
         carAPI.getAll().then(response => {
           const vehicles = response.data || [];
           if (vehicles.length === 0) {
-            navigate('/setup-wizard');
+            // Redirect to tenant-scoped setup wizard if we have a slug
+            const wizardPath = activeTenant.tenant_slug 
+              ? `/${activeTenant.tenant_slug}/setup-wizard` 
+              : '/setup-wizard';
+            navigate(wizardPath);
           } else {
             // Mark as complete if they already have vehicles
             localStorage.setItem(`setup_complete_${activeTenant.tenant_id}`, 'true');

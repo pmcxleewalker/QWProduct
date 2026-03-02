@@ -121,7 +121,7 @@ const Navigation = () => {
     // Poll for new lift requests every 15 seconds
     const interval = setInterval(fetchLiftRequests, 15000);
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, activeTenant]);
 
   const handleAcceptLift = async (requestId) => {
     // For navigation dropdown, we'll just accept without message modal

@@ -76,38 +76,54 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password, rememberMe = false) => {
-    const response = await axios.post(`${API}/auth/login`, { email, password });
-    const { access_token, user: userData, tenants: userTenants, active_tenant } = response.data;
-    
-    // Store token
-    if (rememberMe) {
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('rememberMe', 'true');
-      sessionStorage.removeItem('token');
-    } else {
-      sessionStorage.setItem('token', access_token);
-      localStorage.removeItem('token');
-      localStorage.removeItem('rememberMe');
+    try {
+      const response = await axios.post(`${API}/auth/login`, { email, password });
+      const { access_token, user: userData, tenants: userTenants, active_tenant } = response.data;
+      
+      // Store token
+      if (rememberMe) {
+        localStorage.setItem('token', access_token);
+        localStorage.setItem('rememberMe', 'true');
+        sessionStorage.removeItem('token');
+      } else {
+        sessionStorage.setItem('token', access_token);
+        localStorage.removeItem('token');
+        localStorage.removeItem('rememberMe');
+      }
+      
+      setToken(access_token);
+      
+      // Include memberships in user object for tenant route checking
+      const userWithMemberships = { ...userData, memberships: userTenants };
+      setUser(userWithMemberships);
+      setTenants(userTenants || []);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+      
+      // Handle tenant context
+      if (active_tenant) {
+        setActiveTenant(active_tenant);
+        localStorage.setItem('activeTenant', JSON.stringify(active_tenant));
+        setNeedsTenantSelection(false);
+      } else if (userTenants?.length > 1) {
+        setNeedsTenantSelection(true);
+      } else if (userTenants?.length === 0 && (userData.role === 'super_admin' || userData.role === 'master_admin')) {
+        // Platform admin - no tenant needed
+        setNeedsTenantSelection(false);
+      }
+      
+      return { 
+        success: true, 
+        user: userWithMemberships, 
+        tenants: userTenants, 
+        needsTenantSelection: userTenants?.length > 1 && !active_tenant 
+      };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.detail || 'Login failed' 
+      };
     }
-    
-    setToken(access_token);
-    setUser(userData);
-    setTenants(userTenants || []);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-    
-    // Handle tenant context
-    if (active_tenant) {
-      setActiveTenant(active_tenant);
-      localStorage.setItem('activeTenant', JSON.stringify(active_tenant));
-      setNeedsTenantSelection(false);
-    } else if (userTenants?.length > 1) {
-      setNeedsTenantSelection(true);
-    } else if (userTenants?.length === 0 && (userData.role === 'super_admin' || userData.role === 'master_admin')) {
-      // Platform admin - no tenant needed
-      setNeedsTenantSelection(false);
-    }
-    
-    return { user: userData, tenants: userTenants, needsTenantSelection: userTenants?.length > 1 && !active_tenant };
   };
 
   const selectTenant = async (tenantId) => {

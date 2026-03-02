@@ -795,12 +795,17 @@ const Admin = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-3 py-4 sm:px-6 lg:px-8 pb-20 sm:pb-8">
-      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6" data-testid="admin-title">Admin Panel</h1>
+      {/* Compact Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900" data-testid="admin-title">Admin Panel</h1>
+        <span className="text-xs text-gray-400 hidden sm:inline">Fleet Management</span>
+      </div>
 
-      {/* Success/Error Messages */}
+      {/* Success/Error Messages - Compact */}
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6" data-testid="success-message">
-          <p className="text-green-800 text-sm sm:text-base">{success}</p>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 flex items-center" data-testid="success-message">
+          <CheckCircle size={16} className="text-green-600 mr-2 flex-shrink-0" />
+          <p className="text-green-800 text-sm">{success}</p>
         </div>
       )}
       {error && (

@@ -29,7 +29,11 @@ const StatusUpdateRedirect = () => {
 
 // Protected route that requires tenant context
 const TenantProtectedRoute = ({ children, adminOnly = false }) => {
-  const { isAuthenticated, hasTenantContext, needsTenantSelection, isPlatformAdmin, isTenantAdmin, loading } = useAuth();
+  const { isAuthenticated, user, hasTenantContext, needsTenantSelection, activeTenant, loading } = useAuth();
+
+  // Direct role checks to avoid function call timing issues
+  const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin';
+  const isTenantAdminUser = activeTenant?.role === 'tenant_admin' || isPlatformAdminUser;
 
   if (loading) {
     return (
@@ -43,8 +47,8 @@ const TenantProtectedRoute = ({ children, adminOnly = false }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Platform admins can access platform admin page without tenant context
-  if (isPlatformAdmin() && !hasTenantContext) {
+  // Platform admins without tenant context should go to platform page
+  if (isPlatformAdminUser && !hasTenantContext) {
     return <Navigate to="/platform" replace />;
   }
 
@@ -53,13 +57,13 @@ const TenantProtectedRoute = ({ children, adminOnly = false }) => {
     return <Navigate to="/select-tenant" replace />;
   }
 
-  // Check tenant context for regular routes
-  if (!hasTenantContext && !isPlatformAdmin()) {
+  // Check tenant context for regular routes (non-platform admins)
+  if (!hasTenantContext && !isPlatformAdminUser) {
     return <Navigate to="/select-tenant" replace />;
   }
 
   // Admin only check
-  if (adminOnly && !isTenantAdmin()) {
+  if (adminOnly && !isTenantAdminUser) {
     return <Navigate to="/" replace />;
   }
 

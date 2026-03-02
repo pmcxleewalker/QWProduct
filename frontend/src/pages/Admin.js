@@ -809,8 +809,9 @@ const Admin = () => {
         </div>
       )}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6" data-testid="error-message">
-          <p className="text-red-800 text-sm sm:text-base">{error}</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-center" data-testid="error-message">
+          <AlertCircle size={16} className="text-red-600 mr-2 flex-shrink-0" />
+          <p className="text-red-800 text-sm">{error}</p>
         </div>
       )}
 

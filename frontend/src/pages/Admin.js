@@ -974,25 +974,20 @@ const Admin = () => {
         </div>
       </div>
 
-      {/* To-Do Alert Banner - Shows at top when there are pending mandatory tasks */}
-      {todos.filter(t => !t.is_completed && t.is_mandatory).length > 0 && (
-        <div className="mb-4 sm:mb-6 bg-amber-50 border-2 border-amber-400 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-          <div className="flex items-center space-x-3">
-            <div className="bg-amber-400 rounded-full p-2">
-              <ListTodo size={20} className="text-white" />
-            </div>
-            <div>
-              <h3 className="font-bold text-amber-800">⚠️ Mandatory Tasks Pending</h3>
-              <p className="text-sm text-amber-700">
-                You have {todos.filter(t => !t.is_completed && t.is_mandatory).length} mandatory task(s) that need attention.
-              </p>
-            </div>
+      {/* To-Do Alert Banner - Shows only when there are pending mandatory tasks and not on todos tab */}
+      {activeTab !== 'todos' && todos.filter(t => !t.is_completed && t.is_mandatory).length > 0 && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <AlertCircle size={18} className="text-amber-600" />
+            <span className="text-sm text-amber-800">
+              <strong>{todos.filter(t => !t.is_completed && t.is_mandatory).length}</strong> mandatory task(s) pending
+            </span>
           </div>
           <button
             onClick={() => setActiveTab('todos')}
-            className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            className="text-sm text-amber-700 hover:text-amber-900 font-medium"
           >
-            View Tasks
+            View →
           </button>
         </div>
       )}

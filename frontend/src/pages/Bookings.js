@@ -34,6 +34,7 @@ const Bookings = () => {
   const [viewMode, setViewMode] = useState('all'); // 'all' or 'my' bookings
   const [conflictWarning, setConflictWarning] = useState(null); // Booking conflict alert
   const [checkingConflicts, setCheckingConflicts] = useState(false); // Loading state for conflict check
+  const [showMap, setShowMap] = useState(false); // Toggle map view
   
   const [formData, setFormData] = useState({
     car_id: carFromQR || '',

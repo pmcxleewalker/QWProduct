@@ -307,11 +307,17 @@ const AppContent = () => {
               <Navigation />
               <div className="pt-16 pb-20 sm:pb-4 flex-grow">
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/" element={<TenantDashboard />} />
+                  <Route path="/legacy-dashboard" element={<Dashboard />} />
                   <Route path="/live-sheet" element={<LiveSheet />} />
                   <Route path="/bookings" element={<Bookings />} />
                   <Route path="/assistance" element={<Assistance />} />
                   <Route path="/mileage" element={<MileageUpdate />} />
+                  <Route path="/reports" element={
+                    <TenantProtectedRoute adminOnly={true}>
+                      <Reports />
+                    </TenantProtectedRoute>
+                  } />
                   <Route
                     path="/admin"
                     element={

@@ -39,9 +39,9 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.get(`${API}/auth/me`);
       const data = response.data;
       
-      // Include role from current_context in user object
+      // Include role from current_context in user object, and memberships for tenant routing
       const role = data.current_context?.role;
-      const userWithRole = { ...data.user, role };
+      const userWithRole = { ...data.user, role, memberships: data.memberships };
       setUser(userWithRole);
       
       // Handle tenant context

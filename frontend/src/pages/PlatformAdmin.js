@@ -18,6 +18,7 @@ const PlatformAdmin = () => {
   const [tenants, setTenants] = useState([]);
   const [stats, setStats] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');

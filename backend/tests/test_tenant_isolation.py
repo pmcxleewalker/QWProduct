@@ -257,6 +257,7 @@ class TestTenantIsolation:
                 f"{BASE_URL}/bookings",
                 json={
                     "car_id": vehicle_b["id"],
+                    "user_name": "Hacker A",
                     "start_time": "2025-01-16T09:00:00",
                     "end_time": "2025-01-16T17:00:00",
                     "purpose": "Attempted Cross-Tenant Booking"

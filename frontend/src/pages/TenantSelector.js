@@ -79,7 +79,7 @@ const TenantSelector = () => {
         {/* Tenant list */}
         <div className="p-6 space-y-3">
           {/* Platform Admin - Go to Command Centre */}
-          {isPlatformAdmin() && (
+          {isPlatformAdminUser && (
             <button
               onClick={() => navigate('/platform')}
               className="w-full p-4 rounded-xl border-2 border-blue-500 bg-blue-50 hover:bg-blue-100 transition-all text-left flex items-center justify-between"

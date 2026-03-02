@@ -604,7 +604,7 @@ const Dashboard = () => {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
-          {liveStatus.map((item) => (
+          {liveStatus.filter(item => item?.car?.id).map((item) => (
             <div
               key={item.car.id}
               data-testid={`car-card-${item.car.id}`}

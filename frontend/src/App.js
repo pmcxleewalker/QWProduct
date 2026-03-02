@@ -27,6 +27,34 @@ const StatusUpdateRedirect = () => {
   return <Navigate to={carId ? `/mileage?car=${carId}` : '/dashboard'} replace />;
 };
 
+// Login page with redirect for already logged-in users
+const LoginRedirect = () => {
+  const { isAuthenticated, user, hasTenantContext, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+  
+  // If authenticated, redirect based on role
+  if (isAuthenticated && user) {
+    const isPlatformAdminUser = user.role === 'super_admin' || user.role === 'master_admin';
+    
+    if (isPlatformAdminUser && !hasTenantContext) {
+      return <Navigate to="/platform" replace />;
+    }
+    if (hasTenantContext) {
+      return <Navigate to="/" replace />;
+    }
+    return <Navigate to="/select-tenant" replace />;
+  }
+  
+  return <Login />;
+};
+
 // Protected route that requires tenant context
 const TenantProtectedRoute = ({ children, adminOnly = false }) => {
   const { isAuthenticated, user, hasTenantContext, needsTenantSelection, activeTenant, loading } = useAuth();

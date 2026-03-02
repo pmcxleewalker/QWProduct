@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import TenantLogin from './pages/TenantLogin';
 import Register from './pages/Register';
+import TenantDashboard from './pages/TenantDashboard';
 import Dashboard from './pages/Dashboard';
 import LiveSheet from './pages/LiveSheet';
 import Bookings from './pages/Bookings';

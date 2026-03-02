@@ -189,16 +189,18 @@ class TestTenantIsolation:
             # Create vehicles first
             response = await client.post(
                 f"{BASE_URL}/vehicles",
-                json={"registration": "BOOK-A-001", "make": "Ford", "model": "Focus"},
+                json={"name": "Booking Test A", "registration": "BOOK-A-001"},
                 headers=headers_a
             )
+            assert response.status_code == 200, f"Failed to create vehicle A: {response.text}"
             vehicle_a = response.json()["vehicle"]
             
             response = await client.post(
                 f"{BASE_URL}/vehicles",
-                json={"registration": "BOOK-B-001", "make": "VW", "model": "Golf"},
+                json={"name": "Booking Test B", "registration": "BOOK-B-001"},
                 headers=headers_b
             )
+            assert response.status_code == 200, f"Failed to create vehicle B: {response.text}"
             vehicle_b = response.json()["vehicle"]
             
             # Create booking in Tenant A
@@ -206,6 +208,7 @@ class TestTenantIsolation:
                 f"{BASE_URL}/bookings",
                 json={
                     "car_id": vehicle_a["id"],
+                    "user_name": "Test User A",
                     "start_time": "2025-01-15T09:00:00",
                     "end_time": "2025-01-15T17:00:00",
                     "purpose": "Client Visit A"
@@ -222,6 +225,7 @@ class TestTenantIsolation:
                 f"{BASE_URL}/bookings",
                 json={
                     "car_id": vehicle_b["id"],
+                    "user_name": "Test User B",
                     "start_time": "2025-01-15T09:00:00",
                     "end_time": "2025-01-15T17:00:00",
                     "purpose": "Client Visit B"

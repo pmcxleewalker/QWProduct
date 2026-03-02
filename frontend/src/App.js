@@ -11,6 +11,7 @@ import Assistance from './pages/Assistance';
 import Admin from './pages/Admin';
 import MileageUpdate from './pages/MileageUpdate';
 import Setup from './pages/Setup';
+import SetupWizard from './pages/SetupWizard';
 import TermsOfService from './pages/TermsOfService';
 import TenantSelector from './pages/TenantSelector';
 import PlatformAdmin from './pages/PlatformAdmin';

@@ -126,6 +126,104 @@ const PlatformProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Tenant Routes - handles /{tenant-slug}/* routes
+const TenantRoutes = () => {
+  const { tenantSlug } = useParams();
+  const { isAuthenticated, activeTenant, selectTenant, user, loading } = useAuth();
+  const [tenantLoading, setTenantLoading] = useState(true);
+
+  useEffect(() => {
+    const setupTenantContext = async () => {
+      if (!isAuthenticated) {
+        setTenantLoading(false);
+        return;
+      }
+
+      // If we already have the right tenant selected, we're good
+      if (activeTenant?.tenant_slug === tenantSlug) {
+        setTenantLoading(false);
+        return;
+      }
+
+      // Try to find and select the tenant from user's memberships
+      if (user?.memberships) {
+        const membership = user.memberships.find(m => m.tenant_slug === tenantSlug);
+        if (membership) {
+          try {
+            await selectTenant(membership.tenant_id);
+          } catch (err) {
+            console.error('Failed to select tenant:', err);
+          }
+        }
+      }
+      setTenantLoading(false);
+    };
+
+    setupTenantContext();
+  }, [isAuthenticated, tenantSlug, activeTenant, selectTenant, user]);
+
+  if (loading || tenantLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to={`/${tenantSlug}/login`} replace />;
+  }
+
+  // Check if user has access to this tenant
+  const hasAccess = user?.memberships?.some(m => m.tenant_slug === tenantSlug);
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H10m9.364-7.636a9 9 0 11-12.728 0" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+          <p className="text-gray-600 mb-6">
+            You don't have access to this franchise.
+          </p>
+          <a href="/login" className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            Return to Login
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  const isTenantAdmin = activeTenant?.role === 'admin' || activeTenant?.role === 'master_admin' || user?.role === 'super_admin';
+
+  return (
+    <>
+      <Navigation tenantSlug={tenantSlug} />
+      <div className="pt-16 pb-20 sm:pb-4 flex-grow">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/live-sheet" element={<LiveSheet />} />
+          <Route path="/bookings" element={<Bookings />} />
+          <Route path="/assistance" element={<Assistance />} />
+          <Route path="/mileage" element={<MileageUpdate />} />
+          <Route path="/setup-wizard" element={<SetupWizard />} />
+          <Route
+            path="/admin"
+            element={
+              isTenantAdmin ? <Admin /> : <Navigate to={`/${tenantSlug}`} replace />
+            }
+          />
+        </Routes>
+      </div>
+      <Footer />
+      <MobileBottomNav tenantSlug={tenantSlug} />
+    </>
+  );
+};
+
 // Wrapper component that handles message acknowledgment
 const AppContent = () => {
   const { user, isAuthenticated, hasTenantContext, isPlatformAdmin } = useAuth();

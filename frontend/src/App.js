@@ -206,7 +206,8 @@ const TenantRoutes = () => {
       <Navigation tenantSlug={tenantSlug} />
       <div className="pt-16 pb-20 sm:pb-4 flex-grow">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<TenantDashboard />} />
+          <Route path="/legacy-dashboard" element={<Dashboard />} />
           <Route path="/live-sheet" element={<LiveSheet />} />
           <Route path="/bookings" element={<Bookings />} />
           <Route path="/assistance" element={<Assistance />} />
@@ -216,6 +217,12 @@ const TenantRoutes = () => {
             path="/admin"
             element={
               isTenantAdmin ? <Admin /> : <Navigate to={`/${tenantSlug}`} replace />
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              isTenantAdmin ? <Reports /> : <Navigate to={`/${tenantSlug}`} replace />
             }
           />
         </Routes>

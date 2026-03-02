@@ -219,12 +219,6 @@ const TenantRoutes = () => {
               isTenantAdmin ? <Admin /> : <Navigate to={`/${tenantSlug}`} replace />
             }
           />
-          <Route
-            path="/reports"
-            element={
-              isTenantAdmin ? <Reports /> : <Navigate to={`/${tenantSlug}`} replace />
-            }
-          />
         </Routes>
       </div>
       <Footer />

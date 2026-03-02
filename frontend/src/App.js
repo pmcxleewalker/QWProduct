@@ -165,6 +165,13 @@ const AppContent = () => {
           </ProtectedRoute>
         } />
         
+        {/* Setup Wizard for new Master Admins */}
+        <Route path="/setup-wizard" element={
+          <TenantProtectedRoute>
+            <SetupWizard />
+          </TenantProtectedRoute>
+        } />
+        
         {/* Platform Admin - No tenant context needed */}
         <Route path="/platform" element={
           <PlatformProtectedRoute>

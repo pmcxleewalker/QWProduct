@@ -121,16 +121,26 @@ When creating a new tenant:
 - [x] Data cleanup script (removed orphaned records)
 - [x] Quick Setup Wizard for new Master Admins (onboarding flow)
 - [x] Path-based branded tenant URLs (e.g., quick-wing.com/tenant-slug/login)
+- [x] **PDF Export for Reports & Invoices** (March 2026)
+  - Executive Summary PDF export
+  - Franchises Report PDF export  
+  - Invoices Report PDF export
+  - Individual Invoice PDF export
+  - Blue & white color scheme with Quick Wing branding
+- [x] **Invoice Management CRUD** (March 2026)
+  - Create invoices with line items, tax calculation
+  - List invoices with filters (status, tenant)
+  - Update invoice status (draft → sent → paid)
+  - Summary stats (total, paid, pending)
 
 ### Pending (P1)
-- [ ] Billing integration (Stripe) for subscription management
-- [ ] Email notifications for tenant suspension/reactivation
+- [ ] Fix fragile onboarding redirects (recurring issue)
 - [ ] Rebuild tenant-facing Admin.js page for new architecture
+- [ ] Complete "Franchises" and "Invoices" tabs data display in Reports
 
 ### Future (P2-P3)
-- [ ] Subdomain-based tenant resolution
-- [ ] Convert training manuals to PDF
-- [ ] Printable QR code sheet
+- [ ] Full user management expansion (edit, role changes)
+- [ ] Rebuild tenant Dashboard for new architecture
 
 ## Files Structure
 ```

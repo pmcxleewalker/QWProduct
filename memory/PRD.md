@@ -279,12 +279,12 @@ REACT_APP_PRIMARY_COLOR=#2563eb
 - [ ] **DEPLOY TO PRODUCTION** - Booking calendar fix is in preview, needs deployment
 
 ### P0 (Done)
-- [x] **Staff Location Map** - "Google Maps" style feature for admins to see live staff locations via GPS (February 2026)
-  - Admin can view Staff Map tab in Admin Panel
-  - Leaflet.js map with real-time staff markers
-  - Auto-refresh every 30 seconds
-  - Staff can enable/disable location sharing from Dashboard
-  - Shows active staff with green markers, inactive users listed separately
+- [x] **Booking Locations Map** - Map showing all booking pins based on Eircodes for each day (March 2026)
+  - Admin can view Booking Map tab in Admin Panel with date picker
+  - Staff/Admin can toggle map view on Bookings page (syncs with calendar date)
+  - Eircodes converted to coordinates (V92 Tralee, V93 Killarney, V23 Bantry, etc.)
+  - Color-coded pins by car, popup shows booking details
+  - Shows booking list with map/unmapped status
 - [x] **"My Bookings" Tab** - Added tab on `/bookings` page showing only logged-in user's bookings (February 2026)
 - [x] **Booking Conflict Alert System** - Real-time warning when booking overlaps with existing bookings (February 2026)
 - [x] **Enhanced Admin Reports** - Date-filtered numbers, Charts sub-tab, Daily availability by location (February 2026)

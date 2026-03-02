@@ -432,7 +432,16 @@ const PlatformAdmin = () => {
                       <input
                         type="text"
                         value={newTenant.name}
-                        onChange={(e) => setNewTenant({ ...newTenant, name: e.target.value })}
+                        onChange={(e) => {
+                          const name = e.target.value;
+                          // Auto-generate slug from name
+                          const slug = name.toLowerCase()
+                            .replace(/[^a-z0-9\s-]/g, '')  // Remove special chars
+                            .replace(/\s+/g, '-')          // Replace spaces with hyphens
+                            .replace(/-+/g, '-')           // Replace multiple hyphens with single
+                            .replace(/^-|-$/g, '');        // Remove leading/trailing hyphens
+                          setNewTenant({ ...newTenant, name, slug });
+                        }}
                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                         placeholder="e.g., Bluebird Care Kerry"
                         required
@@ -440,16 +449,20 @@ const PlatformAdmin = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Slug (URL identifier) *</label>
-                      <input
-                        type="text"
-                        value={newTenant.slug}
-                        onChange={(e) => setNewTenant({ ...newTenant, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., bluebird-kerry"
-                        required
-                        data-testid="tenant-slug-input"
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">URL Slug (auto-generated)</label>
+                      <div className="flex items-center">
+                        <span className="text-sm text-gray-500 mr-2">quick-wing.com/</span>
+                        <input
+                          type="text"
+                          value={newTenant.slug}
+                          onChange={(e) => setNewTenant({ ...newTenant, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                          className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                          placeholder="franchise-slug"
+                          required
+                          data-testid="tenant-slug-input"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">This will be the franchise's login URL</p>
                     </div>
                   </div>
                   <div>

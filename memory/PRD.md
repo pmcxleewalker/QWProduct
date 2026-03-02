@@ -1,322 +1,134 @@
-# Quick Wing Fleet Management - Product Requirements Document
+# Quick Wing Fleet Management - Multi-Tenant SaaS Platform
 
-## Original Problem Statement
-Build a comprehensive fleet management application for tracking vehicles, bookings, staff management, and administrative tasks for a company fleet.
-
----
-
-## 🏢 FRANCHISE DUPLICATION GUIDE
-
-### How to Create a Copy for Another Franchise:
-
-1. **Fork this Chat** (click "Fork Chat" button in Emergent)
-   - Creates a complete copy with fresh empty database
-   - All code and features included
-
-2. **New franchise visits `/setup`** to configure:
-   - Company/Franchise Name
-   - Master Admin email & password
-
-3. **Deploy** the forked version
-   - Each franchise gets their own URL
-   - Separate database, separate users
-
-### Configurable Settings (in `/app/frontend/.env`):
-```
-REACT_APP_COMPANY_NAME=Your Franchise Name
-REACT_APP_PRIMARY_COLOR=#2563eb
-```
-
-### What Each Franchise Gets:
-- ✅ All features (bookings, QR codes, mileage tracking, reports)
-- ✅ Empty database (no pre-existing cars/users/bookings)
-- ✅ Own admin/staff user management
-- ✅ Independent deployment
-
----
-
-## User Personas
-1. **Admin Users** - Full access to manage cars, users, bookings, to-do lists, and reports
-2. **Staff Users** - Can book vehicles, view live status, request assistance
-
-## Core Features Implemented
-
-### Authentication & Authorization
-- JWT-based authentication
-- Role-based access (admin/staff)
-- Admin password reset capability
-
-### Fleet Management
-- Car CRUD operations with QR codes
-- Live status tracking
-- Manual status editing by admins
-- Blocking/unblocking vehicles
-
-### Booking System
-- Create, edit, delete bookings
-- Recurring bookings (daily, weekly, monthly)
-- Admin approval workflow
-- **Booking Suggestions** - Shows available cars and time slots for next 7 days
-- **Bulk Booking Cancellation** - Select multiple bookings and cancel them at once
-- **Recurring Series Management** - Delete individual occurrences OR entire series
-
-### Admin To-Do List
-- Create, edit, delete tasks
-- Mandatory task flagging
-- **Scheduling Options**: One-time, Daily, Weekly (select days), Monthly (select dates)
-- **Auto-reset**: Mandatory tasks reset to pending 24 hours after completion
-- Alert badges on Dashboard and Admin panel
-
-### Reports & Analytics
-- Fleet usage statistics
-- Car booking frequency
-- CSV export
-
-### Mobile-First UI
-- Responsive design
-- Bottom navigation for mobile
-- Touch-friendly components
-
----
-
-## Completed Features (January 2025)
-
-### Session: January 15, 2025
-1. **Fish Icon for pmcxleewalker**
-   - Custom navigation for user `pmcxleewalker@quickwing.com`
-   - Shows fish icon (🐟) instead of "Live Sheet" text in navigation
-   - Icon-only display in both mobile and desktop navigation
-   - Tooltip on desktop shows "Live Sheet" on hover
-
-2. **Bookings Page UI Cleanup**
-   - Removed List View toggle - now only Calendar View is available
-   - Car selector tabs are now fully collapsible (including "All Cars")
-   - Click + button to expand car options, - button to collapse
-   - Car tabs now wrap to multiple rows for better mobile experience
-   - Cleaner, more focused booking interface
-
-3. **Dashboard Fleet Status Redesign**
-   - Compact car cards: 5 columns on desktop (was 3)
-   - Smaller, visually friendly cards with essential info only
-   - Status badges now show emoji icons (🟢 Free, 🔵 In Use, 🟡 Booked, etc.)
-   - Location displayed in compact blue pill
-   - Edit button moved to bottom-right corner
-
-4. **Automatic Booking Status Updates**
-   - Cars automatically show "Booked" status when there's an active booking
-   - Backend checks current time against approved booking start/end times
-   - Dashboard and Live Sheet show who booked the car (yellow highlight)
-   - Live Sheet has new "Booked" counter alongside other status counters
-   - Status resets to previous state when booking ends
-
-5. **Booking Form Updates**
-   - Renamed "Destination / Notes" to "Purpose" 
-   - Added new "Location (Eircode)" field
-   - Location entered in booking automatically shows in Live Sheet when car is booked
-   - Helper text explains the location will appear in Live Sheet
-
-6. **Three-Color Booking Status System**
-   - 🟢 **Free** (green) - Car is available
-   - 🔴 **Booked** (red) - Car has a one-time booking
-   - 🟣 **Recurring** (purple) - Car has a recurring booking
-   - Applied to: Car Availability Cards, Live Sheet, Dashboard
-   - Live Sheet has separate "Recurring" counter
-   - Legend on availability cards shows all three colors
-
-7. **Push Notifications for Phones**
-   - Web Push notifications using Service Workers
-   - **"Push On/Off" toggle** in navigation bar
-   - **Lift Requests**: Admins receive notification when staff request a lift
-   - **Admin Messages**: Staff receive notification when admin posts announcement
-   - Works on mobile browsers (Android/iOS Safari)
-   - Auto-removes invalid subscriptions
-
-### Session: February 16, 2026
-1. **"My Bookings" Tab**
-   - New toggle tabs: "All Bookings" and "My Bookings" on the `/bookings` page
-   - "My Bookings" filters calendar to show only logged-in user's bookings
-   - Badge shows count of user's total bookings (e.g., "33")
-   - Calendar header changes to indigo/purple with "👤 My Bookings - [Month]" text
-   - Shows user email below the month name
-   - Works for both staff and admin accounts
-
-2. **Booking Conflict Alert System**
-   - Real-time conflict detection when creating new bookings
-   - Orange warning banner appears when selected car+time overlaps with existing bookings
-   - Shows: car name, conflicting user name, date, time range, and booking status
-   - Helpful tip: "💡 Consider choosing a different time or car to avoid scheduling conflicts"
-   - Uses debounced checking (300ms) for smooth UX
-   - Warning disappears when conflict is resolved
-
-3. **Enhanced Admin Reports**
-   - **Date-filtered Fleet Numbers**: Summary cards (Total Bookings, Pending, etc.) now change based on selected date range
-   - **Booking Details Sub-tabs**: "List" view for data table, "Charts" view for visual analytics
-   - **Charts for Audit Data**:
-     - Bookings by Status (bar chart)
-     - Recurring vs One-time (circular badges)
-     - Bookings by Day of Week (horizontal bars)
-     - Top Bookers (ranked list)
-     - Top Booked Cars (ranked list)
-     - Bookings by Location (grouped by car base_location)
-     - Monthly Booking Trend (bar chart)
-   - **Daily Availability by Location**: Shows cars with no bookings on a specific date, grouped by Tralee/Bantry/Unassigned
-   - **Base Location field**: Added to car model for location-based reporting
-
-4. **Master Admin Role for Carly O'Donovan**
-   - **Master Admin**: carlyodonovan@bluebirdcare.ie has elevated permissions
-   - **Crown Icon**: Displayed in navigation header and user management
-   - **Protected Actions**: 
-     - Only Master Admin can delete other admin accounts
-     - Requires Master Admin password confirmation for admin deletion
-     - Cannot modify or delete the Master Admin account
-   - **Visual Distinction**: Golden badge and styling for Master Admin in user list
-
-### Session: February 5, 2026
-1. **Purple Color for Recurring Bookings on Calendar**
-   - Recurring bookings now show in purple on the main calendar (previously used car color)
-   - Fixed `isRecurring` check to use both `is_recurring` flag AND `recurring_group_id`
-   - Removed purple from car color palette to avoid confusion
-   - 🔄 emoji shows on recurring booking entries
-   - Purple background visible in day modal when clicking on recurring bookings
-
-2. **Live Daily Availability Report**
-   - New report in Admin > Reports tab
-   - Shows hourly availability grid for all active cars (7am-10pm)
-   - Date picker to view any day's availability
-   - Summary stats: Active Cars, Available Hours, Booked Hours, Availability Rate
-   - Color-coded grid: Green (available), Red (booked), Purple (recurring), Gray (past)
-   - Hover shows who booked the slot
-   - New API endpoint: `GET /api/admin/reports/daily-availability`
-
-3. **Admin Notification System**
-   - Push notifications disabled for admin accounts (staff only)
-   - New "Updates" button in navigation for admins only
-   - Shows deployment changelog with recent fixes/features
-   - Easy way to communicate updates to admin users
-
-### Session: January 14, 2025
-1. **Admin Car Swap for Recurring Bookings**
-   - Admins can change the assigned car for individual booking occurrences
-   - Dropdown shows only cars available for that specific time slot
-   - New API endpoint: `GET /api/admin/available-cars`
-   - Modified edit modal in `/app/frontend/src/components/EditBookingModal.js`
-
-2. **Personalized Dashboard Greetings**
-   - Custom greetings for specific users (carlyodonovan, carecoordinatorkwc, kevanfewtrell, pmcxleewalker)
-   - "Welcome, Carly!" with paw emojis for Carly
-   - "Hey [Username]!" format for others
-
-3. **Staff Weather Widgets**
-   - Live weather display for Kerry and West Cork regions
-   - Backend proxy at `/api/weather` to avoid CORS issues
-   - Uses wttr.in API (no key required)
-   - Weather icons based on conditions
-
-4. **Critical Booking Calendar Fix**
-   - Fixed bug where bookings weren't appearing on calendar
-   - Issue: API limit of 100 results + descending sort excluded current month
-   - Fix: Increased limit to 500, changed to ascending sort order
-   - **STATUS: In preview, awaiting user deployment to production**
-
-5. **Enhanced Booking Form Feedback**
-   - Validation improvements
-   - Success/error alert popups
-   - Auto-scrolling to form feedback
-
-### Session: January 12, 2025
-1. **Advanced To-Do Features**
-   - Auto-reset mandatory tasks to incomplete after 24 hours
-   - Schedule types: daily, weekly (Mon-Sun selector), monthly (date selector)
-   - Schedule badges in task list (🔄 Daily, 📅 Weekly: Mon, Wed, Fri)
-   
-2. **Booking Suggestions**
-   - New API endpoint `/api/bookings/suggestions`
-   - Calculates free time slots for each car over next 7 days (8 AM - 6 PM)
-   - Suggestion cards with car info, available slots, and "Book This Car" button
-   - Collapsible section on Bookings page
-
-3. **Bulk Booking Cancellation**
-   - "Select Bookings" mode in List view
-   - Checkboxes on approved bookings (pending bookings cannot be selected)
-   - "Select All" / "Deselect All" toggle
-   - Selected count display
-   - "Cancel Selected" bulk delete button
-   - Visual highlighting (red border + background) for selected bookings
-
-4. **Recurring Booking Series Management**
-   - "🔄 Recurring" badge on booking cards in list view
-   - Modal shows "(Recurring - X bookings)" count
-   - "Cancel This One" - Delete single occurrence
-   - "Cancel Entire Series (X bookings)" - Delete all bookings in the series
-   - New API endpoint: `DELETE /api/bookings/series/{recurring_group_id}`
-
----
+## Product Overview
+Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 ## Architecture
 
-### Backend (FastAPI)
-- `/app/backend/server.py` - Main API routes
-- `/app/backend/auth.py` - JWT authentication
-- MongoDB with Motor async driver
+### Multi-Tenant Model
+- **Tenants**: Franchises/companies with isolated data
+- **Users**: Global accounts with role-based memberships per tenant
+- **Memberships**: Links users to tenants with specific roles
 
-### Frontend (React)
-- `/app/frontend/src/pages/` - Main pages (Dashboard, Bookings, Admin, etc.)
-- `/app/frontend/src/api/api.js` - API client
-- TailwindCSS for styling
+### Role Hierarchy
+| Role | Scope | Capabilities |
+|------|-------|--------------|
+| `super_admin` | Platform | Full platform control, create/manage tenants |
+| `master_admin` | Platform | Support role, view/impersonate tenants |
+| `tenant_admin` | Tenant | Manage tenant users, vehicles, settings |
+| `staff` | Tenant | Book vehicles, view data within tenant |
 
-### Key API Endpoints
-- `POST /api/auth/login` - User login
-- `GET/POST/PUT/DELETE /api/admin/todos` - To-Do list management
-- `GET /api/bookings/suggestions` - Car availability suggestions
-- `DELETE /api/bookings/{id}` - Delete individual booking
-- `GET /api/admin/reports/fleet-usage` - Fleet analytics
+### Data Isolation
+- Every tenant-scoped record includes `tenant_id`
+- All queries automatically filtered by tenant context
+- Cross-tenant access blocked at application level
+- Audit logging for sensitive operations
 
----
+## Features
 
-## Prioritized Backlog
+### 1. Platform Administration (Command Centre)
+- **Overview**: Platform-wide statistics (tenants, users, vehicles, bookings)
+- **Tenant Management**: Create, suspend, reactivate franchises
+- **User Management**: Create platform and tenant users
+- **Audit Log**: View all security and action events
+- **Impersonation**: Support access with full audit trail
 
-### P0 (Critical - Awaiting Action)
-- [ ] **DEPLOY TO PRODUCTION** - Booking calendar fix is in preview, needs deployment
+### 2. Tenant Features (Per Franchise)
+- **Dashboard**: Overview, weather, notifications
+- **Vehicle Management**: Add/edit/delete fleet vehicles
+- **Booking System**: Calendar-based reservations with conflict detection
+- **Live Sheet**: Real-time fleet status
+- **Reports**: Usage statistics and analytics
+- **Team Management**: Add/remove staff members
 
-### P0 (Done)
-- [x] **Booking Locations Map** - Map showing all booking pins based on Eircodes for each day (March 2026)
-  - Admin can view Booking Map tab in Admin Panel with date picker
-  - Staff/Admin can toggle map view on Bookings page (syncs with calendar date)
-  - Eircodes converted to coordinates (V92 Tralee, V93 Killarney, V23 Bantry, etc.)
-  - Color-coded pins by car, popup shows booking details
-  - Shows booking list with map/unmapped status
-- [x] **"My Bookings" Tab** - Added tab on `/bookings` page showing only logged-in user's bookings (February 2026)
-- [x] **Booking Conflict Alert System** - Real-time warning when booking overlaps with existing bookings (February 2026)
-- [x] **Enhanced Admin Reports** - Date-filtered numbers, Charts sub-tab, Daily availability by location (February 2026)
-- [x] **Master Admin Role** - carlyodonovan@bluebirdcare.ie has elevated permissions, crown icon, can delete admin accounts (February 2026)
-- [x] Fish icon for pmcxleewalker user
-- [x] Advanced To-Do features (auto-reset, scheduling)
-- [x] Booking suggestions on Bookings page
-- [x] Bulk booking cancellation
-- [x] Admin car swap for recurring bookings
-- [x] Personalized dashboard greetings
-- [x] Staff weather widgets
-- [x] Purple color for recurring bookings on calendar (February 2026)
-- [x] Live Daily Availability Report in Admin Reports section (February 2026)
+### 3. Security Features
+- JWT-based authentication with tenant context
+- Role-based access control (RBAC)
+- Tenant suspension for non-payment
+- Complete audit trail
+- IDOR prevention
 
-### P1 (Upcoming)
-- [ ] **Booking Edit Permissions**
-  - Staff can edit their own individual and recurring bookings
-  - Staff can retrospectively add "Double up call" to past bookings
-  - Admins can edit recurring bookings (single instance vs. entire series)
-  - Comments on rejected recurring bookings back to staff
-- [ ] Convert Training Manuals to downloadable PDFs
-- [ ] Create printable QR code sheet for all vehicles
+## API Endpoints
 
-### P2 (Future)
-- [ ] Redesign "Available Cars & Time Slots" section (Backend done, Frontend pending)
-- [ ] Complete visual screenshot tutorial for staff
-- [ ] Refactor Bookings.js and Admin.js into smaller components
-- [ ] Documentation for Franchise Setup
+### Authentication
+- `POST /api/auth/login` - Login and get token
+- `POST /api/auth/select-tenant` - Switch active tenant
+- `GET /api/auth/me` - Get current user info
 
----
+### Platform (Super/Master Admin)
+- `GET /api/platform/tenants` - List all tenants
+- `POST /api/platform/tenants` - Create tenant
+- `PUT /api/platform/tenants/{id}` - Update tenant
+- `POST /api/platform/tenants/{id}/suspend` - Suspend tenant
+- `POST /api/platform/tenants/{id}/reactivate` - Reactivate tenant
+- `POST /api/platform/tenants/{id}/impersonate` - Start impersonation
+- `POST /api/platform/stop-impersonation` - End impersonation
+- `GET /api/platform/stats` - Platform statistics
+- `GET /api/platform/audit-log` - Audit events
+
+### Tenant-Scoped
+- `GET /api/vehicles` - List vehicles (tenant-scoped)
+- `POST /api/vehicles` - Create vehicle
+- `GET /api/bookings` - List bookings (tenant-scoped)
+- `POST /api/bookings` - Create booking
+- `GET /api/tenant/users` - List tenant users
+- `POST /api/tenant/users` - Add user to tenant
+
+## Database Schema
+
+### Collections
+- `tenants`: id, name, slug, status, plan, max_vehicles, max_users
+- `users`: id, email, name, password_hash, is_active
+- `memberships`: id, user_id, tenant_id, role
+- `vehicles`: id, tenant_id, name, registration, status
+- `bookings`: id, tenant_id, car_id, user_name, start_time, end_time
+- `audit_events`: id, actor_user_id, tenant_id, action, resource_type
 
 ## Test Credentials
-- **Master Admin**: carlyodonovan@bluebirdcare.ie / carly123
-- **Admin**: admin@quickwing.com / admin123
-- **Staff**: staff@quickwing.com / staff123
+
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | superadmin@quickwing.com | Super123 |
+
+## Status
+
+### Completed (March 2026)
+- [x] Multi-tenant database schema
+- [x] Tenant isolation middleware
+- [x] JWT with tenant context
+- [x] Platform Command Centre UI
+- [x] Tenant creation/suspension
+- [x] Impersonation with audit logging
+- [x] Role-based access control
+- [x] Tenant selector for multi-membership users
+- [x] Security documentation (SECURITY.md)
+
+### Pending
+- [ ] Create initial tenant with admin user
+- [ ] Full testing of all tenant-scoped endpoints
+- [ ] Email notifications for tenant suspension
+- [ ] Billing integration for subscription management
+- [ ] Subdomain-based tenant resolution (future)
+
+## Files Structure
+```
+/app/backend/
+├── server.py              # Main API server
+├── models/
+│   ├── tenant.py          # Tenant, User, Membership models
+│   └── resources.py       # Vehicle, Booking, etc. models
+├── middleware/
+│   └── tenant.py          # Tenant isolation middleware
+└── services/
+    └── audit.py           # Audit logging service
+
+/app/frontend/src/
+├── contexts/
+│   └── AuthContext.js     # Multi-tenant auth context
+├── pages/
+│   ├── PlatformAdmin.js   # Franchise Command Centre
+│   ├── TenantSelector.js  # Tenant selection page
+│   └── Login.js           # Updated login flow
+└── api/
+    └── api.js             # Updated API client
+```

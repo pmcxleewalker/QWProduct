@@ -67,10 +67,18 @@ const TenantLogin = () => {
           setError('You do not have access to this franchise. Please contact your administrator.');
         }
       } else {
-        setError(result.error || 'Invalid email or password');
+        // Handle error - ensure it's a string
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : (result.error?.msg || result.error?.detail || 'Invalid email or password');
+        setError(errorMsg);
       }
     } catch (err) {
-      setError('Login failed. Please try again.');
+      // Handle catch error - ensure it's a string
+      const errorMsg = typeof err === 'string' 
+        ? err 
+        : (err?.response?.data?.detail || err?.message || 'Login failed. Please try again.');
+      setError(typeof errorMsg === 'string' ? errorMsg : 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }

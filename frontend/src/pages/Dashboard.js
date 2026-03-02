@@ -18,7 +18,7 @@ const getUsername = (email) => {
 };
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, activeTenant } = useAuth();
   const navigate = useNavigate();
   const [liveStatus, setLiveStatus] = useState([]);
   const [complianceAlerts, setComplianceAlerts] = useState([]);
@@ -33,6 +33,27 @@ const Dashboard = () => {
   const [showLiftModal, setShowLiftModal] = useState(false);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+
+  // Check if Master Admin needs setup wizard
+  useEffect(() => {
+    if (activeTenant?.role === 'master_admin') {
+      const setupComplete = localStorage.getItem(`setup_complete_${activeTenant.tenant_id}`);
+      if (!setupComplete) {
+        // Check if tenant has any vehicles - if not, show setup wizard
+        carAPI.getAll().then(response => {
+          const vehicles = response.data || [];
+          if (vehicles.length === 0) {
+            navigate('/setup-wizard');
+          } else {
+            // Mark as complete if they already have vehicles
+            localStorage.setItem(`setup_complete_${activeTenant.tenant_id}`, 'true');
+          }
+        }).catch(() => {
+          // If we can't check, don't redirect
+        });
+      }
+    }
+  }, [activeTenant, navigate]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [selectedBookingGroup, setSelectedBookingGroup] = useState(null);
   

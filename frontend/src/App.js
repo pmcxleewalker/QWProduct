@@ -68,7 +68,7 @@ const TenantProtectedRoute = ({ children, adminOnly = false }) => {
 
 // Platform admin route protection
 const PlatformProtectedRoute = ({ children }) => {
-  const { isAuthenticated, isPlatformAdmin, loading } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -82,7 +82,10 @@ const PlatformProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (!isPlatformAdmin()) {
+  // Check if user is platform admin using direct role check
+  const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin';
+  
+  if (!isPlatformAdminUser) {
     return <Navigate to="/" replace />;
   }
 

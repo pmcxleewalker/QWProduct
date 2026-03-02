@@ -7,7 +7,6 @@ import AcceptLiftModal from '../components/AcceptLiftModal';
 import LiftAcceptedNotification from '../components/LiftAcceptedNotification';
 import RejectBookingModal from '../components/RejectBookingModal';
 import BookingNotificationModal from '../components/BookingNotificationModal';
-import LocationSharingToggle from '../components/LocationSharingToggle';
 import { RefreshCw, Clock, AlertTriangle, Check, X, Plus, ListTodo, Edit2, Cloud, Sun, CloudRain, CloudSnow, Wind } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';

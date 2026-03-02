@@ -100,19 +100,20 @@ const Navigation = () => {
       if (!activeTenant?.tenant_id) return;
       
       if (isTenantAdmin()) {
-      try {
-        const [countRes, requestsRes] = await Promise.all([
-          liftRequestAPI.getCount(),
-          liftRequestAPI.getActive()
-        ]);
-        
-        setLiftRequestCount(countRes.data.count);
-        setLiftRequests(requestsRes.data);
-        
-        // Update seen IDs
-        seenRequestIds.current = new Set(requestsRes.data.map(r => r.id));
-      } catch (error) {
-        console.error('Error fetching lift requests:', error);
+        try {
+          const [countRes, requestsRes] = await Promise.all([
+            liftRequestAPI.getCount(),
+            liftRequestAPI.getActive()
+          ]);
+          
+          setLiftRequestCount(countRes.data.count);
+          setLiftRequests(requestsRes.data);
+          
+          // Update seen IDs
+          seenRequestIds.current = new Set(requestsRes.data.map(r => r.id));
+        } catch (error) {
+          console.error('Error fetching lift requests:', error);
+        }
       }
     };
 

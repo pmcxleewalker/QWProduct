@@ -1,200 +1,177 @@
-<analysis>**original_problem_statement**: The user is building Quick Wing, a comprehensive fleet management application. The project has evolved to include a wide range of advanced functionalities.
+<analysis>**original_problem_statement**: The user initially requested a series of features for their Quick Wing fleet management application, including a staff location tracker, booking maps, and UI cleanups.
 
-Recent user requests include:
-1.  **My Bookings Tab**: A new tab on the bookings page for users to see a calendar of only their own bookings. (Implemented)
-2.  **Booking Conflict Alert**: A system to warn users if they try to book a car that is already reserved for an overlapping time. (Implemented)
-3.  **Admin Reports Enhancement**:
-    *   Sub-tabs in the Booking Details report for a list view and a new Graphs and Charts view for data audits.
-    *   Fleet report summary cards should update based on selected calendar dates.
-    *   A Daily Report showing cars available in specific locations (Tralee/Bantry) that have no bookings, including available times and trends, presented as a pie chart with CSV export.
-    *   The Booking Details Report needs a from/to date selection and should be collapsible.
-4.  **Master Admin Role**: A Master Admin (carlyodonovan) with a crown icon who has ultimate permissions. Other admins cannot delete other admin accounts without the Master Admin's password. Only the Master Admin can change their own password. The Master Admin can change all account types, while regular admins can manage all except the Master Admin.
-5.  **Copyright and Legal Docs**:
-    *   Add a copyright footer to the application for Lee Walker.
-    *   Add a Terms of Service document and link to it from the login page and footer.
-6.  **Add a Car Bug**: Users reported that the Add a Car feature was not working. (Fixed)
-7.  **Double Up Call Feature**:
-    *   A non-mandatory checkbox on the booking form: Double up call?.
-    *   This data must be integrated into reports.
-8.  **Booking Edit Permissions**:
-    *   Staff should be able to edit their own individual and recurring bookings.
-    *   Staff should be able to retrospectively add the Double up call check to their past bookings.
-    *   Admins should be able to edit a recurring booking as a single instance or as a whole series.
-    *   Rejected recurring bookings must provide a comment back to the staff member who made the booking.
-9.  **Live Staff Location Map**: A Google Maps style feature where admins can see the live location of staff members on a map, using GPS from their mobile phones.
+However, the project underwent a major pivot. The user's most recent and overriding request is to convert the entire application into a true multi-tenant SaaS platform.
+
+**PRODUCT REQUIREMENTS (Multi-Tenancy)**:
+-   **Model**: A single deployment serving multiple franchises (tenants), with an option for the platform owner to manage subscriptions and pause/reactivate tenant accounts.
+-   **Data Isolation**: Strict tenant data isolation. Each tenant's data (vehicles, bookings, users) must be completely separate and inaccessible to other tenants.  is mandatory on all relevant records.
+-   **Roles**:
+    -   : The platform owner (), with access to a Franchise Command Centre to manage all tenants.
+    -   : The franchise owner/paying customer for a specific tenant.
+    -   : A role created by a  to manage a tenant.
+    -   : Regular users within a tenant.
+-   **Security**: Every API call must be scoped to the current tenant context derived from the server-side session/JWT. Row-Level Security is preferred. Audit logging is required for sensitive actions.
+-   **Deliverables**: Updated database schema, tenant-scoped API, a tenant management console for the Super Admin, and a  file detailing the isolation strategy.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack fleet management application (React frontend, FastAPI backend, MongoDB) with the following features:
--   **User Roles**: Master Admin, Admin, and Staff with tiered permissions. The Master Admin () has supreme privileges.
--   **Vehicle & User Management**: Full CRUD for cars and users, including the ability to set a  (e.g., Tralee, Bantry) for each car.
--   **Booking System**: A comprehensive booking calendar with a My Bookings view, real-time conflict detection alerts, and a Double up call? checkbox.
--   **Advanced Admin Dashboard**:
-    -   A heavily enhanced, multi-tab **Reports** section with date-range filters that update summary cards.
-    -   A **Booking Details Report** with collapsible UI, date filters, CSV export, and sub-tabs for a detailed list and a comprehensive charts/graphs view (Bookings by Status, Day of Week, Top Bookers, etc.).
-    -   A **Daily Availability Report** with multiple tabs (Overview, By Location, Timeline), pie charts, and CSV export to show which cars are free.
--   **Franchise & Legal**: The application is franchise-ready (configurable company name) and includes a copyright footer for Lee Walker and a full Terms of Service page.
--   **Other Features**: Mileage tracking, QR code integration, push notifications, and a changelog system.
+The application has been completely rebuilt from a single-tenant system into a multi-tenant SaaS platform.
+-   **Backend**: A new modular FastAPI backend has been created with separate directories for , , and . It enforces tenant isolation using a  in database records and a custom middleware that injects tenant context into every request.
+-   **Frontend**: The frontend has been significantly refactored. It includes:
+    -   A new  to handle multi-tenant authentication and roles.
+    -   A  page serving as the Franchise Command Centre for the . This console allows for tenant creation, viewing, suspension, and impersonation.
+    -   A  page for users who belong to multiple tenants.
+    -   Updated routing in  to protect platform and tenant routes.
+-   **Data**: The database has been wiped. A new  user has been created. One test tenant (Bluebird Care Kerry) was created successfully.
 
 **Last working item**:
--   **Last item agent was working**: The user requested a Google Maps style feature to track staff locations via mobile GPS. The agent acknowledged the request and planned to use the Leaflet.js library for the map interface.
--   **Status**: NOT STARTED
+-   **Last item agent was working**: The user requested a simplification of the role hierarchy, removing the  role. The agent was in the process of refactoring the backend code (, ) to reflect the new hierarchy:  ->  ->  -> . The agent attempted to replace all instances of  with .
+-   **Status**: IN PROGRESS
 -   **Agent Testing Done**: N
--   **Which testing method agent to use?**: screenshot tool
+-   **Which testing method agent to use?**: backend testing agent
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Booking System Unreliability on Deployed URL (Recurring)** (Priority: P0)
-    -   **Description**: A critical, session-long issue where the user may report bugs on the production URL that are already fixed on the preview URL.
-    -   **Next debug checklist**: Before investigating any user-reported bug, the next agent MUST first confirm with the user that they have deployed the latest changes and are testing on the correct, updated URL.
-    -   **Why fix this issue and what will be achieved with the fix?**: Prevents wasted time re-fixing already-solved issues and aligns user testing with the current state of the code.
-    -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: User verification on the deployed production site.
+-   **Issue 1: Incomplete and Broken Role Refactoring (P0)**
+    -   **Description**: While simplifying the user roles, the agent used a search-and-replace command that likely replaced  with . The  dependency function does not exist, which has broken the authorization layer for all tenant-level administrative actions.
+    -   **Attempted fixes**: The agent was using  and  to replace  with  across backend files.
+    -   **Next debug checklist**:
+        1.  Examine  and .
+        2.  Search for all usages of the non-existent  dependency.
+        3.  In , define the correct dependency decorators for the new roles. For instance, create a new decorator  that verifies if a user is a  OR an  within the current tenant context.
+        4.  Replace all incorrect  calls in  with the correct, newly created dependency function.
+    -   **Why fix this issue and what will be achieved with the fix?**: Fixing this is critical to restoring the application's authorization logic, allowing  and  users to manage their tenants.
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: backend
 
 **In progress Task List**:
--   None.
+-   **Task 1: Finalize Multi-Tenant Conversion (P0)**
+    -   **Where to resume**: After fixing the backend authorization (Issue 1), the agent must review the entire application, particularly the frontend, to ensure the new simplified role structure (, ) is correctly implemented. This includes user creation forms, role selectors in the  console, and any role-based UI rendering in the tenant-facing app.
+    -   **What will be achieved with this?**: A fully functional multi-tenant platform with the user-specified role hierarchy.
+    -   **Status**: IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?**: both
+    -   **Blocked on something**: Issue 1: Incomplete and Broken Role Refactoring.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **P0: Implement Staff Location Map**: Build the Google Maps style feature using mobile GPS data and Leaflet.js to display staff locations for admins. This will involve frontend map components and backend endpoints to receive and store location data.
-    -   **P1: Implement Booking Edit Features**:
-        -   Allow staff to edit their own individual and recurring bookings.
-        -   Allow admins to edit recurring bookings (single instance vs. entire series).
-        -   Implement a mechanism for adding comments to rejected recurring bookings.
-        -   File/Method References:  (booking endpoints),  (UI modals and logic).
-    -   **P2: Convert Training Manuals to PDF**: Convert  and  into downloadable PDF files.
+    -   **P0: Implement Automated Tenant Isolation Tests**: The user's request explicitly mandated automated tests to verify tenant data isolation. This is a critical security requirement that has not been implemented. Tests should confirm a user in Tenant A cannot access Tenant B's data.
+    -   **P1: Implement Billing & Subscription Management**: The user's goal is to pause tenant accounts for non-payment. This requires integrating a payment provider (e.g., Stripe) to manage subscriptions and linking account status (/) to payment status.
+    -   **P2: Data Cleanup**: The agent noted that some old user and booking counts were still visible in the Platform Admin dashboard. A one-time script is needed to fully purge all old data from every collection to ensure a true fresh start.
 -   **Future Tasks**:
-    -   **P3: Printable QR Code Sheet**: Create a single, printable document containing the QR codes for all vehicles.
-    -   **P4: Create Documentation for Franchise Setup**: Document the  page and  configuration.
-    -   **P5: Refactor Large Components**: Break down the monolithic  and  files into smaller, manageable components.
+    -   **P3: Rebuild Tenant-Facing Application**: The original  and  pages are now legacy. They need to be completely rebuilt to work with the new multi-tenant auth and data models.
+    -   **P4: Convert Training Manuals to PDF**: A pending task from previous sessions.
+    -   **P5: Printable QR Code Sheet**: A pending task from previous sessions.
 
 **Completed work in this session**
--   **Master Admin Feature**:
-    -   Implemented a  flag on the  model.
-    -   Created user  as the Master Admin.
-    -   Added a crown icon (👑) and special UI styling in the navigation and user list for the Master Admin.
-    -   Enforced strict permissions: only Master Admin can delete other admins or change their own password.
--   **Enhanced Admin Reports**:
-    -   Added date filters that dynamically update summary cards.
-    -   Created a Booking Details Report with sub-tabs for a list view and a comprehensive charts view.
-    -   Built a Daily Availability report with pie charts, location filtering (Tralee/Bantry), and CSV export.
--   **My Bookings Tab & Conflict Alerts**:
-    -   Added a toggle on the  page for users to view only their bookings.
-    -   Implemented a real-time warning system to prevent double-booking cars.
--   **Double Up Call Feature**:
-    -   Added  checkbox to the booking form.
-    -   Integrated this data into backend report generation and frontend chart displays.
--   **Bug Fix: Add Car Functionality**:
-    -   Diagnosed and fixed a bug where submitting the Add Car form with an empty  field caused a 422 validation error. The fix ensures empty optional number fields are sent as .
--   **Copyright and Legal Documents**:
-    -   Created a new  component and added a copyright notice for Lee Walker throughout the app.
-    -   Created a  page with placeholder legal text and a  file. Linked the ToS from the login page and footer.
+-   **Multi-Tenant SaaS Platform Implementation**:
+    -   Architected and built a new multi-tenant backend from scratch using a modular structure.
+    -   Implemented the Franchise Command Centre (Platform Admin UI) for the Super Admin to manage tenants (create, view, suspend, impersonate).
+    -   Rewrote the entire frontend authentication flow (, , routing) to support tenant context.
+    -   Created a  file outlining the data isolation strategy.
+-   **Booking Locations Map**:
+    -   Implemented a map feature on the Admin and Bookings pages that geocodes Eircodes from bookings and displays them as pins on an OpenStreetMap.
+-   **Admin Panel UI Cleanup**:
+    -   Redesigned the original Admin Panel's tab navigation into a cleaner layout with pill tabs and a More dropdown menu.
+-   **Staff Location Map (Removed)**:
+    -   Initially built a live staff location tracker, but it was immediately removed per the user's request and replaced with the Booking Locations Map.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: GitHub Permissions**:
     -   **Description**: A carry-over issue where the user needs to grant GitHub permissions for the Save to GitHub feature to work.
     -   **Debug checklist**: User must visit  and authorize the Emergent app.
     -   **Why to solve this issue and what will be achieved with this?**: Enables codebase backup and versioning.
-    -   **Should Test frontend/backend/both after fix?**: N/A
     -   **Is recurring issue?**: Y
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork**: Booking System Unreliability on Deployed URL.
--   **Recurrence count**: 3+ times in the previous session.
--   **Status**: USER VERIFICATION PENDING (Awaiting user deployment for any future issues).
+-   None. The previous recurring issue is obsolete due to the complete application rewrite.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Role-Based Access Control (RBAC)**: Advanced permissions implemented for the Master Admin role, requiring backend checks for sensitive operations like user deletion.
--   **Complex State Management (React)**: The  component now manages a large number of states for various reports, date filters, and sub-tabs.
--   **Data Visualization**: Implemented charts (bar, pie) using a charting library in React to visualize booking data.
--   **Pydantic Validation**: Handled a frontend bug caused by a Pydantic  on the backend by ensuring correct data types ( vs. empty string) are sent from the client.
--   **API Design**: Created new, complex endpoints for generating aggregated report data (e.g., ).
--   **Map Integration (Planned)**: Leaflet.js is the chosen library for the upcoming map feature.
+-   **Multi-Tenancy**: The core concept of serving multiple client organizations (tenants) from a single application instance.
+-   **Data Isolation**: Using  on all database records and FastAPI middleware to ensure queries are always scoped to the active tenant.
+-   **Role-Based Access Control (RBAC)**: A hierarchical system of permissions with platform-level roles () and tenant-level roles (, , ).
+-   **JWT with Tenant Context**: The authentication token or server-side session contains the , , and the  to enforce security on every request.
+-   **React Context API**: Used extensively in  to manage global user session, active tenant, and roles across the frontend application.
 
 **key DB schema**
--   **users**: Modified to include .
--   **cars**: Modified to include .
--   **bookings**: Modified to include .
+-   **tenants**: 
+-   **users**: 
+-   **memberships**: 
+-   **vehicles**: 
+-   **bookings**: 
+-   **audit_logs**: 
 
 **changes in tech stack**
--   None, but Leaflet.js is planned for the next feature.
+-   None. The stack remains FastAPI, React, and MongoDB, but the application architecture built on it is fundamentally different.
 
 **All files of reference**
--   : Major changes to add Master Admin logic, new reporting endpoints, and update booking/user models.
--   : Became extremely large. Contains logic for all new reports, charts, date filters, Master Admin UI, and the Add Car bug fix.
--   : Contains logic for the My Bookings view, conflict alert, and Double up call checkbox.
--   : Updated to display the crown icon and Master Admin title.
--   : New file for the copyright and legal links.
--   : New page displaying the terms of service.
--   : New file containing license text.
--   : Updated to include the new  route and render the .
+-   : The new heart of the backend, containing all multi-tenant API logic.
+-   : Critical file for security, handles tenant context injection and role enforcement.
+-   : Defines the core data structures for tenants, users, and memberships.
+-   : Manages the entire frontend session state for the multi-tenant app.
+-   : The UI for the Franchise Command Centre.
+-   : Contains the new routing logic with protected routes for platform and tenant contexts.
+-   : The document outlining the security and tenant isolation model.
 
 **Areas that need refactoring**:
--   : This file is now critically oversized and complex. It handles user management, car management, approvals, and multiple complex, stateful reports. It urgently needs to be broken down into smaller components (e.g., , , ).
--   : This file is also very large and could be broken down, especially the booking form and calendar rendering logic.
+-   ****: This entire file is legacy from the single-tenant application. It is non-functional and must be completely rewritten to serve as the dashboard for  and  roles within the new multi-tenant architecture.
+-   ****: Also a legacy file that needs to be rewritten to fetch and display data using the new tenant-scoped API endpoints and auth context.
 
 **key api endpoints**
--   : (New) Secure endpoint for Master Admin to delete other admins, requiring password verification.
--   : (New) Provides detailed data on car availability for a given day, including free time slots.
--   : (Modified) Now accepts  and  query parameters.
--   : (Modified) Now includes  data.
--   : (Modified) Now includes  in the response.
--   : (Modified) Response now includes  status.
--   : (Modified) Protected to prevent changing the Master Admin's role.
--   : (Modified) Protected to prevent regular admins from resetting the Master Admin's password.
+-   : (New) Creates a new tenant (Super Admin only).
+-   : (New) Suspends or reactivates a tenant.
+-   : (New) Allows Super Admin to assume a role within a tenant for support.
+-   : (New) Tenant-scoped endpoint to get vehicles for the active tenant.
+-   : (New) Tenant-scoped endpoint to get bookings for the active tenant.
+-   : (Modified) Returns user info, list of tenant memberships, and an access token.
+-   : (Modified) Returns the current user's context, including active role and tenant.
 
 **Critical Info for New Agent**
--   **Master Admin**: The user  is the Master Admin with special powers. All user management UI and backend logic must respect these permissions.
--   **Deployment Blocker**: Before debugging user-reported issues, ALWAYS confirm they have deployed the latest code and are not testing an outdated production version. This has been a recurring problem.
--   **Monolithic Components**: Be extremely cautious when editing . It is very large and prone to side effects. A refactor should be proposed as a future task after completing the user's immediate requests.
--   **Report Complexity**: The reports are now highly complex, with interdependent state variables for dates and filters. Trace data flow carefully from the backend API through the frontend state to the UI rendering.
+-   **Total Architectural Shift**: The application is no longer a simple fleet manager. It is a multi-tenant SaaS platform. Do not refer to the old logic. All new development must respect the tenant isolation model.
+-   **Current Blocker**: The backend authorization is broken due to the incomplete role refactoring (see ). This must be fixed before any other work can proceed.
+-   **Legacy Frontend Pages**: Be aware that  and  are relics of the old application and are completely non-functional. They need to be rebuilt, not patched.
 
 **documents and test reports created in this job**
--    (Updated multiple times)
--    (For My Bookings and conflict alert features)
 -   
+-    (overwritten with multi-tenancy requirements)
 
 **Last 10 User Messages and any pending HUMAN messages**
--   **10. please add this to all of my deployed apps**: User asked to apply the copyright footer to other apps. Agent clarified it can only modify the current app. (Status: Answered)
--   **9. Addi license terms and a Terms of Service document...**: User requested a ToS page. (Status: COMPLETED)
--   **8. admins have mentioned the add a car feature hasnt been working..."**: User reported a bug with adding new cars. (Status: COMPLETED/FIXED)
--   **7. "when a car is being booked, I want a check box that asks the staff, Double up call?..."**: User requested the double-up feature and major report enhancements. (Status: PARTIALLY COMPLETED - Double up checkbox and some reports done, but more requested in same message)
--   **6. "url for this app?"**: User asked for the URL. (Status: Answered)
--   **5. "changes to be made, staff can edit each of their own individual bookings..."**: User requested several complex booking edit permissions. (Status: NOT STARTED)
--   **4. "URL for this app"**: User asked for the URL. (Status: Answered)
--   **3. "Please make a google maps style feature..."**: User requested a live staff location tracking map. (Status: NOT STARTED - This is the current `last working item`)
--   **2. "Addi license terms and a Terms of Service document..."**: Repeated request.
--   **1. "admins have mentioned the add a car feature hasnt been working...**: Repeated request.
+-   **10**: User provides requirements for multi-tenancy, including roles and a franchise command centre to pause accounts. (Status: IN PROGRESS)
+-   **9**: User confirms project direction: fresh start,  account, and full implementation of multi-tenancy. (Status: ACKNOWLEDGED)
+-   **8**: Agent asks for confirmation on the multi-tenancy approach. (Status: ANSWERED)
+-   **7**: User requests to build a multi-tenant SaaS platform with strict data isolation. (Status: IN PROGRESS)
+-   **6**: Agent provides summary of Admin UI cleanup. (Status: COMPLETED)
+-   **5**: User asks for a cleaner Admin Panel UI. (Status: COMPLETED)
+-   **4**: Agent provides summary of the Booking Locations Map. (Status: COMPLETED)
+-   **3**: User provides credentials for a new staff account. (Status: COMPLETED)
+-   **2**: Agent provides login credentials and URL. (Status: ANSWERED)
+-   **1**: User asks to remove the staff tracker and replace it with a map that pins booking locations by Eircode. (Status: COMPLETED)
 
 **Project Health Check:**
--   **Broken**: The user's live production site is likely significantly outdated, missing numerous critical features and bug fixes.
--   **Mocked**: The new Terms of Service page contains placeholder legal text and requires review by a qualified attorney.
+-   **Broken**:
+    -   The backend authorization layer is non-functional due to the incomplete role refactoring. Tenant admins cannot perform any actions.
+    -   The primary tenant-facing application pages (, , etc.) are legacy code and do not work with the new architecture.
+-   **Mocked**: None.
 
 **3rd Party Integrations**
--   **wttr.in**: Fetches weather data. No key required.
--   **Web Push (pywebpush)**: Sends push notifications.
--   **Leaflet.js**: (Planned) For displaying the staff location map. Free, no API key required.
+-   **Leaflet.js**: Used for the OpenStreetMap view in the Booking Locations Map.
+-   **Geopy**: Used on the backend to geocode Eircodes for the booking map.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES, for the My Bookings feature.
+-   **Testing agent used after significant changes**: NO. The massive multi-tenancy refactor was only tested manually with  and screenshots, which is insufficient.
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
--   **Known regressions**: None in the preview environment. The main regression exists on the user's outdated production deployment.
+-   **Known regressions**: The entire tenant-facing application from the previous version is non-functional.
 
 **Credentials to test flow:**
 | Role | Email | Password |
 | :--- | :--- | :--- |
-| 👑 Master Admin |  |  |
-| Admin |  |  |
-| Admin |  | *(unknown, can be reset)* |
-| Staff |  |  |
+| 👑 Super Admin |  |  |
 
 **What agent forgot to execute**
--   The agent has a backlog of user requests that were acknowledged but not started:
-    1.  The full set of **booking edit permissions** (staff editing their own, admin editing recurring, comments on rejection).
-    2.  The older tasks from the previous handoff: creating **PDF training manuals** and a **printable QR code sheet**.</analysis>
+-   **Automated Tenant Isolation Tests**: A critical, non-negotiable security requirement from the user's PRD that was not implemented.
+-   **Data Cleanup**: The agent noted that old data from the single-tenant app was still polluting the new database but did not perform the cleanup.</analysis>

@@ -102,6 +102,55 @@ const PlatformAdmin = () => {
     }
   };
 
+  // Delete tenant state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [tenantToDelete, setTenantToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const handleDeleteTenant = async () => {
+    if (!tenantToDelete || !deletePassword) return;
+    
+    setDeleteLoading(true);
+    try {
+      await axios.delete(`${API}/platform/tenants/${tenantToDelete.id}`, {
+        data: { password: deletePassword, confirm: true }
+      });
+      setSuccess(`Tenant "${tenantToDelete.name}" has been permanently deleted`);
+      setShowDeleteModal(false);
+      setDeletePassword('');
+      setTenantToDelete(null);
+      setSelectedTenant(null);
+      fetchData();
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail;
+      setError(typeof errorMsg === 'string' ? errorMsg : 'Failed to delete tenant');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // Reset password state
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [resetPasswordData, setResetPasswordData] = useState({ userId: '', userEmail: '', newPassword: '', adminPassword: '' });
+
+  const handleResetPassword = async () => {
+    if (!resetPasswordData.userId || !resetPasswordData.newPassword || !resetPasswordData.adminPassword) return;
+    
+    try {
+      await axios.post(`${API}/platform/users/${resetPasswordData.userId}/reset-password`, {
+        new_password: resetPasswordData.newPassword,
+        admin_password: resetPasswordData.adminPassword
+      });
+      setSuccess(`Password reset successfully for ${resetPasswordData.userEmail}`);
+      setShowResetPasswordModal(false);
+      setResetPasswordData({ userId: '', userEmail: '', newPassword: '', adminPassword: '' });
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail;
+      setError(typeof errorMsg === 'string' ? errorMsg : 'Failed to reset password');
+    }
+  };
+
   const handleImpersonate = async (tenantId) => {
     if (!window.confirm('You are about to impersonate this tenant. All actions will be logged.')) return;
     

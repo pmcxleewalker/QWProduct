@@ -307,11 +307,6 @@ const AppContent = () => {
                   <Route path="/bookings" element={<Bookings />} />
                   <Route path="/assistance" element={<Assistance />} />
                   <Route path="/mileage" element={<MileageUpdate />} />
-                  <Route path="/reports" element={
-                    <TenantProtectedRoute adminOnly={true}>
-                      <Reports />
-                    </TenantProtectedRoute>
-                  } />
                   <Route
                     path="/admin"
                     element={

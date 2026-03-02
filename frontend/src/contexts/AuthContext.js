@@ -39,7 +39,10 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.get(`${API}/auth/me`);
       const data = response.data;
       
-      setUser(data.user);
+      // Include role from current_context in user object
+      const role = data.current_context?.role;
+      const userWithRole = { ...data.user, role };
+      setUser(userWithRole);
       
       // Handle tenant context
       if (data.memberships && data.memberships.length > 0) {
@@ -55,7 +58,6 @@ export const AuthProvider = ({ children }) => {
       }
       
       // Check if user needs to select tenant
-      const role = data.user?.role || data.current_context?.role;
       if (role === 'super_admin' || role === 'master_admin') {
         // Platform admins don't need tenant selection
         setNeedsTenantSelection(false);

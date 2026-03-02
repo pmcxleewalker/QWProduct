@@ -337,6 +337,9 @@ async def create_tenant(
     
     await db.tenants.insert_one(tenant)
     
+    # Remove MongoDB's _id before returning
+    tenant.pop('_id', None)
+    
     # Log audit event
     await audit_service.log_tenant_action(
         actor_user_id=context.user_id,

@@ -89,7 +89,9 @@ const SetupWizard = () => {
   const handleComplete = () => {
     // Mark setup as complete in localStorage
     localStorage.setItem(`setup_complete_${activeTenant?.tenant_id}`, 'true');
-    navigate('/');
+    // Redirect to tenant-scoped dashboard
+    const dashboardPath = activeTenant?.tenant_slug ? `/${activeTenant.tenant_slug}` : '/';
+    navigate(dashboardPath);
   };
 
   return (

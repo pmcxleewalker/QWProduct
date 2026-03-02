@@ -3239,114 +3239,145 @@ async def send_push_to_user(user_email: str, title: str, body: str, url: str = "
             logging.error(f"Push notification error: {ex}")
 
 
-# ==================== STAFF LOCATION TRACKING ENDPOINTS ====================
+# ==================== BOOKING LOCATIONS MAP ENDPOINTS ====================
 
-class StaffLocationUpdate(BaseModel):
-    latitude: float
-    longitude: float
-    accuracy: Optional[float] = None  # GPS accuracy in meters
-    heading: Optional[float] = None   # Direction of travel (degrees from north)
-    speed: Optional[float] = None     # Speed in m/s
+# Irish Eircode routing key to approximate coordinates mapping
+# Eircodes have format: A65 F4E2 where first 3 chars are the routing key
+EIRCODE_COORDS = {
+    # Kerry
+    "V92": (52.2593, -9.7019),   # Tralee
+    "V93": (51.9478, -9.7073),   # Killarney
+    "V31": (51.8959, -9.5423),   # Kenmare
+    "V23": (51.6802, -9.4509),   # Bantry (West Cork)
+    # Cork
+    "P85": (51.8985, -8.4756),   # Cork City
+    "P72": (51.9000, -8.4000),   # Cork suburbs
+    "P61": (51.9331, -8.4773),   # Cork North
+    # Limerick
+    "V94": (52.6638, -8.6267),   # Limerick City
+    # Dublin
+    "D01": (53.3498, -6.2603),   # Dublin 1
+    "D02": (53.3382, -6.2591),   # Dublin 2
+    "D03": (53.3294, -6.2470),   # Dublin 3
+    "D04": (53.3200, -6.2300),   # Dublin 4
+    # Galway
+    "H91": (53.2707, -9.0568),   # Galway City
+    # Default Ireland center
+    "DEFAULT": (53.1424, -7.6921)
+}
 
-class StaffLocation(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_id: str
-    user_email: str
-    user_name: str
-    latitude: float
-    longitude: float
-    accuracy: Optional[float] = None
-    heading: Optional[float] = None
-    speed: Optional[float] = None
-    is_sharing: bool = True
-    last_updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-
-@api_router.post("/location/update")
-async def update_staff_location(location: StaffLocationUpdate, current_user: dict = Depends(get_current_user)):
-    """Update current user's location (staff members can share their location)"""
-    user_email = current_user.get('email', '')
-    user_name = user_email.split('@')[0] if user_email else 'Unknown'
+def get_coords_from_eircode(eircode: str) -> tuple:
+    """Extract approximate coordinates from an Eircode"""
+    if not eircode:
+        return None
     
-    location_data = {
-        "user_id": current_user['id'],
-        "user_email": user_email,
-        "user_name": user_name,
-        "latitude": location.latitude,
-        "longitude": location.longitude,
-        "accuracy": location.accuracy,
-        "heading": location.heading,
-        "speed": location.speed,
-        "is_sharing": True,
-        "last_updated": datetime.now(timezone.utc).isoformat()
+    # Clean the eircode - remove spaces and convert to uppercase
+    clean_code = eircode.replace(" ", "").upper()
+    
+    # Get the routing key (first 3 characters)
+    if len(clean_code) >= 3:
+        routing_key = clean_code[:3]
+        if routing_key in EIRCODE_COORDS:
+            return EIRCODE_COORDS[routing_key]
+    
+    # Try first 2 characters for Dublin
+    if len(clean_code) >= 2:
+        routing_key = clean_code[:2]
+        if routing_key == "D0":
+            return EIRCODE_COORDS.get("D01", EIRCODE_COORDS["DEFAULT"])
+    
+    return EIRCODE_COORDS["DEFAULT"]
+
+
+@api_router.get("/bookings/locations")
+async def get_booking_locations_for_date(
+    date: str = Query(..., description="Date to get booking locations for (YYYY-MM-DD)"),
+    car_id: Optional[str] = Query(None, description="Filter by specific car"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all booking locations for a specific date with coordinates"""
+    
+    # Get all approved bookings for the date
+    start_of_day = f"{date}T00:00:00"
+    end_of_day = f"{date}T23:59:59"
+    
+    query = {
+        "status": "approved",
+        "$or": [
+            {"start_time": {"$gte": start_of_day, "$lte": end_of_day}},
+            {"end_time": {"$gte": start_of_day, "$lte": end_of_day}},
+            {"start_time": {"$lte": start_of_day}, "end_time": {"$gte": end_of_day}}
+        ]
     }
     
-    # Upsert - update existing or insert new
-    await db.staff_locations.update_one(
-        {"user_id": current_user['id']},
-        {"$set": location_data},
-        upsert=True
-    )
+    if car_id:
+        query["car_id"] = car_id
     
-    return {"message": "Location updated successfully"}
-
-
-@api_router.post("/location/stop-sharing")
-async def stop_sharing_location(current_user: dict = Depends(get_current_user)):
-    """Stop sharing location"""
-    await db.staff_locations.update_one(
-        {"user_id": current_user['id']},
-        {"$set": {"is_sharing": False}}
-    )
-    return {"message": "Location sharing stopped"}
-
-
-@api_router.get("/location/my-status")
-async def get_my_location_status(current_user: dict = Depends(get_current_user)):
-    """Get current user's location sharing status"""
-    location = await db.staff_locations.find_one(
-        {"user_id": current_user['id']}, 
-        {"_id": 0}
-    )
+    bookings = await db.bookings.find(query, {"_id": 0}).to_list(500)
+    
+    # Get car info
+    cars = await db.cars.find({}, {"_id": 0}).to_list(100)
+    car_map = {car['id']: car for car in cars}
+    
+    # Build location pins
+    pins = []
+    for booking in bookings:
+        location = booking.get('location', '')
+        coords = get_coords_from_eircode(location)
+        
+        car = car_map.get(booking.get('car_id'), {})
+        
+        # Parse times
+        try:
+            start_time = booking.get('start_time', '')
+            end_time = booking.get('end_time', '')
+            if isinstance(start_time, str):
+                start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                start_display = start_dt.strftime('%H:%M')
+            else:
+                start_display = str(start_time)
+            if isinstance(end_time, str):
+                end_dt = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+                end_display = end_dt.strftime('%H:%M')
+            else:
+                end_display = str(end_time)
+        except:
+            start_display = str(booking.get('start_time', ''))
+            end_display = str(booking.get('end_time', ''))
+        
+        pin_data = {
+            "booking_id": booking.get('id'),
+            "car_id": booking.get('car_id'),
+            "car_name": car.get('name', 'Unknown'),
+            "car_registration": car.get('registration', ''),
+            "user_name": booking.get('user_name', 'Unknown'),
+            "location": location,
+            "purpose": booking.get('purpose', ''),
+            "start_time": start_display,
+            "end_time": end_display,
+            "is_recurring": booking.get('recurring_group_id') is not None,
+            "is_double_up_call": booking.get('is_double_up_call', False),
+            "has_coordinates": coords is not None,
+            "latitude": coords[0] if coords else None,
+            "longitude": coords[1] if coords else None
+        }
+        pins.append(pin_data)
+    
+    # Group by location for summary
+    location_summary = {}
+    for pin in pins:
+        loc = pin['location'] or 'No location'
+        if loc not in location_summary:
+            location_summary[loc] = 0
+        location_summary[loc] += 1
+    
     return {
-        "is_sharing": location.get('is_sharing', False) if location else False,
-        "last_updated": location.get('last_updated') if location else None
-    }
-
-
-@api_router.get("/admin/staff-locations")
-async def get_all_staff_locations(current_user: dict = Depends(get_current_admin_user)):
-    """Admin: Get all staff locations who are actively sharing"""
-    # Only return locations that are actively being shared and updated within last 30 minutes
-    thirty_minutes_ago = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
-    
-    locations = await db.staff_locations.find({
-        "is_sharing": True,
-        "last_updated": {"$gte": thirty_minutes_ago}
-    }, {"_id": 0}).to_list(500)
-    
-    # Also get users who have stopped sharing or haven't updated recently
-    all_users = await db.users.find({"is_active": True}, {"_id": 0, "id": 1, "email": 1, "role": 1}).to_list(500)
-    active_user_ids = set(loc['user_id'] for loc in locations)
-    
-    # Find users not currently sharing
-    inactive_users = []
-    for user in all_users:
-        if user['id'] not in active_user_ids:
-            inactive_users.append({
-                "user_id": user['id'],
-                "user_email": user['email'],
-                "user_name": user['email'].split('@')[0],
-                "is_sharing": False,
-                "role": user.get('role', 'staff')
-            })
-    
-    return {
-        "active_locations": locations,
-        "inactive_users": inactive_users,
-        "total_active": len(locations),
-        "total_inactive": len(inactive_users)
+        "date": date,
+        "total_bookings": len(pins),
+        "pins": pins,
+        "location_summary": location_summary,
+        "pins_with_coords": len([p for p in pins if p['has_coordinates']]),
+        "pins_without_coords": len([p for p in pins if not p['has_coordinates']])
     }
 
 

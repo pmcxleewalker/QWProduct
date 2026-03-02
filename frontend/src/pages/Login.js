@@ -47,10 +47,21 @@ const Login = () => {
           navigate('/');
         }
       } else {
-        setError(result.error || 'Login failed. Please check your credentials.');
+        // Ensure error is a string
+        const errorMsg = typeof result.error === 'string' 
+          ? result.error 
+          : 'Login failed. Please check your credentials.';
+        setError(errorMsg);
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
+      const detail = err.response?.data?.detail;
+      let errorMsg = 'Login failed. Please check your credentials.';
+      if (typeof detail === 'string') {
+        errorMsg = detail;
+      } else if (Array.isArray(detail)) {
+        errorMsg = detail.map(e => e.msg || String(e)).join(', ');
+      }
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

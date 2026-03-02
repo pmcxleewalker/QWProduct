@@ -326,13 +326,6 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* Location Sharing Section - Staff Only */}
-      {user?.role !== 'admin' && (
-        <div className="mb-4">
-          <LocationSharingToggle />
-        </div>
-      )}
-
       {/* Compliance Alerts Section - Admin Only */}
       {user?.role === 'admin' && complianceAlerts.length > 0 && (
         <div className="mb-4 bg-red-50 border-2 border-red-300 rounded-lg p-3 sm:p-4">

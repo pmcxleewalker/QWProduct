@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Building2, ChevronRight, Shield, AlertTriangle } from 'lucide-react';
+import { Building2, ChevronRight, Shield, AlertTriangle, Crown } from 'lucide-react';
 
 const TenantSelector = () => {
-  const { tenants, selectTenant, user, logout } = useAuth();
+  const { tenants, selectTenant, user, logout, isPlatformAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  // Redirect platform admins to platform page
+  useEffect(() => {
+    if (isPlatformAdmin()) {
+      navigate('/platform');
+    }
+  }, [isPlatformAdmin, navigate]);
 
   const handleSelectTenant = async (tenantId) => {
     try {

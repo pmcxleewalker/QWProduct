@@ -112,6 +112,8 @@ When creating a new tenant:
 - `vehicles`: id, tenant_id, name, registration, status
 - `bookings`: id, tenant_id, car_id, user_name, start_time, end_time
 - `audit_events`: id, actor_user_id, tenant_id, action, resource_type
+- `invoices`: id, invoice_number, tenant_id, items[], subtotal, tax_rate, tax_amount, total, status, due_date
+- `company_settings`: id, company_name, address, tax_id, bank_details, invoice_prefix, currency
 
 ## Test Credentials
 

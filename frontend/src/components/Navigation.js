@@ -93,10 +93,13 @@ const Navigation = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Fetch lift requests for notifications
   useEffect(() => {
-    if (!user) return;
-
     const fetchLiftRequests = async () => {
+      // Skip for platform admins without tenant context
+      if (!activeTenant?.tenant_id) return;
+      
+      if (isTenantAdmin()) {
       try {
         const [countRes, requestsRes] = await Promise.all([
           liftRequestAPI.getCount(),

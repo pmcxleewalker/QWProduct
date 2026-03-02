@@ -662,6 +662,15 @@ const Reports = () => {
                           <td className="px-4 py-3 text-sm">{new Date(invoice.due_date).toLocaleDateString()}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => downloadPdf(`/platform/invoices/${invoice.id}/pdf`, `invoice_${invoice.invoice_number}.pdf`)}
+                                disabled={downloadingPdf}
+                                className="p-1.5 text-gray-600 hover:bg-gray-100 rounded"
+                                title="Download PDF"
+                                data-testid={`download-invoice-${invoice.id}-btn`}
+                              >
+                                <FileText size={16} />
+                              </button>
                               {invoice.status === 'draft' && (
                                 <button
                                   onClick={() => handleUpdateInvoiceStatus(invoice.id, 'sent')}

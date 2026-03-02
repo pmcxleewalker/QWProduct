@@ -307,7 +307,7 @@ const Navigation = () => {
             </div>
             
             {/* Push Notifications Toggle - Mobile (Staff only) */}
-            {isSupported && !isAdmin() && (
+            {isSupported && !isTenantAdmin() && (
               <button
                 onClick={handlePushToggle}
                 className={`flex items-center p-2 rounded-md transition-colors ${

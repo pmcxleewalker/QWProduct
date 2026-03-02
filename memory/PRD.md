@@ -187,7 +187,8 @@ When creating a new tenant:
 ```
 
 ## Testing
-- Backend: 17/17 tests passed (100%)
+- Backend: 25/25 PDF & Invoice tests passed (100%)
+- Backend: 17/17 tenant isolation tests passed (100%)
 - Frontend: All UI flows verified
 - Tenant isolation: Verified via pytest and manual testing
-- Test reports: `/app/test_reports/iteration_5.json`
+- Test reports: `/app/test_reports/iteration_6.json`

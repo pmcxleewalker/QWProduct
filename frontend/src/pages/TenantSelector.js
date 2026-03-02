@@ -75,7 +75,26 @@ const TenantSelector = () => {
 
         {/* Tenant list */}
         <div className="p-6 space-y-3">
-          {tenants.length === 0 ? (
+          {/* Platform Admin - Go to Command Centre */}
+          {isPlatformAdmin() && (
+            <button
+              onClick={() => navigate('/platform')}
+              className="w-full p-4 rounded-xl border-2 border-blue-500 bg-blue-50 hover:bg-blue-100 transition-all text-left flex items-center justify-between"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-blue-600">
+                  <Crown size={24} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Franchise Command Centre</h3>
+                  <p className="text-sm text-gray-500">Manage all franchises and users</p>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-blue-600" />
+            </button>
+          )}
+
+          {tenants.length === 0 && !isPlatformAdmin() ? (
             <div className="text-center py-8 text-gray-500">
               <Shield size={40} className="mx-auto mb-3 opacity-50" />
               <p>You don't have access to any organizations.</p>

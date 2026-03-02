@@ -120,6 +120,7 @@ When creating a new tenant:
 - [x] Automated tenant isolation tests (pytest)
 - [x] Data cleanup script (removed orphaned records)
 - [x] Quick Setup Wizard for new Master Admins (onboarding flow)
+- [x] Path-based branded tenant URLs (e.g., quick-wing.com/tenant-slug/login)
 
 ### Pending (P1)
 - [ ] Billing integration (Stripe) for subscription management

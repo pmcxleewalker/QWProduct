@@ -476,13 +476,25 @@ const Reports = () => {
                 {/* Actions */}
                 <div className="flex justify-between items-center">
                   <h3 className="font-semibold text-gray-900">Invoices</h3>
-                  <button
-                    onClick={() => setShowCreateInvoice(true)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    <Plus size={18} />
-                    <span>Create Invoice</span>
-                  </button>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => downloadPdf('/platform/reports/invoices/pdf', 'invoices_report.pdf')}
+                      disabled={downloadingPdf}
+                      className="flex items-center space-x-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                      data-testid="export-invoices-report-pdf-btn"
+                    >
+                      <Download size={16} />
+                      <span>{downloadingPdf ? 'Downloading...' : 'Export Report'}</span>
+                    </button>
+                    <button
+                      onClick={() => setShowCreateInvoice(true)}
+                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      data-testid="create-invoice-btn"
+                    >
+                      <Plus size={18} />
+                      <span>Create Invoice</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Create Invoice Form */}

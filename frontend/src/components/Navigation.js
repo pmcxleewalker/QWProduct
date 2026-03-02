@@ -1,17 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Megaphone, Crown } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Megaphone, Crown, Building2, Eye, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { liftRequestAPI } from '../api/api';
 import ChangePasswordModal from './ChangePasswordModal';
 import usePushNotifications from '../hooks/usePushNotifications';
 
-// Master Admin email
-const MASTER_ADMIN_EMAIL = 'carlyodonovan@bluebirdcare.ie';
-
 const Navigation = () => {
   const location = useLocation();
-  const { user, logout, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout, isTenantAdmin, isPlatformAdmin, isImpersonating, stopImpersonation, activeTenant } = useAuth();
   const [liftRequestCount, setLiftRequestCount] = useState(0);
   const [liftRequests, setLiftRequests] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -22,39 +20,26 @@ const Navigation = () => {
   const deploymentRef = useRef(null);
   const seenRequestIds = useRef(new Set());
   
-  // Check if current user is master admin
-  const isMasterAdmin = user?.email === MASTER_ADMIN_EMAIL;
-  
-  // Deployment updates for admins - update this array when deploying new features
+  // Deployment updates for admins
   const deploymentUpdates = [
+    {
+      date: '2 Mar 2026',
+      title: 'Multi-Tenant SaaS Platform',
+      changes: [
+        '🏢 Multi-franchise support with tenant isolation',
+        '👑 Super Admin & Master Admin roles',
+        '🔐 Strict data isolation per franchise',
+        '📊 Platform Command Centre for management',
+        '⏸️ Tenant suspension for payment management'
+      ]
+    },
     {
       date: '16 Feb 2026',
       title: 'Master Admin & Reports Update',
       changes: [
         '👑 Master Admin role for Carly O\'Donovan',
         '📊 Enhanced reports with date filtering',
-        '📈 Charts view in Booking Details Report',
-        '📅 Daily availability by location (Tralee/Bantry)',
-        '⚠️ Booking conflict alerts when creating bookings'
-      ]
-    },
-    {
-      date: '5 Feb 2026',
-      title: 'Calendar & Reports Update',
-      changes: [
-        '✅ Recurring bookings now show in purple on calendar',
-        '✅ New Live Daily Availability Report in Admin > Reports',
-        '✅ Push notifications disabled for admin accounts'
-      ]
-    },
-    {
-      date: '15 Jan 2026',
-      title: 'Booking System Fixes',
-      changes: [
-        '✅ Fixed bookings not appearing on calendar',
-        '✅ QR codes now link directly to booking page',
-        '✅ Web push notifications for staff',
-        '✅ Irish date format (DD/MM/YYYY)'
+        '📈 Charts view in Booking Details Report'
       ]
     }
   ];

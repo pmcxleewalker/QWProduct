@@ -35,6 +35,9 @@ class TenantCreate(BaseModel):
     name: str
     slug: str  # URL-friendly identifier
     plan: TenantPlan = TenantPlan.STARTER
+    # Optional: Master Admin credentials. If not provided, will be auto-generated
+    master_admin_email: Optional[str] = None
+    master_admin_name: Optional[str] = None
     
 
 class TenantUpdate(BaseModel):

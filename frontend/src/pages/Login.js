@@ -56,6 +56,12 @@ const Login = () => {
               {process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}
             </h1>
             <p className="text-blue-100 text-sm mt-1">Fleet Management Platform</p>
+            {tenantInfo && (
+              <div className="mt-3 inline-flex items-center px-3 py-1 bg-white/20 rounded-full">
+                <Building2 size={14} className="mr-2 text-blue-100" />
+                <span className="text-sm text-white font-medium">{tenantInfo.name}</span>
+              </div>
+            )}
           </div>
 
           <div className="p-8">

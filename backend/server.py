@@ -419,10 +419,10 @@ async def create_tenant(
         ip_address=request.client.host if request and request.client else None
     )
     
-    # Build the tenant login URL
-    # Format: /{tenant_slug}/login or the main login with tenant context
-    frontend_url = os.environ.get('FRONTEND_URL', 'https://quickwing.com')
-    tenant_login_url = f"{frontend_url}/login?tenant={tenant_data.slug}"
+    # Build the tenant login URL - Path-based branded URL
+    # Format: https://quick-wing.com/{tenant_slug}/login
+    base_domain = os.environ.get('QUICKWING_DOMAIN', 'quick-wing.com')
+    tenant_login_url = f"https://{base_domain}/{tenant_data.slug}/login"
     
     response = {
         "message": "Tenant created successfully",

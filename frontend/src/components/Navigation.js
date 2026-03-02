@@ -72,7 +72,6 @@ const Navigation = () => {
   // Only show Admin for admin users
   if (isTenantAdmin()) {
     navItems.push({ path: '/admin', icon: Settings, label: 'Admin' });
-    navItems.push({ path: '/reports', icon: Receipt, label: 'Reports' });
   }
 
   // Close dropdown when clicking outside

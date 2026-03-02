@@ -1012,6 +1012,9 @@ async def list_all_users(
             user["tenant_count"] = membership_count
     
     return {"users": users, "total": len(users)}
+
+
+@api_router.get("/platform/stats")
 async def get_platform_stats(context: TenantContext = Depends(require_platform_admin)):
     """Get overall platform statistics"""
     total_tenants = await db.tenants.count_documents({})

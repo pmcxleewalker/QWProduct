@@ -50,6 +50,10 @@ from models.resources import (
     MessageCreate, Message, TodoCreate, Todo,
     LiftRequestCreate, LiftRequest
 )
+from models.invoice import (
+    Invoice, InvoiceCreate, InvoiceUpdate, InvoiceStatus, InvoiceItem,
+    CompanySettings, CompanySettingsUpdate
+)
 from middleware.tenant import (
     get_tenant_context, require_tenant_context, require_admin,
     require_super_admin, require_platform_admin,

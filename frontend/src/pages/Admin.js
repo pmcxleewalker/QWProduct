@@ -5,7 +5,7 @@ import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlo
 import { useAuth } from '../contexts/AuthContext';
 
 // Lazy load the map component to avoid loading Leaflet until needed
-const StaffLocationMap = lazy(() => import('../components/StaffLocationMap'));
+const BookingLocationsMap = lazy(() => import('../components/BookingLocationsMap'));
 
 // Helper function to get username from email (removes @domain.com)
 const getUsername = (email) => {

@@ -78,6 +78,22 @@ When creating a new tenant:
 - `POST /api/platform/stop-impersonation` - End impersonation
 - `GET /api/platform/stats` - Platform statistics
 - `GET /api/platform/audit-log` - Audit events
+- `GET /api/platform/settings` - Get company settings
+- `PUT /api/platform/settings` - Update company settings
+
+### Invoices & Reports (Super Admin)
+- `POST /api/platform/invoices` - Create invoice
+- `GET /api/platform/invoices` - List invoices (with filters)
+- `GET /api/platform/invoices/{id}` - Get invoice details
+- `PUT /api/platform/invoices/{id}` - Update invoice status
+- `DELETE /api/platform/invoices/{id}` - Delete draft invoice
+- `GET /api/platform/invoices/{id}/pdf` - Download invoice PDF
+- `GET /api/platform/reports/executive-summary` - Get executive summary
+- `GET /api/platform/reports/executive-summary/pdf` - Download executive summary PDF
+- `GET /api/platform/reports/franchises` - Get franchises report
+- `GET /api/platform/reports/franchises/pdf` - Download franchises report PDF
+- `GET /api/platform/reports/invoices` - Get invoices report
+- `GET /api/platform/reports/invoices/pdf` - Download invoices report PDF
 
 ### Tenant-Scoped (Requires tenant context)
 - `GET /api/vehicles` - List vehicles

@@ -879,7 +879,7 @@ const PlatformAdmin = () => {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                       <input
-                        type="password"
+                        type="text"
                         value={newUser.password}
                         onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -893,6 +893,7 @@ const PlatformAdmin = () => {
                         value={newUser.name}
                         onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        required
                       />
                     </div>
                     <div>
@@ -912,15 +913,16 @@ const PlatformAdmin = () => {
                   </div>
                   {(newUser.role === 'staff' || newUser.role === 'admin') && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Tenant</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tenant</label>
                       <select
                         value={newUser.tenant_id}
                         onChange={(e) => setNewUser({ ...newUser, tenant_id: e.target.value })}
                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        required
                       >
-                        <option value="">Select tenant...</option>
-                        {tenants.map(t => (
-                          <option key={t.id} value={t.id}>{t.name}</option>
+                        <option value="">Select a tenant</option>
+                        {tenants.map(tenant => (
+                          <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
                         ))}
                       </select>
                     </div>
@@ -944,10 +946,73 @@ const PlatformAdmin = () => {
               </div>
             )}
 
-            <div className="bg-white rounded-xl p-6 shadow-sm border text-center text-gray-500">
-              <Users size={40} className="mx-auto mb-3 opacity-50" />
-              <p>User management available per-tenant</p>
-              <p className="text-sm">Select a tenant to manage its users</p>
+            {/* All Users List */}
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tenants</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {allUsers.map(user => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-blue-600 font-medium text-sm">
+                              {user.name?.charAt(0) || user.email?.charAt(0)}
+                            </span>
+                          </div>
+                          <span className="font-medium text-gray-900">{user.name || 'N/A'}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-1 bg-gray-100 rounded text-xs">
+                          {user.tenant_count || 0} tenant(s)
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          user.is_active !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          {user.is_active !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => {
+                            setResetPasswordData({
+                              userId: user.id,
+                              userEmail: user.email,
+                              newPassword: '',
+                              adminPassword: ''
+                            });
+                            setShowResetPasswordModal(true);
+                          }}
+                          className="flex items-center space-x-1 px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                          title="Reset Password"
+                        >
+                          <Key size={14} />
+                          <span className="text-xs">Reset Password</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {allUsers.length === 0 && (
+                <div className="p-8 text-center text-gray-500">
+                  <Users size={40} className="mx-auto mb-3 opacity-50" />
+                  <p>No users found</p>
+                </div>
+              )}
             </div>
           </div>
         )}

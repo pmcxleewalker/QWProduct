@@ -51,7 +51,7 @@ from models.resources import (
     LiftRequestCreate, LiftRequest
 )
 from middleware.tenant import (
-    get_tenant_context, require_tenant_context, require_tenant_admin,
+    get_tenant_context, require_tenant_context, require_admin,
     require_super_admin, require_platform_admin,
     validate_resource_tenant, TenantQueryBuilder
 )
@@ -530,7 +530,7 @@ async def impersonate_tenant(
     token_data = {
         "sub": context.user_id,
         "email": context.user_email,
-        "role": UserRole.TENANT_ADMIN.value,  # Downgrade to tenant admin during impersonation
+        "role": UserRole.ADMIN.value,  # Downgrade to tenant admin during impersonation
         "tenant_id": tenant_id,
         "tenant_slug": tenant["slug"],
         "is_impersonating": True,
@@ -765,7 +765,7 @@ async def list_platform_users(
 async def create_tenant_user(
     user_data: UserCreate,
     role: UserRole = UserRole.STAFF,
-    context: TenantContext = Depends(require_tenant_admin),
+    context: TenantContext = Depends(require_admin),
     request: Request = None
 ):
     """Create a new user in the current tenant"""
@@ -787,7 +787,7 @@ async def create_tenant_user(
             "id": str(uuid.uuid4()),
             "user_id": existing["id"],
             "tenant_id": context.tenant_id,
-            "role": role.value if role in [UserRole.TENANT_ADMIN, UserRole.STAFF] else UserRole.STAFF.value,
+            "role": role.value if role in [UserRole.ADMIN, UserRole.STAFF] else UserRole.STAFF.value,
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         await db.memberships.insert_one(membership)
@@ -811,7 +811,7 @@ async def create_tenant_user(
         "id": str(uuid.uuid4()),
         "user_id": user_id,
         "tenant_id": context.tenant_id,
-        "role": role.value if role in [UserRole.TENANT_ADMIN, UserRole.STAFF] else UserRole.STAFF.value,
+        "role": role.value if role in [UserRole.ADMIN, UserRole.STAFF] else UserRole.STAFF.value,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.memberships.insert_one(membership)
@@ -859,12 +859,12 @@ async def list_tenant_users(
 async def update_user_role(
     user_id: str,
     role: UserRole,
-    context: TenantContext = Depends(require_tenant_admin),
+    context: TenantContext = Depends(require_admin),
     request: Request = None
 ):
     """Update a user's role within the tenant"""
-    # Only allow tenant_admin or staff roles
-    if role not in [UserRole.TENANT_ADMIN, UserRole.STAFF]:
+    # Only allow admin or staff roles
+    if role not in [UserRole.ADMIN, UserRole.STAFF]:
         raise HTTPException(status_code=400, detail="Invalid role for tenant user")
     
     membership = await db.memberships.find_one({
@@ -898,7 +898,7 @@ async def update_user_role(
 @api_router.delete("/tenant/users/{user_id}")
 async def remove_user_from_tenant(
     user_id: str,
-    context: TenantContext = Depends(require_tenant_admin),
+    context: TenantContext = Depends(require_admin),
     request: Request = None
 ):
     """Remove a user from the current tenant"""
@@ -932,7 +932,7 @@ async def remove_user_from_tenant(
 @api_router.post("/vehicles")
 async def create_vehicle(
     vehicle_data: VehicleCreate,
-    context: TenantContext = Depends(require_tenant_admin),
+    context: TenantContext = Depends(require_admin),
     request: Request = None
 ):
     """Create a new vehicle in the current tenant"""
@@ -1001,7 +1001,7 @@ async def get_vehicle(
 async def update_vehicle(
     vehicle_id: str,
     update_data: VehicleUpdate,
-    context: TenantContext = Depends(require_tenant_admin)
+    context: TenantContext = Depends(require_admin)
 ):
     """Update a vehicle"""
     query = TenantQueryBuilder.scope_by_id(context.tenant_id, vehicle_id)
@@ -1022,7 +1022,7 @@ async def update_vehicle(
 @api_router.delete("/vehicles/{vehicle_id}")
 async def delete_vehicle(
     vehicle_id: str,
-    context: TenantContext = Depends(require_tenant_admin),
+    context: TenantContext = Depends(require_admin),
     request: Request = None
 ):
     """Delete a vehicle"""
@@ -1172,7 +1172,7 @@ async def delete_booking(
 @api_router.post("/providers")
 async def create_provider(
     provider_data: ProviderCreate,
-    context: TenantContext = Depends(require_tenant_admin)
+    context: TenantContext = Depends(require_admin)
 ):
     """Create a service provider"""
     provider = {
@@ -1196,7 +1196,7 @@ async def list_providers(context: TenantContext = Depends(require_tenant_context
 @api_router.delete("/providers/{provider_id}")
 async def delete_provider(
     provider_id: str,
-    context: TenantContext = Depends(require_tenant_admin)
+    context: TenantContext = Depends(require_admin)
 ):
     """Delete a provider"""
     query = TenantQueryBuilder.scope_by_id(context.tenant_id, provider_id)
@@ -1213,7 +1213,7 @@ async def delete_provider(
 @api_router.post("/messages")
 async def create_message(
     message_data: MessageCreate,
-    context: TenantContext = Depends(require_tenant_admin)
+    context: TenantContext = Depends(require_admin)
 ):
     """Create an announcement/message"""
     message = {
@@ -1262,7 +1262,7 @@ async def acknowledge_message(
 @api_router.post("/todos")
 async def create_todo(
     todo_data: TodoCreate,
-    context: TenantContext = Depends(require_tenant_admin)
+    context: TenantContext = Depends(require_admin)
 ):
     """Create a todo item"""
     todo = {
@@ -1309,7 +1309,7 @@ async def complete_todo(
 @api_router.delete("/todos/{todo_id}")
 async def delete_todo(
     todo_id: str,
-    context: TenantContext = Depends(require_tenant_admin)
+    context: TenantContext = Depends(require_admin)
 ):
     """Delete a todo"""
     query = TenantQueryBuilder.scope_by_id(context.tenant_id, todo_id)

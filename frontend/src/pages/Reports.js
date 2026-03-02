@@ -39,10 +39,38 @@ const Reports = () => {
   // Settings form
   const [editSettings, setEditSettings] = useState(false);
   const [settingsForm, setSettingsForm] = useState({});
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, [activeTab]);
+
+  // PDF Download helper function
+  const downloadPdf = async (endpoint, filename) => {
+    setDownloadingPdf(true);
+    try {
+      const response = await axios.get(`${API}${endpoint}`, {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      setSuccess('PDF downloaded successfully');
+    } catch (err) {
+      setError('Failed to download PDF');
+      console.error(err);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);

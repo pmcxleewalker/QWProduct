@@ -1415,6 +1415,208 @@ async def get_invoices_report(
     }
 
 
+# ==================== PDF EXPORT ENDPOINTS ====================
+
+from services.pdf_service import pdf_generator
+
+@api_router.get("/platform/reports/executive-summary/pdf")
+async def download_executive_summary_pdf(
+    context: TenantContext = Depends(require_platform_admin)
+):
+    """Download Executive Summary Report as PDF"""
+    # Get report data
+    total_tenants = await db.tenants.count_documents({})
+    active_tenants = await db.tenants.count_documents({"status": "active"})
+    suspended_tenants = await db.tenants.count_documents({"status": "suspended"})
+    total_users = await db.users.count_documents({})
+    total_vehicles = await db.vehicles.count_documents({})
+    total_bookings = await db.bookings.count_documents({})
+    
+    all_invoices = await db.invoices.find({}, {"_id": 0, "total": 1, "status": 1}).to_list(1000)
+    total_revenue = sum(inv.get("total", 0) for inv in all_invoices if inv.get("status") == "paid")
+    pending_revenue = sum(inv.get("total", 0) for inv in all_invoices if inv.get("status") in ["sent", "overdue"])
+    overdue_invoices = len([inv for inv in all_invoices if inv.get("status") == "overdue"])
+    
+    plans = await db.tenants.aggregate([
+        {"$group": {"_id": "$plan", "count": {"$sum": 1}}}
+    ]).to_list(10)
+    plan_distribution = {p["_id"]: p["count"] for p in plans}
+    
+    recent_tenants = await db.tenants.find(
+        {}, {"_id": 0, "name": 1, "slug": 1, "created_at": 1, "status": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    data = {
+        "summary": {
+            "tenants": {"total": total_tenants, "active": active_tenants, "suspended": suspended_tenants},
+            "users": total_users,
+            "vehicles": total_vehicles,
+            "bookings": total_bookings,
+            "revenue": {
+                "total_collected": round(total_revenue, 2),
+                "pending": round(pending_revenue, 2),
+                "overdue_invoices": overdue_invoices
+            },
+            "plan_distribution": plan_distribution
+        },
+        "recent_tenants": recent_tenants
+    }
+    
+    # Get company settings
+    settings = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0})
+    if not settings:
+        settings = {"company_name": "Quick Wing Fleet Management", "currency_symbol": "€"}
+    
+    # Generate PDF
+    pdf_buffer = pdf_generator.generate_executive_summary_pdf(data, settings)
+    
+    filename = f"executive_summary_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@api_router.get("/platform/reports/franchises/pdf")
+async def download_franchises_report_pdf(
+    context: TenantContext = Depends(require_platform_admin),
+    status: Optional[str] = None,
+    plan: Optional[str] = None
+):
+    """Download Franchises Report as PDF"""
+    query = {}
+    if status:
+        query["status"] = status
+    if plan:
+        query["plan"] = plan
+    
+    tenants = await db.tenants.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    enriched_tenants = []
+    for tenant in tenants:
+        tenant_id = tenant["id"]
+        user_count = await db.memberships.count_documents({"tenant_id": tenant_id})
+        vehicle_count = await db.vehicles.count_documents({"tenant_id": tenant_id})
+        booking_count = await db.bookings.count_documents({"tenant_id": tenant_id})
+        
+        invoices = await db.invoices.find(
+            {"tenant_id": tenant_id}, {"_id": 0, "total": 1, "status": 1}
+        ).to_list(100)
+        total_billed = sum(inv.get("total", 0) for inv in invoices)
+        total_paid = sum(inv.get("total", 0) for inv in invoices if inv.get("status") == "paid")
+        
+        enriched_tenants.append({
+            **tenant,
+            "stats": {
+                "users": user_count,
+                "vehicles": vehicle_count,
+                "bookings": booking_count,
+                "total_billed": round(total_billed, 2),
+                "total_paid": round(total_paid, 2),
+                "balance_due": round(total_billed - total_paid, 2)
+            }
+        })
+    
+    data = {"franchises": enriched_tenants, "total": len(enriched_tenants)}
+    
+    settings = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0})
+    if not settings:
+        settings = {"company_name": "Quick Wing Fleet Management", "currency_symbol": "€"}
+    
+    pdf_buffer = pdf_generator.generate_franchises_report_pdf(data, settings)
+    
+    filename = f"franchises_report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@api_router.get("/platform/reports/invoices/pdf")
+async def download_invoices_report_pdf(
+    context: TenantContext = Depends(require_platform_admin),
+    status: Optional[str] = None,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None
+):
+    """Download Invoices Report as PDF"""
+    query = {}
+    if status:
+        query["status"] = status
+    if from_date:
+        query["issue_date"] = {"$gte": from_date}
+    if to_date:
+        if "issue_date" in query:
+            query["issue_date"]["$lte"] = to_date
+        else:
+            query["issue_date"] = {"$lte": to_date}
+    
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    status_totals = {}
+    for inv in invoices:
+        inv_status = inv.get("status", "unknown")
+        if inv_status not in status_totals:
+            status_totals[inv_status] = {"count": 0, "amount": 0}
+        status_totals[inv_status]["count"] += 1
+        status_totals[inv_status]["amount"] += inv.get("total", 0)
+    
+    for status_key in status_totals:
+        status_totals[status_key]["amount"] = round(status_totals[status_key]["amount"], 2)
+    
+    grand_total = sum(inv.get("total", 0) for inv in invoices)
+    
+    data = {
+        "invoices": invoices,
+        "total_count": len(invoices),
+        "grand_total": round(grand_total, 2),
+        "by_status": status_totals
+    }
+    
+    settings = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0})
+    if not settings:
+        settings = {"company_name": "Quick Wing Fleet Management", "currency_symbol": "€"}
+    
+    pdf_buffer = pdf_generator.generate_invoices_report_pdf(data, settings)
+    
+    filename = f"invoices_report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@api_router.get("/platform/invoices/{invoice_id}/pdf")
+async def download_invoice_pdf(
+    invoice_id: str,
+    context: TenantContext = Depends(require_platform_admin)
+):
+    """Download a single invoice as PDF"""
+    invoice = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    settings = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0})
+    if not settings:
+        settings = {"company_name": "Quick Wing Fleet Management", "currency_symbol": "€"}
+    
+    pdf_buffer = pdf_generator.generate_invoice_pdf(invoice, settings)
+    
+    filename = f"invoice_{invoice.get('invoice_number', invoice_id)}.pdf"
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
 # ==================== USER MANAGEMENT ====================
 
 @api_router.post("/platform/users")

@@ -16,6 +16,7 @@ import SetupWizard from './pages/SetupWizard';
 import TermsOfService from './pages/TermsOfService';
 import TenantSelector from './pages/TenantSelector';
 import PlatformAdmin from './pages/PlatformAdmin';
+import Reports from './pages/Reports';
 import Navigation from './components/Navigation';
 import MobileBottomNav from './components/MobileBottomNav';
 import Footer from './components/Footer';

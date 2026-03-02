@@ -68,9 +68,10 @@ const PlatformAdmin = () => {
     try {
       setError('');
       const response = await axios.post(`${API}/platform/tenants`, newTenant);
-      setSuccess(`Tenant "${newTenant.name}" created successfully`);
+      // Store the result to show credentials
+      setCreatedTenantResult(response.data);
       setShowCreateForm(false);
-      setNewTenant({ name: '', slug: '', plan: 'starter' });
+      setNewTenant({ name: '', slug: '', plan: 'starter', master_admin_email: '', master_admin_name: '' });
       fetchData();
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to create tenant');

@@ -163,16 +163,19 @@ When creating a new tenant:
 ## Files Structure
 ```
 /app/backend/
-├── server.py              # Main API server (1500+ lines)
+├── server.py              # Main API server (2400+ lines)
 ├── models/
 │   ├── tenant.py          # Tenant, User, Membership models
-│   └── resources.py       # Vehicle, Booking, etc. models
+│   ├── resources.py       # Vehicle, Booking, etc. models
+│   └── invoice.py         # Invoice and CompanySettings models
 ├── middleware/
 │   └── tenant.py          # Tenant isolation middleware
 ├── services/
-│   └── audit.py           # Audit logging service
+│   ├── audit.py           # Audit logging service
+│   └── pdf_service.py     # PDF generation for reports & invoices
 └── tests/
-    └── test_tenant_isolation.py  # Automated isolation tests
+    ├── test_tenant_isolation.py  # Automated isolation tests
+    └── test_pdf_export.py        # PDF export tests
 
 /app/frontend/src/
 ├── contexts/
@@ -180,9 +183,10 @@ When creating a new tenant:
 ├── pages/
 │   ├── PlatformAdmin.js   # Franchise Command Centre
 │   ├── TenantSelector.js  # Tenant selection page
-│   ├── SetupWizard.js     # NEW: Onboarding wizard for Master Admins
+│   ├── SetupWizard.js     # Onboarding wizard for Master Admins
 │   ├── Login.js           # Updated login flow with tenant support
-│   └── Dashboard.js       # Main dashboard with wizard redirect
+│   ├── Dashboard.js       # Main dashboard with wizard redirect
+│   └── Reports.js         # Reports & Billing with PDF export
 └── components/ui/         # Shadcn UI components
 ```
 

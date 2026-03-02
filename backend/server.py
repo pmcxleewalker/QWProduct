@@ -1072,6 +1072,349 @@ async def get_platform_audit_log(
     return {"events": events}
 
 
+# ==================== COMPANY SETTINGS ====================
+
+@api_router.get("/platform/settings")
+async def get_company_settings(
+    context: TenantContext = Depends(require_platform_admin)
+):
+    """Get company settings for invoices and branding"""
+    settings = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0})
+    if not settings:
+        # Return defaults
+        settings = CompanySettings().model_dump()
+    return settings
+
+
+@api_router.put("/platform/settings")
+async def update_company_settings(
+    settings_update: CompanySettingsUpdate,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Update company settings (Super Admin only)"""
+    # Get existing settings
+    existing = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0})
+    if not existing:
+        existing = CompanySettings().model_dump()
+    
+    # Update with new values
+    update_data = {k: v for k, v in settings_update.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.company_settings.update_one(
+        {"id": "company_settings"},
+        {"$set": {**existing, **update_data, "id": "company_settings"}},
+        upsert=True
+    )
+    
+    updated = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0})
+    return {"message": "Settings updated", "settings": updated}
+
+
+# ==================== INVOICES ====================
+
+async def generate_invoice_number():
+    """Generate next invoice number"""
+    settings = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0})
+    prefix = settings.get("invoice_prefix", "INV") if settings else "INV"
+    year = datetime.now().year
+    
+    # Get count of invoices this year
+    count = await db.invoices.count_documents({
+        "invoice_number": {"$regex": f"^{prefix}-{year}-"}
+    })
+    
+    return f"{prefix}-{year}-{str(count + 1).zfill(4)}"
+
+
+@api_router.post("/platform/invoices")
+async def create_invoice(
+    invoice_data: InvoiceCreate,
+    context: TenantContext = Depends(require_platform_admin)
+):
+    """Create a new invoice for a tenant"""
+    # Get tenant info
+    tenant = await db.tenants.find_one({"id": invoice_data.tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    # Get company settings for defaults
+    settings = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0})
+    default_tax = settings.get("default_tax_rate", 23.0) if settings else 23.0
+    
+    # Create invoice
+    invoice_number = await generate_invoice_number()
+    
+    # Calculate item amounts
+    items = []
+    for item in invoice_data.items:
+        item_dict = item.model_dump()
+        item_dict["amount"] = item.quantity * item.unit_price
+        items.append(item_dict)
+    
+    invoice = Invoice(
+        invoice_number=invoice_number,
+        tenant_id=invoice_data.tenant_id,
+        tenant_name=tenant["name"],
+        items=items,
+        tax_rate=invoice_data.tax_rate or default_tax,
+        due_date=invoice_data.due_date,
+        notes=invoice_data.notes
+    )
+    invoice.calculate_totals()
+    
+    invoice_dict = invoice.model_dump()
+    await db.invoices.insert_one(invoice_dict)
+    invoice_dict.pop("_id", None)
+    
+    return {"message": "Invoice created", "invoice": invoice_dict}
+
+
+@api_router.get("/platform/invoices")
+async def list_invoices(
+    context: TenantContext = Depends(require_platform_admin),
+    tenant_id: Optional[str] = None,
+    status: Optional[InvoiceStatus] = None,
+    limit: int = 100
+):
+    """List all invoices with optional filters"""
+    query = {}
+    if tenant_id:
+        query["tenant_id"] = tenant_id
+    if status:
+        query["status"] = status.value
+    
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    # Get summary stats
+    total_amount = sum(inv.get("total", 0) for inv in invoices)
+    paid_amount = sum(inv.get("total", 0) for inv in invoices if inv.get("status") == "paid")
+    pending_amount = total_amount - paid_amount
+    
+    return {
+        "invoices": invoices,
+        "total": len(invoices),
+        "summary": {
+            "total_amount": round(total_amount, 2),
+            "paid_amount": round(paid_amount, 2),
+            "pending_amount": round(pending_amount, 2)
+        }
+    }
+
+
+@api_router.get("/platform/invoices/{invoice_id}")
+async def get_invoice(
+    invoice_id: str,
+    context: TenantContext = Depends(require_platform_admin)
+):
+    """Get invoice details"""
+    invoice = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    # Get company settings for PDF generation
+    settings = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0})
+    
+    return {"invoice": invoice, "company_settings": settings}
+
+
+@api_router.put("/platform/invoices/{invoice_id}")
+async def update_invoice(
+    invoice_id: str,
+    update_data: InvoiceUpdate,
+    context: TenantContext = Depends(require_platform_admin)
+):
+    """Update invoice status"""
+    invoice = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    update_dict = {k: v.value if isinstance(v, InvoiceStatus) else v 
+                   for k, v in update_data.model_dump().items() if v is not None}
+    update_dict["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    if update_data.status == InvoiceStatus.PAID and not update_data.paid_date:
+        update_dict["paid_date"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.invoices.update_one({"id": invoice_id}, {"$set": update_dict})
+    
+    updated = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    return {"message": "Invoice updated", "invoice": updated}
+
+
+@api_router.delete("/platform/invoices/{invoice_id}")
+async def delete_invoice(
+    invoice_id: str,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Delete an invoice (Super Admin only, draft/cancelled only)"""
+    invoice = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    if invoice.get("status") not in ["draft", "cancelled"]:
+        raise HTTPException(status_code=400, detail="Can only delete draft or cancelled invoices")
+    
+    await db.invoices.delete_one({"id": invoice_id})
+    return {"message": "Invoice deleted"}
+
+
+# ==================== REPORTS ====================
+
+@api_router.get("/platform/reports/executive-summary")
+async def get_executive_summary(
+    context: TenantContext = Depends(require_platform_admin)
+):
+    """Get executive summary with high-level metrics"""
+    # Tenant stats
+    total_tenants = await db.tenants.count_documents({})
+    active_tenants = await db.tenants.count_documents({"status": "active"})
+    suspended_tenants = await db.tenants.count_documents({"status": "suspended"})
+    
+    # User stats
+    total_users = await db.users.count_documents({})
+    
+    # Resource stats
+    total_vehicles = await db.vehicles.count_documents({})
+    total_bookings = await db.bookings.count_documents({})
+    
+    # Invoice stats
+    all_invoices = await db.invoices.find({}, {"_id": 0, "total": 1, "status": 1}).to_list(1000)
+    total_revenue = sum(inv.get("total", 0) for inv in all_invoices if inv.get("status") == "paid")
+    pending_revenue = sum(inv.get("total", 0) for inv in all_invoices if inv.get("status") in ["sent", "overdue"])
+    overdue_invoices = len([inv for inv in all_invoices if inv.get("status") == "overdue"])
+    
+    # Get tenants by plan
+    plans = await db.tenants.aggregate([
+        {"$group": {"_id": "$plan", "count": {"$sum": 1}}}
+    ]).to_list(10)
+    plan_distribution = {p["_id"]: p["count"] for p in plans}
+    
+    # Recent activity
+    recent_tenants = await db.tenants.find(
+        {}, {"_id": 0, "name": 1, "slug": 1, "created_at": 1, "status": 1}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    return {
+        "summary": {
+            "tenants": {
+                "total": total_tenants,
+                "active": active_tenants,
+                "suspended": suspended_tenants
+            },
+            "users": total_users,
+            "vehicles": total_vehicles,
+            "bookings": total_bookings,
+            "revenue": {
+                "total_collected": round(total_revenue, 2),
+                "pending": round(pending_revenue, 2),
+                "overdue_invoices": overdue_invoices
+            },
+            "plan_distribution": plan_distribution
+        },
+        "recent_tenants": recent_tenants,
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@api_router.get("/platform/reports/franchises")
+async def get_franchises_report(
+    context: TenantContext = Depends(require_platform_admin),
+    status: Optional[str] = None,
+    plan: Optional[str] = None
+):
+    """Complete list of all franchises with details"""
+    query = {}
+    if status:
+        query["status"] = status
+    if plan:
+        query["plan"] = plan
+    
+    tenants = await db.tenants.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Enrich with stats
+    enriched_tenants = []
+    for tenant in tenants:
+        tenant_id = tenant["id"]
+        
+        # Get counts
+        user_count = await db.memberships.count_documents({"tenant_id": tenant_id})
+        vehicle_count = await db.vehicles.count_documents({"tenant_id": tenant_id})
+        booking_count = await db.bookings.count_documents({"tenant_id": tenant_id})
+        
+        # Get invoice stats
+        invoices = await db.invoices.find(
+            {"tenant_id": tenant_id}, {"_id": 0, "total": 1, "status": 1}
+        ).to_list(100)
+        total_billed = sum(inv.get("total", 0) for inv in invoices)
+        total_paid = sum(inv.get("total", 0) for inv in invoices if inv.get("status") == "paid")
+        
+        enriched_tenants.append({
+            **tenant,
+            "stats": {
+                "users": user_count,
+                "vehicles": vehicle_count,
+                "bookings": booking_count,
+                "total_billed": round(total_billed, 2),
+                "total_paid": round(total_paid, 2),
+                "balance_due": round(total_billed - total_paid, 2)
+            }
+        })
+    
+    return {
+        "franchises": enriched_tenants,
+        "total": len(enriched_tenants),
+        "filters_applied": {"status": status, "plan": plan},
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@api_router.get("/platform/reports/invoices")
+async def get_invoices_report(
+    context: TenantContext = Depends(require_platform_admin),
+    status: Optional[str] = None,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None
+):
+    """All invoices with payment status and amounts"""
+    query = {}
+    if status:
+        query["status"] = status
+    if from_date:
+        query["issue_date"] = {"$gte": from_date}
+    if to_date:
+        if "issue_date" in query:
+            query["issue_date"]["$lte"] = to_date
+        else:
+            query["issue_date"] = {"$lte": to_date}
+    
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Calculate totals by status
+    status_totals = {}
+    for inv in invoices:
+        inv_status = inv.get("status", "unknown")
+        if inv_status not in status_totals:
+            status_totals[inv_status] = {"count": 0, "amount": 0}
+        status_totals[inv_status]["count"] += 1
+        status_totals[inv_status]["amount"] += inv.get("total", 0)
+    
+    # Round amounts
+    for status_key in status_totals:
+        status_totals[status_key]["amount"] = round(status_totals[status_key]["amount"], 2)
+    
+    grand_total = sum(inv.get("total", 0) for inv in invoices)
+    
+    return {
+        "invoices": invoices,
+        "total_count": len(invoices),
+        "grand_total": round(grand_total, 2),
+        "by_status": status_totals,
+        "filters_applied": {"status": status, "from_date": from_date, "to_date": to_date},
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
 # ==================== USER MANAGEMENT ====================
 
 @api_router.post("/platform/users")

@@ -33,9 +33,22 @@ const Login = () => {
     try {
       const result = await login(formData.email, formData.password, rememberMe);
       
-      // Navigation is handled by App.js routing based on auth state
-      // After successful login, the ProtectedRoute/TenantProtectedRoute will redirect appropriately
-      
+      // Direct navigation based on role
+      if (result.success) {
+        const userRole = result.user?.role;
+        if (userRole === 'super_admin') {
+          navigate('/platform');
+        } else if (result.needsTenantSelection) {
+          navigate('/select-tenant');
+        } else if (result.tenants?.length === 1) {
+          // Single tenant - go to their branded URL
+          navigate(`/${result.tenants[0].tenant_slug}`);
+        } else {
+          navigate('/');
+        }
+      } else {
+        setError(result.error || 'Login failed. Please check your credentials.');
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
     } finally {

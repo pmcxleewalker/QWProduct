@@ -389,9 +389,14 @@ const Reports = () => {
                 <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
                   <div className="p-4 border-b flex items-center justify-between">
                     <h3 className="font-semibold text-gray-900">All Franchises ({franchisesReport.total})</h3>
-                    <button className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">
+                    <button 
+                      onClick={() => downloadPdf('/platform/reports/franchises/pdf', 'franchises_report.pdf')}
+                      disabled={downloadingPdf}
+                      className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+                      data-testid="export-franchises-pdf-btn"
+                    >
                       <Download size={16} />
-                      <span>Export</span>
+                      <span>{downloadingPdf ? 'Downloading...' : 'Export PDF'}</span>
                     </button>
                   </div>
                   <div className="overflow-x-auto">

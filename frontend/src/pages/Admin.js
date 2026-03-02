@@ -809,115 +809,169 @@ const Admin = () => {
         </div>
       )}
 
-      {/* Tabs - Scrollable on mobile */}
-      <div className="flex space-x-1 sm:space-x-4 mb-4 sm:mb-6 border-b overflow-x-auto pb-px -mx-3 px-3 sm:mx-0 sm:px-0">
-        <button
-          onClick={() => setActiveTab('cars')}
-          data-testid="tab-cars"
-          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
-            activeTab === 'cars'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-blue-600'
-          }`}
-        >
-          <Car className="inline mr-1 sm:mr-2" size={18} />
-          <span className="hidden sm:inline">Manage </span>Cars
-        </button>
-        <button
-          onClick={() => setActiveTab('providers')}
-          data-testid="tab-providers"
-          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
-            activeTab === 'providers'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-blue-600'
-          }`}
-        >
-          <Phone className="inline mr-1 sm:mr-2" size={18} />
-          Providers
-        </button>
-        <button
-          onClick={() => setActiveTab('users')}
-          data-testid="tab-users"
-          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
-            activeTab === 'users'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-blue-600'
-          }`}
-        >
-          <Users className="inline mr-2" size={20} />
-          Users
-        </button>
-        <button
-          onClick={() => setActiveTab('approvals')}
-          data-testid="tab-approvals"
-          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors relative whitespace-nowrap text-sm sm:text-base ${
-            activeTab === 'approvals'
-              ? 'border-b-2 border-orange-600 text-orange-600'
-              : 'text-gray-600 hover:text-orange-600'
-          }`}
-        >
-          <Clock className="inline mr-1 sm:mr-2" size={18} />
-          Approvals
+      {/* Tabs - Clean grouped navigation */}
+      <div className="mb-6">
+        {/* Primary tabs with action badges */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {/* Action items with badges - always visible */}
           {pendingBookings.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center text-[10px] sm:text-xs">
-              {pendingBookings.length}
-            </span>
+            <button
+              onClick={() => setActiveTab('approvals')}
+              data-testid="tab-approvals"
+              className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                activeTab === 'approvals'
+                  ? 'bg-orange-500 text-white shadow-md'
+                  : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+              }`}
+            >
+              <Clock size={16} />
+              <span>Approvals</span>
+              <span className="bg-white text-orange-600 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {pendingBookings.length}
+              </span>
+            </button>
           )}
-        </button>
-        <button
-          onClick={() => setActiveTab('messages')}
-          data-testid="tab-messages"
-          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
-            activeTab === 'messages'
-              ? 'border-b-2 border-purple-600 text-purple-600'
-              : 'text-gray-600 hover:text-purple-600'
-          }`}
-        >
-          <MessageSquare className="inline mr-1 sm:mr-2" size={18} />
-          <span className="hidden sm:inline">Messages</span>
-          <span className="sm:hidden">Msgs</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('todos')}
-          data-testid="tab-todos"
-          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors relative whitespace-nowrap text-sm sm:text-base ${
-            activeTab === 'todos'
-              ? 'border-b-2 border-teal-600 text-teal-600'
-              : 'text-gray-600 hover:text-teal-600'
-          }`}
-        >
-          <ListTodo className="inline mr-1 sm:mr-2" size={18} />
-          To-Do
+          
           {todos.filter(t => !t.is_completed).length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-teal-500 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center text-[10px] sm:text-xs">
-              {todos.filter(t => !t.is_completed).length}
-            </span>
+            <button
+              onClick={() => setActiveTab('todos')}
+              data-testid="tab-todos"
+              className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                activeTab === 'todos'
+                  ? 'bg-teal-500 text-white shadow-md'
+                  : 'bg-teal-100 text-teal-700 hover:bg-teal-200'
+              }`}
+            >
+              <ListTodo size={16} />
+              <span>Tasks</span>
+              <span className="bg-white text-teal-600 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {todos.filter(t => !t.is_completed).length}
+              </span>
+            </button>
           )}
-        </button>
-        <button
-          onClick={() => setActiveTab('reports')}
-          data-testid="tab-reports"
-          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
-            activeTab === 'reports'
-              ? 'border-b-2 border-indigo-600 text-indigo-600'
-              : 'text-gray-600 hover:text-indigo-600'
-          }`}
-        >
-          <BarChart3 className="inline mr-1 sm:mr-2" size={18} />
-          Reports
-        </button>
-        <button
-          onClick={() => setActiveTab('staffmap')}
-          data-testid="tab-staffmap"
-          className={`pb-3 sm:pb-4 px-2 sm:px-4 font-medium transition-colors whitespace-nowrap text-sm sm:text-base ${
-            activeTab === 'staffmap'
-              ? 'border-b-2 border-emerald-600 text-emerald-600'
-              : 'text-gray-600 hover:text-emerald-600'
-          }`}
-        >
-          <Map className="inline mr-1 sm:mr-2" size={18} />
-          <span className="hidden sm:inline">Booking </span>Map
-        </button>
+        </div>
+
+        {/* Main navigation - clean pill tabs */}
+        <div className="flex flex-wrap gap-2 p-1 bg-gray-100 rounded-xl w-fit">
+          <button
+            onClick={() => setActiveTab('cars')}
+            data-testid="tab-cars"
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'cars'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Car size={16} />
+            <span>Fleet</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('staffmap')}
+            data-testid="tab-staffmap"
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'staffmap'
+                ? 'bg-white text-emerald-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Map size={16} />
+            <span>Map</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('users')}
+            data-testid="tab-users"
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'users'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Users size={16} />
+            <span>Users</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('reports')}
+            data-testid="tab-reports"
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === 'reports'
+                ? 'bg-white text-indigo-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <BarChart3 size={16} />
+            <span>Reports</span>
+          </button>
+          
+          {/* More dropdown for less used items */}
+          <div className="relative group">
+            <button
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                ['providers', 'messages', 'approvals', 'todos'].includes(activeTab) && 
+                !(['approvals', 'todos'].includes(activeTab) && (pendingBookings.length > 0 || todos.filter(t => !t.is_completed).length > 0))
+                  ? 'bg-white text-gray-700 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Activity size={16} />
+              <span>More</span>
+              <ChevronDown size={14} />
+            </button>
+            
+            {/* Dropdown menu */}
+            <div className="absolute left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+              <div className="py-1">
+                <button
+                  onClick={() => setActiveTab('providers')}
+                  data-testid="tab-providers"
+                  className={`w-full flex items-center space-x-3 px-4 py-2.5 text-sm transition-colors ${
+                    activeTab === 'providers' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Phone size={16} />
+                  <span>Service Providers</span>
+                </button>
+                
+                <button
+                  onClick={() => setActiveTab('messages')}
+                  data-testid="tab-messages"
+                  className={`w-full flex items-center space-x-3 px-4 py-2.5 text-sm transition-colors ${
+                    activeTab === 'messages' ? 'bg-purple-50 text-purple-600' : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <MessageSquare size={16} />
+                  <span>Announcements</span>
+                </button>
+                
+                {pendingBookings.length === 0 && (
+                  <button
+                    onClick={() => setActiveTab('approvals')}
+                    className={`w-full flex items-center space-x-3 px-4 py-2.5 text-sm transition-colors ${
+                      activeTab === 'approvals' ? 'bg-orange-50 text-orange-600' : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Clock size={16} />
+                    <span>Approvals</span>
+                  </button>
+                )}
+                
+                {todos.filter(t => !t.is_completed).length === 0 && (
+                  <button
+                    onClick={() => setActiveTab('todos')}
+                    className={`w-full flex items-center space-x-3 px-4 py-2.5 text-sm transition-colors ${
+                      activeTab === 'todos' ? 'bg-teal-50 text-teal-600' : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <ListTodo size={16} />
+                    <span>To-Do List</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* To-Do Alert Banner - Shows at top when there are pending mandatory tasks */}

@@ -695,7 +695,323 @@ async def stop_impersonation(
     }
 
 
-@api_router.get("/platform/stats")
+# ==================== DELETE TENANT ====================
+
+class DeleteTenantRequest(BaseModel):
+    password: str
+    confirm: bool = False
+
+@api_router.delete("/platform/tenants/{tenant_id}")
+async def delete_tenant(
+    tenant_id: str,
+    delete_request: DeleteTenantRequest,
+    context: TenantContext = Depends(require_super_admin),
+    request: Request = None
+):
+    """
+    Permanently delete a tenant and all associated data.
+    Requires super admin password confirmation.
+    """
+    # Verify super admin password
+    user = await db.users.find_one({"id": context.user_id}, {"_id": 0})
+    if not user or not verify_password(delete_request.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid password")
+    
+    if not delete_request.confirm:
+        raise HTTPException(status_code=400, detail="Please confirm deletion")
+    
+    # Get tenant info
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    tenant_name = tenant["name"]
+    
+    # Delete all tenant data
+    deleted_vehicles = await db.vehicles.delete_many({"tenant_id": tenant_id})
+    deleted_bookings = await db.bookings.delete_many({"tenant_id": tenant_id})
+    deleted_statuses = await db.car_statuses.delete_many({"tenant_id": tenant_id})
+    
+    # Get users who only belong to this tenant
+    memberships = await db.memberships.find({"tenant_id": tenant_id}, {"_id": 0}).to_list(1000)
+    users_to_delete = []
+    
+    for membership in memberships:
+        # Check if user has other memberships
+        other_memberships = await db.memberships.count_documents({
+            "user_id": membership["user_id"],
+            "tenant_id": {"$ne": tenant_id}
+        })
+        if other_memberships == 0:
+            # User only belongs to this tenant - mark for deletion
+            users_to_delete.append(membership["user_id"])
+    
+    # Delete memberships
+    deleted_memberships = await db.memberships.delete_many({"tenant_id": tenant_id})
+    
+    # Delete users who only belonged to this tenant
+    deleted_users = 0
+    for user_id in users_to_delete:
+        await db.users.delete_one({"id": user_id})
+        deleted_users += 1
+    
+    # Delete tenant
+    await db.tenants.delete_one({"id": tenant_id})
+    
+    # Log audit event
+    await audit_service.log_tenant_action(
+        actor_user_id=context.user_id,
+        actor_email=context.user_email,
+        action=AuditAction.TENANT_DELETED,
+        tenant_id=tenant_id,
+        meta={
+            "tenant_name": tenant_name,
+            "deleted_vehicles": deleted_vehicles.deleted_count,
+            "deleted_bookings": deleted_bookings.deleted_count,
+            "deleted_users": deleted_users
+        },
+        ip_address=request.client.host if request and request.client else None
+    )
+    
+    return {
+        "message": f"Tenant '{tenant_name}' permanently deleted",
+        "deleted": {
+            "vehicles": deleted_vehicles.deleted_count,
+            "bookings": deleted_bookings.deleted_count,
+            "memberships": deleted_memberships.deleted_count,
+            "users": deleted_users
+        }
+    }
+
+
+# ==================== SUPER ADMIN USER MANAGEMENT ====================
+
+class ResetPasswordRequest(BaseModel):
+    new_password: str
+    admin_password: str  # Super admin's password for verification
+
+@api_router.post("/platform/users/{user_id}/reset-password")
+async def reset_user_password(
+    user_id: str,
+    reset_request: ResetPasswordRequest,
+    context: TenantContext = Depends(require_super_admin),
+    request: Request = None
+):
+    """
+    Super admin can reset any user's password.
+    Requires super admin password confirmation.
+    """
+    # Verify super admin password
+    admin = await db.users.find_one({"id": context.user_id}, {"_id": 0})
+    if not admin or not verify_password(reset_request.admin_password, admin["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid admin password")
+    
+    # Get target user
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update password
+    new_hash = get_password_hash(reset_request.new_password)
+    await db.users.update_one({"id": user_id}, {"$set": {"password_hash": new_hash}})
+    
+    # Log audit event
+    await audit_service.log(
+        actor_user_id=context.user_id,
+        actor_email=context.user_email,
+        action=AuditAction.USER_UPDATED,
+        resource_type="user",
+        resource_id=user_id,
+        meta={"action": "password_reset", "target_email": user["email"]},
+        ip_address=request.client.host if request and request.client else None
+    )
+    
+    return {"message": f"Password reset successfully for {user['email']}"}
+
+
+class UpdateUserRoleRequest(BaseModel):
+    tenant_id: str
+    new_role: UserRole
+    admin_password: str
+
+@api_router.post("/platform/users/{user_id}/update-role")
+async def update_user_role(
+    user_id: str,
+    role_request: UpdateUserRoleRequest,
+    context: TenantContext = Depends(require_super_admin),
+    request: Request = None
+):
+    """
+    Super admin can change any user's role within a tenant.
+    """
+    # Verify super admin password
+    admin = await db.users.find_one({"id": context.user_id}, {"_id": 0})
+    if not admin or not verify_password(role_request.admin_password, admin["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid admin password")
+    
+    # Get target user
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get membership
+    membership = await db.memberships.find_one({
+        "user_id": user_id,
+        "tenant_id": role_request.tenant_id
+    }, {"_id": 0})
+    
+    if not membership:
+        raise HTTPException(status_code=404, detail="User is not a member of this tenant")
+    
+    old_role = membership["role"]
+    
+    # Update role
+    await db.memberships.update_one(
+        {"user_id": user_id, "tenant_id": role_request.tenant_id},
+        {"$set": {"role": role_request.new_role.value}}
+    )
+    
+    # Log audit event
+    await audit_service.log(
+        actor_user_id=context.user_id,
+        actor_email=context.user_email,
+        action=AuditAction.USER_UPDATED,
+        tenant_id=role_request.tenant_id,
+        resource_type="user",
+        resource_id=user_id,
+        meta={
+            "action": "role_change",
+            "target_email": user["email"],
+            "old_role": old_role,
+            "new_role": role_request.new_role.value
+        },
+        ip_address=request.client.host if request and request.client else None
+    )
+    
+    return {
+        "message": f"Role updated for {user['email']}",
+        "old_role": old_role,
+        "new_role": role_request.new_role.value
+    }
+
+
+@api_router.delete("/platform/users/{user_id}/remove-from-tenant/{tenant_id}")
+async def remove_user_from_tenant(
+    user_id: str,
+    tenant_id: str,
+    admin_password: str,
+    context: TenantContext = Depends(require_super_admin),
+    request: Request = None
+):
+    """
+    Super admin can remove a user from a tenant.
+    """
+    # Verify super admin password
+    admin = await db.users.find_one({"id": context.user_id}, {"_id": 0})
+    if not admin or not verify_password(admin_password, admin["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid admin password")
+    
+    # Get target user
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Delete membership
+    result = await db.memberships.delete_one({
+        "user_id": user_id,
+        "tenant_id": tenant_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User is not a member of this tenant")
+    
+    # Log audit event
+    await audit_service.log(
+        actor_user_id=context.user_id,
+        actor_email=context.user_email,
+        action=AuditAction.USER_REMOVED,
+        tenant_id=tenant_id,
+        resource_type="user",
+        resource_id=user_id,
+        meta={"target_email": user["email"]},
+        ip_address=request.client.host if request and request.client else None
+    )
+    
+    return {"message": f"User {user['email']} removed from tenant"}
+
+
+@api_router.get("/platform/users/{user_id}")
+async def get_user_details(
+    user_id: str,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """
+    Get detailed user information including all tenant memberships.
+    """
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get all memberships
+    memberships = await db.memberships.find({"user_id": user_id}, {"_id": 0}).to_list(100)
+    
+    tenant_memberships = []
+    for m in memberships:
+        if m.get("tenant_id"):
+            tenant = await db.tenants.find_one({"id": m["tenant_id"]}, {"_id": 0})
+            if tenant:
+                tenant_memberships.append({
+                    "tenant_id": tenant["id"],
+                    "tenant_name": tenant["name"],
+                    "tenant_slug": tenant["slug"],
+                    "role": m["role"],
+                    "status": tenant.get("status")
+                })
+        else:
+            # Platform-level membership (super admin)
+            tenant_memberships.append({
+                "tenant_id": None,
+                "tenant_name": "Platform",
+                "role": m["role"]
+            })
+    
+    return {
+        "user": user,
+        "memberships": tenant_memberships
+    }
+
+
+@api_router.get("/platform/users")
+async def list_all_users(
+    context: TenantContext = Depends(require_super_admin),
+    tenant_id: Optional[str] = None
+):
+    """
+    List all users, optionally filtered by tenant.
+    """
+    if tenant_id:
+        # Get users for specific tenant
+        memberships = await db.memberships.find({"tenant_id": tenant_id}, {"_id": 0}).to_list(1000)
+        user_ids = [m["user_id"] for m in memberships]
+        users = await db.users.find(
+            {"id": {"$in": user_ids}},
+            {"_id": 0, "password_hash": 0}
+        ).to_list(1000)
+        
+        # Add role info
+        for user in users:
+            membership = next((m for m in memberships if m["user_id"] == user["id"]), None)
+            user["role"] = membership["role"] if membership else None
+    else:
+        # Get all users
+        users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(1000)
+        
+        # Add membership count for each user
+        for user in users:
+            membership_count = await db.memberships.count_documents({"user_id": user["id"]})
+            user["tenant_count"] = membership_count
+    
+    return {"users": users, "total": len(users)}
 async def get_platform_stats(context: TenantContext = Depends(require_platform_admin)):
     """Get overall platform statistics"""
     total_tenants = await db.tenants.count_documents({})

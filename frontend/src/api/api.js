@@ -146,12 +146,13 @@ export const pushAPI = {
   unsubscribe: () => axios.delete(`${API}/push/unsubscribe`),
 };
 
-// Staff Location API
-export const locationAPI = {
-  updateLocation: (data) => axios.post(`${API}/location/update`, data),
-  stopSharing: () => axios.post(`${API}/location/stop-sharing`),
-  getMyStatus: () => axios.get(`${API}/location/my-status`),
-  getAllStaffLocations: () => axios.get(`${API}/admin/staff-locations`),
+// Booking Locations Map API
+export const bookingLocationsAPI = {
+  getLocationsForDate: (date, carId = null) => {
+    const params = { date };
+    if (carId) params.car_id = carId;
+    return axios.get(`${API}/bookings/locations`, { params });
+  },
 };
 
-export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI, liftRequestAPI, todoAPI, pushAPI, locationAPI };
+export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI, liftRequestAPI, todoAPI, pushAPI, bookingLocationsAPI };

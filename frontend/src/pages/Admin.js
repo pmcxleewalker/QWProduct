@@ -916,7 +916,7 @@ const Admin = () => {
           }`}
         >
           <Map className="inline mr-1 sm:mr-2" size={18} />
-          <span className="hidden sm:inline">Staff </span>Map
+          <span className="hidden sm:inline">Booking </span>Map
         </button>
       </div>
 

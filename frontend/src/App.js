@@ -180,7 +180,12 @@ const AppContent = () => {
           </PlatformProtectedRoute>
         } />
         
-        {/* Tenant-scoped routes */}
+        {/* Path-based Tenant Routes: /{tenant-slug}/... */}
+        <Route path="/:tenantSlug/login" element={<TenantLogin />} />
+        
+        <Route path="/:tenantSlug/*" element={<TenantRoutes />} />
+        
+        {/* Legacy tenant-scoped routes (for backward compatibility) */}
         <Route
           path="/*"
           element={

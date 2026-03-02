@@ -1,0 +1,815 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
+import { 
+  Building2, Users, Car, Calendar, TrendingUp, Plus, 
+  Pause, Play, Eye, Shield, Crown, AlertTriangle,
+  Search, Filter, MoreVertical, ChevronDown, ChevronUp,
+  Activity, DollarSign, Clock, CheckCircle, XCircle,
+  FileText, Settings, RefreshCw, LogOut
+} from 'lucide-react';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const PlatformAdmin = () => {
+  const { user, isPlatformAdmin, isSuperAdmin, impersonateTenant, isImpersonating, stopImpersonation, activeTenant } = useAuth();
+  
+  const [activeTab, setActiveTab] = useState('overview');
+  const [tenants, setTenants] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  // Create tenant form
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newTenant, setNewTenant] = useState({ name: '', slug: '', plan: 'starter' });
+  
+  // Selected tenant for details
+  const [selectedTenant, setSelectedTenant] = useState(null);
+  const [tenantDetails, setTenantDetails] = useState(null);
+  
+  // Create user form
+  const [showCreateUserForm, setShowCreateUserForm] = useState(false);
+  const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'staff', tenant_id: '' });
+
+  useEffect(() => {
+    if (isPlatformAdmin()) {
+      fetchData();
+    }
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [tenantsRes, statsRes, logsRes] = await Promise.all([
+        axios.get(`${API}/platform/tenants`),
+        axios.get(`${API}/platform/stats`),
+        axios.get(`${API}/platform/audit-log?limit=50`)
+      ]);
+      
+      setTenants(tenantsRes.data.tenants || []);
+      setStats(statsRes.data);
+      setAuditLogs(logsRes.data.events || []);
+    } catch (err) {
+      setError('Failed to load platform data');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateTenant = async (e) => {
+    e.preventDefault();
+    try {
+      setError('');
+      const response = await axios.post(`${API}/platform/tenants`, newTenant);
+      setSuccess(`Tenant "${newTenant.name}" created successfully`);
+      setShowCreateForm(false);
+      setNewTenant({ name: '', slug: '', plan: 'starter' });
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to create tenant');
+    }
+  };
+
+  const handleSuspendTenant = async (tenantId) => {
+    if (!window.confirm('Are you sure you want to suspend this tenant? They will lose access immediately.')) return;
+    
+    try {
+      await axios.post(`${API}/platform/tenants/${tenantId}/suspend`);
+      setSuccess('Tenant suspended successfully');
+      fetchData();
+      setSelectedTenant(null);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to suspend tenant');
+    }
+  };
+
+  const handleReactivateTenant = async (tenantId) => {
+    try {
+      await axios.post(`${API}/platform/tenants/${tenantId}/reactivate`);
+      setSuccess('Tenant reactivated successfully');
+      fetchData();
+      setSelectedTenant(null);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to reactivate tenant');
+    }
+  };
+
+  const handleImpersonate = async (tenantId) => {
+    if (!window.confirm('You are about to impersonate this tenant. All actions will be logged.')) return;
+    
+    try {
+      await impersonateTenant(tenantId);
+      setSuccess('Now impersonating tenant');
+      // Redirect to dashboard
+      window.location.href = '/';
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to impersonate tenant');
+    }
+  };
+
+  const handleStopImpersonation = async () => {
+    try {
+      await stopImpersonation();
+      setSuccess('Impersonation ended');
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to stop impersonation');
+    }
+  };
+
+  const fetchTenantDetails = async (tenantId) => {
+    try {
+      const response = await axios.get(`${API}/platform/tenants/${tenantId}`);
+      setTenantDetails(response.data);
+      setSelectedTenant(tenantId);
+    } catch (err) {
+      setError('Failed to load tenant details');
+    }
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    try {
+      setError('');
+      await axios.post(`${API}/platform/users`, {
+        email: newUser.email,
+        password: newUser.password,
+        name: newUser.name
+      }, {
+        params: {
+          role: newUser.role,
+          tenant_id: newUser.tenant_id || undefined
+        }
+      });
+      setSuccess(`User "${newUser.email}" created successfully`);
+      setShowCreateUserForm(false);
+      setNewUser({ email: '', password: '', name: '', role: 'staff', tenant_id: '' });
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to create user');
+    }
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      active: 'bg-green-100 text-green-700 border-green-200',
+      suspended: 'bg-red-100 text-red-700 border-red-200',
+      pending_payment: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+      trial: 'bg-blue-100 text-blue-700 border-blue-200'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-700';
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('en-IE', {
+      day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  };
+
+  if (!isPlatformAdmin()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <Shield size={48} className="mx-auto mb-4 text-red-500" />
+          <h1 className="text-2xl font-bold text-gray-900">Access Denied</h1>
+          <p className="text-gray-600 mt-2">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Impersonation Banner */}
+      {isImpersonating() && (
+        <div className="bg-amber-500 text-white px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Eye size={18} />
+            <span>Impersonating: <strong>{activeTenant?.tenant_name}</strong></span>
+          </div>
+          <button
+            onClick={handleStopImpersonation}
+            className="flex items-center space-x-1 bg-white/20 hover:bg-white/30 px-3 py-1 rounded"
+          >
+            <LogOut size={16} />
+            <span>Exit Impersonation</span>
+          </button>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                <Crown size={24} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">Franchise Command Centre</h1>
+                <p className="text-slate-300 text-sm">Platform Administration</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <span className="text-sm text-slate-300">{user?.email}</span>
+              <span className="px-3 py-1 bg-blue-600 rounded-full text-xs font-medium">
+                {isSuperAdmin() ? 'Super Admin' : 'Master Admin'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex space-x-1 py-2">
+            {[
+              { id: 'overview', label: 'Overview', icon: Activity },
+              { id: 'tenants', label: 'Tenants', icon: Building2 },
+              { id: 'users', label: 'Users', icon: Users },
+              { id: 'audit', label: 'Audit Log', icon: FileText }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <tab.icon size={18} />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Messages */}
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center text-red-700">
+            <AlertTriangle size={18} className="mr-2" />
+            {error}
+            <button onClick={() => setError('')} className="ml-auto">×</button>
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center text-green-700">
+            <CheckCircle size={18} className="mr-2" />
+            {success}
+            <button onClick={() => setSuccess('')} className="ml-auto">×</button>
+          </div>
+        )}
+
+        {/* Overview Tab */}
+        {activeTab === 'overview' && stats && (
+          <div className="space-y-6">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white rounded-xl p-6 shadow-sm border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Total Tenants</p>
+                    <p className="text-3xl font-bold text-gray-900">{stats.tenants?.total || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Building2 className="text-blue-600" size={24} />
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center text-sm">
+                  <span className="text-green-600 font-medium">{stats.tenants?.active || 0} active</span>
+                  {stats.tenants?.suspended > 0 && (
+                    <span className="text-red-600 ml-2">{stats.tenants.suspended} suspended</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Total Users</p>
+                    <p className="text-3xl font-bold text-gray-900">{stats.users || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <Users className="text-purple-600" size={24} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Total Vehicles</p>
+                    <p className="text-3xl font-bold text-gray-900">{stats.vehicles || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Car className="text-green-600" size={24} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Bookings This Month</p>
+                    <p className="text-3xl font-bold text-gray-900">{stats.bookings?.this_month || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <Calendar className="text-orange-600" size={24} />
+                  </div>
+                </div>
+                <p className="mt-3 text-sm text-gray-500">
+                  Total: {stats.bookings?.total || 0}
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border">
+              <h2 className="font-semibold text-gray-900 mb-4">Quick Actions</h2>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => { setActiveTab('tenants'); setShowCreateForm(true); }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  <Plus size={18} />
+                  <span>New Tenant</span>
+                </button>
+                <button
+                  onClick={() => { setActiveTab('users'); setShowCreateUserForm(true); }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                >
+                  <Plus size={18} />
+                  <span>New User</span>
+                </button>
+                <button
+                  onClick={fetchData}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                >
+                  <RefreshCw size={18} />
+                  <span>Refresh Data</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Recent Tenants */}
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="p-4 border-b flex items-center justify-between">
+                <h2 className="font-semibold text-gray-900">Recent Tenants</h2>
+                <button 
+                  onClick={() => setActiveTab('tenants')}
+                  className="text-sm text-blue-600 hover:text-blue-700"
+                >
+                  View All →
+                </button>
+              </div>
+              <div className="divide-y">
+                {tenants.slice(0, 5).map(tenant => (
+                  <div key={tenant.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Building2 size={20} className="text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{tenant.name}</p>
+                        <p className="text-sm text-gray-500">{tenant.slug}</p>
+                      </div>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(tenant.status)}`}>
+                      {tenant.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tenants Tab */}
+        {activeTab === 'tenants' && (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">Manage Tenants</h2>
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <Plus size={18} />
+                <span>Create Tenant</span>
+              </button>
+            </div>
+
+            {/* Create Tenant Form */}
+            {showCreateForm && (
+              <div className="bg-white rounded-xl p-6 shadow-sm border">
+                <h3 className="font-semibold text-gray-900 mb-4">Create New Tenant</h3>
+                <form onSubmit={handleCreateTenant} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Franchise Name</label>
+                      <input
+                        type="text"
+                        value={newTenant.name}
+                        onChange={(e) => setNewTenant({ ...newTenant, name: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., Bluebird Care Kerry"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Slug (URL identifier)</label>
+                      <input
+                        type="text"
+                        value={newTenant.slug}
+                        onChange={(e) => setNewTenant({ ...newTenant, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., bluebird-kerry"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+                    <select
+                      value={newTenant.plan}
+                      onChange={(e) => setNewTenant({ ...newTenant, plan: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="free">Free (3 vehicles, 5 users)</option>
+                      <option value="starter">Starter (10 vehicles, 20 users)</option>
+                      <option value="professional">Professional (50 vehicles, 100 users)</option>
+                      <option value="enterprise">Enterprise (Unlimited)</option>
+                    </select>
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      Create Tenant
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateForm(false)}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Tenants List */}
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tenant</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {tenants.map(tenant => (
+                    <tr key={tenant.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <Building2 size={20} className="text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{tenant.name}</p>
+                            <p className="text-sm text-gray-500">{tenant.slug}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="capitalize">{tenant.plan}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(tenant.status)}`}>
+                          {tenant.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-500">
+                        {formatDate(tenant.created_at)}
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => fetchTenantDetails(tenant.id)}
+                            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                            title="View Details"
+                          >
+                            <Eye size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleImpersonate(tenant.id)}
+                            className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg"
+                            title="Impersonate"
+                          >
+                            <Shield size={18} />
+                          </button>
+                          {tenant.status === 'active' ? (
+                            <button
+                              onClick={() => handleSuspendTenant(tenant.id)}
+                              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                              title="Suspend"
+                            >
+                              <Pause size={18} />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleReactivateTenant(tenant.id)}
+                              className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg"
+                              title="Reactivate"
+                            >
+                              <Play size={18} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {tenants.length === 0 && (
+                <div className="p-8 text-center text-gray-500">
+                  <Building2 size={40} className="mx-auto mb-3 opacity-50" />
+                  <p>No tenants yet. Create your first franchise!</p>
+                </div>
+              )}
+            </div>
+
+            {/* Tenant Details Modal */}
+            {selectedTenant && tenantDetails && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-2xl max-w-lg w-full m-4 max-h-[90vh] overflow-auto">
+                  <div className="p-6 border-b flex items-center justify-between">
+                    <h3 className="text-lg font-bold">Tenant Details</h3>
+                    <button onClick={() => setSelectedTenant(null)} className="text-gray-500 hover:text-gray-700">
+                      <XCircle size={24} />
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Name</p>
+                      <p className="font-medium">{tenantDetails.tenant?.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Slug</p>
+                      <p className="font-medium">{tenantDetails.tenant?.slug}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Status</p>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(tenantDetails.tenant?.status)}`}>
+                        {tenantDetails.tenant?.status}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Plan</p>
+                      <p className="font-medium capitalize">{tenantDetails.tenant?.plan}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <p className="text-sm text-blue-600">Vehicles</p>
+                        <p className="text-2xl font-bold text-blue-700">
+                          {tenantDetails.usage?.vehicles} / {tenantDetails.usage?.max_vehicles}
+                        </p>
+                      </div>
+                      <div className="bg-purple-50 p-4 rounded-lg">
+                        <p className="text-sm text-purple-600">Users</p>
+                        <p className="text-2xl font-bold text-purple-700">
+                          {tenantDetails.usage?.users} / {tenantDetails.usage?.max_users}
+                        </p>
+                      </div>
+                      <div className="bg-green-50 p-4 rounded-lg">
+                        <p className="text-sm text-green-600">Total Bookings</p>
+                        <p className="text-2xl font-bold text-green-700">{tenantDetails.usage?.bookings_total}</p>
+                      </div>
+                      <div className="bg-orange-50 p-4 rounded-lg">
+                        <p className="text-sm text-orange-600">This Month</p>
+                        <p className="text-2xl font-bold text-orange-700">{tenantDetails.usage?.bookings_this_month}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-6 border-t flex space-x-3">
+                    <button
+                      onClick={() => handleImpersonate(selectedTenant)}
+                      className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                    >
+                      <Shield size={18} />
+                      <span>Impersonate</span>
+                    </button>
+                    {tenantDetails.tenant?.status === 'active' ? (
+                      <button
+                        onClick={() => handleSuspendTenant(selectedTenant)}
+                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      >
+                        <Pause size={18} />
+                        <span>Suspend</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleReactivateTenant(selectedTenant)}
+                        className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      >
+                        <Play size={18} />
+                        <span>Reactivate</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">Manage Users</h2>
+              <button
+                onClick={() => setShowCreateUserForm(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <Plus size={18} />
+                <span>Create User</span>
+              </button>
+            </div>
+
+            {/* Create User Form */}
+            {showCreateUserForm && (
+              <div className="bg-white rounded-xl p-6 shadow-sm border">
+                <h3 className="font-semibold text-gray-900 mb-4">Create New User</h3>
+                <form onSubmit={handleCreateUser} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={newUser.email}
+                        onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                      <input
+                        type="password"
+                        value={newUser.password}
+                        onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <input
+                        type="text"
+                        value={newUser.name}
+                        onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                      <select
+                        value={newUser.role}
+                        onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="staff">Staff</option>
+                        <option value="tenant_admin">Tenant Admin</option>
+                        {isSuperAdmin() && <option value="master_admin">Master Admin</option>}
+                        {isSuperAdmin() && <option value="super_admin">Super Admin</option>}
+                      </select>
+                    </div>
+                  </div>
+                  {(newUser.role === 'staff' || newUser.role === 'tenant_admin') && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Tenant</label>
+                      <select
+                        value={newUser.tenant_id}
+                        onChange={(e) => setNewUser({ ...newUser, tenant_id: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select tenant...</option>
+                        {tenants.map(t => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <div className="flex space-x-3">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      Create User
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateUserForm(false)}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            <div className="bg-white rounded-xl p-6 shadow-sm border text-center text-gray-500">
+              <Users size={40} className="mx-auto mb-3 opacity-50" />
+              <p>User management available per-tenant</p>
+              <p className="text-sm">Select a tenant to manage its users</p>
+            </div>
+          </div>
+        )}
+
+        {/* Audit Log Tab */}
+        {activeTab === 'audit' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-gray-900">Audit Log</h2>
+            
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Timestamp</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actor</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Resource</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {auditLogs.map(log => (
+                    <tr key={log.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {formatDate(log.created_at)}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {log.actor_email}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          log.action.includes('suspend') ? 'bg-red-100 text-red-700' :
+                          log.action.includes('create') ? 'bg-green-100 text-green-700' :
+                          log.action.includes('impersonation') ? 'bg-purple-100 text-purple-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {log.resource_type}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {log.meta ? JSON.stringify(log.meta).substring(0, 50) : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {auditLogs.length === 0 && (
+                <div className="p-8 text-center text-gray-500">
+                  <FileText size={40} className="mx-auto mb-3 opacity-50" />
+                  <p>No audit events recorded yet</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default PlatformAdmin;

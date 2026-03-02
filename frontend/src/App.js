@@ -61,7 +61,7 @@ const TenantProtectedRoute = ({ children, adminOnly = false }) => {
 
   // Direct role checks to avoid function call timing issues
   const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin';
-  const isTenantAdminUser = activeTenant?.role === 'tenant_admin' || isPlatformAdminUser;
+  const isTenantAdminUser = activeTenant?.role === 'admin' || activeTenant?.role === 'master_admin' || isPlatformAdminUser;
 
   if (loading) {
     return (

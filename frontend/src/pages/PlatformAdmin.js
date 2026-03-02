@@ -1005,6 +1005,137 @@ const PlatformAdmin = () => {
           </div>
         )}
       </div>
+      
+      {/* Delete Tenant Confirmation Modal */}
+      {showDeleteModal && tenantToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full m-4 overflow-hidden" data-testid="delete-tenant-modal">
+            <div className="p-6 bg-red-50 border-b border-red-100">
+              <div className="flex items-center space-x-3">
+                <AlertTriangle size={24} className="text-red-600" />
+                <h3 className="text-lg font-bold text-red-800">Delete Franchise</h3>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-red-100 border border-red-200 rounded-lg p-4">
+                <p className="text-red-800 font-medium">You are about to permanently delete:</p>
+                <p className="text-red-900 text-lg font-bold mt-1">{tenantToDelete.name}</p>
+              </div>
+              
+              <div className="text-sm text-gray-600 space-y-1">
+                <p>This action will:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Delete all vehicles and bookings</li>
+                  <li>Remove all users from this franchise</li>
+                  <li>Delete users who only belong to this franchise</li>
+                  <li>This action <strong>cannot be undone</strong></li>
+                </ul>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Enter your password to confirm
+                </label>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500"
+                  placeholder="Your super admin password"
+                  data-testid="delete-confirm-password"
+                />
+              </div>
+            </div>
+            <div className="p-6 border-t bg-gray-50 flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletePassword('');
+                  setTenantToDelete(null);
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteTenant}
+                disabled={!deletePassword || deleteLoading}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center justify-center"
+                data-testid="confirm-delete-btn"
+              >
+                {deleteLoading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Trash2 size={18} className="mr-2" />
+                    Delete Permanently
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Reset Password Modal */}
+      {showResetPasswordModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full m-4 overflow-hidden">
+            <div className="p-6 bg-blue-50 border-b border-blue-100">
+              <div className="flex items-center space-x-3">
+                <Key size={24} className="text-blue-600" />
+                <h3 className="text-lg font-bold text-blue-800">Reset User Password</h3>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-blue-100 border border-blue-200 rounded-lg p-4">
+                <p className="text-blue-800 font-medium">Resetting password for:</p>
+                <p className="text-blue-900 font-bold">{resetPasswordData.userEmail}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <input
+                  type="text"
+                  value={resetPasswordData.newPassword}
+                  onChange={(e) => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter new password"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Your Admin Password</label>
+                <input
+                  type="password"
+                  value={resetPasswordData.adminPassword}
+                  onChange={(e) => setResetPasswordData({ ...resetPasswordData, adminPassword: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Confirm with your password"
+                />
+              </div>
+            </div>
+            <div className="p-6 border-t bg-gray-50 flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowResetPasswordModal(false);
+                  setResetPasswordData({ userId: '', userEmail: '', newPassword: '', adminPassword: '' });
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetPassword}
+                disabled={!resetPasswordData.newPassword || !resetPasswordData.adminPassword}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                Reset Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

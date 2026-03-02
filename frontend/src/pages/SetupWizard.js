@@ -11,7 +11,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const SetupWizard = () => {
   const navigate = useNavigate();
-  const { user, activeTenant, token } = useAuth();
+  const { user, activeTenant } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

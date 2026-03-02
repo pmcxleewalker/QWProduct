@@ -119,6 +119,7 @@ When creating a new tenant:
 - [x] Security documentation (SECURITY.md)
 - [x] Automated tenant isolation tests (pytest)
 - [x] Data cleanup script (removed orphaned records)
+- [x] Quick Setup Wizard for new Master Admins (onboarding flow)
 
 ### Pending (P1)
 - [ ] Billing integration (Stripe) for subscription management

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LogIn, AlertCircle, Car, Building2 } from 'lucide-react';
@@ -7,13 +7,23 @@ const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get('redirect');
+  const tenantSlug = searchParams.get('tenant');
   const { login } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [tenantInfo, setTenantInfo] = useState(null);
 
   const isQRRedirect = redirectUrl && redirectUrl.includes('/bookings?car=');
+  
+  // If tenant slug provided, try to fetch tenant info for display
+  useEffect(() => {
+    if (tenantSlug) {
+      // We'll just show the slug for now - could fetch tenant name from API
+      setTenantInfo({ slug: tenantSlug, name: tenantSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') });
+    }
+  }, [tenantSlug]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

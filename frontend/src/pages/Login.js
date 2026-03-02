@@ -23,24 +23,9 @@ const Login = () => {
     try {
       const result = await login(formData.email, formData.password, rememberMe);
       
-      console.log('Login result:', result);
-      console.log('User role:', result.user?.role);
+      // Navigation is handled by App.js routing based on auth state
+      // After successful login, the ProtectedRoute/TenantProtectedRoute will redirect appropriately
       
-      // Check if user is platform admin (no tenants needed)
-      if (result.user?.role === 'super_admin' || result.user?.role === 'master_admin') {
-        console.log('Redirecting to platform...');
-        navigate('/platform');
-        return;
-      }
-      
-      // Check if tenant selection is needed
-      if (result.needsTenantSelection) {
-        navigate('/select-tenant');
-        return;
-      }
-      
-      // Single tenant or tenant already selected
-      navigate(redirectUrl || '/');
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
     } finally {

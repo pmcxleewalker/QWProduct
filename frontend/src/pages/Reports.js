@@ -265,6 +265,20 @@ const Reports = () => {
             {/* Executive Summary Tab */}
             {activeTab === 'executive' && executiveSummary && (
               <div className="space-y-6">
+                {/* Header with Export Button */}
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900">Executive Summary</h2>
+                  <button
+                    onClick={() => downloadPdf('/platform/reports/executive-summary/pdf', 'executive_summary.pdf')}
+                    disabled={downloadingPdf}
+                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    data-testid="export-executive-pdf-btn"
+                  >
+                    <Download size={18} />
+                    <span>{downloadingPdf ? 'Downloading...' : 'Export PDF'}</span>
+                  </button>
+                </div>
+                
                 {/* Key Metrics */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-white rounded-xl p-6 shadow-sm border">

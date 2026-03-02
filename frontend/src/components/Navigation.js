@@ -51,7 +51,7 @@ const Navigation = () => {
   
   // Helper functions for admin checks
   const isAdmin = () => isTenantAdmin || isPlatformAdmin;
-  const isMasterAdmin = isPlatformAdmin;
+  const isPlatformAdmin() = isPlatformAdmin;
   
   // Check if user is pmcxleewalker (show fish icon instead of "Live Sheet")
   const isPmcxUser = user?.email?.toLowerCase().split('@')[0] === 'pmcxleewalker';
@@ -74,7 +74,7 @@ const Navigation = () => {
   };
 
   // Only show Admin for admin users
-  if (isAdmin()) {
+  if (isTenantAdmin()) {
     navItems.push({ path: '/admin', icon: Settings, label: 'Admin' });
   }
 
@@ -322,7 +322,7 @@ const Navigation = () => {
             )}
             
             {/* Deployment Updates - Admin only (Mobile) */}
-            {isAdmin() && (
+            {isTenantAdmin() && (
               <div className="relative" ref={deploymentRef}>
                 <button
                   onClick={() => setShowDeploymentUpdates(!showDeploymentUpdates)}
@@ -361,18 +361,18 @@ const Navigation = () => {
             )}
             
             <div className="flex items-center space-x-1">
-              {isMasterAdmin && (
+              {isPlatformAdmin() && (
                 <Crown size={16} className="text-yellow-500" title="Master Admin" />
               )}
               <span className="text-xs text-gray-600">{user?.email?.split('@')[0]}</span>
             </div>
-            {isAdmin() && (
+            {isTenantAdmin() && (
               <span className={`px-1.5 py-0.5 text-xs font-medium rounded ${
-                isMasterAdmin 
+                isPlatformAdmin() 
                   ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 border border-amber-300'
                   : 'bg-purple-100 text-purple-800'
               }`}>
-                {isMasterAdmin ? '👑 Master Admin' : 'Admin'}
+                {isPlatformAdmin() ? '👑 Master Admin' : 'Admin'}
               </span>
             )}
             <button
@@ -430,7 +430,7 @@ const Navigation = () => {
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   // For admin: show icons only for Bookings, Assistance, Admin (not Dashboard, Live Sheet)
-                  const isIconOnlyForAdmin = isAdmin() && ['Bookings', 'Assistance', 'Admin'].includes(item.label);
+                  const isIconOnlyForAdmin = isTenantAdmin() && ['Bookings', 'Assistance', 'Admin'].includes(item.label);
                   return (
                     <Link
                       key={item.path}
@@ -451,7 +451,7 @@ const Navigation = () => {
               </div>
               
               {/* Notification Bell - Desktop (Staff only) */}
-              {!isAdmin() && (
+              {!isTenantAdmin() && (
                 <div className="relative" ref={notificationRef}>
                   <button
                     onClick={toggleNotifications}
@@ -486,7 +486,7 @@ const Navigation = () => {
               )}
               
               {/* Deployment Updates - Admin only (Desktop) */}
-              {isAdmin() && (
+              {isTenantAdmin() && (
                 <div className="relative">
                   <button
                     onClick={() => setShowDeploymentUpdates(!showDeploymentUpdates)}
@@ -527,23 +527,23 @@ const Navigation = () => {
               
               <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
                 {/* Show email only for staff */}
-                {!isAdmin() && <span className="text-sm text-gray-700">{user?.email}</span>}
-                {isAdmin() && (
+                {!isTenantAdmin() && <span className="text-sm text-gray-700">{user?.email}</span>}
+                {isTenantAdmin() && (
                   <div className="flex items-center space-x-2">
-                    {isMasterAdmin && (
+                    {isPlatformAdmin() && (
                       <Crown size={20} className="text-yellow-500" title="Master Admin" />
                     )}
                     <span className={`px-2 py-1 text-xs font-medium rounded ${
-                      isMasterAdmin 
+                      isPlatformAdmin() 
                         ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 border border-amber-300'
                         : 'bg-purple-100 text-purple-800'
                     }`}>
-                      {isMasterAdmin ? '👑 Master Admin' : 'Admin'}
+                      {isPlatformAdmin() ? '👑 Master Admin' : 'Admin'}
                     </span>
                   </div>
                 )}
                 {/* Show change password only for staff */}
-                {!isAdmin() && (
+                {!isTenantAdmin() && (
                   <button
                     onClick={() => setShowChangePassword(true)}
                     className="flex items-center p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"

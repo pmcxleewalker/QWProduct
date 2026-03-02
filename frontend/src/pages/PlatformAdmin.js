@@ -825,6 +825,18 @@ const PlatformAdmin = () => {
                       </button>
                     )}
                   </div>
+                  
+                  {/* Delete Tenant Button */}
+                  <button
+                    onClick={() => {
+                      setTenantToDelete(tenantDetails.tenant);
+                      setShowDeleteModal(true);
+                    }}
+                    className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 border border-red-300"
+                  >
+                    <Trash2 size={18} />
+                    <span>Delete Franchise Permanently</span>
+                  </button>
                 </div>
               </div>
             )}

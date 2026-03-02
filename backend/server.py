@@ -299,6 +299,25 @@ async def get_current_user_info(context: TenantContext = Depends(get_tenant_cont
     }
 
 
+# ==================== PUBLIC TENANT LOOKUP ====================
+
+@api_router.get("/tenants/by-slug/{slug}")
+async def get_tenant_by_slug(slug: str):
+    """
+    Public endpoint to get tenant info by slug.
+    Used for branded login pages.
+    """
+    tenant = await db.tenants.find_one(
+        {"slug": slug},
+        {"_id": 0, "id": 1, "name": 1, "slug": 1, "status": 1}
+    )
+    
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    return tenant
+
+
 # ==================== SUPER ADMIN - PLATFORM MANAGEMENT ====================
 
 @api_router.post("/platform/tenants", response_model=dict)

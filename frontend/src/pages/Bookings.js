@@ -768,38 +768,75 @@ const Bookings = () => {
         </div>
       </div>
 
-      {/* View Mode Toggle: All Bookings / My Bookings */}
-      <div className="flex items-center space-x-2 mb-4 bg-gray-100 rounded-lg p-1 w-fit" data-testid="view-mode-toggle">
+      {/* View Mode Toggle: All Bookings / My Bookings + Map Toggle */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1" data-testid="view-mode-toggle">
+          <button
+            onClick={() => setViewMode('all')}
+            data-testid="all-bookings-tab"
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              viewMode === 'all'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            <Users size={16} />
+            <span>All Bookings</span>
+          </button>
+          <button
+            onClick={() => setViewMode('my')}
+            data-testid="my-bookings-tab"
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              viewMode === 'my'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            <User size={16} />
+            <span>My Bookings</span>
+            {user?.email && (
+              <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full ml-1">
+                {bookings.filter(b => b.created_by_email === user.email).length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Map Toggle Button */}
         <button
-          onClick={() => setViewMode('all')}
-          data-testid="all-bookings-tab"
+          onClick={() => setShowMap(!showMap)}
+          data-testid="map-toggle-button"
           className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            viewMode === 'all'
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-800'
+            showMap
+              ? 'bg-emerald-600 text-white'
+              : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
           }`}
         >
-          <Users size={16} />
-          <span>All Bookings</span>
-        </button>
-        <button
-          onClick={() => setViewMode('my')}
-          data-testid="my-bookings-tab"
-          className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            viewMode === 'my'
-              ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-800'
-          }`}
-        >
-          <User size={16} />
-          <span>My Bookings</span>
-          {user?.email && (
-            <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full ml-1">
-              {bookings.filter(b => b.created_by_email === user.email).length}
-            </span>
-          )}
+          <Map size={16} />
+          <span>{showMap ? 'Hide Map' : 'Show Map'}</span>
         </button>
       </div>
+
+      {/* Booking Locations Map */}
+      {showMap && (
+        <div className="mb-6">
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600 mx-auto mb-3"></div>
+                <p className="text-gray-600 text-sm">Loading map...</p>
+              </div>
+            </div>
+          }>
+            <BookingLocationsMap 
+              carId={selectedCar !== 'all' ? selectedCar : null}
+              selectedDate={currentDate.toISOString().split('T')[0]}
+              height="350px"
+              showDatePicker={false}
+            />
+          </Suspense>
+        </div>
+      )}
 
       {/* Success/Error Messages */}
       {success && (

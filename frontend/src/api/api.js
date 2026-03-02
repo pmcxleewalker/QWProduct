@@ -3,156 +3,122 @@ import axios from 'axios';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-// Car API
+// Vehicle/Car API (tenant-scoped)
 export const carAPI = {
-  getAll: () => axios.get(`${API}/cars`),
-  getById: (id) => axios.get(`${API}/cars/${id}`),
-  create: (data) => axios.post(`${API}/cars`, data),
-  update: (id, data) => axios.put(`${API}/cars/${id}`, data),
-  delete: (id) => axios.delete(`${API}/cars/${id}`),
-  getQRCode: (id) => `${API}/cars/${id}/qr`,
-  block: (id, data) => axios.post(`${API}/cars/${id}/block`, data),
-  unblock: (id, data) => axios.post(`${API}/cars/${id}/unblock`, data),
-  updateStatus: (id, data) => axios.put(`${API}/admin/cars/${id}/status`, data),
-  getAvailability: (carId, date, view = 'day') => 
-    axios.get(`${API}/cars/${carId}/availability`, { params: { date, view } }),
-  updateMileage: (id, mileage) => axios.put(`${API}/cars/${id}/mileage`, { mileage }),
-  getDetails: (id) => axios.get(`${API}/cars/${id}/details`),
+  getAll: () => axios.get(`${API}/vehicles`),
+  getById: (id) => axios.get(`${API}/vehicles/${id}`),
+  create: (data) => axios.post(`${API}/vehicles`, data),
+  update: (id, data) => axios.put(`${API}/vehicles/${id}`, data),
+  delete: (id) => axios.delete(`${API}/vehicles/${id}`),
+  getQRCode: (id) => `${API}/vehicles/${id}/qr`,
 };
 
-// Compliance API
-export const complianceAPI = {
-  getAlerts: () => axios.get(`${API}/admin/compliance-alerts`),
-};
-
-// Reports API
-export const reportsAPI = {
-  getFleetUsage: (startDate, endDate) => {
-    const params = {};
-    if (startDate) params.start_date = startDate;
-    if (endDate) params.end_date = endDate;
-    return axios.get(`${API}/admin/reports/fleet-usage`, { params });
-  },
-  exportCSV: () => `${API}/admin/reports/export`,
-  getDailyAvailability: (date) => axios.get(`${API}/admin/reports/daily-availability`, { params: { date } }),
-  getBookingsDetail: (startDate, endDate) => axios.get(`${API}/admin/reports/bookings-detail`, { params: { start_date: startDate, end_date: endDate } }),
-  clearBookings: (startDate, endDate) => axios.delete(`${API}/admin/bookings/clear`, { params: { start_date: startDate, end_date: endDate } }),
-  getCarsWithoutBookings: (date) => axios.get(`${API}/admin/reports/cars-without-bookings`, { params: { date } }),
-  getBookingCharts: (startDate, endDate) => {
-    const params = {};
-    if (startDate) params.start_date = startDate;
-    if (endDate) params.end_date = endDate;
-    return axios.get(`${API}/admin/reports/booking-charts`, { params });
-  },
-};
-
-// Status API
-export const statusAPI = {
-  create: (data) => axios.post(`${API}/status`, data),
-  getLive: () => axios.get(`${API}/status/live`),
-  getHistory: (carId, limit = 50) => axios.get(`${API}/status/history/${carId}?limit=${limit}`),
-  getWeather: () => axios.get(`${API}/weather`),
-};
-
-// Booking API
+// Booking API (tenant-scoped)
 export const bookingAPI = {
   getAll: () => axios.get(`${API}/bookings`),
-  getByCar: (carId) => axios.get(`${API}/bookings/car/${carId}`),
+  getById: (id) => axios.get(`${API}/bookings/${id}`),
   create: (data) => axios.post(`${API}/bookings`, data),
+  update: (id, data) => axios.put(`${API}/bookings/${id}`, data),
   delete: (id) => axios.delete(`${API}/bookings/${id}`),
-  deleteSeries: (recurringGroupId) => axios.delete(`${API}/bookings/series/${recurringGroupId}`),
-  getPending: () => axios.get(`${API}/admin/pending-bookings`),
-  approve: (groupId) => axios.post(`${API}/admin/bookings/${groupId}/approve`),
-  reject: (groupId, reason) => axios.post(`${API}/admin/bookings/${groupId}/reject`, { reason }),
-  edit: (bookingId, data) => axios.put(`${API}/admin/bookings/${bookingId}`, data),
-  editSeries: (recurrenceId, data) => axios.put(`${API}/admin/bookings/series/${recurrenceId}`, data),
-  getSuggestions: () => axios.get(`${API}/bookings/suggestions`),
-  getAvailableCars: (startTime, endTime, excludeBookingId) => 
-    axios.get(`${API}/admin/available-cars`, { 
-      params: { start_time: startTime, end_time: endTime, exclude_booking_id: excludeBookingId } 
-    }),
 };
 
-// Booking Notifications API
-export const bookingNotificationAPI = {
-  get: () => axios.get(`${API}/booking-notifications`),
-  markRead: (id) => axios.post(`${API}/booking-notifications/${id}/read`),
+// Provider API (tenant-scoped)
+export const providerAPI = {
+  getAll: () => axios.get(`${API}/providers`),
+  create: (data) => axios.post(`${API}/providers`, data),
+  delete: (id) => axios.delete(`${API}/providers/${id}`),
 };
 
-// Assistance API
-export const assistanceAPI = {
-  getAll: () => axios.get(`${API}/assistance`),
-  getByRegion: (region) => axios.get(`${API}/assistance/${region}`),
-  create: (data) => axios.post(`${API}/assistance`, data),
-  update: (id, data) => axios.put(`${API}/assistance/${id}`, data),
-  delete: (id) => axios.delete(`${API}/assistance/${id}`),
-};
-
-// User Management API
-export const userAPI = {
-  create: (data) => axios.post(`${API}/admin/users/create`, data),
-  invite: (data) => axios.post(`${API}/admin/users/invite`, data),
-  getAll: () => axios.get(`${API}/admin/users`),
-  update: (id, data) => axios.put(`${API}/admin/users/${id}`, data),
-  delete: (id) => axios.delete(`${API}/admin/users/${id}`),
-  deleteAdmin: (id, masterAdminPassword) => axios.post(`${API}/admin/users/${id}/delete-admin`, { master_admin_password: masterAdminPassword }),
-  changePassword: (data) => axios.post(`${API}/auth/change-password`, data),
-  resetPassword: (userId, newPassword) => axios.post(`${API}/admin/users/${userId}/reset-password`, { new_password: newPassword }),
-  checkMasterAdmin: () => axios.get(`${API}/admin/master-admin-check`),
-};
-
-// Admin Messages API
+// Message API (tenant-scoped)
 export const messageAPI = {
-  // Admin endpoints
-  create: (data) => axios.post(`${API}/admin/messages`, data),
-  getAll: () => axios.get(`${API}/admin/messages`),
-  update: (id, data) => axios.put(`${API}/admin/messages/${id}`, data),
-  delete: (id) => axios.delete(`${API}/admin/messages/${id}`),
-  // Staff endpoints
-  getUnacknowledged: () => axios.get(`${API}/messages/unacknowledged`),
+  getAll: () => axios.get(`${API}/messages`),
+  create: (data) => axios.post(`${API}/messages`, data),
   acknowledge: (id) => axios.post(`${API}/messages/${id}/acknowledge`),
 };
 
-// Lift Request API
-export const liftRequestAPI = {
-  create: (data) => axios.post(`${API}/lift-requests`, data),
-  getActive: () => axios.get(`${API}/lift-requests`),
-  getAll: () => axios.get(`${API}/lift-requests/all`),
-  getCount: () => axios.get(`${API}/lift-requests/count`),
-  accept: (id, message) => axios.post(`${API}/lift-requests/${id}/accept`, { message }),
-  dismiss: (id) => axios.post(`${API}/lift-requests/${id}/dismiss`),
-  delete: (id) => axios.delete(`${API}/lift-requests/${id}`),
-};
-
-// Lift Notifications API
-export const liftNotificationAPI = {
-  get: () => axios.get(`${API}/lift-notifications`),
-  getCount: () => axios.get(`${API}/lift-notifications/count`),
-  markRead: (id) => axios.post(`${API}/lift-notifications/${id}/read`),
-};
-
-// Admin To-Do List API
+// Todo API (tenant-scoped)
 export const todoAPI = {
-  getAll: () => axios.get(`${API}/admin/todos`),
-  create: (data) => axios.post(`${API}/admin/todos`, data),
-  update: (id, data) => axios.put(`${API}/admin/todos/${id}`, data),
-  delete: (id) => axios.delete(`${API}/admin/todos/${id}`),
+  getAll: () => axios.get(`${API}/todos`),
+  create: (data) => axios.post(`${API}/todos`, data),
+  complete: (id) => axios.put(`${API}/todos/${id}/complete`),
+  delete: (id) => axios.delete(`${API}/todos/${id}`),
 };
 
-// Push Notification API
+// Lift Request API (tenant-scoped)
+export const liftRequestAPI = {
+  getAll: () => axios.get(`${API}/lift-requests`),
+  create: (data) => axios.post(`${API}/lift-requests`, data),
+  getCount: () => axios.get(`${API}/lift-requests`).then(r => ({ data: { count: r.data?.length || 0 } })),
+};
+
+// Reports API (tenant-scoped)
+export const reportsAPI = {
+  getSummary: () => axios.get(`${API}/reports/summary`),
+};
+
+// Tenant User API (tenant admin)
+export const userAPI = {
+  getAll: () => axios.get(`${API}/tenant/users`),
+  create: (data, role = 'staff') => axios.post(`${API}/tenant/users`, data, { params: { role } }),
+  updateRole: (userId, role) => axios.put(`${API}/tenant/users/${userId}/role`, null, { params: { role } }),
+  remove: (userId) => axios.delete(`${API}/tenant/users/${userId}`),
+};
+
+// Platform API (super/master admin only)
+export const platformAPI = {
+  // Tenants
+  getTenants: (status) => axios.get(`${API}/platform/tenants`, { params: status ? { status } : {} }),
+  getTenant: (id) => axios.get(`${API}/platform/tenants/${id}`),
+  createTenant: (data) => axios.post(`${API}/platform/tenants`, data),
+  updateTenant: (id, data) => axios.put(`${API}/platform/tenants/${id}`, data),
+  suspendTenant: (id) => axios.post(`${API}/platform/tenants/${id}/suspend`),
+  reactivateTenant: (id) => axios.post(`${API}/platform/tenants/${id}/reactivate`),
+  impersonateTenant: (id) => axios.post(`${API}/platform/tenants/${id}/impersonate`),
+  stopImpersonation: () => axios.post(`${API}/platform/stop-impersonation`),
+  
+  // Users
+  getUsers: (tenantId) => axios.get(`${API}/platform/users`, { params: tenantId ? { tenant_id: tenantId } : {} }),
+  createUser: (data, role, tenantId) => axios.post(`${API}/platform/users`, data, { params: { role, tenant_id: tenantId } }),
+  
+  // Stats & Audit
+  getStats: () => axios.get(`${API}/platform/stats`),
+  getAuditLog: (tenantId, action, limit) => axios.get(`${API}/platform/audit-log`, { params: { tenant_id: tenantId, action, limit } }),
+};
+
+// Auth API
+export const authAPI = {
+  login: (email, password) => axios.post(`${API}/auth/login`, { email, password }),
+  selectTenant: (tenantId) => axios.post(`${API}/auth/select-tenant`, { tenant_id: tenantId }),
+  getMe: () => axios.get(`${API}/auth/me`),
+};
+
+// Compatibility aliases for existing components
+export const assistanceAPI = providerAPI;
+export const complianceAPI = { getAlerts: () => Promise.resolve({ data: [] }) };
+export const statusAPI = { 
+  getLive: () => axios.get(`${API}/vehicles`),
+  getWeather: () => axios.get(`${API}/weather`).catch(() => ({ data: null }))
+};
 export const pushAPI = {
-  getVapidKey: () => axios.get(`${API}/push/vapid-public-key`),
-  subscribe: (subscription, userEmail) => axios.post(`${API}/push/subscribe`, { subscription, user_email: userEmail }),
-  unsubscribe: () => axios.delete(`${API}/push/unsubscribe`),
+  getVapidKey: () => axios.get(`${API}/push/vapid-public-key`).catch(() => ({ data: { key: null } })),
+  subscribe: () => Promise.resolve(),
+  unsubscribe: () => Promise.resolve(),
 };
-
-// Booking Locations Map API
+export const liftNotificationAPI = {
+  get: () => Promise.resolve({ data: [] }),
+  getCount: () => Promise.resolve({ data: { count: 0 } }),
+  markRead: () => Promise.resolve(),
+};
+export const bookingNotificationAPI = {
+  get: () => Promise.resolve({ data: [] }),
+  markRead: () => Promise.resolve(),
+};
 export const bookingLocationsAPI = {
-  getLocationsForDate: (date, carId = null) => {
-    const params = { date };
-    if (carId) params.car_id = carId;
-    return axios.get(`${API}/bookings/locations`, { params });
-  },
+  getLocationsForDate: (date, carId) => axios.get(`${API}/bookings/locations`, { params: { date, car_id: carId } }).catch(() => ({ data: { pins: [] } })),
 };
 
-export default { carAPI, statusAPI, bookingAPI, assistanceAPI, userAPI, complianceAPI, messageAPI, liftRequestAPI, todoAPI, pushAPI, bookingLocationsAPI };
+export default { 
+  carAPI, bookingAPI, providerAPI, messageAPI, todoAPI, liftRequestAPI, 
+  reportsAPI, userAPI, platformAPI, authAPI, assistanceAPI, complianceAPI, 
+  statusAPI, pushAPI, liftNotificationAPI, bookingNotificationAPI, bookingLocationsAPI
+};

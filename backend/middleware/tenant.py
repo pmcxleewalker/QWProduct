@@ -129,12 +129,13 @@ async def require_tenant_admin(
     context: TenantContext = Depends(require_tenant_context)
 ) -> TenantContext:
     """
-    Require tenant admin or higher role.
+    Require admin or higher role within tenant.
+    Master Admin, Admin, or Super Admin can access.
     """
-    if context.role not in [UserRole.SUPER_ADMIN, UserRole.MASTER_ADMIN, UserRole.TENANT_ADMIN]:
+    if context.role not in [UserRole.SUPER_ADMIN, UserRole.MASTER_ADMIN, UserRole.ADMIN]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Tenant admin access required"
+            detail="Admin access required"
         )
     return context
 

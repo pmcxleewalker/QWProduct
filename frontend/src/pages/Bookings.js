@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { bookingAPI, carAPI } from '../api/api';
-import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp, Minus, AlertTriangle, Users } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp, Minus, AlertTriangle, Users, Map } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import EditBookingModal from '../components/EditBookingModal';
 import CarAvailabilityCard from '../components/CarAvailabilityCard';
+
+// Lazy load the map component
+const BookingLocationsMap = lazy(() => import('../components/BookingLocationsMap'));
 
 const Bookings = () => {
   const { user } = useAuth();

@@ -424,11 +424,11 @@ const PlatformAdmin = () => {
             {/* Create Tenant Form */}
             {showCreateForm && (
               <div className="bg-white rounded-xl p-6 shadow-sm border">
-                <h3 className="font-semibold text-gray-900 mb-4">Create New Tenant</h3>
+                <h3 className="font-semibold text-gray-900 mb-4">Create New Franchise</h3>
                 <form onSubmit={handleCreateTenant} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Franchise Name</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Franchise Name *</label>
                       <input
                         type="text"
                         value={newTenant.name}
@@ -436,10 +436,11 @@ const PlatformAdmin = () => {
                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                         placeholder="e.g., Bluebird Care Kerry"
                         required
+                        data-testid="tenant-name-input"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Slug (URL identifier)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Slug (URL identifier) *</label>
                       <input
                         type="text"
                         value={newTenant.slug}
@@ -447,6 +448,7 @@ const PlatformAdmin = () => {
                         className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                         placeholder="e.g., bluebird-kerry"
                         required
+                        data-testid="tenant-slug-input"
                       />
                     </div>
                   </div>
@@ -456,6 +458,7 @@ const PlatformAdmin = () => {
                       value={newTenant.plan}
                       onChange={(e) => setNewTenant({ ...newTenant, plan: e.target.value })}
                       className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      data-testid="tenant-plan-select"
                     >
                       <option value="free">Free (3 vehicles, 5 users)</option>
                       <option value="starter">Starter (10 vehicles, 20 users)</option>
@@ -463,22 +466,137 @@ const PlatformAdmin = () => {
                       <option value="enterprise">Enterprise (Unlimited)</option>
                     </select>
                   </div>
+                  
+                  {/* Master Admin Section */}
+                  <div className="border-t pt-4 mt-4">
+                    <h4 className="font-medium text-gray-900 mb-3">Master Admin (Franchise Owner)</h4>
+                    <p className="text-sm text-gray-500 mb-3">
+                      A Master Admin account will be created automatically. You can optionally specify the email and name.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Admin Email (optional)</label>
+                        <input
+                          type="email"
+                          value={newTenant.master_admin_email}
+                          onChange={(e) => setNewTenant({ ...newTenant, master_admin_email: e.target.value })}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="owner@franchise.com"
+                          data-testid="master-admin-email-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Admin Name (optional)</label>
+                        <input
+                          type="text"
+                          value={newTenant.master_admin_name}
+                          onChange={(e) => setNewTenant({ ...newTenant, master_admin_name: e.target.value })}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="John Smith"
+                          data-testid="master-admin-name-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="flex space-x-3">
                     <button
                       type="submit"
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      data-testid="create-tenant-submit-btn"
                     >
-                      Create Tenant
+                      Create Franchise
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowCreateForm(false)}
                       className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                      data-testid="create-tenant-cancel-btn"
                     >
                       Cancel
                     </button>
                   </div>
                 </form>
+              </div>
+            )}
+            
+            {/* Created Tenant Credentials Modal */}
+            {createdTenantResult && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-2xl max-w-lg w-full m-4 overflow-hidden" data-testid="tenant-created-modal">
+                  <div className="p-6 bg-green-50 border-b border-green-100">
+                    <div className="flex items-center space-x-3">
+                      <CheckCircle size={24} className="text-green-600" />
+                      <h3 className="text-lg font-bold text-green-800">Franchise Created Successfully!</h3>
+                    </div>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <p className="text-sm text-blue-600 font-medium mb-1">Franchise Name</p>
+                      <p className="text-lg font-bold text-blue-900">{createdTenantResult.tenant?.name}</p>
+                    </div>
+                    
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="text-sm text-gray-600 font-medium mb-2">Master Admin Credentials</p>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-500">Email:</span>
+                          <span className="font-mono font-medium text-gray-900">{createdTenantResult.master_admin?.email}</span>
+                        </div>
+                        {createdTenantResult.master_admin?.password && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-500">Password:</span>
+                            <span className="font-mono font-medium text-gray-900 bg-yellow-100 px-2 py-1 rounded">{createdTenantResult.master_admin?.password}</span>
+                          </div>
+                        )}
+                        {!createdTenantResult.master_admin?.password && (
+                          <p className="text-sm text-amber-600">
+                            User already exists - they can use their existing password.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <p className="text-sm text-purple-600 font-medium mb-1">Login URL</p>
+                      <div className="flex items-center space-x-2">
+                        <code className="flex-1 font-mono text-sm text-purple-900 bg-purple-100 px-2 py-1 rounded overflow-auto">
+                          {createdTenantResult.login_url}
+                        </code>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(createdTenantResult.login_url);
+                            setSuccess('Login URL copied to clipboard!');
+                          }}
+                          className="px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                      <div className="flex items-start space-x-2">
+                        <AlertTriangle size={18} className="text-amber-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-amber-800">Important</p>
+                          <p className="text-sm text-amber-700">
+                            {createdTenantResult.instructions}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-6 border-t bg-gray-50">
+                    <button
+                      onClick={() => setCreatedTenantResult(null)}
+                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      data-testid="close-credentials-modal-btn"
+                    >
+                      Got it, Close
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 

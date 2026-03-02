@@ -11,10 +11,10 @@ All vehicles have been successfully imported with QR codes generated!
 **Status:** Free  
 
 **QR Code Download:**  
-https://tenant-platform-11.preview.emergentagent.com/api/cars/3e9f9c9a-b2e4-4edc-be1a-e7171aa5d9d7/qr
+https://fleet-saas-1.preview.emergentagent.com/api/cars/3e9f9c9a-b2e4-4edc-be1a-e7171aa5d9d7/qr
 
 **Status Update Link:**  
-https://tenant-platform-11.preview.emergentagent.com/status-update?car=quickwing
+https://fleet-saas-1.preview.emergentagent.com/status-update?car=quickwing
 
 ---
 
@@ -23,10 +23,10 @@ https://tenant-platform-11.preview.emergentagent.com/status-update?car=quickwing
 **Status:** Free  
 
 **QR Code Download:**  
-https://tenant-platform-11.preview.emergentagent.com/api/cars/[CAR_ID_2]/qr
+https://fleet-saas-1.preview.emergentagent.com/api/cars/[CAR_ID_2]/qr
 
 **Status Update Link:**  
-https://tenant-platform-11.preview.emergentagent.com/status-update?car=[CAR_ID_2]
+https://fleet-saas-1.preview.emergentagent.com/status-update?car=[CAR_ID_2]
 
 ---
 
@@ -156,7 +156,7 @@ https://tenant-platform-11.preview.emergentagent.com/status-update?car=[CAR_ID_2
 ## 📱 How to Download All QR Codes
 
 ### Option 1: From Admin Panel (Easiest)
-1. Login: https://tenant-platform-11.preview.emergentagent.com/login
+1. Login: https://fleet-saas-1.preview.emergentagent.com/login
 2. Go to **Admin Panel** → **Manage Cars**
 3. Click the **QR** button next to each vehicle
 4. QR code downloads as PNG file
@@ -207,10 +207,10 @@ https://tenant-platform-11.preview.emergentagent.com/status-update?car=[CAR_ID_2
 
 ## 🔗 Quick Access Links
 
-- **App Login:** https://tenant-platform-11.preview.emergentagent.com/login
-- **Dashboard:** https://tenant-platform-11.preview.emergentagent.com/
-- **Live Sheet:** https://tenant-platform-11.preview.emergentagent.com/live-sheet
-- **Admin Panel:** https://tenant-platform-11.preview.emergentagent.com/admin
+- **App Login:** https://fleet-saas-1.preview.emergentagent.com/login
+- **Dashboard:** https://fleet-saas-1.preview.emergentagent.com/
+- **Live Sheet:** https://fleet-saas-1.preview.emergentagent.com/live-sheet
+- **Admin Panel:** https://fleet-saas-1.preview.emergentagent.com/admin
 
 **Login Credentials:**
 - Email: `admin@quickwing.com`

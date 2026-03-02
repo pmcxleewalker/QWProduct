@@ -3215,13 +3215,13 @@ const Admin = () => {
         </div>
       )}
 
-      {/* Staff Location Map Tab */}
+      {/* Booking Locations Map Tab */}
       {activeTab === 'staffmap' && (
         <div>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold flex items-center">
               <Map className="mr-2 text-emerald-600" size={24} />
-              Staff Location Map
+              Booking Locations Map
             </h2>
           </div>
           <Suspense fallback={
@@ -3232,7 +3232,7 @@ const Admin = () => {
               </div>
             </div>
           }>
-            <StaffLocationMap />
+            <BookingLocationsMap height="500px" showDatePicker={true} />
           </Suspense>
         </div>
       )}

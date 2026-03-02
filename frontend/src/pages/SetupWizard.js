@@ -50,9 +50,7 @@ const SetupWizard = () => {
     setError('');
     
     try {
-      const response = await axios.post(`${API}/vehicles`, vehicle, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.post(`${API}/vehicles`, vehicle);
       setCreatedVehicle(response.data.vehicle);
       setCurrentStep(2);
     } catch (err) {
@@ -73,7 +71,6 @@ const SetupWizard = () => {
     
     try {
       await axios.post(`${API}/tenant/users`, staff, {
-        headers: { Authorization: `Bearer ${token}` },
         params: { role: 'staff' }
       });
       setCreatedStaff({ email: staff.email, name: staff.name });

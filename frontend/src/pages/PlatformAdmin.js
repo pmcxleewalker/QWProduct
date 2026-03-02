@@ -280,6 +280,13 @@ const PlatformAdmin = () => {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              <a
+                href="/platform/reports"
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                <FileText size={18} />
+                <span>Reports & Billing</span>
+              </a>
               <span className="text-sm text-slate-300">{user?.email}</span>
               <span className="px-3 py-1 bg-blue-600 rounded-full text-xs font-medium">
                 {isSuperAdmin() ? 'Super Admin' : 'Master Admin'}

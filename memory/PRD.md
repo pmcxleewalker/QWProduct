@@ -151,7 +151,9 @@ When creating a new tenant:
 ├── pages/
 │   ├── PlatformAdmin.js   # Franchise Command Centre
 │   ├── TenantSelector.js  # Tenant selection page
-│   └── Login.js           # Updated login flow with tenant support
+│   ├── SetupWizard.js     # NEW: Onboarding wizard for Master Admins
+│   ├── Login.js           # Updated login flow with tenant support
+│   └── Dashboard.js       # Main dashboard with wizard redirect
 └── components/ui/         # Shadcn UI components
 ```
 

@@ -109,6 +109,10 @@ const TenantSelector = () => {
               <p>You don't have access to any organizations.</p>
               <p className="text-sm mt-2">Contact your administrator.</p>
             </div>
+          ) : tenants.length === 0 && isPlatformAdminUser ? (
+            <div className="text-center py-4 text-gray-500">
+              <p className="text-sm">No franchises assigned. Use the Command Centre to manage franchises.</p>
+            </div>
           ) : tenants.length > 0 ? (
             tenants.map((tenant) => (
               <button

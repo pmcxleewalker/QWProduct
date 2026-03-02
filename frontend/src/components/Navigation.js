@@ -49,6 +49,10 @@ const Navigation = () => {
   
   const isActive = (path) => location.pathname === path;
   
+  // Helper functions for admin checks
+  const isAdmin = () => isTenantAdmin || isPlatformAdmin;
+  const isMasterAdmin = isPlatformAdmin;
+  
   // Check if user is pmcxleewalker (show fish icon instead of "Live Sheet")
   const isPmcxUser = user?.email?.toLowerCase().split('@')[0] === 'pmcxleewalker';
   

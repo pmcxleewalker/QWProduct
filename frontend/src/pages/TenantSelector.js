@@ -4,17 +4,20 @@ import { useAuth } from '../contexts/AuthContext';
 import { Building2, ChevronRight, Shield, AlertTriangle, Crown } from 'lucide-react';
 
 const TenantSelector = () => {
-  const { tenants, selectTenant, user, logout, isPlatformAdmin } = useAuth();
+  const { tenants, selectTenant, user, logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Redirect platform admins to platform page
+  // Check if user is platform admin
+  const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin';
+
+  // Redirect platform admins to platform page if they have no tenants
   useEffect(() => {
-    if (isPlatformAdmin()) {
+    if (isPlatformAdminUser && tenants.length === 0) {
       navigate('/platform');
     }
-  }, [isPlatformAdmin, navigate]);
+  }, [isPlatformAdminUser, tenants, navigate]);
 
   const handleSelectTenant = async (tenantId) => {
     try {

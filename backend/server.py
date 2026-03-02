@@ -349,7 +349,7 @@ async def create_tenant(
     
     # Generate Master Admin credentials
     # Auto-generate email based on slug if not provided
-    master_email = tenant_data.master_admin_email or f"admin@{tenant_data.slug}.quickwing.local"
+    master_email = tenant_data.master_admin_email or f"admin.{tenant_data.slug}@quickwing.com"
     master_name = tenant_data.master_admin_name or f"{tenant_data.name} Admin"
     
     # Generate secure random password (12 chars: letters + digits)

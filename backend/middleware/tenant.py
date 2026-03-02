@@ -140,6 +140,22 @@ async def require_tenant_admin(
     return context
 
 
+async def require_admin(
+    context: TenantContext = Depends(require_tenant_context)
+) -> TenantContext:
+    """
+    Require admin privileges within tenant context.
+    Allows: Super Admin, Master Admin, or Admin roles.
+    Use this for tenant-level admin operations (managing vehicles, users within tenant, etc.)
+    """
+    if context.role not in [UserRole.SUPER_ADMIN, UserRole.MASTER_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return context
+
+
 async def require_super_admin(
     context: TenantContext = Depends(get_tenant_context)
 ) -> TenantContext:

@@ -307,7 +307,13 @@ async def create_tenant(
     context: TenantContext = Depends(require_platform_admin),
     request: Request = None
 ):
-    """Create a new tenant (franchise)"""
+    """
+    Create a new tenant (franchise) with auto-generated Master Admin.
+    Returns tenant details and Master Admin credentials.
+    """
+    import secrets
+    import string
+    
     # Check slug uniqueness
     existing = await db.tenants.find_one({"slug": tenant_data.slug}, {"_id": 0})
     if existing:
@@ -322,8 +328,9 @@ async def create_tenant(
     }
     limits = plan_limits.get(tenant_data.plan, plan_limits[TenantPlan.STARTER])
     
+    tenant_id = str(uuid.uuid4())
     tenant = {
-        "id": str(uuid.uuid4()),
+        "id": tenant_id,
         "name": tenant_data.name,
         "slug": tenant_data.slug,
         "status": TenantStatus.ACTIVE.value,
@@ -340,17 +347,78 @@ async def create_tenant(
     # Remove MongoDB's _id before returning
     tenant.pop('_id', None)
     
+    # Generate Master Admin credentials
+    # Auto-generate email based on slug if not provided
+    master_email = tenant_data.master_admin_email or f"admin@{tenant_data.slug}.quickwing.local"
+    master_name = tenant_data.master_admin_name or f"{tenant_data.name} Admin"
+    
+    # Generate secure random password (12 chars: letters + digits)
+    alphabet = string.ascii_letters + string.digits
+    master_password = ''.join(secrets.choice(alphabet) for _ in range(12))
+    
+    # Check if user with this email already exists
+    existing_user = await db.users.find_one({"email": master_email}, {"_id": 0})
+    
+    if existing_user:
+        # User exists - just add them as Master Admin of this tenant
+        user_id = existing_user["id"]
+        master_password = None  # Don't show password for existing user
+    else:
+        # Create new Master Admin user
+        user_id = str(uuid.uuid4())
+        master_user = {
+            "id": user_id,
+            "email": master_email,
+            "name": master_name,
+            "password_hash": get_password_hash(master_password),
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.users.insert_one(master_user)
+    
+    # Create Master Admin membership for this tenant
+    membership = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "tenant_id": tenant_id,
+        "role": UserRole.MASTER_ADMIN.value,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.memberships.insert_one(membership)
+    
     # Log audit event
     await audit_service.log_tenant_action(
         actor_user_id=context.user_id,
         actor_email=context.user_email,
         action=AuditAction.TENANT_CREATED,
         tenant_id=tenant["id"],
-        meta={"tenant_name": tenant["name"], "plan": tenant["plan"]},
+        meta={
+            "tenant_name": tenant["name"], 
+            "plan": tenant["plan"],
+            "master_admin_email": master_email
+        },
         ip_address=request.client.host if request and request.client else None
     )
     
-    return {"message": "Tenant created successfully", "tenant": tenant}
+    # Build the tenant login URL
+    # Format: /{tenant_slug}/login or the main login with tenant context
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://quickwing.com')
+    tenant_login_url = f"{frontend_url}/login?tenant={tenant_data.slug}"
+    
+    response = {
+        "message": "Tenant created successfully",
+        "tenant": tenant,
+        "master_admin": {
+            "email": master_email,
+            "name": master_name,
+            "password": master_password,  # Will be None for existing users
+            "is_new_user": master_password is not None
+        },
+        "login_url": tenant_login_url,
+        "instructions": f"Share the login URL and credentials with the franchise owner. They can then create Admin and Staff accounts for their team."
+    }
+    
+    return response
 
 
 @api_router.get("/platform/tenants")

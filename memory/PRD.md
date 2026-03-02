@@ -10,12 +10,12 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 - **Users**: Global accounts with role-based memberships per tenant
 - **Memberships**: Links users to tenants with specific roles
 
-### Role Hierarchy
+### Role Hierarchy (Simplified - March 2026)
 | Role | Scope | Capabilities |
 |------|-------|--------------|
-| `super_admin` | Platform | Full platform control, create/manage tenants |
-| `master_admin` | Platform | Support role, view/impersonate tenants |
-| `tenant_admin` | Tenant | Manage tenant users, vehicles, settings |
+| `super_admin` | Platform | Full platform control, create/manage all tenants |
+| `master_admin` | Tenant | Franchise owner - pays subscription, manages their tenant |
+| `admin` | Tenant | Manage tenant users, vehicles, settings |
 | `staff` | Tenant | Book vehicles, view data within tenant |
 
 ### Data Isolation
@@ -23,17 +23,29 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 - All queries automatically filtered by tenant context
 - Cross-tenant access blocked at application level
 - Audit logging for sensitive operations
+- Automated tenant isolation tests verify security
 
 ## Features
 
-### 1. Platform Administration (Command Centre)
+### 1. Platform Administration (Franchise Command Centre)
 - **Overview**: Platform-wide statistics (tenants, users, vehicles, bookings)
-- **Tenant Management**: Create, suspend, reactivate franchises
+- **Tenant Management**: Create franchises with auto-generated Master Admin credentials
 - **User Management**: Create platform and tenant users
 - **Audit Log**: View all security and action events
 - **Impersonation**: Support access with full audit trail
+- **Suspend/Reactivate**: Control tenant access for non-payment
 
-### 2. Tenant Features (Per Franchise)
+### 2. Tenant Creation Flow
+When creating a new tenant:
+1. Super Admin fills in franchise name, slug, and plan
+2. Optionally specifies Master Admin email and name
+3. System auto-generates:
+   - Master Admin user account
+   - Secure 12-character password
+   - Tenant-specific login URL
+4. Credentials displayed in modal for sharing with franchise owner
+
+### 3. Tenant Features (Per Franchise)
 - **Dashboard**: Overview, weather, notifications
 - **Vehicle Management**: Add/edit/delete fleet vehicles
 - **Booking System**: Calendar-based reservations with conflict detection
@@ -41,12 +53,13 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 - **Reports**: Usage statistics and analytics
 - **Team Management**: Add/remove staff members
 
-### 3. Security Features
+### 4. Security Features
 - JWT-based authentication with tenant context
 - Role-based access control (RBAC)
 - Tenant suspension for non-payment
 - Complete audit trail
-- IDOR prevention
+- IDOR prevention via TenantQueryBuilder
+- Automated tenant isolation tests
 
 ## API Endpoints
 
@@ -55,9 +68,9 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 - `POST /api/auth/select-tenant` - Switch active tenant
 - `GET /api/auth/me` - Get current user info
 
-### Platform (Super/Master Admin)
+### Platform (Super Admin)
 - `GET /api/platform/tenants` - List all tenants
-- `POST /api/platform/tenants` - Create tenant
+- `POST /api/platform/tenants` - Create tenant (returns Master Admin credentials)
 - `PUT /api/platform/tenants/{id}` - Update tenant
 - `POST /api/platform/tenants/{id}/suspend` - Suspend tenant
 - `POST /api/platform/tenants/{id}/reactivate` - Reactivate tenant
@@ -66,13 +79,13 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 - `GET /api/platform/stats` - Platform statistics
 - `GET /api/platform/audit-log` - Audit events
 
-### Tenant-Scoped
-- `GET /api/vehicles` - List vehicles (tenant-scoped)
-- `POST /api/vehicles` - Create vehicle
-- `GET /api/bookings` - List bookings (tenant-scoped)
+### Tenant-Scoped (Requires tenant context)
+- `GET /api/vehicles` - List vehicles
+- `POST /api/vehicles` - Create vehicle (Admin only)
+- `GET /api/bookings` - List bookings
 - `POST /api/bookings` - Create booking
 - `GET /api/tenant/users` - List tenant users
-- `POST /api/tenant/users` - Add user to tenant
+- `POST /api/tenant/users` - Add user to tenant (Admin only)
 
 ## Database Schema
 
@@ -89,38 +102,47 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 | Role | Email | Password |
 |------|-------|----------|
 | Super Admin | superadmin@quickwing.com | Super123 |
+| Master Admin (Kerry Care) | admin.kerry-care@quickwing.com | Rer6FQql1zWq |
 
 ## Status
 
 ### Completed (March 2026)
-- [x] Multi-tenant database schema
-- [x] Tenant isolation middleware
+- [x] Multi-tenant database schema with tenant_id
+- [x] Tenant isolation middleware with TenantQueryBuilder
 - [x] JWT with tenant context
 - [x] Platform Command Centre UI
-- [x] Tenant creation/suspension
+- [x] Tenant creation with auto-generated Master Admin credentials
+- [x] Tenant suspension/reactivation
 - [x] Impersonation with audit logging
-- [x] Role-based access control
+- [x] Role-based access control (Super Admin, Master Admin, Admin, Staff)
 - [x] Tenant selector for multi-membership users
 - [x] Security documentation (SECURITY.md)
+- [x] Automated tenant isolation tests (pytest)
+- [x] Data cleanup script (removed orphaned records)
 
-### Pending
-- [ ] Create initial tenant with admin user
-- [ ] Full testing of all tenant-scoped endpoints
-- [ ] Email notifications for tenant suspension
-- [ ] Billing integration for subscription management
-- [ ] Subdomain-based tenant resolution (future)
+### Pending (P1)
+- [ ] Billing integration (Stripe) for subscription management
+- [ ] Email notifications for tenant suspension/reactivation
+- [ ] Rebuild tenant-facing Admin.js page for new architecture
+
+### Future (P2-P3)
+- [ ] Subdomain-based tenant resolution
+- [ ] Convert training manuals to PDF
+- [ ] Printable QR code sheet
 
 ## Files Structure
 ```
 /app/backend/
-├── server.py              # Main API server
+├── server.py              # Main API server (1500+ lines)
 ├── models/
 │   ├── tenant.py          # Tenant, User, Membership models
 │   └── resources.py       # Vehicle, Booking, etc. models
 ├── middleware/
 │   └── tenant.py          # Tenant isolation middleware
-└── services/
-    └── audit.py           # Audit logging service
+├── services/
+│   └── audit.py           # Audit logging service
+└── tests/
+    └── test_tenant_isolation.py  # Automated isolation tests
 
 /app/frontend/src/
 ├── contexts/
@@ -128,7 +150,12 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 ├── pages/
 │   ├── PlatformAdmin.js   # Franchise Command Centre
 │   ├── TenantSelector.js  # Tenant selection page
-│   └── Login.js           # Updated login flow
-└── api/
-    └── api.js             # Updated API client
+│   └── Login.js           # Updated login flow with tenant support
+└── components/ui/         # Shadcn UI components
 ```
+
+## Testing
+- Backend: 17/17 tests passed (100%)
+- Frontend: All UI flows verified
+- Tenant isolation: Verified via pytest and manual testing
+- Test reports: `/app/test_reports/iteration_5.json`

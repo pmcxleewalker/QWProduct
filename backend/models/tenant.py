@@ -24,8 +24,8 @@ class TenantPlan(str, Enum):
 
 class UserRole(str, Enum):
     SUPER_ADMIN = "super_admin"      # Platform owner - full access to all tenants
-    MASTER_ADMIN = "master_admin"    # Support role - can impersonate tenants
-    TENANT_ADMIN = "tenant_admin"    # Admin within a single tenant
+    MASTER_ADMIN = "master_admin"    # Franchise owner - pays for service, manages their tenant
+    ADMIN = "admin"                  # Admin within tenant (created by master admin)
     STAFF = "staff"                  # Regular staff within a tenant
 
 

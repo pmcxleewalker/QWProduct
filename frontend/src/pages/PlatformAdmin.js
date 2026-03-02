@@ -24,7 +24,10 @@ const PlatformAdmin = () => {
   
   // Create tenant form
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newTenant, setNewTenant] = useState({ name: '', slug: '', plan: 'starter' });
+  const [newTenant, setNewTenant] = useState({ name: '', slug: '', plan: 'starter', master_admin_email: '', master_admin_name: '' });
+  
+  // Created tenant result (to show credentials)
+  const [createdTenantResult, setCreatedTenantResult] = useState(null);
   
   // Selected tenant for details
   const [selectedTenant, setSelectedTenant] = useState(null);

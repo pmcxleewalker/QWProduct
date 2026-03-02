@@ -470,7 +470,7 @@ const Navigation = () => {
               )}
               
               {/* Push Notifications Toggle - Desktop (Staff only) */}
-              {isSupported && !isAdmin() && (
+              {isSupported && !isTenantAdmin() && (
                 <button
                   onClick={handlePushToggle}
                   className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-colors text-sm ${

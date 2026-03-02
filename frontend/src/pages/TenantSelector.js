@@ -133,7 +133,7 @@ const TenantSelector = () => {
                 )}
               </button>
             ))
-          )}
+          ) : null}
         </div>
 
         {/* Footer */}

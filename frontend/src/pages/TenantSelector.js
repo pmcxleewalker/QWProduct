@@ -11,10 +11,16 @@ const TenantSelector = () => {
 
   // Check if user is platform admin
   const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin';
+  
+  console.log('TenantSelector - user:', user);
+  console.log('TenantSelector - role:', user?.role);
+  console.log('TenantSelector - isPlatformAdminUser:', isPlatformAdminUser);
 
   // Redirect platform admins to platform page if they have no tenants
   useEffect(() => {
+    console.log('TenantSelector useEffect - isPlatformAdminUser:', isPlatformAdminUser, 'tenants:', tenants.length);
     if (isPlatformAdminUser && tenants.length === 0) {
+      console.log('Redirecting to /platform...');
       navigate('/platform');
     }
   }, [isPlatformAdminUser, tenants, navigate]);

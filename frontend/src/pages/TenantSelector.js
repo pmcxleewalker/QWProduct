@@ -97,7 +97,7 @@ const TenantSelector = () => {
             </button>
           )}
 
-          {tenants.length === 0 && !isPlatformAdmin() ? (
+          {tenants.length === 0 && !isPlatformAdminUser ? (
             <div className="text-center py-8 text-gray-500">
               <Shield size={40} className="mx-auto mb-3 opacity-50" />
               <p>You don't have access to any organizations.</p>

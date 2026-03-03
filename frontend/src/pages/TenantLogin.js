@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { LogIn, AlertCircle, Car, Building2, Shield } from 'lucide-react';
+import ChangePasswordModal from '../components/ChangePasswordModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -16,6 +17,8 @@ const TenantLogin = () => {
   const [loading, setLoading] = useState(false);
   const [tenantInfo, setTenantInfo] = useState(null);
   const [tenantLoading, setTenantLoading] = useState(true);
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [tempPassword, setTempPassword] = useState('');
 
   // Fetch tenant info on mount
   useEffect(() => {
@@ -56,6 +59,14 @@ const TenantLogin = () => {
       const result = await login(formData.email, formData.password, rememberMe);
       
       if (result.success) {
+        // Check if password change is required
+        if (result.requirePasswordChange) {
+          setTempPassword(formData.password);
+          setShowPasswordChange(true);
+          setLoading(false);
+          return;
+        }
+        
         // Check if user has access to this tenant
         const userTenants = result.tenants || [];
         const matchingTenant = userTenants.find(t => t.tenant_slug === tenantSlug);
@@ -85,6 +96,13 @@ const TenantLogin = () => {
     }
   };
 
+  const handlePasswordChangeSuccess = async () => {
+    setShowPasswordChange(false);
+    // Re-login with new credentials would be needed, but user is already authenticated
+    // Just redirect to the tenant dashboard
+    navigate(`/${tenantSlug}`);
+  };
+
   if (tenantLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -95,6 +113,13 @@ const TenantLogin = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
+      {/* Password Change Modal */}
+      <ChangePasswordModal 
+        isOpen={showPasswordChange}
+        onSuccess={handlePasswordChangeSuccess}
+        currentPassword={tempPassword}
+      />
+      
       <div className="w-full max-w-md">
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">

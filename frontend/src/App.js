@@ -281,13 +281,6 @@ const AppContent = () => {
           </PlatformProtectedRoute>
         } />
         
-        {/* Reports & Billing - Platform Admin only */}
-        <Route path="/platform/reports" element={
-          <PlatformProtectedRoute>
-            <Reports />
-          </PlatformProtectedRoute>
-        } />
-        
         {/* Path-based Tenant Routes: /{tenant-slug}/... */}
         <Route path="/:tenantSlug/login" element={<TenantLogin />} />
         

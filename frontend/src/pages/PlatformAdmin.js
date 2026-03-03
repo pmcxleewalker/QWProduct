@@ -384,13 +384,13 @@ const PlatformAdmin = () => {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <a
-                href="/platform/reports"
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors"
+              <button
+                onClick={fetchData}
+                className="flex items-center space-x-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors"
               >
-                <FileText size={18} />
-                <span>Reports & Billing</span>
-              </a>
+                <RefreshCw size={16} />
+                <span>Refresh</span>
+              </button>
               <span className="text-sm text-slate-300">{user?.email}</span>
               <span className="px-3 py-1 bg-blue-600 rounded-full text-xs font-medium">
                 {isSuperAdmin() ? 'Super Admin' : 'Master Admin'}
@@ -408,6 +408,7 @@ const PlatformAdmin = () => {
               { id: 'overview', label: 'Overview', icon: Activity },
               { id: 'tenants', label: 'Tenants', icon: Building2 },
               { id: 'users', label: 'Users', icon: Users },
+              { id: 'reports', label: 'Reports & Billing', icon: Receipt },
               { id: 'audit', label: 'Audit Log', icon: FileText }
             ].map(tab => (
               <button
@@ -418,6 +419,7 @@ const PlatformAdmin = () => {
                     ? 'bg-blue-100 text-blue-700'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
+                data-testid={`tab-${tab.id}`}
               >
                 <tab.icon size={18} />
                 <span>{tab.label}</span>

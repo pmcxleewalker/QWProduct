@@ -1130,6 +1130,439 @@ const PlatformAdmin = () => {
           </div>
         )}
 
+        {/* Reports & Billing Tab */}
+        {activeTab === 'reports' && (
+          <div className="space-y-6">
+            {/* Sub-tabs */}
+            <div className="flex space-x-2 border-b pb-3">
+              {[
+                { id: 'executive', label: 'Executive Summary' },
+                { id: 'franchises', label: 'Franchises Report' },
+                { id: 'invoices', label: 'Invoices' },
+                { id: 'settings', label: 'Company Settings' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setReportsTab(tab.id)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    reportsTab === tab.id
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  data-testid={`reports-tab-${tab.id}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Executive Summary */}
+            {reportsTab === 'executive' && executiveSummary && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900">Executive Summary</h2>
+                  <button
+                    onClick={() => downloadPdf('/platform/reports/executive-summary/pdf', 'executive_summary.pdf')}
+                    disabled={downloadingPdf}
+                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    data-testid="export-executive-pdf-btn"
+                  >
+                    <Download size={18} />
+                    <span>{downloadingPdf ? 'Downloading...' : 'Export PDF'}</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-xl p-4 shadow-sm border">
+                    <p className="text-sm text-gray-500">Total Franchises</p>
+                    <p className="text-2xl font-bold text-gray-900">{executiveSummary.summary?.tenants?.total || 0}</p>
+                    <p className="text-xs text-green-600">{executiveSummary.summary?.tenants?.active || 0} active</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border">
+                    <p className="text-sm text-gray-500">Total Users</p>
+                    <p className="text-2xl font-bold text-gray-900">{executiveSummary.summary?.users || 0}</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border">
+                    <p className="text-sm text-gray-500">Revenue Collected</p>
+                    <p className="text-2xl font-bold text-green-600">€{executiveSummary.summary?.revenue?.total_collected || 0}</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-sm border">
+                    <p className="text-sm text-gray-500">Pending Revenue</p>
+                    <p className="text-2xl font-bold text-orange-600">€{executiveSummary.summary?.revenue?.pending || 0}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Franchises Report */}
+            {reportsTab === 'franchises' && franchisesReport && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900">All Franchises ({franchisesReport.total})</h3>
+                  <button
+                    onClick={() => downloadPdf('/platform/reports/franchises/pdf', 'franchises_report.pdf')}
+                    disabled={downloadingPdf}
+                    className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+                    data-testid="export-franchises-pdf-btn"
+                  >
+                    <Download size={16} />
+                    <span>{downloadingPdf ? 'Downloading...' : 'Export PDF'}</span>
+                  </button>
+                </div>
+                <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Franchise</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Users</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehicles</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Billed</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paid</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {franchisesReport.franchises?.map(f => (
+                        <tr key={f.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-gray-900">{f.name}</p>
+                            <p className="text-xs text-gray-500">{f.slug}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(f.status)}`}>
+                              {f.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm">{f.stats?.users || 0}</td>
+                          <td className="px-4 py-3 text-sm">{f.stats?.vehicles || 0}</td>
+                          <td className="px-4 py-3 text-sm">€{f.stats?.total_billed || 0}</td>
+                          <td className="px-4 py-3 text-sm text-green-600">€{f.stats?.total_paid || 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Invoices */}
+            {reportsTab === 'invoices' && (
+              <div className="space-y-4">
+                {/* Summary Cards */}
+                {invoicesReport && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white rounded-xl p-4 shadow-sm border">
+                      <p className="text-sm text-gray-500">Total Invoiced</p>
+                      <p className="text-2xl font-bold text-gray-900">€{invoicesReport.grand_total || 0}</p>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 shadow-sm border">
+                      <p className="text-sm text-gray-500">Paid</p>
+                      <p className="text-2xl font-bold text-green-600">€{invoicesReport.by_status?.paid?.amount || 0}</p>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 shadow-sm border">
+                      <p className="text-sm text-gray-500">Pending</p>
+                      <p className="text-2xl font-bold text-orange-600">
+                        €{(invoicesReport.by_status?.sent?.amount || 0) + (invoicesReport.by_status?.draft?.amount || 0)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold text-gray-900">Invoices</h3>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => downloadPdf('/platform/reports/invoices/pdf', 'invoices_report.pdf')}
+                      disabled={downloadingPdf}
+                      className="flex items-center space-x-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                      data-testid="export-invoices-report-pdf-btn"
+                    >
+                      <Download size={16} />
+                      <span>{downloadingPdf ? 'Downloading...' : 'Export Report'}</span>
+                    </button>
+                    <button
+                      onClick={() => setShowCreateInvoice(true)}
+                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      data-testid="create-invoice-btn"
+                    >
+                      <Plus size={18} />
+                      <span>Create Invoice</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Invoices Table */}
+                <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice #</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Franchise</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {invoices.map(invoice => (
+                        <tr key={invoice.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 font-medium">{invoice.invoice_number}</td>
+                          <td className="px-4 py-3 text-sm">{invoice.tenant_name}</td>
+                          <td className="px-4 py-3 font-medium">€{invoice.total?.toFixed(2)}</td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              invoice.status === 'paid' ? 'bg-green-100 text-green-700' :
+                              invoice.status === 'sent' ? 'bg-blue-100 text-blue-700' :
+                              invoice.status === 'overdue' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {invoice.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm">{invoice.due_date}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => downloadPdf(`/platform/invoices/${invoice.id}/pdf`, `invoice_${invoice.invoice_number}.pdf`)}
+                                disabled={downloadingPdf}
+                                className="p-1.5 text-gray-600 hover:bg-gray-100 rounded"
+                                title="Download PDF"
+                              >
+                                <FileText size={16} />
+                              </button>
+                              {invoice.status === 'draft' && (
+                                <button
+                                  onClick={() => handleUpdateInvoiceStatus(invoice.id, 'sent')}
+                                  className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                                  title="Send Invoice"
+                                >
+                                  <Send size={16} />
+                                </button>
+                              )}
+                              {(invoice.status === 'sent' || invoice.status === 'overdue') && (
+                                <button
+                                  onClick={() => handleUpdateInvoiceStatus(invoice.id, 'paid')}
+                                  className="p-1.5 text-green-600 hover:bg-green-50 rounded"
+                                  title="Mark as Paid"
+                                >
+                                  <CheckCircle size={16} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {invoices.length === 0 && (
+                    <div className="p-8 text-center text-gray-500">
+                      <Receipt size={40} className="mx-auto mb-3 opacity-50" />
+                      <p>No invoices yet</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Create Invoice Modal */}
+                {showCreateInvoice && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-auto">
+                      <div className="p-4 border-b flex justify-between items-center">
+                        <h3 className="text-lg font-bold">Create Invoice</h3>
+                        <button onClick={() => setShowCreateInvoice(false)} className="text-gray-500">
+                          <XCircle size={20} />
+                        </button>
+                      </div>
+                      <form onSubmit={handleCreateInvoice} className="p-4 space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Franchise *</label>
+                          <select
+                            value={newInvoice.tenant_id}
+                            onChange={(e) => setNewInvoice({...newInvoice, tenant_id: e.target.value})}
+                            className="w-full px-3 py-2 border rounded-lg"
+                            required
+                          >
+                            <option value="">Select franchise</option>
+                            {tenants.map(t => (
+                              <option key={t.id} value={t.id}>{t.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                          <input
+                            type="text"
+                            value={newInvoice.items[0].description}
+                            onChange={(e) => setNewInvoice({
+                              ...newInvoice,
+                              items: [{ ...newInvoice.items[0], description: e.target.value }]
+                            })}
+                            className="w-full px-3 py-2 border rounded-lg"
+                            placeholder="e.g., Monthly Subscription"
+                            required
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Amount (€) *</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={newInvoice.items[0].unit_price}
+                              onChange={(e) => setNewInvoice({
+                                ...newInvoice,
+                                items: [{ ...newInvoice.items[0], unit_price: parseFloat(e.target.value) || 0 }]
+                              })}
+                              className="w-full px-3 py-2 border rounded-lg"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Tax Rate (%)</label>
+                            <input
+                              type="number"
+                              value={newInvoice.tax_rate}
+                              onChange={(e) => setNewInvoice({...newInvoice, tax_rate: parseFloat(e.target.value) || 0})}
+                              className="w-full px-3 py-2 border rounded-lg"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Due Date *</label>
+                          <input
+                            type="date"
+                            value={newInvoice.due_date}
+                            onChange={(e) => setNewInvoice({...newInvoice, due_date: e.target.value})}
+                            className="w-full px-3 py-2 border rounded-lg"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                          <textarea
+                            value={newInvoice.notes}
+                            onChange={(e) => setNewInvoice({...newInvoice, notes: e.target.value})}
+                            className="w-full px-3 py-2 border rounded-lg"
+                            rows={2}
+                          />
+                        </div>
+                        <div className="flex space-x-3 pt-2">
+                          <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                            Create Invoice
+                          </button>
+                          <button type="button" onClick={() => setShowCreateInvoice(false)} className="flex-1 bg-gray-100 py-2 rounded-lg hover:bg-gray-200">
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Company Settings */}
+            {reportsTab === 'settings' && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-900">Company Settings</h3>
+                <div className="bg-white rounded-xl shadow-sm border p-6">
+                  {editSettings ? (
+                    <form onSubmit={handleSaveSettings} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                          <input
+                            type="text"
+                            value={settingsForm.company_name || ''}
+                            onChange={(e) => setSettingsForm({...settingsForm, company_name: e.target.value})}
+                            className="w-full px-3 py-2 border rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Tax ID</label>
+                          <input
+                            type="text"
+                            value={settingsForm.tax_id || ''}
+                            onChange={(e) => setSettingsForm({...settingsForm, tax_id: e.target.value})}
+                            className="w-full px-3 py-2 border rounded-lg"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                          <textarea
+                            value={settingsForm.address || ''}
+                            onChange={(e) => setSettingsForm({...settingsForm, address: e.target.value})}
+                            className="w-full px-3 py-2 border rounded-lg"
+                            rows={2}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                          <input
+                            type="text"
+                            value={settingsForm.phone || ''}
+                            onChange={(e) => setSettingsForm({...settingsForm, phone: e.target.value})}
+                            className="w-full px-3 py-2 border rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                          <input
+                            type="email"
+                            value={settingsForm.email || ''}
+                            onChange={(e) => setSettingsForm({...settingsForm, email: e.target.value})}
+                            className="w-full px-3 py-2 border rounded-lg"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex space-x-3 pt-4">
+                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                          Save Settings
+                        </button>
+                        <button type="button" onClick={() => setEditSettings(false)} className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-500">Company Name</p>
+                          <p className="font-medium">{companySettings?.company_name || 'Quick Wing Fleet Management'}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Tax ID</p>
+                          <p className="font-medium">{companySettings?.tax_id || 'Not set'}</p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <p className="text-sm text-gray-500">Address</p>
+                          <p className="font-medium">{companySettings?.address || 'Not set'}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Phone</p>
+                          <p className="font-medium">{companySettings?.phone || 'Not set'}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Email</p>
+                          <p className="font-medium">{companySettings?.email || 'Not set'}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setEditSettings(true)}
+                        className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mt-4"
+                      >
+                        <Edit2 size={16} />
+                        <span>Edit Settings</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Audit Log Tab */}
         {activeTab === 'audit' && (
           <div className="space-y-6">

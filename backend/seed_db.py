@@ -74,8 +74,9 @@ async def seed_database():
             # Create super admin user
             password_hash = bcrypt.hashpw(SUPER_ADMIN_PASSWORD.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
             
+            user_id = str(uuid4())
             super_admin = {
-                "id": str(uuid4()),
+                "id": user_id,
                 "email": SUPER_ADMIN_EMAIL,
                 "name": SUPER_ADMIN_NAME,
                 "password_hash": password_hash,
@@ -87,6 +88,17 @@ async def seed_database():
             
             await db.users.insert_one(super_admin)
             print(f"Created super admin: {SUPER_ADMIN_EMAIL}")
+            
+            # Create super_admin membership
+            membership = {
+                "id": str(uuid4()),
+                "user_id": user_id,
+                "tenant_id": None,
+                "role": "super_admin",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.memberships.insert_one(membership)
+            print(f"Created super_admin membership")
         
         # Ensure indexes exist
         await db.users.create_index("email", unique=True)

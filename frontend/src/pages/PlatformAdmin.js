@@ -6,7 +6,8 @@ import {
   Pause, Play, Eye, Shield, Crown, AlertTriangle,
   Search, Filter, MoreVertical, ChevronDown, ChevronUp,
   Activity, DollarSign, Clock, CheckCircle, XCircle,
-  FileText, Settings, RefreshCw, LogOut, Trash2, Key
+  FileText, Settings, RefreshCw, LogOut, Trash2, Key,
+  Receipt, Download, Send, Edit2
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;

@@ -2525,18 +2525,52 @@ async def seed_super_admin():
         existing_admin = await db.users.find_one({"email": SUPER_ADMIN_EMAIL})
         
         if existing_admin:
+            user_id = existing_admin["id"]
             logger.info(f"Super admin exists: {SUPER_ADMIN_EMAIL}")
-            # Ensure password is correct
+            
+            # Ensure password is correct and role is set
             password_hash = get_password_hash(SUPER_ADMIN_PASSWORD)
             await db.users.update_one(
                 {"email": SUPER_ADMIN_EMAIL},
                 {"$set": {"password_hash": password_hash, "is_active": True, "role": "super_admin"}}
             )
+            
+            # CRITICAL: Ensure super_admin membership exists
+            existing_membership = await db.memberships.find_one({
+                "user_id": user_id,
+                "role": "super_admin"
+            })
+            
+            if not existing_membership:
+                # Check if any membership exists for this user
+                any_membership = await db.memberships.find_one({"user_id": user_id})
+                
+                if any_membership:
+                    # Update existing membership to super_admin role
+                    await db.memberships.update_one(
+                        {"user_id": user_id},
+                        {"$set": {"role": "super_admin", "tenant_id": None}}
+                    )
+                    logger.info(f"Updated existing membership to super_admin role")
+                else:
+                    # Create new super_admin membership
+                    membership = {
+                        "id": str(uuid.uuid4()),
+                        "user_id": user_id,
+                        "tenant_id": None,
+                        "role": "super_admin",
+                        "created_at": datetime.now(timezone.utc).isoformat()
+                    }
+                    await db.memberships.insert_one(membership)
+                    logger.info(f"Created super_admin membership for existing user")
+            else:
+                logger.info("Super admin membership already exists")
         else:
             # Create super admin
+            user_id = str(uuid.uuid4())
             password_hash = get_password_hash(SUPER_ADMIN_PASSWORD)
             super_admin = {
-                "id": str(uuid.uuid4()),
+                "id": user_id,
                 "email": SUPER_ADMIN_EMAIL,
                 "name": SUPER_ADMIN_NAME,
                 "password_hash": password_hash,
@@ -2547,6 +2581,17 @@ async def seed_super_admin():
             }
             await db.users.insert_one(super_admin)
             logger.info(f"Created super admin: {SUPER_ADMIN_EMAIL}")
+            
+            # Create super_admin membership
+            membership = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "tenant_id": None,
+                "role": "super_admin",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.memberships.insert_one(membership)
+            logger.info(f"Created super_admin membership")
         
         logger.info("="*50)
         logger.info("ADMIN CREDENTIALS:")

@@ -164,14 +164,14 @@ class TestTenantLookup:
     
     def test_tenant_by_slug_kerry_fleet(self):
         """Test looking up Kerry Fleet Services by slug"""
-        response = requests.get(f"{BASE_URL}/api/tenants/by-slug/kerry-fleet-services")
+        response = requests.get(f"{BASE_URL}/api/tenants/by-slug/kerry-fleet")
         assert response.status_code == 200, f"Failed: {response.text}"
         
         data = response.json()
         assert "id" in data
         assert "name" in data
         assert "slug" in data
-        assert data["slug"] == "kerry-fleet-services"
+        assert data["slug"] == "kerry-fleet"
         print(f"✓ Found tenant: {data['name']}")
     
     def test_tenant_by_slug_not_found(self):

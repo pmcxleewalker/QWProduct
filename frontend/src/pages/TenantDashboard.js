@@ -189,12 +189,21 @@ const TenantDashboard = () => {
     });
   };
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'vehicles', label: 'Vehicles', icon: Car },
-    { id: 'bookings', label: 'Bookings', icon: Calendar },
-    ...(isAdmin ? [{ id: 'team', label: 'Team', icon: Users }] : [])
-  ];
+  // Staff only see: Bookings, Calendar (via Vehicles tab for now), Request a Lift
+  // Admins and Master Admins see everything
+  const isStaffOnly = !isAdmin && (activeTenant?.role === 'staff' || user?.role === 'staff');
+  
+  const tabs = isStaffOnly 
+    ? [
+        { id: 'bookings', label: 'My Bookings', icon: Calendar },
+        { id: 'vehicles', label: 'Book a Car', icon: Car },
+      ]
+    : [
+        { id: 'overview', label: 'Overview', icon: BarChart3 },
+        { id: 'vehicles', label: 'Vehicles', icon: Car },
+        { id: 'bookings', label: 'Bookings', icon: Calendar },
+        { id: 'team', label: 'Team', icon: Users }
+      ];
 
   return (
     <div className="min-h-screen bg-gray-50" data-testid="tenant-dashboard">

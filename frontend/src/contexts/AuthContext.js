@@ -124,7 +124,8 @@ export const AuthProvider = ({ children }) => {
         success: true, 
         user: userWithMemberships, 
         tenants: userTenants, 
-        needsTenantSelection: userTenants?.length > 1 && !active_tenant 
+        needsTenantSelection: userTenants?.length > 1 && !active_tenant,
+        isSuperAdmin: userData.role === 'super_admin'
       };
     } catch (error) {
       console.error('Login error:', error);

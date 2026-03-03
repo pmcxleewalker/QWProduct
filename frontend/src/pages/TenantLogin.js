@@ -9,7 +9,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const TenantLogin = () => {
   const navigate = useNavigate();
   const { tenantSlug } = useParams();
-  const { login, isAuthenticated, activeTenant } = useAuth();
+  const { login, isAuthenticated, activeTenant, selectTenant } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');

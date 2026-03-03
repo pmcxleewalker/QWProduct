@@ -26,7 +26,7 @@ const getErrorMessage = (err, defaultMsg = 'An error occurred') => {
 };
 
 const PlatformAdmin = () => {
-  const { user, isPlatformAdmin, isSuperAdmin, impersonateTenant, isImpersonating, stopImpersonation, activeTenant } = useAuth();
+  const { user, isPlatformAdmin, isSuperAdmin, impersonateTenant, isImpersonating, stopImpersonation, activeTenant, logout } = useAuth();
   
   const [activeTab, setActiveTab] = useState('overview');
   const [tenants, setTenants] = useState([]);

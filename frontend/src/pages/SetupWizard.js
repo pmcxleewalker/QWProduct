@@ -67,7 +67,7 @@ const SetupWizard = () => {
       setCreatedVehicle(response.data.vehicle);
       setCurrentStep(2);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to add vehicle');
+      setError(getErrorMessage(err, 'Failed to add vehicle'));
     } finally {
       setLoading(false);
     }
@@ -89,7 +89,7 @@ const SetupWizard = () => {
       setCreatedStaff({ email: staff.email, name: staff.name });
       setCurrentStep(3);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to add staff member');
+      setError(getErrorMessage(err, 'Failed to add staff member'));
     } finally {
       setLoading(false);
     }

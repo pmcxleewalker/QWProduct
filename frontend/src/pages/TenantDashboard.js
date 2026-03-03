@@ -54,8 +54,8 @@ const TenantDashboard = () => {
   const [vehicleForm, setVehicleForm] = useState({ name: '', registration: '' });
   const [userForm, setUserForm] = useState({ name: '', email: '', role: 'staff' });
 
-  const isAdmin = activeTenant?.role === 'admin' || activeTenant?.role === 'master_admin' || 
-                  user?.role === 'super_admin' || user?.role === 'master_admin';
+  // Use the isAdminUser variable defined at top
+  const isAdmin = isAdminUser;
 
   // Check if new Master Admin needs setup wizard
   useEffect(() => {

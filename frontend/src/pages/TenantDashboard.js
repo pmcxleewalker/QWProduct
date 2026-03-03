@@ -698,6 +698,7 @@ const TenantDashboard = () => {
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., John Smith"
                   required
+                  data-testid="add-user-name"
                 />
               </div>
               <div>
@@ -709,24 +710,34 @@ const TenantDashboard = () => {
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g., john@company.com"
                   required
+                  data-testid="add-user-email"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Temporary Password *</label>
-                <input
-                  type="text"
-                  value={userForm.password}
-                  onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+                <select
+                  value={userForm.role}
+                  onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Create a temporary password"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">Share this with the team member</p>
+                  data-testid="add-user-role"
+                >
+                  <option value="staff">Staff</option>
+                  <option value="admin">Admin</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {userForm.role === 'admin' ? 'Admins can manage vehicles and team members' : 'Staff can view and book vehicles'}
+                </p>
+              </div>
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Auto-generated password:</strong> A temporary password will be created and shown after adding. The user must change it on first login.
+                </p>
               </div>
               <div className="flex space-x-3 pt-2">
                 <button
                   type="submit"
                   className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-medium"
+                  data-testid="add-user-submit"
                 >
                   Add Member
                 </button>
@@ -739,6 +750,72 @@ const TenantDashboard = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* User Credentials Modal */}
+      {showUserCredentials && newUserCredentials && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-md">
+            <div className="p-4 border-b">
+              <h3 className="text-lg font-bold text-green-600">✓ Team Member Added!</h3>
+            </div>
+            <div className="p-4 space-y-4">
+              <p className="text-sm text-gray-600">Share these credentials with <strong>{newUserCredentials.name}</strong>:</p>
+              
+              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-500">LOGIN URL</label>
+                  <div className="flex items-center space-x-2">
+                    <code className="flex-1 text-sm bg-white p-2 rounded border break-all">{newUserCredentials.loginUrl}</code>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(newUserCredentials.loginUrl)}
+                      className="px-3 py-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 text-sm"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">EMAIL</label>
+                  <p className="text-sm font-mono bg-white p-2 rounded border">{newUserCredentials.email}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">TEMPORARY PASSWORD</label>
+                  <div className="flex items-center space-x-2">
+                    <code className="flex-1 text-sm bg-white p-2 rounded border font-bold">{newUserCredentials.password}</code>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(newUserCredentials.password)}
+                      className="px-3 py-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 text-sm"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500">ROLE</label>
+                  <p className="text-sm capitalize bg-white p-2 rounded border">{newUserCredentials.role}</p>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                <p className="text-sm text-amber-800">
+                  <strong>Important:</strong> The user will be required to change their password on first login.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowUserCredentials(false);
+                  setNewUserCredentials(null);
+                  setSuccess('Team member added successfully');
+                }}
+                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-medium"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

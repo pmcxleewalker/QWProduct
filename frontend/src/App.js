@@ -186,8 +186,12 @@ const TenantRoutes = () => {
     return <Navigate to={`/${tenantSlug}/login`} replace />;
   }
 
-  // Check if user has access - either through active tenant or memberships
-  const hasAccess = activeTenant?.tenant_slug === tenantSlug || 
+  // Super Admins and Master Admins have access to ALL franchises
+  const isPlatformAdmin = user?.role === 'super_admin' || user?.role === 'master_admin';
+  
+  // Check if user has access - platform admins have universal access
+  const hasAccess = isPlatformAdmin ||
+                    activeTenant?.tenant_slug === tenantSlug || 
                     user?.memberships?.some(m => m.tenant_slug === tenantSlug);
   
   if (accessDenied && !hasAccess) {

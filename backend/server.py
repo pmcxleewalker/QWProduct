@@ -2500,14 +2500,63 @@ app.include_router(api_router)
 async def startup():
     logger.info("Quick Wing Multi-Tenant SaaS starting up...")
     
+    # Seed database with super admin
+    await seed_super_admin()
+    
     # Ensure indexes exist
     try:
         await db.vehicles.create_index([("tenant_id", 1), ("id", 1)])
         await db.bookings.create_index([("tenant_id", 1), ("id", 1)])
         await db.tenants.create_index([("slug", 1)], unique=True)
         await db.memberships.create_index([("user_id", 1), ("tenant_id", 1)])
+        await db.users.create_index("email", unique=True)
+        await db.users.create_index("id", unique=True)
     except Exception as e:
         logger.warning(f"Index creation warning: {e}")
+
+
+async def seed_super_admin():
+    """Ensure super admin user exists on startup."""
+    SUPER_ADMIN_EMAIL = "superadmin@quickwing.com"
+    SUPER_ADMIN_PASSWORD = "Super123"
+    SUPER_ADMIN_NAME = "Super Admin"
+    
+    try:
+        existing_admin = await db.users.find_one({"email": SUPER_ADMIN_EMAIL})
+        
+        if existing_admin:
+            logger.info(f"Super admin exists: {SUPER_ADMIN_EMAIL}")
+            # Ensure password is correct
+            password_hash = get_password_hash(SUPER_ADMIN_PASSWORD)
+            await db.users.update_one(
+                {"email": SUPER_ADMIN_EMAIL},
+                {"$set": {"password_hash": password_hash, "is_active": True, "role": "super_admin"}}
+            )
+        else:
+            # Create super admin
+            password_hash = get_password_hash(SUPER_ADMIN_PASSWORD)
+            super_admin = {
+                "id": str(uuid.uuid4()),
+                "email": SUPER_ADMIN_EMAIL,
+                "name": SUPER_ADMIN_NAME,
+                "password_hash": password_hash,
+                "role": "super_admin",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.users.insert_one(super_admin)
+            logger.info(f"Created super admin: {SUPER_ADMIN_EMAIL}")
+        
+        logger.info("="*50)
+        logger.info("ADMIN CREDENTIALS:")
+        logger.info(f"  Email: {SUPER_ADMIN_EMAIL}")
+        logger.info(f"  Password: {SUPER_ADMIN_PASSWORD}")
+        logger.info(f"  URL: https://qtrack-4.emergent.host/login")
+        logger.info("="*50)
+        
+    except Exception as e:
+        logger.error(f"Error seeding super admin: {e}")
 
 
 @app.on_event("shutdown")

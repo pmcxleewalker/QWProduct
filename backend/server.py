@@ -2392,8 +2392,8 @@ async def get_vehicle_qr(
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     
-    # Generate QR with tenant context
-    base_url = os.environ.get('FRONTEND_URL', 'https://quick-wing.com')
+    # Generate QR with tenant context - HARDCODED to quick-wing.com
+    base_url = 'https://quick-wing.com'
     qr_url = f"{base_url}/{context.tenant_slug}/book/{vehicle_id}"
     
     qr = qrcode.QRCode(version=1, box_size=10, border=4)

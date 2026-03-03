@@ -39,6 +39,17 @@ const PlatformAdmin = () => {
   const [showCreateUserForm, setShowCreateUserForm] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'staff', tenant_id: '' });
 
+  // User management expansion state
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userDetails, setUserDetails] = useState(null);
+  const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
+  const [showEditRoleModal, setShowEditRoleModal] = useState(false);
+  const [showRemoveFromTenantModal, setShowRemoveFromTenantModal] = useState(false);
+  const [showAddToTenantModal, setShowAddToTenantModal] = useState(false);
+  const [editRoleData, setEditRoleData] = useState({ tenantId: '', tenantName: '', currentRole: '', newRole: '', adminPassword: '' });
+  const [removeFromTenantData, setRemoveFromTenantData] = useState({ tenantId: '', tenantName: '', adminPassword: '' });
+  const [addToTenantData, setAddToTenantData] = useState({ tenantId: '', role: 'staff', adminPassword: '' });
+
   // Reports & Billing state
   const [reportsTab, setReportsTab] = useState('executive');
   const [executiveSummary, setExecutiveSummary] = useState(null);

@@ -475,6 +475,7 @@ async def create_tenant(
     # HARDCODED to quick-wing.com - ignore any environment variables
     base_url = 'https://quick-wing.com'
     tenant_login_url = f"{base_url}/{tenant_data.slug}/login"
+    staff_login_url = f"{base_url}/{tenant_data.slug}/login"
     
     response = {
         "message": "Tenant created successfully",
@@ -486,7 +487,8 @@ async def create_tenant(
             "is_new_user": master_password is not None
         },
         "login_url": tenant_login_url,
-        "instructions": f"Share the login URL and credentials with the franchise owner. They can then create Admin and Staff accounts for their team."
+        "staff_login_url": staff_login_url,
+        "instructions": f"Share the login URL and credentials with the franchise owner. They can then create Admin and Staff accounts for their team. Staff use the same login URL: {staff_login_url}"
     }
     
     return response

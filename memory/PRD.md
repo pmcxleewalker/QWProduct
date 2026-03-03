@@ -150,6 +150,13 @@ When creating a new tenant:
   - List invoices with filters (status, tenant)
   - Update invoice status (draft → sent → paid)
   - Summary stats (total, paid, pending)
+- [x] **Rebuilt Tenant Dashboard** (March 2026)
+  - New TenantDashboard.js with Overview/Vehicles/Bookings/Team tabs
+  - Add Vehicle and Add Team Member modals
+  - Fixed onboarding redirects for new tenants
+- [x] **Reports & Billing Integrated into Command Centre** (March 2026)
+  - Moved from separate page to tab in Franchise Command Centre
+  - Sub-tabs: Executive Summary, Franchises Report, Invoices, Company Settings
 
 ### Pending (P1)
 - [ ] Fix fragile onboarding redirects (recurring issue)

@@ -34,6 +34,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
+  // Set tenant header when active tenant changes
+  useEffect(() => {
+    if (activeTenant?.tenant_id) {
+      axios.defaults.headers.common['X-Tenant-ID'] = activeTenant.tenant_id;
+    } else {
+      delete axios.defaults.headers.common['X-Tenant-ID'];
+    }
+  }, [activeTenant]);
+
   const fetchCurrentUser = async () => {
     try {
       const response = await axios.get(`${API}/auth/me`);

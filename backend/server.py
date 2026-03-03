@@ -200,7 +200,8 @@ async def login(credentials: UserLogin, request: Request):
             "id": user["id"],
             "email": user["email"],
             "name": user.get("name"),
-            "role": user_role.value
+            "role": user_role.value,
+            "require_password_change": user.get("require_password_change", False)
         },
         "tenants": tenant_list,
         "active_tenant": active_tenant

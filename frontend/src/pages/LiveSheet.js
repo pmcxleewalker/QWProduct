@@ -12,7 +12,18 @@ const LiveSheet = () => {
     try {
       setLoading(true);
       const response = await statusAPI.getLive();
-      setLiveStatus(response.data);
+      // Transform vehicles data to expected format if needed
+      const data = response.data || [];
+      const transformedData = data.map(item => {
+        // If already in {car: {...}} format, use as is
+        if (item.car) return item;
+        // Otherwise, transform vehicle to expected format
+        return {
+          car: item,
+          latest_status: null
+        };
+      });
+      setLiveStatus(transformedData);
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching live status:', error);

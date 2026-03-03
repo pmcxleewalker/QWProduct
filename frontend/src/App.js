@@ -238,6 +238,12 @@ const TenantRoutes = () => {
           <Route path="/mileage" element={<MileageUpdate />} />
           <Route path="/setup-wizard" element={<SetupWizard />} />
           <Route
+            path="/reports"
+            element={
+              isTenantAdmin ? <Reports /> : <Navigate to={`/${tenantSlug}`} replace />
+            }
+          />
+          <Route
             path="/admin"
             element={
               isTenantAdmin ? <Admin /> : <Navigate to={`/${tenantSlug}`} replace />

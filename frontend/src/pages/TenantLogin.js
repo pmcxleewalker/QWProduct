@@ -58,10 +58,11 @@ const TenantLogin = () => {
       if (result.success) {
         // Check if user has access to this tenant
         const userTenants = result.tenants || [];
-        const hasAccess = userTenants.some(t => t.tenant_slug === tenantSlug);
+        const matchingTenant = userTenants.find(t => t.tenant_slug === tenantSlug);
         
-        if (hasAccess) {
-          // Select this tenant and redirect
+        if (matchingTenant) {
+          // Select this tenant to set context, then redirect
+          await selectTenant(matchingTenant.tenant_id);
           navigate(`/${tenantSlug}`);
         } else {
           setError('You do not have access to this franchise. Please contact your administrator.');

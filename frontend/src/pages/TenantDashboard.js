@@ -144,10 +144,27 @@ const TenantDashboard = () => {
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API}/tenant/users`, userForm, { params: { role: 'staff' } });
-      setSuccess('Team member added successfully');
+      const response = await axios.post(`${API}/tenant/users`, 
+        { name: userForm.name, email: userForm.email }, 
+        { params: { role: userForm.role } }
+      );
+      
+      // Show credentials modal if temporary password was generated
+      if (response.data.temporary_password) {
+        setNewUserCredentials({
+          email: userForm.email,
+          name: userForm.name,
+          role: userForm.role,
+          password: response.data.temporary_password,
+          loginUrl: response.data.login_url || `https://quick-wing.com/${activeTenant?.tenant_slug}/login`
+        });
+        setShowUserCredentials(true);
+      } else {
+        setSuccess('Team member added successfully');
+      }
+      
       setShowAddUser(false);
-      setUserForm({ name: '', email: '', password: '' });
+      setUserForm({ name: '', email: '', role: 'staff' });
       fetchData();
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to add team member'));

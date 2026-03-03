@@ -196,11 +196,9 @@ const TenantDashboard = () => {
     });
   };
 
-  // Staff only see: Bookings, Calendar (via Vehicles tab for now), Request a Lift
-  // Admins and Master Admins see everything
-  const isStaffOnly = !isAdmin && (activeTenant?.role === 'staff' || user?.role === 'staff');
-  
-  const tabs = isStaffOnly 
+  // Staff only see: Bookings, Book a Car
+  // Admins and Master Admins see everything including Overview and Team management
+  const tabs = isStaffUser 
     ? [
         { id: 'bookings', label: 'My Bookings', icon: Calendar },
         { id: 'vehicles', label: 'Book a Car', icon: Car },

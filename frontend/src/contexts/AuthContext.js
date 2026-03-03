@@ -303,6 +303,7 @@ export const AuthProvider = ({ children }) => {
       login, 
       logout, 
       selectTenant,
+      changePassword,
       impersonateTenant,
       stopImpersonation,
       isSuperAdmin,

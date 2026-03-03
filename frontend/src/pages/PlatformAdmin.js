@@ -493,6 +493,14 @@ const PlatformAdmin = () => {
               <span className="px-3 py-1 bg-blue-600 rounded-full text-xs font-medium">
                 {isSuperAdmin() ? 'Super Admin' : 'Master Admin'}
               </span>
+              <button
+                onClick={logout}
+                className="flex items-center space-x-2 px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm transition-colors"
+                data-testid="logout-button"
+              >
+                <LogOut size={16} />
+                <span>Logout</span>
+              </button>
             </div>
           </div>
         </div>

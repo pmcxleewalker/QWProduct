@@ -133,6 +133,7 @@ const TenantRoutes = () => {
   const { tenantSlug } = useParams();
   const { isAuthenticated, activeTenant, selectTenant, user, loading } = useAuth();
   const [tenantLoading, setTenantLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
     const setupTenantContext = async () => {
@@ -144,6 +145,7 @@ const TenantRoutes = () => {
       // If we already have the right tenant selected, we're good
       if (activeTenant?.tenant_slug === tenantSlug) {
         setTenantLoading(false);
+        setAccessDenied(false);
         return;
       }
 
@@ -153,10 +155,18 @@ const TenantRoutes = () => {
         if (membership) {
           try {
             await selectTenant(membership.tenant_id);
+            setAccessDenied(false);
           } catch (err) {
             console.error('Failed to select tenant:', err);
+            setAccessDenied(true);
           }
+        } else {
+          // User doesn't have membership to this tenant
+          setAccessDenied(true);
         }
+      } else {
+        // No memberships loaded yet - wait
+        setAccessDenied(false);
       }
       setTenantLoading(false);
     };
@@ -176,9 +186,11 @@ const TenantRoutes = () => {
     return <Navigate to={`/${tenantSlug}/login`} replace />;
   }
 
-  // Check if user has access to this tenant
-  const hasAccess = user?.memberships?.some(m => m.tenant_slug === tenantSlug);
-  if (!hasAccess) {
+  // Check if user has access - either through active tenant or memberships
+  const hasAccess = activeTenant?.tenant_slug === tenantSlug || 
+                    user?.memberships?.some(m => m.tenant_slug === tenantSlug);
+  
+  if (accessDenied && !hasAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-8">

@@ -149,6 +149,9 @@ const TenantRoutes = () => {
         return;
       }
 
+      // Super Admins and Master Admins have access to ALL franchises
+      const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin';
+
       // Try to find and select the tenant from user's memberships
       if (user?.memberships) {
         const membership = user.memberships.find(m => m.tenant_slug === tenantSlug);
@@ -158,10 +161,15 @@ const TenantRoutes = () => {
             setAccessDenied(false);
           } catch (err) {
             console.error('Failed to select tenant:', err);
-            setAccessDenied(true);
+            // Platform admins should still have access even if select fails
+            setAccessDenied(!isPlatformAdminUser);
           }
+        } else if (isPlatformAdminUser) {
+          // Platform admin without direct membership - allow access anyway
+          // They can impersonate any tenant
+          setAccessDenied(false);
         } else {
-          // User doesn't have membership to this tenant
+          // Regular user doesn't have membership to this tenant
           setAccessDenied(true);
         }
       } else {

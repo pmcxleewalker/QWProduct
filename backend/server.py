@@ -944,6 +944,78 @@ async def remove_user_from_tenant(
     return {"message": f"User {user['email']} removed from tenant"}
 
 
+class AddUserToTenantRequest(BaseModel):
+    tenant_id: str
+    role: str = "staff"
+    admin_password: str
+
+
+@api_router.post("/platform/users/{user_id}/add-to-tenant")
+async def add_user_to_tenant(
+    user_id: str,
+    add_request: AddUserToTenantRequest,
+    context: TenantContext = Depends(require_super_admin),
+    request: Request = None
+):
+    """
+    Super admin can add an existing user to a tenant.
+    """
+    # Verify super admin password
+    admin = await db.users.find_one({"id": context.user_id}, {"_id": 0})
+    if not admin or not verify_password(add_request.admin_password, admin["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid admin password")
+    
+    # Get target user
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get tenant
+    tenant = await db.tenants.find_one({"id": add_request.tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    # Check if membership already exists
+    existing = await db.memberships.find_one({
+        "user_id": user_id,
+        "tenant_id": add_request.tenant_id
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="User is already a member of this tenant")
+    
+    # Create membership
+    membership = {
+        "id": str(uuid4()),
+        "user_id": user_id,
+        "tenant_id": add_request.tenant_id,
+        "role": add_request.role,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.memberships.insert_one(membership)
+    
+    # Log audit event
+    await audit_service.log(
+        actor_user_id=context.user_id,
+        actor_email=context.user_email,
+        action=AuditAction.USER_CREATED,
+        tenant_id=add_request.tenant_id,
+        resource_type="membership",
+        resource_id=membership["id"],
+        meta={
+            "action": "add_to_tenant",
+            "target_email": user["email"],
+            "role": add_request.role,
+            "tenant_name": tenant["name"]
+        },
+        ip_address=request.client.host if request and request.client else None
+    )
+    
+    return {
+        "message": f"User {user['email']} added to {tenant['name']}",
+        "membership_id": membership["id"]
+    }
+
+
 @api_router.get("/platform/users/{user_id}")
 async def get_user_details(
     user_id: str,

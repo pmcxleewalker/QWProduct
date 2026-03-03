@@ -168,13 +168,12 @@ When creating a new tenant:
   - Removed 700+ lines of legacy fleet status code
 
 ### Pending (P1)
-- [ ] Fix fragile onboarding redirects (recurring issue)
-- [ ] Rebuild tenant-facing Admin.js page for new architecture
-- [ ] Complete "Franchises" and "Invoices" tabs data display in Reports
+- [ ] Email notifications for invoices
+- [ ] Automated invoice reminders for overdue payments
 
 ### Future (P2-P3)
-- [ ] Full user management expansion (edit, role changes)
-- [ ] Rebuild tenant Dashboard for new architecture
+- [ ] Subscription billing automation
+- [ ] Dashboard analytics and charts
 
 ## Files Structure
 ```

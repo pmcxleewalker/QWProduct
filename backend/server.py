@@ -303,6 +303,52 @@ async def get_current_user_info(context: TenantContext = Depends(get_tenant_cont
     }
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+@api_router.post("/auth/change-password")
+async def change_password(
+    password_data: ChangePasswordRequest,
+    context: TenantContext = Depends(get_tenant_context),
+    request: Request = None
+):
+    """
+    Change user's password. Required for staff on first login.
+    """
+    user = await db.users.find_one({"id": context.user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Verify current password
+    if not verify_password(password_data.current_password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    
+    # Validate new password
+    if len(password_data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+    
+    # Update password and clear require_password_change flag
+    new_hash = get_password_hash(password_data.new_password)
+    await db.users.update_one(
+        {"id": context.user_id},
+        {"$set": {"password_hash": new_hash, "require_password_change": False}}
+    )
+    
+    # Log audit event
+    await audit_service.log(
+        actor_user_id=context.user_id,
+        actor_email=context.user_email,
+        action=AuditAction.USER_UPDATED,
+        resource_type="user",
+        resource_id=context.user_id,
+        meta={"action": "password_changed"},
+        ip_address=request.client.host if request and request.client else None
+    )
+    
+    return {"message": "Password changed successfully"}
+
+
 # ==================== PUBLIC TENANT LOOKUP ====================
 
 @api_router.get("/tenants/by-slug/{slug}")

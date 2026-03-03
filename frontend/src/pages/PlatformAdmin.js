@@ -181,6 +181,70 @@ const PlatformAdmin = () => {
     }
   };
 
+  // User Management Functions
+  const fetchUserDetails = async (userId) => {
+    try {
+      const response = await axios.get(`${API}/platform/users/${userId}`);
+      setUserDetails(response.data);
+      setShowUserDetailsModal(true);
+    } catch (err) {
+      setError('Failed to fetch user details');
+    }
+  };
+
+  const handleUpdateUserRole = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/platform/users/${selectedUser.id}/update-role`, {
+        tenant_id: editRoleData.tenantId,
+        new_role: editRoleData.newRole,
+        admin_password: editRoleData.adminPassword
+      });
+      setSuccess(`Role updated to ${editRoleData.newRole}`);
+      setShowEditRoleModal(false);
+      setEditRoleData({ tenantId: '', tenantName: '', currentRole: '', newRole: '', adminPassword: '' });
+      // Refresh user details
+      fetchUserDetails(selectedUser.id);
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to update role');
+    }
+  };
+
+  const handleRemoveUserFromTenant = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.delete(`${API}/platform/users/${selectedUser.id}/remove-from-tenant/${removeFromTenantData.tenantId}?admin_password=${encodeURIComponent(removeFromTenantData.adminPassword)}`);
+      setSuccess(`User removed from ${removeFromTenantData.tenantName}`);
+      setShowRemoveFromTenantModal(false);
+      setRemoveFromTenantData({ tenantId: '', tenantName: '', adminPassword: '' });
+      // Refresh user details
+      fetchUserDetails(selectedUser.id);
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to remove user from tenant');
+    }
+  };
+
+  const handleAddUserToTenant = async (e) => {
+    e.preventDefault();
+    try {
+      // Use the existing create user endpoint but with existing user
+      await axios.post(`${API}/platform/users/${selectedUser.id}/add-to-tenant`, {
+        tenant_id: addToTenantData.tenantId,
+        role: addToTenantData.role,
+        admin_password: addToTenantData.adminPassword
+      });
+      setSuccess('User added to tenant');
+      setShowAddToTenantModal(false);
+      setAddToTenantData({ tenantId: '', role: 'staff', adminPassword: '' });
+      fetchUserDetails(selectedUser.id);
+      fetchData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to add user to tenant');
+    }
+  };
+
   const handleCreateTenant = async (e) => {
     e.preventDefault();
     try {

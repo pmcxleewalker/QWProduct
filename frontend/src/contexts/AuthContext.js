@@ -152,6 +152,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      await axios.post(`${API}/auth/change-password`, {
+        current_password: currentPassword,
+        new_password: newPassword
+      });
+      
+      // Update user state to reflect password change complete
+      setUser(prev => ({ ...prev, require_password_change: false }));
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Password change error:', error);
+      let errorMsg = 'Failed to change password';
+      if (error.response?.data?.detail) {
+        errorMsg = typeof error.response.data.detail === 'string' 
+          ? error.response.data.detail 
+          : 'Failed to change password';
+      }
+      return { success: false, error: errorMsg };
+    }
+  };
+
   const selectTenant = async (tenantId) => {
     try {
       const response = await axios.post(`${API}/auth/select-tenant`, { tenant_id: tenantId });

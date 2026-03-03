@@ -1797,6 +1797,9 @@ async def create_tenant_user(
     request: Request = None
 ):
     """Create a new user in the current tenant"""
+    import secrets
+    import string
+    
     # Check if user exists
     existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
     
@@ -1820,16 +1823,21 @@ async def create_tenant_user(
         }
         await db.memberships.insert_one(membership)
         
-        return {"message": "User added to tenant", "user_id": existing["id"]}
+        return {"message": "User added to tenant", "user_id": existing["id"], "temporary_password": None}
     
-    # Create new user
+    # Generate temporary password for new users
+    alphabet = string.ascii_letters + string.digits
+    temp_password = user_data.password if user_data.password else ''.join(secrets.choice(alphabet) for _ in range(10))
+    
+    # Create new user with require_password_change flag
     user_id = str(uuid.uuid4())
     user = {
         "id": user_id,
         "email": user_data.email,
         "name": user_data.name,
-        "password_hash": get_password_hash(user_data.password),
+        "password_hash": get_password_hash(temp_password),
         "is_active": True,
+        "require_password_change": True,  # Staff must change password on first login
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user)
@@ -1854,7 +1862,17 @@ async def create_tenant_user(
         ip_address=request.client.host if request and request.client else None
     )
     
-    return {"message": "User created successfully", "user_id": user_id}
+    # Get tenant slug for login URL
+    tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    staff_login_url = f"https://quick-wing.com/{tenant['slug']}/login" if tenant else None
+    
+    return {
+        "message": "User created successfully", 
+        "user_id": user_id,
+        "temporary_password": temp_password,
+        "login_url": staff_login_url,
+        "require_password_change": True
+    }
 
 
 @api_router.get("/tenant/users")

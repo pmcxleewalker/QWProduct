@@ -2395,7 +2395,7 @@ async def get_vehicle_qr(
         raise HTTPException(status_code=404, detail="Vehicle not found")
     
     # Generate QR with tenant context
-    qr_url = f"https://quick-wing.com/{context.tenant_slug}/book/{vehicle_id}"
+    qr_url = f"https://qtrack-4.emergent.host/{context.tenant_slug}/book/{vehicle_id}"
     
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
     qr.add_data(qr_url)

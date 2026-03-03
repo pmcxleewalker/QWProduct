@@ -168,7 +168,7 @@ const PlatformAdmin = () => {
       setNewInvoice({ tenant_id: '', items: [{ description: '', quantity: 1, unit_price: 0 }], tax_rate: 23, due_date: '', notes: '' });
       fetchReportsData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create invoice');
+      setError(getErrorMessage(err, 'Failed to create invoice');
     }
   };
 
@@ -220,7 +220,7 @@ const PlatformAdmin = () => {
       fetchUserDetails(selectedUser.id);
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to update role');
+      setError(getErrorMessage(err, 'Failed to update role');
     }
   };
 
@@ -235,7 +235,7 @@ const PlatformAdmin = () => {
       fetchUserDetails(selectedUser.id);
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to remove user from tenant');
+      setError(getErrorMessage(err, 'Failed to remove user from tenant');
     }
   };
 
@@ -254,7 +254,7 @@ const PlatformAdmin = () => {
       fetchUserDetails(selectedUser.id);
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to add user to tenant');
+      setError(getErrorMessage(err, 'Failed to add user to tenant');
     }
   };
 
@@ -279,7 +279,7 @@ const PlatformAdmin = () => {
       setNewTenant({ name: '', slug: '', plan: 'starter', master_admin_email: '', master_admin_name: '' });
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create tenant');
+      setError(getErrorMessage(err, 'Failed to create tenant');
     }
   };
 
@@ -292,7 +292,7 @@ const PlatformAdmin = () => {
       fetchData();
       setSelectedTenant(null);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to suspend tenant');
+      setError(getErrorMessage(err, 'Failed to suspend tenant');
     }
   };
 
@@ -303,7 +303,7 @@ const PlatformAdmin = () => {
       fetchData();
       setSelectedTenant(null);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to reactivate tenant');
+      setError(getErrorMessage(err, 'Failed to reactivate tenant');
     }
   };
 
@@ -365,7 +365,7 @@ const PlatformAdmin = () => {
       // Redirect to dashboard
       window.location.href = '/';
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to impersonate tenant');
+      setError(getErrorMessage(err, 'Failed to impersonate tenant');
     }
   };
 
@@ -375,7 +375,7 @@ const PlatformAdmin = () => {
       setSuccess('Impersonation ended');
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to stop impersonation');
+      setError(getErrorMessage(err, 'Failed to stop impersonation');
     }
   };
 
@@ -408,7 +408,7 @@ const PlatformAdmin = () => {
       setNewUser({ email: '', password: '', name: '', role: 'staff', tenant_id: '' });
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create user');
+      setError(getErrorMessage(err, 'Failed to create user');
     }
   };
 

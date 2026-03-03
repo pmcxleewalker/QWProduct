@@ -157,6 +157,15 @@ When creating a new tenant:
 - [x] **Reports & Billing Integrated into Command Centre** (March 2026)
   - Moved from separate page to tab in Franchise Command Centre
   - Sub-tabs: Executive Summary, Franchises Report, Invoices, Company Settings
+- [x] **User Management Expansion** (March 2026)
+  - View user details with all tenant memberships
+  - Edit user role per tenant membership
+  - Remove user from tenant
+  - Add user to new tenant
+  - Backend endpoint: POST /platform/users/{user_id}/add-to-tenant
+- [x] **Legacy Dashboard Cleanup** (March 2026)
+  - Simplified Dashboard.js to redirect to new TenantDashboard
+  - Removed 700+ lines of legacy fleet status code
 
 ### Pending (P1)
 - [ ] Fix fragile onboarding redirects (recurring issue)

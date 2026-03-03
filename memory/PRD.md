@@ -224,8 +224,29 @@ When creating a new tenant:
 ```
 
 ## Testing
+- Backend: 19/19 auth and platform tests passed (100%) - Dec 2025
 - Backend: 25/25 PDF & Invoice tests passed (100%)
 - Backend: 17/17 tenant isolation tests passed (100%)
 - Frontend: All UI flows verified
 - Tenant isolation: Verified via pytest and manual testing
-- Test reports: `/app/test_reports/iteration_6.json`
+- Test reports: `/app/test_reports/iteration_7.json`
+
+## Scalability Assessment (Dec 2025)
+**User Requirement**: 10 franchises, 20-30 cars per franchise, 15 admins + 30 staff per franchise
+
+| Metric | Current Capacity | Required | Status |
+|--------|-----------------|----------|--------|
+| Tenants | Unlimited | 10 | ✅ Ready |
+| Users per tenant | 999 (Enterprise) | 45 | ✅ Ready |
+| Vehicles per tenant | 999 (Enterprise) | 30 | ✅ Ready |
+| Role-based access | 4 roles | 4 roles | ✅ Ready |
+| Data isolation | Full tenant isolation | Required | ✅ Ready |
+| PDF exports | Working | Required | ✅ Ready |
+| Invoicing | CRUD + PDF | Required | ✅ Ready |
+
+### Plan Limits
+- **Starter**: 10 vehicles, 20 users
+- **Professional**: 50 vehicles, 100 users  
+- **Enterprise**: 999 vehicles, 999 users
+
+**Recommendation**: Use **Professional** or **Enterprise** plan for franchises with 15+ users and 20+ vehicles.

@@ -249,6 +249,16 @@ const PlatformAdmin = () => {
     e.preventDefault();
     try {
       setError('');
+      
+      // Validate email if provided
+      if (newTenant.master_admin_email) {
+        const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
+        if (!emailRegex.test(newTenant.master_admin_email)) {
+          setError('Please enter a valid email address (e.g., name@domain.com)');
+          return;
+        }
+      }
+      
       const response = await axios.post(`${API}/platform/tenants`, newTenant);
       // Store the result to show credentials
       setCreatedTenantResult(response.data);

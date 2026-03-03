@@ -42,8 +42,10 @@ const TenantDashboard = () => {
   // Modal states
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [showAddUser, setShowAddUser] = useState(false);
+  const [showUserCredentials, setShowUserCredentials] = useState(false);
+  const [newUserCredentials, setNewUserCredentials] = useState(null);
   const [vehicleForm, setVehicleForm] = useState({ name: '', registration: '' });
-  const [userForm, setUserForm] = useState({ name: '', email: '', password: '' });
+  const [userForm, setUserForm] = useState({ name: '', email: '', role: 'staff' });
 
   const isAdmin = activeTenant?.role === 'admin' || activeTenant?.role === 'master_admin' || 
                   user?.role === 'super_admin' || user?.role === 'master_admin';

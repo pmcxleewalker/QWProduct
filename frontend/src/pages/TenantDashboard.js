@@ -27,7 +27,14 @@ const getErrorMessage = (err, defaultMsg = 'An error occurred') => {
 const TenantDashboard = () => {
   const navigate = useNavigate();
   const { user, activeTenant } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
+  
+  // Determine if user is staff-only (limited access)
+  const isAdminUser = activeTenant?.role === 'admin' || activeTenant?.role === 'master_admin' || 
+                      user?.role === 'super_admin' || user?.role === 'master_admin';
+  const isStaffUser = !isAdminUser;
+  
+  // Staff default to bookings tab, admins to overview
+  const [activeTab, setActiveTab] = useState(isStaffUser ? 'bookings' : 'overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');

@@ -1,21 +1,30 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calendar, Settings, User } from 'lucide-react';
+import { LayoutDashboard, Calendar, Settings, User, BarChart3, FileSpreadsheet } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const MobileBottomNav = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, activeTenant, isTenantAdmin } = useAuth();
   
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path || location.pathname.endsWith(path);
+  
+  const isAdmin = isTenantAdmin ? isTenantAdmin() : (
+    activeTenant?.role === 'admin' || 
+    activeTenant?.role === 'master_admin' || 
+    user?.role === 'super_admin' || 
+    user?.role === 'master_admin'
+  );
   
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: 'Home' },
+    { path: '/live-sheet', icon: FileSpreadsheet, label: 'Live' },
     { path: '/bookings', icon: Calendar, label: 'Bookings' },
   ];
   
   // Add Admin link for admin users
-  if (user?.role === 'admin') {
+  if (isAdmin) {
+    navItems.push({ path: '/reports', icon: BarChart3, label: 'Reports' });
     navItems.push({ path: '/admin', icon: Settings, label: 'Admin' });
   }
 

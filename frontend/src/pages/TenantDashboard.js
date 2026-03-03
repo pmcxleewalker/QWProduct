@@ -124,7 +124,7 @@ const TenantDashboard = () => {
       setVehicleForm({ name: '', registration: '' });
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to add vehicle');
+      setError(getErrorMessage(err, 'Failed to add vehicle'));
     }
   };
 

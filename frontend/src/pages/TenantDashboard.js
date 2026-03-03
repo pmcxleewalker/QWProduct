@@ -11,6 +11,19 @@ import {
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+// Helper to extract error message from various error formats
+const getErrorMessage = (err, defaultMsg = 'An error occurred') => {
+  const detail = err?.response?.data?.detail;
+  if (Array.isArray(detail)) {
+    return detail[0]?.msg || defaultMsg;
+  } else if (typeof detail === 'string') {
+    return detail;
+  } else if (typeof detail === 'object' && detail?.msg) {
+    return detail.msg;
+  }
+  return err?.message || defaultMsg;
+};
+
 const TenantDashboard = () => {
   const navigate = useNavigate();
   const { user, activeTenant } = useAuth();

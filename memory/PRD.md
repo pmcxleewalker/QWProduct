@@ -3,6 +3,24 @@
 ## Product Overview
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
+## Production Domain
+- **URL:** https://qtrack-4.emergent.host
+- Path-based tenant URLs: `https://qtrack-4.emergent.host/{tenant-slug}/login`
+
+## Test Credentials
+
+### Super Admin (Platform Owner)
+- **URL:** https://qtrack-4.emergent.host/login
+- **Email:** superadmin@quickwing.com
+- **Password:** Super123
+
+### Demo Franchise (Kerry Fleet Services)
+- **URL:** https://qtrack-4.emergent.host/kerry-fleet/login
+- **Email:** admin.kerry-fleet@quickwing.com
+- **Password:** KerryFleet123
+
+---
+
 ## Architecture
 
 ### Multi-Tenant Model

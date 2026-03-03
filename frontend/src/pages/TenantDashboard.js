@@ -135,7 +135,18 @@ const TenantDashboard = () => {
       setUserForm({ name: '', email: '', password: '' });
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to add team member');
+      // Handle Pydantic validation errors which come as an array
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        // Extract first validation error message
+        setError(detail[0]?.msg || 'Validation error');
+      } else if (typeof detail === 'string') {
+        setError(detail);
+      } else if (typeof detail === 'object' && detail?.msg) {
+        setError(detail.msg);
+      } else {
+        setError('Failed to add team member');
+      }
     }
   };
 

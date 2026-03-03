@@ -714,7 +714,7 @@ const PlatformAdmin = () => {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">URL Slug (auto-generated)</label>
                       <div className="flex items-center">
-                        <span className="text-sm text-gray-500 mr-2">qtrack-4.emergent.host/</span>
+                        <span className="text-sm text-gray-500 mr-2">quick-wing.com/</span>
                         <input
                           type="text"
                           value={newTenant.slug}

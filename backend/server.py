@@ -425,8 +425,8 @@ async def create_tenant(
     
     # Build the tenant login URL - Path-based branded URL
     # Format: https://domain/{tenant_slug}/login
-    # Use FRONTEND_URL env var in preview, fallback to qtrack-4.emergent.host for production
-    base_url = os.environ.get('FRONTEND_URL', 'https://qtrack-4.emergent.host')
+    # Use FRONTEND_URL env var in preview, fallback to quick-wing.com for production
+    base_url = os.environ.get('FRONTEND_URL', 'https://quick-wing.com')
     # Remove trailing slash if present
     base_url = base_url.rstrip('/')
     tenant_login_url = f"{base_url}/{tenant_data.slug}/login"
@@ -2395,7 +2395,7 @@ async def get_vehicle_qr(
         raise HTTPException(status_code=404, detail="Vehicle not found")
     
     # Generate QR with tenant context
-    base_url = os.environ.get('FRONTEND_URL', 'https://qtrack-4.emergent.host')
+    base_url = os.environ.get('FRONTEND_URL', 'https://quick-wing.com')
     qr_url = f"{base_url}/{context.tenant_slug}/book/{vehicle_id}"
     
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
@@ -2597,7 +2597,7 @@ async def seed_super_admin():
         logger.info("ADMIN CREDENTIALS:")
         logger.info(f"  Email: {SUPER_ADMIN_EMAIL}")
         logger.info(f"  Password: {SUPER_ADMIN_PASSWORD}")
-        logger.info(f"  URL: https://qtrack-4.emergent.host/login")
+        logger.info(f"  URL: https://quick-wing.com/login")
         logger.info("="*50)
         
     except Exception as e:

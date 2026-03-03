@@ -64,6 +64,12 @@ const PlatformAdmin = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (activeTab === 'reports') {
+      fetchReportsData();
+    }
+  }, [activeTab, reportsTab]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -83,6 +89,84 @@ const PlatformAdmin = () => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReportsData = async () => {
+    try {
+      if (reportsTab === 'executive') {
+        const res = await axios.get(`${API}/platform/reports/executive-summary`);
+        setExecutiveSummary(res.data);
+      } else if (reportsTab === 'franchises') {
+        const res = await axios.get(`${API}/platform/reports/franchises`);
+        setFranchisesReport(res.data);
+      } else if (reportsTab === 'invoices') {
+        const res = await axios.get(`${API}/platform/invoices`);
+        setInvoices(res.data.invoices || []);
+        const summaryRes = await axios.get(`${API}/platform/reports/invoices`);
+        setInvoicesReport(summaryRes.data);
+      } else if (reportsTab === 'settings') {
+        const res = await axios.get(`${API}/platform/settings`);
+        setCompanySettings(res.data);
+        setSettingsForm(res.data || {});
+      }
+    } catch (err) {
+      console.error('Failed to fetch reports data:', err);
+    }
+  };
+
+  const downloadPdf = async (endpoint, filename) => {
+    setDownloadingPdf(true);
+    try {
+      const response = await axios.get(`${API}${endpoint}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setSuccess('PDF downloaded successfully');
+    } catch (err) {
+      setError('Failed to download PDF');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
+  const handleCreateInvoice = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/platform/invoices`, newInvoice);
+      setSuccess('Invoice created successfully');
+      setShowCreateInvoice(false);
+      setNewInvoice({ tenant_id: '', items: [{ description: '', quantity: 1, unit_price: 0 }], tax_rate: 23, due_date: '', notes: '' });
+      fetchReportsData();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to create invoice');
+    }
+  };
+
+  const handleUpdateInvoiceStatus = async (invoiceId, status) => {
+    try {
+      await axios.put(`${API}/platform/invoices/${invoiceId}`, { status });
+      setSuccess(`Invoice marked as ${status}`);
+      fetchReportsData();
+    } catch (err) {
+      setError('Failed to update invoice');
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API}/platform/settings`, settingsForm);
+      setSuccess('Settings saved successfully');
+      setEditSettings(false);
+      fetchReportsData();
+    } catch (err) {
+      setError('Failed to save settings');
     }
   };
 

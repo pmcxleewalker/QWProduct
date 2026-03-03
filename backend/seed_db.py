@@ -30,6 +30,8 @@ async def seed_database():
         
         if existing_admin:
             print(f"Super admin already exists: {SUPER_ADMIN_EMAIL}")
+            user_id = existing_admin["id"]
+            
             # Update password to ensure it matches
             password_hash = bcrypt.hashpw(SUPER_ADMIN_PASSWORD.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
             await db.users.update_one(
@@ -37,6 +39,37 @@ async def seed_database():
                 {"$set": {"password_hash": password_hash, "is_active": True}}
             )
             print("Super admin password updated.")
+            
+            # CRITICAL: Ensure super_admin membership exists
+            existing_membership = await db.memberships.find_one({
+                "user_id": user_id,
+                "role": "super_admin"
+            })
+            
+            if not existing_membership:
+                # Check if any membership exists for this user
+                any_membership = await db.memberships.find_one({"user_id": user_id})
+                
+                if any_membership:
+                    # Update existing membership to super_admin role
+                    await db.memberships.update_one(
+                        {"user_id": user_id},
+                        {"$set": {"role": "super_admin", "tenant_id": None}}
+                    )
+                    print(f"Updated existing membership to super_admin role")
+                else:
+                    # Create new super_admin membership
+                    membership = {
+                        "id": str(uuid4()),
+                        "user_id": user_id,
+                        "tenant_id": None,
+                        "role": "super_admin",
+                        "created_at": datetime.now(timezone.utc).isoformat()
+                    }
+                    await db.memberships.insert_one(membership)
+                    print(f"Created super_admin membership for existing user")
+            else:
+                print("Super admin membership already exists")
         else:
             # Create super admin user
             password_hash = bcrypt.hashpw(SUPER_ADMIN_PASSWORD.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')

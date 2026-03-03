@@ -39,6 +39,25 @@ const PlatformAdmin = () => {
   const [showCreateUserForm, setShowCreateUserForm] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '', role: 'staff', tenant_id: '' });
 
+  // Reports & Billing state
+  const [reportsTab, setReportsTab] = useState('executive');
+  const [executiveSummary, setExecutiveSummary] = useState(null);
+  const [franchisesReport, setFranchisesReport] = useState(null);
+  const [invoicesReport, setInvoicesReport] = useState(null);
+  const [companySettings, setCompanySettings] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+  const [editSettings, setEditSettings] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({});
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [newInvoice, setNewInvoice] = useState({
+    tenant_id: '',
+    items: [{ description: '', quantity: 1, unit_price: 0 }],
+    tax_rate: 23,
+    due_date: '',
+    notes: ''
+  });
+
   useEffect(() => {
     if (isPlatformAdmin()) {
       fetchData();

@@ -1147,48 +1147,61 @@ const PlatformAdmin = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {allUsers.map(user => (
-                    <tr key={user.id} className="hover:bg-gray-50">
+                  {allUsers.map(u => (
+                    <tr key={u.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                             <span className="text-blue-600 font-medium text-sm">
-                              {user.name?.charAt(0) || user.email?.charAt(0)}
+                              {u.name?.charAt(0) || u.email?.charAt(0)}
                             </span>
                           </div>
-                          <span className="font-medium text-gray-900">{user.name || 'N/A'}</span>
+                          <span className="font-medium text-gray-900">{u.name || 'N/A'}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{u.email}</td>
                       <td className="px-4 py-3">
                         <span className="px-2 py-1 bg-gray-100 rounded text-xs">
-                          {user.tenant_count || 0} tenant(s)
+                          {u.tenant_count || 0} tenant(s)
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          user.is_active !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          u.is_active !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                         }`}>
-                          {user.is_active !== false ? 'Active' : 'Inactive'}
+                          {u.is_active !== false ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <button
-                          onClick={() => {
-                            setResetPasswordData({
-                              userId: user.id,
-                              userEmail: user.email,
-                              newPassword: '',
-                              adminPassword: ''
-                            });
-                            setShowResetPasswordModal(true);
-                          }}
-                          className="flex items-center space-x-1 px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
-                          title="Reset Password"
-                        >
-                          <Key size={14} />
-                          <span className="text-xs">Reset Password</span>
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => {
+                              setSelectedUser(u);
+                              fetchUserDetails(u.id);
+                            }}
+                            className="flex items-center space-x-1 px-2 py-1 bg-gray-50 text-gray-600 rounded hover:bg-gray-100"
+                            title="View Details"
+                            data-testid={`view-user-${u.id}`}
+                          >
+                            <Eye size={14} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setResetPasswordData({
+                                userId: u.id,
+                                userEmail: u.email,
+                                newPassword: '',
+                                adminPassword: ''
+                              });
+                              setShowResetPasswordModal(true);
+                            }}
+                            className="flex items-center space-x-1 px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                            title="Reset Password"
+                            data-testid={`reset-pwd-${u.id}`}
+                          >
+                            <Key size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1202,6 +1215,270 @@ const PlatformAdmin = () => {
                 </div>
               )}
             </div>
+
+            {/* User Details Modal */}
+            {showUserDetailsModal && userDetails && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+                  <div className="p-4 border-b flex justify-between items-center">
+                    <h3 className="text-lg font-bold">User Details</h3>
+                    <button onClick={() => { setShowUserDetailsModal(false); setUserDetails(null); setSelectedUser(null); }} className="text-gray-500">
+                      <XCircle size={20} />
+                    </button>
+                  </div>
+                  <div className="p-4 space-y-6">
+                    {/* User Info */}
+                    <div className="flex items-center space-x-4">
+                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-blue-600 font-bold text-2xl">
+                          {userDetails.user?.name?.charAt(0) || userDetails.user?.email?.charAt(0)}
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="text-xl font-bold text-gray-900">{userDetails.user?.name || 'N/A'}</h4>
+                        <p className="text-gray-600">{userDetails.user?.email}</p>
+                        <p className="text-sm text-gray-500">Created: {userDetails.user?.created_at?.split('T')[0]}</p>
+                      </div>
+                    </div>
+
+                    {/* Memberships */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-semibold text-gray-900">Tenant Memberships</h5>
+                        <button
+                          onClick={() => setShowAddToTenantModal(true)}
+                          className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+                          data-testid="add-to-tenant-btn"
+                        >
+                          <UserPlus size={14} />
+                          <span>Add to Tenant</span>
+                        </button>
+                      </div>
+                      
+                      {userDetails.memberships?.length === 0 ? (
+                        <p className="text-gray-500 text-sm">No tenant memberships</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {userDetails.memberships?.map((m, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div>
+                                <p className="font-medium text-gray-900">{m.tenant_name}</p>
+                                <p className="text-sm text-gray-500">{m.tenant_slug}</p>
+                              </div>
+                              <div className="flex items-center space-x-3">
+                                <span className={`px-2 py-1 rounded-full text-xs ${
+                                  m.role === 'master_admin' ? 'bg-purple-100 text-purple-700' :
+                                  m.role === 'admin' ? 'bg-blue-100 text-blue-700' :
+                                  m.role === 'super_admin' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {m.role}
+                                </span>
+                                {m.tenant_id && (
+                                  <div className="flex items-center space-x-1">
+                                    <button
+                                      onClick={() => {
+                                        setEditRoleData({
+                                          tenantId: m.tenant_id,
+                                          tenantName: m.tenant_name,
+                                          currentRole: m.role,
+                                          newRole: m.role,
+                                          adminPassword: ''
+                                        });
+                                        setShowEditRoleModal(true);
+                                      }}
+                                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                                      title="Edit Role"
+                                    >
+                                      <Edit2 size={14} />
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setRemoveFromTenantData({
+                                          tenantId: m.tenant_id,
+                                          tenantName: m.tenant_name,
+                                          adminPassword: ''
+                                        });
+                                        setShowRemoveFromTenantModal(true);
+                                      }}
+                                      className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                                      title="Remove from Tenant"
+                                    >
+                                      <UserMinus size={14} />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Edit Role Modal */}
+            {showEditRoleModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-xl w-full max-w-md">
+                  <div className="p-4 border-b flex justify-between items-center">
+                    <h3 className="text-lg font-bold">Edit User Role</h3>
+                    <button onClick={() => setShowEditRoleModal(false)} className="text-gray-500">
+                      <XCircle size={20} />
+                    </button>
+                  </div>
+                  <form onSubmit={handleUpdateUserRole} className="p-4 space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Changing role for <strong>{selectedUser?.email}</strong> in <strong>{editRoleData.tenantName}</strong>
+                    </p>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Current Role</label>
+                      <p className="px-3 py-2 bg-gray-100 rounded-lg text-gray-700">{editRoleData.currentRole}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">New Role *</label>
+                      <select
+                        value={editRoleData.newRole}
+                        onChange={(e) => setEditRoleData({...editRoleData, newRole: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg"
+                        required
+                      >
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                        <option value="master_admin">Master Admin</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Your Password *</label>
+                      <input
+                        type="password"
+                        value={editRoleData.adminPassword}
+                        onChange={(e) => setEditRoleData({...editRoleData, adminPassword: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg"
+                        placeholder="Confirm with your password"
+                        required
+                      />
+                    </div>
+                    <div className="flex space-x-3 pt-2">
+                      <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                        Update Role
+                      </button>
+                      <button type="button" onClick={() => setShowEditRoleModal(false)} className="flex-1 bg-gray-100 py-2 rounded-lg hover:bg-gray-200">
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Remove from Tenant Modal */}
+            {showRemoveFromTenantModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-xl w-full max-w-md">
+                  <div className="p-4 border-b flex justify-between items-center">
+                    <h3 className="text-lg font-bold text-red-600">Remove User from Tenant</h3>
+                    <button onClick={() => setShowRemoveFromTenantModal(false)} className="text-gray-500">
+                      <XCircle size={20} />
+                    </button>
+                  </div>
+                  <form onSubmit={handleRemoveUserFromTenant} className="p-4 space-y-4">
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-700">
+                        You are about to remove <strong>{selectedUser?.email}</strong> from <strong>{removeFromTenantData.tenantName}</strong>.
+                        They will lose all access to this tenant.
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Your Password *</label>
+                      <input
+                        type="password"
+                        value={removeFromTenantData.adminPassword}
+                        onChange={(e) => setRemoveFromTenantData({...removeFromTenantData, adminPassword: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg"
+                        placeholder="Confirm with your password"
+                        required
+                      />
+                    </div>
+                    <div className="flex space-x-3 pt-2">
+                      <button type="submit" className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">
+                        Remove User
+                      </button>
+                      <button type="button" onClick={() => setShowRemoveFromTenantModal(false)} className="flex-1 bg-gray-100 py-2 rounded-lg hover:bg-gray-200">
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Add to Tenant Modal */}
+            {showAddToTenantModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-xl w-full max-w-md">
+                  <div className="p-4 border-b flex justify-between items-center">
+                    <h3 className="text-lg font-bold">Add User to Tenant</h3>
+                    <button onClick={() => setShowAddToTenantModal(false)} className="text-gray-500">
+                      <XCircle size={20} />
+                    </button>
+                  </div>
+                  <form onSubmit={handleAddUserToTenant} className="p-4 space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Adding <strong>{selectedUser?.email}</strong> to a new tenant
+                    </p>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tenant *</label>
+                      <select
+                        value={addToTenantData.tenantId}
+                        onChange={(e) => setAddToTenantData({...addToTenantData, tenantId: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg"
+                        required
+                      >
+                        <option value="">Select tenant</option>
+                        {tenants.filter(t => !userDetails?.memberships?.some(m => m.tenant_id === t.id)).map(t => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+                      <select
+                        value={addToTenantData.role}
+                        onChange={(e) => setAddToTenantData({...addToTenantData, role: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg"
+                        required
+                      >
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                        <option value="master_admin">Master Admin</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Your Password *</label>
+                      <input
+                        type="password"
+                        value={addToTenantData.adminPassword}
+                        onChange={(e) => setAddToTenantData({...addToTenantData, adminPassword: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg"
+                        placeholder="Confirm with your password"
+                        required
+                      />
+                    </div>
+                    <div className="flex space-x-3 pt-2">
+                      <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                        Add to Tenant
+                      </button>
+                      <button type="button" onClick={() => setShowAddToTenantModal(false)} className="flex-1 bg-gray-100 py-2 rounded-lg hover:bg-gray-200">
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -21,7 +21,7 @@ async def get_tenant_context(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> TenantContext:
     """
-    Extract and validate tenant context from JWT token.
+    Extract and validate tenant context from JWT token or X-Tenant-ID header.
     This is the primary security gate for all tenant-scoped operations.
     """
     token = credentials.credentials
@@ -53,10 +53,14 @@ async def get_tenant_context(
         )
     
     role = UserRole(payload.get("role", "staff"))
-    tenant_id = payload.get("tenant_id")
     is_impersonating = payload.get("is_impersonating", False)
     
-    # If tenant_id is set, verify tenant is still active
+    # Get tenant_id from token first, then fall back to header
+    tenant_id = payload.get("tenant_id")
+    if not tenant_id:
+        tenant_id = request.headers.get("X-Tenant-ID")
+    
+    # If tenant_id is set, verify tenant is still active and user has membership
     tenant_name = None
     tenant_slug = None
     

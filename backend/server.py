@@ -425,8 +425,8 @@ async def create_tenant(
     
     # Build the tenant login URL - Path-based branded URL
     # Format: https://domain/{tenant_slug}/login
-    # Use FRONTEND_URL env var in preview, fallback to quick-wing.com for production
-    base_url = os.environ.get('FRONTEND_URL', 'https://quick-wing.com')
+    # Use FRONTEND_URL env var in preview, fallback to qtrack-4.emergent.host for production
+    base_url = os.environ.get('FRONTEND_URL', 'https://qtrack-4.emergent.host')
     # Remove trailing slash if present
     base_url = base_url.rstrip('/')
     tenant_login_url = f"{base_url}/{tenant_data.slug}/login"

@@ -192,6 +192,10 @@ When creating a new tenant:
   - Summary Statistics section
   - Backend endpoints: GET /api/tenant/reports/summary, GET /api/tenant/reports/vehicle-utilization
   - Staff users cannot see Reports tab (admin/master_admin only)
+  - **CSV/PDF Export** for franchise analytics reports
+    - Export CSV: GET /api/tenant/reports/summary/csv
+    - Export PDF: GET /api/tenant/reports/summary/pdf
+    - Downloadable reports with all metrics, vehicle usage, and daily trends
 
 ### Pending (P1)
 - [ ] Email notifications for invoices

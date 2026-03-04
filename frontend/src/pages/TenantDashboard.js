@@ -658,8 +658,8 @@ const TenantDashboard = () => {
               </div>
             )}
 
-            {/* Live Fleet Status Tab (Staff View) */}
-            {activeTab === 'fleet-status' && (
+            {/* Live Fleet Status Tab (Staff View) or Fleet > Live Status sub-tab */}
+            {(activeTab === 'fleet-status' || (activeTab === 'fleet' && activeSubTab === 'live-fleet')) && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>

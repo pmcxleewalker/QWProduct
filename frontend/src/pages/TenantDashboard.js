@@ -63,6 +63,9 @@ const TenantDashboard = () => {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const [selectedVehicleForQR, setSelectedVehicleForQR] = useState(null);
+  const [showEditVehicle, setShowEditVehicle] = useState(false);
+  const [selectedVehicleForEdit, setSelectedVehicleForEdit] = useState(null);
+  const [serviceAlert, setServiceAlert] = useState(null);
 
   // Modal states
   const [showAddVehicle, setShowAddVehicle] = useState(false);

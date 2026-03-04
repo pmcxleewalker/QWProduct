@@ -51,6 +51,9 @@ export const liftRequestAPI = {
   getAll: () => axios.get(`${API}/lift-requests`),
   create: (data) => axios.post(`${API}/lift-requests`, data),
   getCount: () => axios.get(`${API}/lift-requests`).then(r => ({ data: { count: r.data?.length || 0 } })),
+  getActive: () => axios.get(`${API}/lift-requests/active`),
+  accept: (requestId, message) => axios.post(`${API}/lift-requests/${requestId}/accept`, null, { params: { message } }),
+  dismiss: (requestId) => axios.post(`${API}/lift-requests/${requestId}/dismiss`),
 };
 
 // Reports API (tenant-scoped)

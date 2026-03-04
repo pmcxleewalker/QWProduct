@@ -47,6 +47,7 @@ const TenantDashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [tenantReports, setTenantReports] = useState(null);
 
   // Modal states
   const [showAddVehicle, setShowAddVehicle] = useState(false);

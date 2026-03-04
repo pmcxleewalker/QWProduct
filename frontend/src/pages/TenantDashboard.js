@@ -450,6 +450,103 @@ const TenantDashboard = () => {
               </div>
             )}
 
+            {/* Live Fleet Status Tab (Staff View) */}
+            {activeTab === 'fleet-status' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900">Live Fleet Status</h2>
+                  <div className="text-sm text-gray-500">
+                    Auto-updates every 30 seconds
+                  </div>
+                </div>
+
+                {vehicles.length === 0 ? (
+                  <div className="bg-white rounded-xl p-12 text-center text-gray-500">
+                    <Car size={48} className="mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium">No vehicles available</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {vehicles.map(vehicle => {
+                      const isAvailable = !vehicle.is_blocked && (vehicle.current_status === 'Free' || vehicle.current_status === 'available');
+                      const currentBooking = bookings.find(b => 
+                        b.car_id === vehicle.id && 
+                        new Date(b.start_time) <= new Date() && 
+                        new Date(b.end_time) >= new Date()
+                      );
+                      
+                      return (
+                        <div 
+                          key={vehicle.id} 
+                          className={`bg-white rounded-xl shadow-sm border overflow-hidden ${
+                            vehicle.is_blocked ? 'border-red-200' : ''
+                          }`}
+                          data-testid={`vehicle-card-${vehicle.id}`}
+                        >
+                          <div className={`px-4 py-3 ${
+                            vehicle.is_blocked 
+                              ? 'bg-red-50' 
+                              : isAvailable 
+                                ? 'bg-green-50' 
+                                : 'bg-orange-50'
+                          }`}>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className="font-semibold text-gray-900 text-sm">{vehicle.name}</h3>
+                                <p className="text-xs text-gray-600">{vehicle.registration}</p>
+                              </div>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                vehicle.is_blocked 
+                                  ? 'bg-red-100 text-red-700' 
+                                  : isAvailable 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-orange-100 text-orange-700'
+                              }`}>
+                                {vehicle.is_blocked ? 'Blocked' : isAvailable ? 'Available' : 'In Use'}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {currentBooking && (
+                            <div className="px-4 py-2 bg-yellow-100 text-xs">
+                              <p className="font-medium text-yellow-800">
+                                {currentBooking.user_name || 'Booked'}
+                              </p>
+                              <p className="text-yellow-600">
+                                {currentBooking.notes || currentBooking.location || 'No details'}
+                              </p>
+                            </div>
+                          )}
+                          
+                          <div className="px-4 py-3">
+                            {vehicle.location && (
+                              <p className="text-xs text-gray-500 mb-2">
+                                📍 {vehicle.location}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-400">
+                              Updated: {vehicle.updated_at ? new Date(vehicle.updated_at).toLocaleString('en-IE', {
+                                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                              }) : 'N/A'}
+                            </p>
+                            
+                            {!vehicle.is_blocked && isAvailable && (
+                              <button
+                                onClick={() => navigate(`/${activeTenant?.tenant_slug}/bookings`)}
+                                className="mt-3 w-full py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+                              >
+                                Book This Car
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Vehicles Tab */}
             {activeTab === 'vehicles' && (
               <div className="space-y-6">

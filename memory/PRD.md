@@ -13,9 +13,6 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 - **URL:** https://quick-wing.com/login
 - **Email:** superadmin@quickwing.com
 - **Password:** Super123
-
-### Demo Franchise (Kerry Fleet Services)
-- **URL:** https://quick-wing.com/kerry-fleet/login
 - **Email:** admin.kerry-fleet@quickwing.com
 - **Password:** KerryFleet123
 

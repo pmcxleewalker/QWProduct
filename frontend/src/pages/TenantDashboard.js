@@ -944,7 +944,8 @@ const TenantDashboard = () => {
             )}
 
             {/* Vehicles Tab */}
-            {activeTab === 'vehicles' && (
+            {/* Vehicles Tab (Manage Vehicles) */}
+            {((activeTab === 'vehicles') || (activeTab === 'fleet' && activeSubTab === 'vehicles')) && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-gray-900">Fleet Vehicles</h2>

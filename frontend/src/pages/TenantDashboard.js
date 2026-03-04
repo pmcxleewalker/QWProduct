@@ -125,8 +125,21 @@ const TenantDashboard = () => {
     fetchData();
   }, [activeTab]);
 
-  const fetchData = async () => {
-    setLoading(true);
+  // Auto-refresh for live fleet status (every 30 seconds)
+  useEffect(() => {
+    let interval;
+    if (activeTab === 'fleet-status' || activeTab === 'car-calendars' || activeTab === 'all-cars') {
+      interval = setInterval(() => {
+        fetchData(true); // silent refresh
+      }, 30000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeTab]);
+
+  const fetchData = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError('');
     try {
       // Always fetch overview data
@@ -148,6 +161,7 @@ const TenantDashboard = () => {
         bookings: bookingList.length,
         users: userList.length
       });
+      setLastUpdated(new Date());
 
       // Generate recent activity from bookings
       const recent = bookingList.slice(0, 5).map(b => ({
@@ -170,10 +184,10 @@ const TenantDashboard = () => {
       }
 
     } catch (err) {
-      setError('Failed to load dashboard data');
+      if (!silent) setError('Failed to load dashboard data');
       console.error(err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 

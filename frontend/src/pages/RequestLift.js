@@ -91,8 +91,8 @@ const RequestLift = () => {
           </label>
           <input
             type="text"
-            value={formData.pickup_location}
-            onChange={(e) => setFormData({ ...formData, pickup_location: e.target.value })}
+            value={formData.from_location}
+            onChange={(e) => setFormData({ ...formData, from_location: e.target.value })}
             placeholder="e.g., Office, Home address, etc."
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
@@ -108,8 +108,8 @@ const RequestLift = () => {
           </label>
           <input
             type="text"
-            value={formData.dropoff_location}
-            onChange={(e) => setFormData({ ...formData, dropoff_location: e.target.value })}
+            value={formData.to_location}
+            onChange={(e) => setFormData({ ...formData, to_location: e.target.value })}
             placeholder="e.g., Client site, Station, etc."
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required

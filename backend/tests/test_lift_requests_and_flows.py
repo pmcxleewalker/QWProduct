@@ -169,10 +169,12 @@ class TestMasterAdminFlow:
         assert response.status_code == 200, f"Failed to create vehicle: {response.text}"
         data = response.json()
         
-        assert data["name"] == "Test Vehicle"
-        assert data["registration"] == "TEST-123"
-        TestMasterAdminFlow.test_vehicle_id = data["id"]
-        print(f"✓ Master Admin created vehicle: {data['name']}")
+        # Response format: {"message": "...", "vehicle": {...}}
+        vehicle = data.get("vehicle", data)
+        assert vehicle["name"] == "Test Vehicle"
+        assert vehicle["registration"] == "TEST-123"
+        TestMasterAdminFlow.test_vehicle_id = vehicle["id"]
+        print(f"✓ Master Admin created vehicle: {vehicle['name']}")
     
     def test_master_admin_can_create_staff(self):
         """Master Admin can create staff user"""

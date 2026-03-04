@@ -12,10 +12,10 @@ All vehicles are ready for immediate use with QR codes generated!
 **Car ID:** `1e1aad5c-c5be-45be-9e61-bfad17731dfe`
 
 **QR Code Download:**  
-https://wing-fleet-mgmt.preview.emergentagent.com/api/cars/1e1aad5c-c5be-45be-9e61-bfad17731dfe/qr
+https://saas-fleet-mgmt.preview.emergentagent.com/api/cars/1e1aad5c-c5be-45be-9e61-bfad17731dfe/qr
 
 **Direct Status Update Link:**  
-https://wing-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
+https://saas-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
 
 ---
 
@@ -25,10 +25,10 @@ https://wing-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
 **Car ID:** `e5c92bc8-c69f-4f53-b532-1fe85a86b59a`
 
 **QR Code Download:**  
-https://wing-fleet-mgmt.preview.emergentagent.com/api/cars/e5c92bc8-c69f-4f53-b532-1fe85a86b59a/qr
+https://saas-fleet-mgmt.preview.emergentagent.com/api/cars/e5c92bc8-c69f-4f53-b532-1fe85a86b59a/qr
 
 **Direct Status Update Link:**  
-https://wing-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
+https://saas-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
 
 ---
 
@@ -38,10 +38,10 @@ https://wing-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
 **Car ID:** `6edbedac-575b-4447-bb9c-5fd5f4403225`
 
 **QR Code Download:**  
-https://wing-fleet-mgmt.preview.emergentagent.com/api/cars/6edbedac-575b-4447-bb9c-5fd5f4403225/qr
+https://saas-fleet-mgmt.preview.emergentagent.com/api/cars/6edbedac-575b-4447-bb9c-5fd5f4403225/qr
 
 **Direct Status Update Link:**  
-https://wing-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
+https://saas-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
 
 ---
 
@@ -51,10 +51,10 @@ https://wing-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
 **Car ID:** `87e963ce-9009-42e7-92a4-1a5764d768e3`
 
 **QR Code Download:**  
-https://wing-fleet-mgmt.preview.emergentagent.com/api/cars/87e963ce-9009-42e7-92a4-1a5764d768e3/qr
+https://saas-fleet-mgmt.preview.emergentagent.com/api/cars/87e963ce-9009-42e7-92a4-1a5764d768e3/qr
 
 **Direct Status Update Link:**  
-https://wing-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
+https://saas-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
 
 ---
 
@@ -64,10 +64,10 @@ https://wing-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
 **Car ID:** `4792ed88-9fc6-48be-adfb-e17e21d843a0`
 
 **QR Code Download:**  
-https://wing-fleet-mgmt.preview.emergentagent.com/api/cars/4792ed88-9fc6-48be-adfb-e17e21d843a0/qr
+https://saas-fleet-mgmt.preview.emergentagent.com/api/cars/4792ed88-9fc6-48be-adfb-e17e21d843a0/qr
 
 **Direct Status Update Link:**  
-https://wing-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
+https://saas-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
 
 ---
 
@@ -85,7 +85,7 @@ https://wing-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
 3. Check the dashboard to see real-time updates
 
 ### Option 3: Download from Admin Panel
-1. Login at: https://wing-fleet-mgmt.preview.emergentagent.com/login
+1. Login at: https://saas-fleet-mgmt.preview.emergentagent.com/login
 2. Go to Admin Panel → Manage Cars
 3. Click the "QR" button next to each vehicle
 4. Download and print
@@ -97,13 +97,13 @@ https://wing-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
 ### Test the System Right Now:
 
 1. **View Dashboard:**
-   - Login: https://wing-fleet-mgmt.preview.emergentagent.com/login
+   - Login: https://saas-fleet-mgmt.preview.emergentagent.com/login
    - Email: `admin@quickwing.com`
    - Password: `admin123`
    - You'll see all 5 vehicles on the dashboard
 
 2. **Test Status Update (No Login Required):**
-   - Open this link: https://wing-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
+   - Open this link: https://saas-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
    - Change status to "In Use"
    - Add a note
    - Submit
@@ -139,7 +139,7 @@ https://wing-fleet-mgmt.preview.emergentagent.com/status-update?car=quickwing
 ```bash
 TOKEN="your-jwt-token"
 
-curl -X POST https://wing-fleet-mgmt.preview.emergentagent.com/api/cars \
+curl -X POST https://saas-fleet-mgmt.preview.emergentagent.com/api/cars \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

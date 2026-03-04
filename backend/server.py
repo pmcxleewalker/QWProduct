@@ -2657,6 +2657,32 @@ async def scan_update_vehicle(
     
     await db.vehicles.update_one(query, {"$set": update_dict})
     
+    # Check for service due alert
+    service_alert = None
+    service_due = vehicle.get("service_due_mileage")
+    new_mileage = update_data.current_mileage
+    
+    if service_due and new_mileage:
+        remaining_km = service_due - new_mileage
+        if remaining_km <= 0:
+            service_alert = {
+                "type": "overdue",
+                "message": f"SERVICE OVERDUE! Vehicle is {abs(remaining_km)} km past service due.",
+                "remaining_km": remaining_km
+            }
+        elif remaining_km <= 500:
+            service_alert = {
+                "type": "urgent",
+                "message": f"Service due in {remaining_km} km. Consider blocking for service appointment.",
+                "remaining_km": remaining_km
+            }
+        elif remaining_km <= 1000:
+            service_alert = {
+                "type": "warning",
+                "message": f"Service approaching in {remaining_km} km.",
+                "remaining_km": remaining_km
+            }
+    
     # Create a status update record for history
     status_update = {
         "id": str(uuid.uuid4()),
@@ -2669,7 +2695,8 @@ async def scan_update_vehicle(
         "reported_by": context.user_email,
         "reported_by_user_id": context.user_id,
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "source": "qr_scan"
+        "source": "qr_scan",
+        "service_alert": service_alert
     }
     await db.status_updates.insert_one(status_update)
     

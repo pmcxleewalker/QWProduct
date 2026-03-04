@@ -197,7 +197,7 @@ const TenantDashboard = () => {
       setRecentActivity(recent);
 
       // Fetch reports data if admin and on reports tab
-      if (isAdmin && activeTab === 'reports') {
+      if (isAdmin && (activeTab === 'reports' || activeSubTab === 'analytics')) {
         try {
           const reportsRes = await axios.get(`${API}/tenant/reports/summary`);
           setTenantReports(reportsRes.data);

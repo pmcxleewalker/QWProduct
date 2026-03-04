@@ -2223,6 +2223,278 @@ async def get_vehicle_utilization_report(
     }
 
 
+@api_router.get("/tenant/reports/summary/pdf")
+async def download_tenant_reports_pdf(
+    context: TenantContext = Depends(require_admin)
+):
+    """
+    Download tenant-specific reports as PDF.
+    """
+    tenant_id = context.tenant_id
+    
+    # Get tenant name
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    tenant_name = tenant.get("name", "Franchise") if tenant else "Franchise"
+    
+    # Get all vehicles for this tenant
+    vehicles = await db.vehicles.find(
+        {"tenant_id": tenant_id},
+        {"_id": 0, "id": 1, "name": 1, "registration": 1, "is_blocked": 1}
+    ).to_list(1000)
+    total_vehicles = len(vehicles)
+    
+    # Get all bookings for this tenant
+    all_bookings = await db.bookings.find(
+        {"tenant_id": tenant_id},
+        {"_id": 0}
+    ).to_list(10000)
+    total_bookings = len(all_bookings)
+    
+    # Get team members count
+    team_count = await db.memberships.count_documents({"tenant_id": tenant_id})
+    
+    # Calculate this month's bookings
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    bookings_this_month = [
+        b for b in all_bookings 
+        if b.get("created_at") and b["created_at"] >= month_start.isoformat()
+    ]
+    
+    # Calculate last month's bookings
+    last_month_end = month_start - timedelta(seconds=1)
+    last_month_start = (month_start - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    bookings_last_month = [
+        b for b in all_bookings 
+        if b.get("created_at") and last_month_start.isoformat() <= b["created_at"] <= last_month_end.isoformat()
+    ]
+    
+    # Calculate vehicle utilization
+    vehicles_used_this_month = set()
+    for booking in bookings_this_month:
+        if booking.get("car_id"):
+            vehicles_used_this_month.add(booking["car_id"])
+    
+    utilization_rate = (len(vehicles_used_this_month) / total_vehicles * 100) if total_vehicles > 0 else 0
+    
+    # Calculate booking trends
+    booking_trend = 0
+    if len(bookings_last_month) > 0:
+        booking_trend = ((len(bookings_this_month) - len(bookings_last_month)) / len(bookings_last_month)) * 100
+    elif len(bookings_this_month) > 0:
+        booking_trend = 100
+    
+    # Get vehicle usage breakdown
+    vehicle_booking_count = {}
+    for booking in all_bookings:
+        car_id = booking.get("car_id")
+        if car_id:
+            vehicle_booking_count[car_id] = vehicle_booking_count.get(car_id, 0) + 1
+    
+    vehicle_usage = []
+    for vehicle in vehicles:
+        vehicle_id = vehicle["id"]
+        booking_count = vehicle_booking_count.get(vehicle_id, 0)
+        vehicle_usage.append({
+            "id": vehicle_id,
+            "name": vehicle["name"],
+            "registration": vehicle["registration"],
+            "total_bookings": booking_count,
+            "is_blocked": vehicle.get("is_blocked", False)
+        })
+    
+    vehicle_usage.sort(key=lambda x: x["total_bookings"], reverse=True)
+    
+    # Get daily booking trend
+    daily_bookings = {}
+    for i in range(7):
+        day = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+        daily_bookings[day] = 0
+    
+    week_ago = (now - timedelta(days=7)).isoformat()
+    recent_bookings = [
+        b for b in all_bookings 
+        if b.get("created_at") and b["created_at"] >= week_ago
+    ]
+    
+    for booking in recent_bookings:
+        if booking.get("created_at"):
+            day = booking["created_at"][:10]
+            if day in daily_bookings:
+                daily_bookings[day] += 1
+    
+    daily_trend = [
+        {"date": date, "count": count}
+        for date, count in sorted(daily_bookings.items())
+    ]
+    
+    data = {
+        "summary": {
+            "total_vehicles": total_vehicles,
+            "total_bookings": total_bookings,
+            "team_members": team_count,
+            "bookings_this_month": len(bookings_this_month),
+            "bookings_last_month": len(bookings_last_month),
+            "booking_trend_percent": round(booking_trend, 1),
+            "vehicles_used_this_month": len(vehicles_used_this_month),
+            "utilization_rate_percent": round(utilization_rate, 1)
+        },
+        "vehicle_usage": vehicle_usage[:10],
+        "daily_booking_trend": daily_trend
+    }
+    
+    # Generate PDF
+    pdf_buffer = pdf_generator.generate_tenant_reports_pdf(data, tenant_name)
+    
+    filename = f"{tenant_name.lower().replace(' ', '_')}_analytics_{datetime.now().strftime('%Y%m%d')}.pdf"
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@api_router.get("/tenant/reports/summary/csv")
+async def download_tenant_reports_csv(
+    context: TenantContext = Depends(require_admin)
+):
+    """
+    Download tenant-specific reports as CSV.
+    """
+    import csv
+    from io import StringIO
+    
+    tenant_id = context.tenant_id
+    
+    # Get tenant name
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    tenant_name = tenant.get("name", "Franchise") if tenant else "Franchise"
+    
+    # Get all vehicles for this tenant
+    vehicles = await db.vehicles.find(
+        {"tenant_id": tenant_id},
+        {"_id": 0, "id": 1, "name": 1, "registration": 1, "is_blocked": 1}
+    ).to_list(1000)
+    
+    # Get all bookings for this tenant
+    all_bookings = await db.bookings.find(
+        {"tenant_id": tenant_id},
+        {"_id": 0}
+    ).to_list(10000)
+    
+    # Get team members count
+    team_count = await db.memberships.count_documents({"tenant_id": tenant_id})
+    
+    # Calculate metrics
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    bookings_this_month = [
+        b for b in all_bookings 
+        if b.get("created_at") and b["created_at"] >= month_start.isoformat()
+    ]
+    
+    last_month_end = month_start - timedelta(seconds=1)
+    last_month_start = (month_start - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    bookings_last_month = [
+        b for b in all_bookings 
+        if b.get("created_at") and last_month_start.isoformat() <= b["created_at"] <= last_month_end.isoformat()
+    ]
+    
+    vehicles_used_this_month = set()
+    for booking in bookings_this_month:
+        if booking.get("car_id"):
+            vehicles_used_this_month.add(booking["car_id"])
+    
+    utilization_rate = (len(vehicles_used_this_month) / len(vehicles) * 100) if len(vehicles) > 0 else 0
+    
+    booking_trend = 0
+    if len(bookings_last_month) > 0:
+        booking_trend = ((len(bookings_this_month) - len(bookings_last_month)) / len(bookings_last_month)) * 100
+    elif len(bookings_this_month) > 0:
+        booking_trend = 100
+    
+    # Get vehicle booking counts
+    vehicle_booking_count = {}
+    for booking in all_bookings:
+        car_id = booking.get("car_id")
+        if car_id:
+            vehicle_booking_count[car_id] = vehicle_booking_count.get(car_id, 0) + 1
+    
+    # Create CSV
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Header info
+    writer.writerow([f"{tenant_name} - Analytics Report"])
+    writer.writerow([f"Generated: {now.strftime('%Y-%m-%d %H:%M:%S')}"])
+    writer.writerow([])
+    
+    # Summary section
+    writer.writerow(["=== Summary Metrics ==="])
+    writer.writerow(["Metric", "Value"])
+    writer.writerow(["Total Vehicles", len(vehicles)])
+    writer.writerow(["Total Bookings", len(all_bookings)])
+    writer.writerow(["Bookings This Month", len(bookings_this_month)])
+    writer.writerow(["Bookings Last Month", len(bookings_last_month)])
+    writer.writerow(["Booking Trend (%)", f"{round(booking_trend, 1)}%"])
+    writer.writerow(["Vehicles Used This Month", len(vehicles_used_this_month)])
+    writer.writerow(["Fleet Utilization (%)", f"{round(utilization_rate, 1)}%"])
+    writer.writerow(["Team Members", team_count])
+    writer.writerow([])
+    
+    # Vehicle usage section
+    writer.writerow(["=== Vehicle Usage ==="])
+    writer.writerow(["Rank", "Vehicle Name", "Registration", "Total Bookings", "Status"])
+    
+    vehicle_list = []
+    for vehicle in vehicles:
+        vehicle_id = vehicle["id"]
+        booking_count = vehicle_booking_count.get(vehicle_id, 0)
+        vehicle_list.append({
+            "name": vehicle["name"],
+            "registration": vehicle["registration"],
+            "total_bookings": booking_count,
+            "is_blocked": vehicle.get("is_blocked", False)
+        })
+    
+    vehicle_list.sort(key=lambda x: x["total_bookings"], reverse=True)
+    
+    for i, v in enumerate(vehicle_list, 1):
+        status = "Blocked" if v["is_blocked"] else "Available"
+        writer.writerow([i, v["name"], v["registration"], v["total_bookings"], status])
+    
+    writer.writerow([])
+    
+    # Daily trend section
+    writer.writerow(["=== Daily Booking Trend (Last 7 Days) ==="])
+    writer.writerow(["Date", "Day", "Bookings"])
+    
+    for i in range(6, -1, -1):
+        day = now - timedelta(days=i)
+        day_str = day.strftime("%Y-%m-%d")
+        day_name = day.strftime("%A")
+        
+        count = 0
+        for booking in all_bookings:
+            if booking.get("created_at") and booking["created_at"][:10] == day_str:
+                count += 1
+        
+        writer.writerow([day_str, day_name, count])
+    
+    # Prepare response
+    output.seek(0)
+    csv_content = output.getvalue()
+    
+    filename = f"{tenant_name.lower().replace(' ', '_')}_analytics_{datetime.now().strftime('%Y%m%d')}.csv"
+    
+    return StreamingResponse(
+        iter([csv_content]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
 # ==================== VEHICLES (TENANT-SCOPED) ====================
 
 @api_router.post("/vehicles")

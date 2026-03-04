@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="15" skipped="0" tests="17" time="7.370" timestamp="2026-03-04T10:38:33.524776+00:00" hostname="agent-env-1bb3e748-1ff8-445b-b2fa-09b6e601a993"><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_01_create_announcement" time="0.539"><failure message="AssertionError: Create announcement failed: {&quot;detail&quot;:&quot;You do not have access to this tenant&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:71: in test_01_create_announcement
+    assert response.status_code == 200, f"Create announcement failed: {response.text}"
+E   AssertionError: Create announcement failed: {"detail":"You do not have access to this tenant"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_02_list_announcements" time="0.453"><failure message="AssertionError: List announcements failed: {&quot;detail&quot;:&quot;You do not have access to this tenant&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:95: in test_02_list_announcements
+    assert response.status_code == 200, f"List announcements failed: {response.text}"
+E   AssertionError: List announcements failed: {"detail":"You do not have access to this tenant"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_03_get_pending_announcements" time="0.421"><failure message="AssertionError: Get pending announcements failed: {&quot;detail&quot;:&quot;You do not have access to this tenant&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:114: in test_03_get_pending_announcements
+    assert response.status_code == 200, f"Get pending announcements failed: {response.text}"
+E   AssertionError: Get pending announcements failed: {"detail":"You do not have access to this tenant"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_04_get_unread_count" time="0.430"><failure message="AssertionError: Get unread count failed: {&quot;detail&quot;:&quot;You do not have access to this tenant&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:132: in test_04_get_unread_count
+    assert response.status_code == 200, f"Get unread count failed: {response.text}"
+E   AssertionError: Get unread count failed: {"detail":"You do not have access to this tenant"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_05_acknowledge_announcement" time="0.427"><failure message="AssertionError: Create announcement failed: {&quot;detail&quot;:&quot;You do not have access to this tenant&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:155: in test_05_acknowledge_announcement
+    assert create_response.status_code == 200, f"Create announcement failed: {create_response.text}"
+E   AssertionError: Create announcement failed: {"detail":"You do not have access to this tenant"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_06_acknowledge_nonexistent_announcement" time="0.434"><failure message="AssertionError: Expected 404, got 403&#10;assert 403 == 404&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:182: in test_06_acknowledge_nonexistent_announcement
+    assert response.status_code == 404, f"Expected 404, got {response.status_code}"
+E   AssertionError: Expected 404, got 403
+E   assert 403 == 404
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_07_delete_announcement" time="0.433"><failure message="assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:198: in test_07_delete_announcement
+    assert create_response.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_08_delete_nonexistent_announcement" time="0.425"><failure message="AssertionError: Expected 404, got 403&#10;assert 403 == 404&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:220: in test_08_delete_nonexistent_announcement
+    assert response.status_code == 404, f"Expected 404, got {response.status_code}"
+E   AssertionError: Expected 404, got 403
+E   assert 403 == 404
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_09_create_announcement_with_all_priorities" time="0.441"><failure message="AssertionError: Create low announcement failed: {&quot;detail&quot;:&quot;You do not have access to this tenant&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:239: in test_09_create_announcement_with_all_priorities
+    assert response.status_code == 200, f"Create {priority} announcement failed: {response.text}"
+E   AssertionError: Create low announcement failed: {"detail":"You do not have access to this tenant"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_10_get_daily_timeline" time="0.429"><failure message="AssertionError: Get daily timeline failed: {&quot;detail&quot;:&quot;You do not have access to this tenant&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:259: in test_10_get_daily_timeline
+    assert response.status_code == 200, f"Get daily timeline failed: {response.text}"
+E   AssertionError: Get daily timeline failed: {"detail":"You do not have access to this tenant"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_11_get_daily_timeline_with_date" time="0.438"><failure message="AssertionError: Get timeline with date failed: {&quot;detail&quot;:&quot;You do not have access to this tenant&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:300: in test_11_get_daily_timeline_with_date
+    assert response.status_code == 200, f"Get timeline with date failed: {response.text}"
+E   AssertionError: Get timeline with date failed: {"detail":"You do not have access to this tenant"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_12_get_daily_timeline_past_date" time="0.442"><failure message="AssertionError: Get timeline for past date failed: {&quot;detail&quot;:&quot;You do not have access to this tenant&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:314: in test_12_get_daily_timeline_past_date
+    assert response.status_code == 200, f"Get timeline for past date failed: {response.text}"
+E   AssertionError: Get timeline for past date failed: {"detail":"You do not have access to this tenant"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_13_get_daily_timeline_invalid_date" time="0.459"><failure message="AssertionError: Expected 400 for invalid date, got 403&#10;assert 403 == 400&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:326: in test_13_get_daily_timeline_invalid_date
+    assert response.status_code == 400, f"Expected 400 for invalid date, got {response.status_code}"
+E   AssertionError: Expected 400 for invalid date, got 403
+E   assert 403 == 400
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_14_daily_timeline_requires_admin" time="0.129" /><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_15_timeline_hours_are_correct" time="0.432"><failure message="assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:346: in test_15_timeline_hours_are_correct
+    assert response.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_16_timeline_utilization_calculation" time="0.422"><failure message="assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_announcements_timeline.py:368: in test_16_timeline_utilization_calculation
+    assert response.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_announcements_timeline.TestAnnouncementsAndTimeline" name="test_99_cleanup_test_announcements" time="0.418" /></testsuite></testsuites>

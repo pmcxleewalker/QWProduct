@@ -220,6 +220,17 @@ When creating a new tenant:
   - **Role-Based Tabs**:
     - Staff: Live Fleet, Car Calendars, My Bookings
     - Admin: Overview, Live Fleet, Car Calendars, All Cars, Vehicles, Team, Reports
+- [x] **QR Code Scanning & Mileage Update** (March 2026)
+  - **QR Code Generation**: Each vehicle gets a unique QR code (format: QUICKWING:VEHICLE:{id})
+  - **Vehicle QR Code Modal**: Download (PNG) and Print functionality
+  - **QR Scanner**: Camera-based scanner for status updates
+  - **Status Options**: Free, In Use, Needs Cleaning, Needs Repair
+  - **Mileage Tracking**: Update current mileage on scan
+  - **Location Tracking**: Update vehicle location
+  - **Status History**: Full audit trail of all QR scan updates
+  - **Real-time Updates**: Live Fleet dashboard refreshes to show updated info
+  - **Components**: QRScanner.js, VehicleQRCode.js
+  - **Endpoints**: POST /api/vehicles/{id}/scan-update, GET /api/vehicles/{id}/status-history
 
 ### Pending (P1)
 - [ ] Email notifications for invoices

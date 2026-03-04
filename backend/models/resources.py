@@ -141,11 +141,19 @@ class Provider(BaseModel):
 
 # ==================== MESSAGE/ANNOUNCEMENT MODELS ====================
 
+class AnnouncementPriority(str, Enum):
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+    URGENT = "urgent"
+
+
 class MessageCreate(BaseModel):
     title: str
     content: str
-    priority: str = "normal"
+    priority: str = "normal"  # low, normal, high, urgent
     requires_acknowledgment: bool = False
+    expires_at: Optional[str] = None  # ISO date when announcement should expire
 
 
 class Message(BaseModel):
@@ -156,6 +164,7 @@ class Message(BaseModel):
     content: str
     priority: str = "normal"
     requires_acknowledgment: bool = False
+    expires_at: Optional[str] = None
     created_by: str
     created_by_user_id: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

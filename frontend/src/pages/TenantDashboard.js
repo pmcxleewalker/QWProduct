@@ -239,6 +239,16 @@ const TenantDashboard = () => {
               <RefreshCw size={18} />
               <span>Refresh</span>
             </button>
+            {isAdmin && (
+              <button
+                onClick={() => setShowTraining(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200"
+                data-testid="help-button"
+              >
+                <HelpCircle size={18} />
+                <span>Help</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

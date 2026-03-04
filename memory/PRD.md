@@ -300,6 +300,7 @@ When creating a new tenant:
 │   ├── AnnouncementsManager.js # Admin view - create/manage announcements
 │   ├── DailyTimelineChart.js   # Hourly availability timeline chart
 │   ├── FleetVehicleCard.js     # Detailed vehicle card with status
+│   ├── NotificationBell.js     # Notification bell with polling & toast alerts
 │   └── QRScanner.js            # Camera-based QR code scanner
 └── components/ui/         # Shadcn UI components
 ```

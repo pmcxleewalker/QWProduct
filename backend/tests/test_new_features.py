@@ -269,8 +269,8 @@ class TestLiftRequestsAPI:
 class TestTenantUsersAPI:
     """Test tenant users API for role-based access"""
     
-    def test_get_tenant_users_admin_only(self, api_client, admin_token, staff_token):
-        """Test only admin can get tenant users list"""
+    def test_get_tenant_users_accessible_to_all_members(self, api_client, admin_token, staff_token):
+        """Test tenant users list is accessible to all tenant members (read-only for staff)"""
         # Admin should succeed
         admin_response = api_client.get(
             f"{BASE_URL}/api/tenant/users",
@@ -279,13 +279,13 @@ class TestTenantUsersAPI:
         assert admin_response.status_code == 200
         print("Admin can access tenant users list")
         
-        # Staff should be denied
+        # Staff can also view (read-only access)
         staff_response = api_client.get(
             f"{BASE_URL}/api/tenant/users",
             headers={"Authorization": f"Bearer {staff_token}"}
         )
-        assert staff_response.status_code in [401, 403]
-        print("Staff correctly denied access to tenant users list")
+        assert staff_response.status_code == 200
+        print("Staff can view tenant users list (read-only)")
 
 
 class TestFleetStatusData:

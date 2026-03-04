@@ -117,6 +117,8 @@ When creating a new tenant:
 - `POST /api/bookings` - Create booking
 - `GET /api/tenant/users` - List tenant users
 - `POST /api/tenant/users` - Add user to tenant (Admin only)
+- `GET /api/tenant/reports/summary` - Get tenant reports summary (Admin only)
+- `GET /api/tenant/reports/vehicle-utilization` - Get vehicle utilization report (Admin only)
 
 ## Database Schema
 

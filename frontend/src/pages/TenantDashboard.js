@@ -807,6 +807,219 @@ const TenantDashboard = () => {
                 </div>
               </div>
             )}
+
+            {/* Reports Tab (Admin Only) */}
+            {activeTab === 'reports' && isAdmin && (
+              <div className="space-y-6" data-testid="reports-tab">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Franchise Reports</h2>
+                    <p className="text-sm text-gray-500 mt-1">Analytics and insights for your franchise</p>
+                  </div>
+                  <button
+                    onClick={fetchData}
+                    className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                    data-testid="refresh-reports-btn"
+                  >
+                    <RefreshCw size={18} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+
+                {tenantReports ? (
+                  <>
+                    {/* Key Metrics */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-white rounded-xl p-5 shadow-sm border" data-testid="report-metric-vehicles">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500">Total Vehicles</p>
+                            <p className="text-2xl font-bold text-gray-900">{tenantReports.summary.total_vehicles}</p>
+                          </div>
+                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <Car className="text-blue-600" size={20} />
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500">
+                          {tenantReports.summary.vehicles_used_this_month} active this month
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-xl p-5 shadow-sm border" data-testid="report-metric-bookings">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500">Bookings This Month</p>
+                            <p className="text-2xl font-bold text-gray-900">{tenantReports.summary.bookings_this_month}</p>
+                          </div>
+                          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <Calendar className="text-green-600" size={20} />
+                          </div>
+                        </div>
+                        <div className={`mt-2 text-xs flex items-center ${
+                          tenantReports.summary.booking_trend_percent >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {tenantReports.summary.booking_trend_percent >= 0 ? (
+                            <TrendingUp size={14} className="mr-1" />
+                          ) : (
+                            <TrendingDown size={14} className="mr-1" />
+                          )}
+                          {Math.abs(tenantReports.summary.booking_trend_percent)}% vs last month
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-xl p-5 shadow-sm border" data-testid="report-metric-utilization">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500">Fleet Utilization</p>
+                            <p className="text-2xl font-bold text-gray-900">{tenantReports.summary.utilization_rate_percent}%</p>
+                          </div>
+                          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <Activity className="text-purple-600" size={20} />
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500">
+                          Vehicles used this month
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-xl p-5 shadow-sm border" data-testid="report-metric-team">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-500">Team Members</p>
+                            <p className="text-2xl font-bold text-gray-900">{tenantReports.summary.team_members}</p>
+                          </div>
+                          <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <Users className="text-orange-600" size={20} />
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500">
+                          Active staff
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Vehicle Usage and Daily Trend */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Top Vehicles by Bookings */}
+                      <div className="bg-white rounded-xl p-6 shadow-sm border">
+                        <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                          <Car size={20} className="mr-2 text-blue-600" />
+                          Most Used Vehicles
+                        </h3>
+                        {tenantReports.vehicle_usage.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            <Car size={40} className="mx-auto mb-3 opacity-50" />
+                            <p>No vehicle usage data yet</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {tenantReports.vehicle_usage.map((vehicle, index) => (
+                              <div 
+                                key={vehicle.id} 
+                                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                    index === 0 ? 'bg-yellow-100 text-yellow-700' :
+                                    index === 1 ? 'bg-gray-200 text-gray-700' :
+                                    index === 2 ? 'bg-orange-100 text-orange-700' :
+                                    'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    {index + 1}
+                                  </span>
+                                  <div>
+                                    <p className="font-medium text-gray-900 text-sm">{vehicle.name}</p>
+                                    <p className="text-xs text-gray-500">{vehicle.registration}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold text-gray-900">{vehicle.total_bookings}</p>
+                                  <p className="text-xs text-gray-500">bookings</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Daily Booking Trend */}
+                      <div className="bg-white rounded-xl p-6 shadow-sm border">
+                        <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                          <TrendingUp size={20} className="mr-2 text-green-600" />
+                          Bookings This Week
+                        </h3>
+                        {tenantReports.daily_booking_trend.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            <Calendar size={40} className="mx-auto mb-3 opacity-50" />
+                            <p>No booking data yet</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {tenantReports.daily_booking_trend.map((day) => {
+                              const maxCount = Math.max(...tenantReports.daily_booking_trend.map(d => d.count), 1);
+                              const barWidth = (day.count / maxCount) * 100;
+                              const dayName = new Date(day.date).toLocaleDateString('en-IE', { weekday: 'short' });
+                              return (
+                                <div key={day.date} className="flex items-center space-x-3">
+                                  <span className="w-12 text-xs text-gray-500">{dayName}</span>
+                                  <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
+                                    <div 
+                                      className="bg-green-500 h-full rounded-full flex items-center justify-end pr-2 transition-all duration-500"
+                                      style={{ width: `${Math.max(barWidth, 8)}%` }}
+                                    >
+                                      {day.count > 0 && (
+                                        <span className="text-xs text-white font-medium">{day.count}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Summary Stats */}
+                    <div className="bg-white rounded-xl p-6 shadow-sm border">
+                      <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                        <PieChart size={20} className="mr-2 text-purple-600" />
+                        Summary Statistics
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <p className="text-2xl font-bold text-blue-600">{tenantReports.summary.total_bookings}</p>
+                          <p className="text-sm text-gray-500">Total Bookings</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <p className="text-2xl font-bold text-green-600">{tenantReports.summary.bookings_this_month}</p>
+                          <p className="text-sm text-gray-500">This Month</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <p className="text-2xl font-bold text-gray-600">{tenantReports.summary.bookings_last_month}</p>
+                          <p className="text-sm text-gray-500">Last Month</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <p className="text-2xl font-bold text-purple-600">{tenantReports.summary.utilization_rate_percent}%</p>
+                          <p className="text-sm text-gray-500">Utilization</p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-white rounded-xl p-12 shadow-sm border text-center">
+                    <PieChart size={48} className="mx-auto mb-4 text-gray-300" />
+                    <p className="text-gray-500">Loading reports data...</p>
+                    <button
+                      onClick={fetchData}
+                      className="mt-4 text-blue-600 hover:underline"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>

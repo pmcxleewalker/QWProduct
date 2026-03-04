@@ -211,7 +211,8 @@ const TenantDashboard = () => {
         { id: 'overview', label: 'Overview', icon: BarChart3 },
         { id: 'vehicles', label: 'Vehicles', icon: Car },
         { id: 'bookings', label: 'Bookings', icon: Calendar },
-        { id: 'team', label: 'Team', icon: Users }
+        { id: 'team', label: 'Team', icon: Users },
+        { id: 'reports', label: 'Reports', icon: PieChart }
       ];
 
   // Staff default to fleet-status tab

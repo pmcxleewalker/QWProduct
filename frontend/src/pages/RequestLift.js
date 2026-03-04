@@ -157,8 +157,8 @@ const RequestLift = () => {
             Number of Passengers
           </label>
           <select
-            value={formData.passengers}
-            onChange={(e) => setFormData({ ...formData, passengers: parseInt(e.target.value) })}
+            value={formData.seats_needed}
+            onChange={(e) => setFormData({ ...formData, seats_needed: parseInt(e.target.value) })}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             data-testid="passengers-select"
           >

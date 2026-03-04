@@ -295,7 +295,12 @@ When creating a new tenant:
 │   ├── CarBookingCalendar.js   # Individual car booking calendar (07:00-22:00)
 │   ├── AllCarsCalendar.js      # Monthly all-cars calendar with drill-down
 │   ├── RequestLiftButton.js    # Sticky bottom button for staff mobile
-│   └── AdminTraining.js        # In-app training guide
+│   ├── AdminTraining.js        # In-app training guide
+│   ├── AnnouncementBanner.js   # Staff view - pending announcements banner
+│   ├── AnnouncementsManager.js # Admin view - create/manage announcements
+│   ├── DailyTimelineChart.js   # Hourly availability timeline chart
+│   ├── FleetVehicleCard.js     # Detailed vehicle card with status
+│   └── QRScanner.js            # Camera-based QR code scanner
 └── components/ui/         # Shadcn UI components
 ```
 

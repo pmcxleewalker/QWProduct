@@ -2022,6 +2022,207 @@ async def remove_user_from_tenant(
     return {"message": "User removed from tenant"}
 
 
+# ==================== TENANT REPORTS (TENANT-SCOPED) ====================
+
+@api_router.get("/tenant/reports/summary")
+async def get_tenant_report_summary(
+    context: TenantContext = Depends(require_admin)
+):
+    """
+    Get tenant-specific reports summary including:
+    - Fleet utilization
+    - Booking stats
+    - Vehicle usage breakdown
+    """
+    tenant_id = context.tenant_id
+    
+    # Get all vehicles for this tenant
+    vehicles = await db.vehicles.find(
+        {"tenant_id": tenant_id},
+        {"_id": 0, "id": 1, "name": 1, "registration": 1, "is_blocked": 1}
+    ).to_list(1000)
+    total_vehicles = len(vehicles)
+    
+    # Get all bookings for this tenant
+    all_bookings = await db.bookings.find(
+        {"tenant_id": tenant_id},
+        {"_id": 0}
+    ).to_list(10000)
+    total_bookings = len(all_bookings)
+    
+    # Get team members count
+    team_count = await db.memberships.count_documents({"tenant_id": tenant_id})
+    
+    # Calculate this month's bookings
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    bookings_this_month = [
+        b for b in all_bookings 
+        if b.get("created_at") and b["created_at"] >= month_start.isoformat()
+    ]
+    
+    # Calculate last month's bookings for trend comparison
+    last_month_end = month_start - timedelta(seconds=1)
+    last_month_start = (month_start - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    bookings_last_month = [
+        b for b in all_bookings 
+        if b.get("created_at") and last_month_start.isoformat() <= b["created_at"] <= last_month_end.isoformat()
+    ]
+    
+    # Calculate vehicle utilization (vehicles with at least one booking this month)
+    vehicles_used_this_month = set()
+    for booking in bookings_this_month:
+        if booking.get("car_id"):
+            vehicles_used_this_month.add(booking["car_id"])
+    
+    utilization_rate = (len(vehicles_used_this_month) / total_vehicles * 100) if total_vehicles > 0 else 0
+    
+    # Calculate booking trends
+    booking_trend = 0
+    if len(bookings_last_month) > 0:
+        booking_trend = ((len(bookings_this_month) - len(bookings_last_month)) / len(bookings_last_month)) * 100
+    elif len(bookings_this_month) > 0:
+        booking_trend = 100  # 100% increase from 0
+    
+    # Get vehicle usage breakdown (most booked vehicles)
+    vehicle_booking_count = {}
+    for booking in all_bookings:
+        car_id = booking.get("car_id")
+        if car_id:
+            vehicle_booking_count[car_id] = vehicle_booking_count.get(car_id, 0) + 1
+    
+    # Create vehicle usage list sorted by bookings
+    vehicle_usage = []
+    for vehicle in vehicles:
+        vehicle_id = vehicle["id"]
+        booking_count = vehicle_booking_count.get(vehicle_id, 0)
+        vehicle_usage.append({
+            "id": vehicle_id,
+            "name": vehicle["name"],
+            "registration": vehicle["registration"],
+            "total_bookings": booking_count,
+            "is_blocked": vehicle.get("is_blocked", False)
+        })
+    
+    # Sort by booking count descending
+    vehicle_usage.sort(key=lambda x: x["total_bookings"], reverse=True)
+    
+    # Get recent bookings activity (last 7 days)
+    week_ago = (now - timedelta(days=7)).isoformat()
+    recent_bookings = [
+        b for b in all_bookings 
+        if b.get("created_at") and b["created_at"] >= week_ago
+    ]
+    
+    # Calculate daily booking distribution for this week
+    daily_bookings = {}
+    for i in range(7):
+        day = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+        daily_bookings[day] = 0
+    
+    for booking in recent_bookings:
+        if booking.get("created_at"):
+            day = booking["created_at"][:10]
+            if day in daily_bookings:
+                daily_bookings[day] += 1
+    
+    # Convert to list sorted by date
+    daily_trend = [
+        {"date": date, "count": count}
+        for date, count in sorted(daily_bookings.items())
+    ]
+    
+    return {
+        "summary": {
+            "total_vehicles": total_vehicles,
+            "total_bookings": total_bookings,
+            "team_members": team_count,
+            "bookings_this_month": len(bookings_this_month),
+            "bookings_last_month": len(bookings_last_month),
+            "booking_trend_percent": round(booking_trend, 1),
+            "vehicles_used_this_month": len(vehicles_used_this_month),
+            "utilization_rate_percent": round(utilization_rate, 1)
+        },
+        "vehicle_usage": vehicle_usage[:10],  # Top 10 vehicles
+        "daily_booking_trend": daily_trend,
+        "generated_at": now.isoformat()
+    }
+
+
+@api_router.get("/tenant/reports/vehicle-utilization")
+async def get_vehicle_utilization_report(
+    context: TenantContext = Depends(require_admin)
+):
+    """
+    Detailed vehicle utilization report showing:
+    - Each vehicle's booking history
+    - Hours booked
+    - Last booking date
+    """
+    tenant_id = context.tenant_id
+    
+    # Get all vehicles
+    vehicles = await db.vehicles.find(
+        {"tenant_id": tenant_id},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Get all bookings
+    bookings = await db.bookings.find(
+        {"tenant_id": tenant_id},
+        {"_id": 0}
+    ).to_list(10000)
+    
+    # Calculate stats for each vehicle
+    vehicle_stats = []
+    for vehicle in vehicles:
+        vehicle_id = vehicle["id"]
+        vehicle_bookings = [b for b in bookings if b.get("car_id") == vehicle_id]
+        
+        # Calculate total hours booked
+        total_hours = 0
+        last_booking_date = None
+        
+        for booking in vehicle_bookings:
+            start = booking.get("start_time")
+            end = booking.get("end_time")
+            if start and end:
+                try:
+                    start_dt = datetime.fromisoformat(start.replace("Z", "+00:00"))
+                    end_dt = datetime.fromisoformat(end.replace("Z", "+00:00"))
+                    hours = (end_dt - start_dt).total_seconds() / 3600
+                    total_hours += hours
+                except:
+                    pass
+            
+            created_at = booking.get("created_at")
+            if created_at:
+                if not last_booking_date or created_at > last_booking_date:
+                    last_booking_date = created_at
+        
+        vehicle_stats.append({
+            "id": vehicle_id,
+            "name": vehicle["name"],
+            "registration": vehicle["registration"],
+            "is_blocked": vehicle.get("is_blocked", False),
+            "total_bookings": len(vehicle_bookings),
+            "total_hours_booked": round(total_hours, 1),
+            "last_booking_date": last_booking_date,
+            "tax_expiry": vehicle.get("tax_expiry"),
+            "service_due_at": vehicle.get("service_due_at")
+        })
+    
+    # Sort by total bookings
+    vehicle_stats.sort(key=lambda x: x["total_bookings"], reverse=True)
+    
+    return {
+        "vehicles": vehicle_stats,
+        "total_vehicles": len(vehicles),
+        "total_bookings": len(bookings),
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
 # ==================== VEHICLES (TENANT-SCOPED) ====================
 
 @api_router.post("/vehicles")

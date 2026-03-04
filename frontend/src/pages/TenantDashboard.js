@@ -366,24 +366,34 @@ const TenantDashboard = () => {
               </h1>
               <p className="text-sm text-gray-500 mt-1">Fleet Management Dashboard</p>
             </div>
-            <button
-              onClick={fetchData}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              data-testid="refresh-button"
-            >
-              <RefreshCw size={18} />
-              <span>Refresh</span>
-            </button>
-            {isAdmin && (
+            <div className="flex items-center space-x-3">
+              {/* Notification Bell */}
+              <NotificationBell 
+                onAnnouncementClick={() => {
+                  setActiveTab('announcements');
+                  setActiveSubTab(null);
+                }} 
+              />
+              
               <button
-                onClick={() => setShowTraining(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200"
-                data-testid="help-button"
+                onClick={fetchData}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                data-testid="refresh-button"
               >
-                <HelpCircle size={18} />
-                <span>Help</span>
+                <RefreshCw size={18} />
+                <span>Refresh</span>
               </button>
-            )}
+              {isAdmin && (
+                <button
+                  onClick={() => setShowTraining(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200"
+                  data-testid="help-button"
+                >
+                  <HelpCircle size={18} />
+                  <span>Help</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

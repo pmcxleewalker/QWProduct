@@ -841,7 +841,8 @@ const TenantDashboard = () => {
             )}
 
             {/* Car Calendars Tab - Individual car booking calendars */}
-            {activeTab === 'car-calendars' && (
+            {/* Car Calendars Tab */}
+            {(activeTab === 'car-calendars' || (activeTab === 'fleet' && activeSubTab === 'car-calendars')) && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>

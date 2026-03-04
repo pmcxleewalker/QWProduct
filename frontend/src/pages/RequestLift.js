@@ -12,11 +12,11 @@ const RequestLift = () => {
   const [error, setError] = useState('');
   
   const [formData, setFormData] = useState({
-    pickup_location: '',
-    dropoff_location: '',
+    from_location: '',
+    to_location: '',
     date: new Date().toISOString().split('T')[0],
     time: '',
-    passengers: 1,
+    seats_needed: 1,
     notes: ''
   });
 

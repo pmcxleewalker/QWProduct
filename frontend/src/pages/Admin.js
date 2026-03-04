@@ -995,6 +995,17 @@ const Admin = () => {
                     <span>To-Do List</span>
                   </button>
                 )}
+                
+                <div className="border-t border-gray-100 my-1"></div>
+                
+                <button
+                  onClick={() => setShowTraining(true)}
+                  data-testid="open-training"
+                  className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                >
+                  <BookOpen size={16} />
+                  <span>Training Guide</span>
+                </button>
               </div>
             </div>
           </div>

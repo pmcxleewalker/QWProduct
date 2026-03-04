@@ -8,7 +8,7 @@ import {
   CheckCircle, XCircle, Edit2, Trash2, Eye, Download, UserPlus,
   ArrowRight, MoreVertical, BookOpen, HelpCircle, PieChart,
   Activity, TrendingDown, CalendarDays, QrCode, Camera, Gauge,
-  ClipboardList
+  ClipboardList, Bell, Megaphone
 } from 'lucide-react';
 import AdminTraining from '../components/AdminTraining';
 import CarBookingCalendar from '../components/CarBookingCalendar';
@@ -19,6 +19,9 @@ import VehicleQRCode from '../components/VehicleQRCode';
 import FleetVehicleCard from '../components/FleetVehicleCard';
 import FleetReportsSection from '../components/FleetReportsSection';
 import EditVehicleModal from '../components/EditVehicleModal';
+import AnnouncementBanner from '../components/AnnouncementBanner';
+import AnnouncementsManager from '../components/AnnouncementsManager';
+import DailyTimelineChart from '../components/DailyTimelineChart';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

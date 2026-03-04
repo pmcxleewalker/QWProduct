@@ -16,7 +16,7 @@ const getUsername = (email) => {
 
 const Admin = () => {
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user, activeTenant } = useAuth();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'cars');
   const [cars, setCars] = useState([]);
   const [providers, setProviders] = useState([]);
@@ -32,6 +32,26 @@ const Admin = () => {
   const [editingMessage, setEditingMessage] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showTraining, setShowTraining] = useState(false);
+
+  // Check if this is first time admin visits - show training
+  useEffect(() => {
+    const trainingKey = `training_completed_${activeTenant?.tenant_id || 'default'}`;
+    const trainingCompleted = localStorage.getItem(trainingKey);
+    if (!trainingCompleted && activeTenant?.tenant_id) {
+      // Show training for new admins after a short delay
+      const timer = setTimeout(() => {
+        setShowTraining(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTenant?.tenant_id]);
+
+  const handleCloseTraining = () => {
+    setShowTraining(false);
+    const trainingKey = `training_completed_${activeTenant?.tenant_id || 'default'}`;
+    localStorage.setItem(trainingKey, 'true');
+  };
 
   const [carForm, setCarForm] = useState({
     name: '',

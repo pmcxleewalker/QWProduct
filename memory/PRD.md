@@ -231,6 +231,30 @@ When creating a new tenant:
   - **Real-time Updates**: Live Fleet dashboard refreshes to show updated info
   - **Components**: QRScanner.js, VehicleQRCode.js
   - **Endpoints**: POST /api/vehicles/{id}/scan-update, GET /api/vehicles/{id}/status-history
+- [x] **Enhanced Vehicle Cards & Fleet Reports** (March 2026)
+  - **Enhanced Vehicle Card Design** (FleetVehicleCard.js):
+    - Current Mileage display with odometer icon
+    - Service Due At (km) with service alert warnings
+    - Tax Due Date, NCT Due Date
+    - Base Location
+    - Last updated timestamp + user
+    - Service Alert Banners: Warning (1000km), Urgent (500km), Overdue (0km)
+    - QR, Edit, Delete action buttons
+  - **Block for Appointment Feature**:
+    - Dropdown options: Service, Cleaning, Other (with icons)
+    - Notes field (optional)
+    - Blocked vehicles show red styling + "Unblock & Return to Fleet" button
+    - Endpoints: POST /api/vehicles/{id}/block, POST /api/vehicles/{id}/unblock
+  - **Edit Vehicle Modal** (EditVehicleModal.js):
+    - All fields: Name, Registration, Status, Mileage, Service Due, Tax, NCT, Location
+  - **Fleet Reports Section** (FleetReportsSection.js):
+    - Summary Stats Cards: Total Vehicles, Total Bookings, Pending, Blocked
+    - Most Booked Cars (Ranked) - Top 10 list
+    - Daily Availability Report with donut chart visualization
+    - By Location Summary with utilization %
+    - Date filters (From/To)
+    - Export CSV functionality
+    - Endpoint: GET /api/tenant/fleet-reports, GET /api/tenant/fleet-reports/csv
 
 ### Pending (P1)
 - [ ] Email notifications for invoices

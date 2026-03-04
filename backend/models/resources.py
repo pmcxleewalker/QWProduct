@@ -86,6 +86,7 @@ class Booking(BaseModel):
     end_time: str
     purpose: str = ""
     location: str = ""
+    notes: str = ""
     is_double_up_call: bool = False
     is_recurring: bool = False
     recurrence_type: Optional[str] = None

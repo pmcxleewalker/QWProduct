@@ -119,6 +119,8 @@ When creating a new tenant:
 - `POST /api/tenant/users` - Add user to tenant (Admin only)
 - `GET /api/tenant/reports/summary` - Get tenant reports summary (Admin only)
 - `GET /api/tenant/reports/vehicle-utilization` - Get vehicle utilization report (Admin only)
+- `GET /api/tenant/reports/summary/pdf` - Download tenant analytics as PDF (Admin only)
+- `GET /api/tenant/reports/summary/csv` - Download tenant analytics as CSV (Admin only)
 
 ## Database Schema
 

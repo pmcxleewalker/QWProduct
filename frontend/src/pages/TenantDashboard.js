@@ -714,6 +714,108 @@ const TenantDashboard = () => {
               </div>
             )}
 
+            {/* Car Calendars Tab - Individual car booking calendars */}
+            {activeTab === 'car-calendars' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Car Bookings</h2>
+                    <p className="text-xs text-gray-500">
+                      {lastUpdated ? `Updated: ${lastUpdated.toLocaleTimeString('en-IE')}` : ''} 
+                      <span className="ml-2 text-green-600">● Auto-updates every 30s</span>
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => fetchData()}
+                      className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 flex items-center space-x-2"
+                    >
+                      <RefreshCw size={16} />
+                      <span>Refresh</span>
+                    </button>
+                    {!showAllCars && vehicles.length > 6 && (
+                      <button
+                        onClick={() => setShowAllCars(true)}
+                        className="px-3 py-2 bg-blue-100 text-blue-700 text-sm rounded-lg hover:bg-blue-200"
+                      >
+                        Show All {vehicles.length} Cars
+                      </button>
+                    )}
+                    {showAllCars && (
+                      <button
+                        onClick={() => setShowAllCars(false)}
+                        className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200"
+                      >
+                        Show Less
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Legend */}
+                <div className="flex items-center justify-center space-x-6 px-4 py-3 bg-white rounded-lg border text-sm">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 rounded bg-green-200 border border-green-400"></div>
+                    <span className="text-gray-600">Free</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 rounded bg-purple-200 border border-purple-400"></div>
+                    <span className="text-gray-600">Booked</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 rounded bg-orange-200 border border-orange-400"></div>
+                    <span className="text-gray-600">Recurring</span>
+                  </div>
+                </div>
+
+                {vehicles.length === 0 ? (
+                  <div className="bg-white rounded-xl p-12 text-center text-gray-500">
+                    <Car size={48} className="mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium">No vehicles in fleet</p>
+                    <p className="text-sm mt-1">Add vehicles to start booking</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {(showAllCars ? vehicles : vehicles.slice(0, 6)).map(vehicle => (
+                      <CarBookingCalendar
+                        key={vehicle.id}
+                        vehicle={vehicle}
+                        bookings={bookings}
+                        onBookingCreated={() => fetchData()}
+                        isAdmin={isAdmin}
+                        tenantSlug={activeTenant?.tenant_slug}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* All Cars Monthly Calendar (Admin Only) */}
+            {activeTab === 'all-cars' && isAdmin && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">All Cars Calendar</h2>
+                    <p className="text-xs text-gray-500">Monthly overview of all bookings</p>
+                  </div>
+                  <button
+                    onClick={() => fetchData()}
+                    className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 flex items-center space-x-2"
+                  >
+                    <RefreshCw size={16} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+
+                <AllCarsCalendar
+                  vehicles={vehicles}
+                  bookings={bookings}
+                  onBookingCreated={() => fetchData()}
+                />
+              </div>
+            )}
+
             {/* Vehicles Tab */}
             {activeTab === 'vehicles' && (
               <div className="space-y-6">

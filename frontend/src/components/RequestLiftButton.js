@@ -7,7 +7,7 @@ const RequestLiftButton = ({ tenantSlug }) => {
 
   return (
     <div 
-      className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-40 p-3 md:hidden"
+      className="fixed bottom-16 left-0 right-0 bg-white border-t shadow-lg z-50 p-3 md:hidden"
       data-testid="request-lift-sticky"
     >
       <button

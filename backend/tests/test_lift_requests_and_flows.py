@@ -335,9 +335,11 @@ class TestComplianceAlerts:
         assert response.status_code == 200, f"Failed to create vehicle: {response.text}"
         data = response.json()
         
-        assert data["tax_due_date"] == tax_due
-        TestComplianceAlerts.compliance_vehicle_id = data["id"]
-        print(f"✓ Vehicle with tax expiry created: {data['name']}, tax due: {tax_due}")
+        # Response format: {"message": "...", "vehicle": {...}}
+        vehicle = data.get("vehicle", data)
+        assert vehicle.get("tax_due_date") == tax_due
+        TestComplianceAlerts.compliance_vehicle_id = vehicle["id"]
+        print(f"✓ Vehicle with tax expiry created: {vehicle['name']}, tax due: {tax_due}")
     
     def test_vehicles_list_includes_tax_expiry(self):
         """Vehicles list includes tax_due_date for compliance checking"""

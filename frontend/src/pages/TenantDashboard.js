@@ -22,6 +22,7 @@ import EditVehicleModal from '../components/EditVehicleModal';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import AnnouncementsManager from '../components/AnnouncementsManager';
 import DailyTimelineChart from '../components/DailyTimelineChart';
+import NotificationBell from '../components/NotificationBell';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

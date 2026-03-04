@@ -3263,6 +3263,229 @@ async def acknowledge_message(
     return {"message": "Acknowledged"}
 
 
+@api_router.get("/announcements")
+async def list_announcements(context: TenantContext = Depends(require_tenant_context)):
+    """List all announcements in the current tenant"""
+    query = TenantQueryBuilder.scope(context.tenant_id)
+    announcements = await db.messages.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return announcements
+
+
+@api_router.get("/announcements/pending")
+async def get_pending_announcements(context: TenantContext = Depends(require_tenant_context)):
+    """Get announcements that require acknowledgment from the current user"""
+    query = TenantQueryBuilder.scope(context.tenant_id, {
+        "requires_acknowledgment": True,
+        "acknowledged_by": {"$ne": context.user_email}
+    })
+    pending = await db.messages.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return pending
+
+
+@api_router.get("/announcements/unread-count")
+async def get_unread_announcement_count(context: TenantContext = Depends(require_tenant_context)):
+    """Get count of unread announcements requiring acknowledgment"""
+    query = TenantQueryBuilder.scope(context.tenant_id, {
+        "requires_acknowledgment": True,
+        "acknowledged_by": {"$ne": context.user_email}
+    })
+    count = await db.messages.count_documents(query)
+    return {"count": count}
+
+
+@api_router.delete("/announcements/{announcement_id}")
+async def delete_announcement(
+    announcement_id: str,
+    context: TenantContext = Depends(require_admin)
+):
+    """Delete an announcement (Admin only)"""
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, announcement_id)
+    result = await db.messages.delete_one(query)
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    
+    return {"message": "Announcement deleted"}
+
+
+# ==================== DAILY AVAILABILITY TIMELINE ====================
+
+@api_router.get("/tenant/reports/daily-timeline")
+async def get_daily_availability_timeline(
+    date: Optional[str] = None,
+    context: TenantContext = Depends(require_admin)
+):
+    """
+    Get hourly availability timeline for all vehicles on a specific day.
+    Returns data for each hour from 07:00 to 22:00.
+    """
+    tenant_id = context.tenant_id
+    
+    # Parse date or use today
+    if date:
+        try:
+            target_date = datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    else:
+        target_date = datetime.now(timezone.utc)
+    
+    # Set date boundaries
+    day_start = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    day_end = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+    
+    # Get all vehicles
+    vehicles = await db.vehicles.find(
+        {"tenant_id": tenant_id},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    total_vehicles = len(vehicles)
+    blocked_vehicles = len([v for v in vehicles if v.get("is_blocked")])
+    available_fleet = total_vehicles - blocked_vehicles
+    
+    # Get bookings for this day
+    bookings = await db.bookings.find({
+        "tenant_id": tenant_id,
+        "start_time": {"$lte": day_end.isoformat()},
+        "end_time": {"$gte": day_start.isoformat()}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Build hourly timeline (07:00 - 22:00)
+    timeline = []
+    for hour in range(7, 23):  # 07:00 to 22:00
+        hour_start = target_date.replace(hour=hour, minute=0, second=0, microsecond=0)
+        hour_end = target_date.replace(hour=hour, minute=59, second=59, microsecond=999999)
+        
+        # Count vehicles in use during this hour
+        vehicles_in_use = set()
+        for booking in bookings:
+            try:
+                booking_start = datetime.fromisoformat(booking["start_time"].replace("Z", "+00:00"))
+                booking_end = datetime.fromisoformat(booking["end_time"].replace("Z", "+00:00"))
+                
+                # Check if booking overlaps with this hour
+                # Make hour_start and hour_end timezone-aware for comparison
+                hour_start_aware = hour_start.replace(tzinfo=timezone.utc)
+                hour_end_aware = hour_end.replace(tzinfo=timezone.utc)
+                
+                if booking_start <= hour_end_aware and booking_end >= hour_start_aware:
+                    vehicles_in_use.add(booking["car_id"])
+            except (ValueError, KeyError):
+                continue
+        
+        in_use_count = len(vehicles_in_use)
+        free_count = available_fleet - in_use_count
+        
+        timeline.append({
+            "hour": f"{hour:02d}:00",
+            "hour_24": hour,
+            "total_fleet": available_fleet,
+            "in_use": in_use_count,
+            "free": max(0, free_count),
+            "utilization_percent": round((in_use_count / available_fleet * 100), 1) if available_fleet > 0 else 0
+        })
+    
+    # Calculate peak hours
+    peak_hour = max(timeline, key=lambda x: x["in_use"]) if timeline else None
+    avg_utilization = sum(t["utilization_percent"] for t in timeline) / len(timeline) if timeline else 0
+    
+    return {
+        "date": target_date.strftime("%Y-%m-%d"),
+        "total_vehicles": total_vehicles,
+        "blocked_vehicles": blocked_vehicles,
+        "available_fleet": available_fleet,
+        "timeline": timeline,
+        "summary": {
+            "peak_hour": peak_hour["hour"] if peak_hour else None,
+            "peak_vehicles_in_use": peak_hour["in_use"] if peak_hour else 0,
+            "average_utilization": round(avg_utilization, 1)
+        },
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@api_router.get("/tenant/reports/daily-timeline/csv")
+async def export_daily_timeline_csv(
+    date: Optional[str] = None,
+    context: TenantContext = Depends(require_admin)
+):
+    """Export daily availability timeline as CSV"""
+    import csv
+    from io import StringIO
+    
+    # Get the timeline data
+    tenant_id = context.tenant_id
+    
+    if date:
+        try:
+            target_date = datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format")
+    else:
+        target_date = datetime.now(timezone.utc)
+    
+    day_start = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    day_end = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+    
+    vehicles = await db.vehicles.find({"tenant_id": tenant_id}, {"_id": 0}).to_list(1000)
+    total_vehicles = len(vehicles)
+    blocked_vehicles = len([v for v in vehicles if v.get("is_blocked")])
+    available_fleet = total_vehicles - blocked_vehicles
+    
+    bookings = await db.bookings.find({
+        "tenant_id": tenant_id,
+        "start_time": {"$lte": day_end.isoformat()},
+        "end_time": {"$gte": day_start.isoformat()}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Build CSV
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow(["Daily Availability Timeline Report"])
+    writer.writerow([f"Date: {target_date.strftime('%Y-%m-%d')}"])
+    writer.writerow([f"Total Fleet: {total_vehicles}", f"Blocked: {blocked_vehicles}", f"Available: {available_fleet}"])
+    writer.writerow([])
+    writer.writerow(["Hour", "Total Fleet", "In Use", "Free", "Utilization %"])
+    
+    # Data rows
+    for hour in range(7, 23):
+        hour_start = target_date.replace(hour=hour, minute=0, second=0, microsecond=0)
+        hour_end = target_date.replace(hour=hour, minute=59, second=59, microsecond=999999)
+        
+        vehicles_in_use = set()
+        for booking in bookings:
+            try:
+                booking_start = datetime.fromisoformat(booking["start_time"].replace("Z", "+00:00"))
+                booking_end = datetime.fromisoformat(booking["end_time"].replace("Z", "+00:00"))
+                
+                hour_start_aware = hour_start.replace(tzinfo=timezone.utc)
+                hour_end_aware = hour_end.replace(tzinfo=timezone.utc)
+                
+                if booking_start <= hour_end_aware and booking_end >= hour_start_aware:
+                    vehicles_in_use.add(booking["car_id"])
+            except:
+                continue
+        
+        in_use_count = len(vehicles_in_use)
+        free_count = max(0, available_fleet - in_use_count)
+        utilization = round((in_use_count / available_fleet * 100), 1) if available_fleet > 0 else 0
+        
+        writer.writerow([f"{hour:02d}:00", available_fleet, in_use_count, free_count, f"{utilization}%"])
+    
+    output.seek(0)
+    
+    filename = f"daily_timeline_{target_date.strftime('%Y%m%d')}.csv"
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
 # ==================== TODOS (TENANT-SCOPED) ====================
 
 @api_router.post("/todos")

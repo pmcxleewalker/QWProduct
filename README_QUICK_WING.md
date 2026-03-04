@@ -128,12 +128,12 @@ A comprehensive fleet management application for tracking car status, managing b
 MONGO_URL="mongodb://localhost:27017"
 DB_NAME="test_database"
 CORS_ORIGINS="*"
-FRONTEND_URL="https://multitenant-hub-3.preview.emergentagent.com"
+FRONTEND_URL="https://wing-fleet-mgmt.preview.emergentagent.com"
 ```
 
 **Frontend (.env)**
 ```
-REACT_APP_BACKEND_URL=https://multitenant-hub-3.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://wing-fleet-mgmt.preview.emergentagent.com
 ```
 
 ### Key Design Decisions
@@ -202,4 +202,4 @@ The app is fully functional and ready for production use. Start by:
 3. Adding regional assistance providers
 4. Printing QR codes and placing them in vehicles
 
-**App URL**: https://multitenant-hub-3.preview.emergentagent.com
+**App URL**: https://wing-fleet-mgmt.preview.emergentagent.com

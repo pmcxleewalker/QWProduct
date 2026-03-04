@@ -1486,6 +1486,27 @@ const TenantDashboard = () => {
         />
       )}
 
+      {/* QR Scanner Modal */}
+      <QRScanner
+        isOpen={showQRScanner}
+        onClose={() => setShowQRScanner(false)}
+        onSuccess={() => {
+          fetchData();
+          setShowQRScanner(false);
+        }}
+        tenantSlug={activeTenant?.tenant_slug}
+      />
+
+      {/* Vehicle QR Code Modal */}
+      <VehicleQRCode
+        vehicle={selectedVehicleForQR}
+        isOpen={showQRCode}
+        onClose={() => {
+          setShowQRCode(false);
+          setSelectedVehicleForQR(null);
+        }}
+      />
+
       {/* Sticky Request a Lift Button for Staff on Mobile */}
       {isStaffUser && (
         <RequestLiftButton tenantSlug={activeTenant?.tenant_slug} />

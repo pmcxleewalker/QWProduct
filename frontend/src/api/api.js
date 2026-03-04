@@ -26,21 +26,21 @@ export const bookingAPI = {
 
 // Provider API (tenant-scoped)
 export const providerAPI = {
-  getAll: () => axios.get(`${API}/providers`),
+  getAll: () => axios.get(`${API}/providers`).catch(() => ({ data: [] })),
   create: (data) => axios.post(`${API}/providers`, data),
   delete: (id) => axios.delete(`${API}/providers/${id}`),
 };
 
 // Message API (tenant-scoped)
 export const messageAPI = {
-  getAll: () => axios.get(`${API}/messages`),
+  getAll: () => axios.get(`${API}/messages`).catch(() => ({ data: [] })),
   create: (data) => axios.post(`${API}/messages`, data),
   acknowledge: (id) => axios.post(`${API}/messages/${id}/acknowledge`),
 };
 
 // Todo API (tenant-scoped)
 export const todoAPI = {
-  getAll: () => axios.get(`${API}/todos`),
+  getAll: () => axios.get(`${API}/todos`).catch(() => ({ data: [] })),
   create: (data) => axios.post(`${API}/todos`, data),
   complete: (id) => axios.put(`${API}/todos/${id}/complete`),
   delete: (id) => axios.delete(`${API}/todos/${id}`),

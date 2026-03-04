@@ -252,12 +252,15 @@ const TenantDashboard = () => {
   const tabs = isStaffUser 
     ? [
         { id: 'fleet-status', label: 'Live Fleet', icon: Car },
+        { id: 'car-calendars', label: 'Car Calendars', icon: CalendarDays },
         { id: 'bookings', label: 'My Bookings', icon: Calendar },
       ]
     : [
         { id: 'overview', label: 'Overview', icon: BarChart3 },
+        { id: 'fleet-status', label: 'Live Fleet', icon: Car },
+        { id: 'car-calendars', label: 'Car Calendars', icon: CalendarDays },
+        { id: 'all-cars', label: 'All Cars', icon: Calendar },
         { id: 'vehicles', label: 'Vehicles', icon: Car },
-        { id: 'bookings', label: 'Bookings', icon: Calendar },
         { id: 'team', label: 'Team', icon: Users },
         { id: 'reports', label: 'Reports', icon: PieChart }
       ];

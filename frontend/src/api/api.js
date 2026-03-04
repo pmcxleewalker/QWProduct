@@ -20,6 +20,7 @@ export const bookingAPI = {
   create: (data) => axios.post(`${API}/bookings`, data),
   update: (id, data) => axios.put(`${API}/bookings/${id}`, data),
   delete: (id) => axios.delete(`${API}/bookings/${id}`),
+  getSuggestions: () => Promise.resolve({ data: [] }), // Booking suggestions - placeholder
 };
 
 // Provider API (tenant-scoped)

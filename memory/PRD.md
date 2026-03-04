@@ -303,10 +303,11 @@ When creating a new tenant:
 - Backend: 19/19 auth and platform tests passed (100%) - Dec 2025
 - Backend: 25/25 PDF & Invoice tests passed (100%)
 - Backend: 17/17 tenant isolation tests passed (100%)
-- Backend: 15/15 new features tests passed (100%) - Mar 2026
+- Backend: 15/15 fleet management tests passed (100%) - Mar 2026
+- Backend: 20/20 fleet reports & block tests passed (100%) - Mar 2026
 - Frontend: All UI flows verified
 - Tenant isolation: Verified via pytest and manual testing
-- Test reports: `/app/test_reports/iteration_10.json`
+- Test reports: `/app/test_reports/iteration_12.json`
 
 ## Scalability Assessment (Dec 2025)
 **User Requirement**: 10 franchises, 20-30 cars per franchise, 15 admins + 30 staff per franchise

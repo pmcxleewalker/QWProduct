@@ -7,7 +7,8 @@ import {
   Search, Filter, MoreVertical, ChevronDown, ChevronUp,
   Activity, DollarSign, Clock, CheckCircle, XCircle,
   FileText, Settings, RefreshCw, LogOut, Trash2, Key,
-  Receipt, Download, Send, Edit2, UserPlus, UserMinus
+  Receipt, Download, Send, Edit2, UserPlus, UserMinus,
+  Globe, Copy
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;

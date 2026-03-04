@@ -290,6 +290,7 @@ const TenantDashboard = () => {
         { id: 'all-cars', label: 'All Cars', icon: Calendar },
         { id: 'vehicles', label: 'Vehicles', icon: Car },
         { id: 'team', label: 'Team', icon: Users },
+        { id: 'fleet-reports', label: 'Fleet Reports', icon: ClipboardList },
         { id: 'reports', label: 'Reports', icon: PieChart }
       ];
 

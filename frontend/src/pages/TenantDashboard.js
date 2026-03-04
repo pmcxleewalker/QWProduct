@@ -596,6 +596,14 @@ const TenantDashboard = () => {
                       <Car size={16} />
                       <span>Request a Lift</span>
                     </button>
+                    <button
+                      onClick={() => setShowQRScanner(true)}
+                      className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                      data-testid="qr-scan-btn"
+                    >
+                      <Camera size={16} />
+                      <span className="hidden sm:inline">Scan QR</span>
+                    </button>
                   </div>
                 </div>
 

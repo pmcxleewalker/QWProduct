@@ -384,7 +384,14 @@ const TenantDashboard = () => {
             {tabs.map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  if (tab.subTabs) {
+                    setActiveSubTab(tab.subTabs[0].id);
+                  } else {
+                    setActiveSubTab(null);
+                  }
+                }}
                 className={`flex items-center space-x-2 px-4 py-3 border-b-2 whitespace-nowrap transition-colors ${
                   activeTab === tab.id
                     ? 'border-blue-600 text-blue-600'
@@ -394,11 +401,40 @@ const TenantDashboard = () => {
               >
                 <tab.icon size={18} />
                 <span>{tab.label}</span>
+                {tab.badge > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                    {tab.badge}
+                  </span>
+                )}
               </button>
             ))}
           </div>
         </div>
       </div>
+
+      {/* Sub-Tabs (if present) */}
+      {tabs.find(t => t.id === activeTab)?.subTabs && (
+        <div className="bg-gray-50 border-b">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex space-x-1 overflow-x-auto py-2">
+              {tabs.find(t => t.id === activeTab).subTabs.map(subTab => (
+                <button
+                  key={subTab.id}
+                  onClick={() => setActiveSubTab(subTab.id)}
+                  className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
+                    activeSubTab === subTab.id
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 border'
+                  }`}
+                  data-testid={`subtab-${subTab.id}`}
+                >
+                  {subTab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Alerts */}
       <div className="max-w-7xl mx-auto px-4 pt-4">

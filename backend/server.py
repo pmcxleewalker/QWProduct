@@ -2717,10 +2717,16 @@ async def scan_update_vehicle(
     )
     
     updated = await db.vehicles.find_one(query, {"_id": 0})
-    return {
+    
+    response = {
         "message": "Vehicle updated successfully",
         "vehicle": updated
     }
+    
+    if service_alert:
+        response["service_alert"] = service_alert
+    
+    return response
 
 
 @api_router.get("/vehicles/{vehicle_id}/status-history")

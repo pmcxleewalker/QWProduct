@@ -305,9 +305,41 @@ When creating a new tenant:
 - Backend: 17/17 tenant isolation tests passed (100%)
 - Backend: 15/15 fleet management tests passed (100%) - Mar 2026
 - Backend: 20/20 fleet reports & block tests passed (100%) - Mar 2026
+- Backend: 17/17 announcements & timeline tests passed (100%) - Mar 2026
 - Frontend: All UI flows verified
 - Tenant isolation: Verified via pytest and manual testing
-- Test reports: `/app/test_reports/iteration_12.json`
+- Test reports: `/app/test_reports/iteration_13.json`
+
+## Recent Updates (March 2026)
+
+### Staff Announcements Feature
+- Create announcements with title, content, and priority (low/normal/high/urgent)
+- Require staff acknowledgment before using the app
+- Admin view: AnnouncementsManager to create/delete/view acknowledgment counts
+- Staff view: AnnouncementBanner with Acknowledge button
+- Endpoints:
+  - `POST /api/messages` - Create announcement
+  - `GET /api/announcements` - List all announcements
+  - `GET /api/announcements/pending` - Get unacknowledged for current user
+  - `GET /api/announcements/unread-count` - Get count of unread
+  - `POST /api/messages/{id}/acknowledge` - Acknowledge an announcement
+  - `DELETE /api/announcements/{id}` - Delete announcement
+
+### Daily Availability Timeline
+- Hourly utilization chart (07:00-22:00)
+- Summary cards: Total Fleet, Available, Peak Hour, Avg Utilization
+- Date picker to view historical data
+- CSV export functionality
+- Endpoints:
+  - `GET /api/tenant/reports/daily-timeline` - Get hourly availability data
+  - `GET /api/tenant/reports/daily-timeline/csv` - Export as CSV
+
+### Dashboard UI Consolidation
+- **Main Tabs**: Overview, Fleet, Bookings, Team, Reports, Announcements
+- **Fleet Sub-tabs**: Live Status, Car Calendars, All Cars Calendar, Manage Vehicles
+- **Reports Sub-tabs**: Analytics, Fleet Reports, Daily Timeline
+- Badge on Announcements tab showing unread count for admins
+- Staff users see simplified tabs: Live Fleet, Car Calendars, My Bookings
 
 ## Scalability Assessment (Dec 2025)
 **User Requirement**: 10 franchises, 20-30 cars per franchise, 15 admins + 30 staff per franchise

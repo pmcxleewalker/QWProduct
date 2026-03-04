@@ -567,20 +567,63 @@ const TenantDashboard = () => {
             {/* Live Fleet Status Tab (Staff View) */}
             {activeTab === 'fleet-status' && (
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Live Fleet Status</h2>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Live Fleet Status</h2>
+                    <p className="text-xs text-gray-500">
+                      {lastUpdated ? `Updated: ${lastUpdated.toLocaleTimeString('en-IE')}` : ''} 
+                      <span className="ml-2 text-green-600">● Live (updates every 30s)</span>
+                    </p>
+                  </div>
                   <div className="flex items-center space-x-3">
                     <button
+                      onClick={() => fetchData()}
+                      className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 flex items-center space-x-2"
+                    >
+                      <RefreshCw size={16} />
+                      <span>Refresh</span>
+                    </button>
+                    <button
                       onClick={() => navigate(`/${activeTenant?.tenant_slug}/request-lift`)}
-                      className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 flex items-center space-x-2"
+                      className="hidden md:flex px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 items-center space-x-2"
                       data-testid="request-lift-btn"
                     >
                       <Car size={16} />
                       <span>Request a Lift</span>
                     </button>
-                    <div className="text-sm text-gray-500">
-                      Auto-updates every 30 seconds
-                    </div>
+                  </div>
+                </div>
+
+                {/* Fleet Summary Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="bg-white rounded-lg p-3 border">
+                    <p className="text-xs text-gray-500">Total Cars</p>
+                    <p className="text-xl font-bold text-gray-900">{vehicles.length}</p>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                    <p className="text-xs text-green-600">Free</p>
+                    <p className="text-xl font-bold text-green-700">
+                      {vehicles.filter(v => !v.is_blocked && !bookings.find(b => 
+                        b.car_id === v.id && 
+                        new Date(b.start_time) <= new Date() && 
+                        new Date(b.end_time) >= new Date()
+                      )).length}
+                    </p>
+                  </div>
+                  <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                    <p className="text-xs text-orange-600">In Use</p>
+                    <p className="text-xl font-bold text-orange-700">
+                      {bookings.filter(b => 
+                        new Date(b.start_time) <= new Date() && 
+                        new Date(b.end_time) >= new Date()
+                      ).length}
+                    </p>
+                  </div>
+                  <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+                    <p className="text-xs text-red-600">Blocked</p>
+                    <p className="text-xl font-bold text-red-700">
+                      {vehicles.filter(v => v.is_blocked).length}
+                    </p>
                   </div>
                 </div>
 
@@ -592,12 +635,12 @@ const TenantDashboard = () => {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {vehicles.map(vehicle => {
-                      const isAvailable = !vehicle.is_blocked && (vehicle.current_status === 'Free' || vehicle.current_status === 'available');
                       const currentBooking = bookings.find(b => 
                         b.car_id === vehicle.id && 
                         new Date(b.start_time) <= new Date() && 
                         new Date(b.end_time) >= new Date()
                       );
+                      const isAvailable = !vehicle.is_blocked && !currentBooking;
                       
                       return (
                         <div 

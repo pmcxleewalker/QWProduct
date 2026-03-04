@@ -145,7 +145,13 @@ const TenantDashboard = () => {
   // Auto-refresh for live fleet status (every 30 seconds)
   useEffect(() => {
     let interval;
-    if (activeTab === 'fleet-status' || activeTab === 'car-calendars' || activeTab === 'all-cars') {
+    const shouldAutoRefresh = 
+      activeTab === 'fleet-status' || 
+      activeTab === 'car-calendars' || 
+      activeTab === 'all-cars' ||
+      (activeTab === 'fleet' && ['live-fleet', 'car-calendars', 'all-cars'].includes(activeSubTab));
+    
+    if (shouldAutoRefresh) {
       interval = setInterval(() => {
         fetchData(true); // silent refresh
       }, 30000);
@@ -153,7 +159,7 @@ const TenantDashboard = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [activeTab]);
+  }, [activeTab, activeSubTab]);
 
   const fetchData = async (silent = false) => {
     if (!silent) setLoading(true);

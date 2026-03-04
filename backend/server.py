@@ -2445,6 +2445,64 @@ async def list_lift_requests(context: TenantContext = Depends(require_tenant_con
     return requests
 
 
+@api_router.get("/lift-requests/active")
+async def get_active_lift_requests(context: TenantContext = Depends(require_tenant_context)):
+    """Get active (open) lift requests"""
+    query = TenantQueryBuilder.scope(context.tenant_id, {"status": "open"})
+    requests = await db.lift_requests.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return requests
+
+
+@api_router.post("/lift-requests/{request_id}/accept")
+async def accept_lift_request(
+    request_id: str,
+    message: str = "",
+    context: TenantContext = Depends(require_tenant_context)
+):
+    """Accept a lift request"""
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, request_id)
+    lift_request = await db.lift_requests.find_one(query)
+    
+    if not lift_request:
+        raise HTTPException(status_code=404, detail="Lift request not found")
+    
+    await db.lift_requests.update_one(
+        query,
+        {"$set": {
+            "status": "accepted",
+            "accepted_by": context.user_email,
+            "accepted_at": datetime.now(timezone.utc).isoformat(),
+            "accept_message": message
+        }}
+    )
+    
+    return {"message": "Lift request accepted"}
+
+
+@api_router.post("/lift-requests/{request_id}/dismiss")
+async def dismiss_lift_request(
+    request_id: str,
+    context: TenantContext = Depends(require_tenant_context)
+):
+    """Dismiss a lift request"""
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, request_id)
+    lift_request = await db.lift_requests.find_one(query)
+    
+    if not lift_request:
+        raise HTTPException(status_code=404, detail="Lift request not found")
+    
+    await db.lift_requests.update_one(
+        query,
+        {"$set": {
+            "status": "dismissed",
+            "dismissed_by": context.user_email,
+            "dismissed_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Lift request dismissed"}
+
+
 # ==================== QR CODE ====================
 
 @api_router.get("/vehicles/{vehicle_id}/qr")

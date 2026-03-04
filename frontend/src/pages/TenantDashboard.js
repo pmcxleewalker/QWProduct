@@ -1448,6 +1448,14 @@ const TenantDashboard = () => {
           franchiseName={activeTenant?.tenant_name}
         />
       )}
+
+      {/* Sticky Request a Lift Button for Staff on Mobile */}
+      {isStaffUser && (
+        <RequestLiftButton tenantSlug={activeTenant?.tenant_slug} />
+      )}
+
+      {/* Add padding at bottom for sticky button on mobile */}
+      {isStaffUser && <div className="h-24 md:hidden"></div>}
     </div>
   );
 };

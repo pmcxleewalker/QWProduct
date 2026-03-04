@@ -1497,6 +1497,47 @@ const TenantDashboard = () => {
         }}
       />
 
+      {/* Edit Vehicle Modal */}
+      <EditVehicleModal
+        vehicle={selectedVehicleForEdit}
+        isOpen={showEditVehicle}
+        onClose={() => {
+          setShowEditVehicle(false);
+          setSelectedVehicleForEdit(null);
+        }}
+        onSaved={() => {
+          fetchData();
+          setSuccess('Vehicle updated successfully');
+        }}
+      />
+
+      {/* Service Alert Toast */}
+      {serviceAlert && (
+        <div className={`fixed bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-96 p-4 rounded-lg shadow-lg z-50 ${
+          serviceAlert.type === 'overdue' ? 'bg-red-100 border-l-4 border-red-500' :
+          serviceAlert.type === 'urgent' ? 'bg-orange-100 border-l-4 border-orange-500' :
+          'bg-yellow-100 border-l-4 border-yellow-500'
+        }`}>
+          <div className="flex items-start">
+            <AlertTriangle className={`mr-3 mt-0.5 ${
+              serviceAlert.type === 'overdue' ? 'text-red-600' :
+              serviceAlert.type === 'urgent' ? 'text-orange-600' :
+              'text-yellow-600'
+            }`} size={20} />
+            <div>
+              <p className="font-medium text-gray-900">Service Alert</p>
+              <p className="text-sm text-gray-700 mt-1">{serviceAlert.message}</p>
+            </div>
+            <button 
+              onClick={() => setServiceAlert(null)}
+              className="ml-auto p-1 hover:bg-gray-200 rounded"
+            >
+              <XCircle size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Sticky Request a Lift Button for Staff on Mobile */}
       {isStaffUser && (
         <RequestLiftButton tenantSlug={activeTenant?.tenant_slug} />

@@ -181,6 +181,15 @@ When creating a new tenant:
 - [x] **Legacy Dashboard Cleanup** (March 2026)
   - Simplified Dashboard.js to redirect to new TenantDashboard
   - Removed 700+ lines of legacy fleet status code
+- [x] **Tenant-Specific Reports** (March 2026)
+  - New Reports tab in TenantDashboard for admin users only
+  - Fleet utilization percentage (vehicles used this month)
+  - Bookings this month vs last month with trend percentage
+  - Most Used Vehicles ranked list (top 10)
+  - Bookings This Week visual bar chart (7-day rolling)
+  - Summary Statistics section
+  - Backend endpoints: GET /api/tenant/reports/summary, GET /api/tenant/reports/vehicle-utilization
+  - Staff users cannot see Reports tab (admin/master_admin only)
 
 ### Pending (P1)
 - [ ] Email notifications for invoices

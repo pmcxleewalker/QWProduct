@@ -198,6 +198,28 @@ When creating a new tenant:
     - Export CSV: GET /api/tenant/reports/summary/csv
     - Export PDF: GET /api/tenant/reports/summary/pdf
     - Downloadable reports with all metrics, vehicle usage, and daily trends
+- [x] **Enhanced Fleet Management Features** (March 2026)
+  - **Request a Lift Sticky Button**: Full-width sticky button at bottom for staff on mobile
+  - **Live Fleet Status Dashboard**: Real-time vehicle status with 30-second auto-refresh
+    - Fleet summary stats (Total Cars, Free, In Use, Blocked)
+    - Live indicator showing update frequency
+    - Vehicle cards with status and booking capability
+  - **Individual Car Calendars** (07:00-22:00)
+    - Each vehicle has its own booking calendar
+    - Time slots from 07:00 to 22:00 (hourly)
+    - Color coding: Green=Free, Purple=Booked, Orange=Recurring
+    - Day/Week view toggle
+    - Click-to-book functionality
+    - Booking modal with Name, Time, Notes, Recurring option
+  - **All Cars Monthly Calendar** (Admin only)
+    - Monthly calendar view of all bookings across fleet
+    - Daily booking counts in corner of each day
+    - Click-to-drill-down showing detailed booking list
+    - Legend: One-time, Recurring, Pending
+  - **New Components**: CarBookingCalendar.js, AllCarsCalendar.js, RequestLiftButton.js
+  - **Role-Based Tabs**:
+    - Staff: Live Fleet, Car Calendars, My Bookings
+    - Admin: Overview, Live Fleet, Car Calendars, All Cars, Vehicles, Team, Reports
 
 ### Pending (P1)
 - [ ] Email notifications for invoices

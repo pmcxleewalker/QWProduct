@@ -196,12 +196,12 @@ const TenantDashboard = () => {
     });
   };
 
-  // Staff only see: Bookings, Book a Car
+  // Staff only see: Live Fleet, Bookings
   // Admins and Master Admins see everything including Overview and Team management
   const tabs = isStaffUser 
     ? [
+        { id: 'fleet-status', label: 'Live Fleet', icon: Car },
         { id: 'bookings', label: 'My Bookings', icon: Calendar },
-        { id: 'vehicles', label: 'Book a Car', icon: Car },
       ]
     : [
         { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -209,6 +209,13 @@ const TenantDashboard = () => {
         { id: 'bookings', label: 'Bookings', icon: Calendar },
         { id: 'team', label: 'Team', icon: Users }
       ];
+
+  // Staff default to fleet-status tab
+  useEffect(() => {
+    if (isStaffUser && activeTab === 'overview') {
+      setActiveTab('fleet-status');
+    }
+  }, [isStaffUser, activeTab]);
 
   return (
     <div className="min-h-screen bg-gray-50" data-testid="tenant-dashboard">

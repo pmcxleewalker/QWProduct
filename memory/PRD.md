@@ -322,6 +322,11 @@ When creating a new tenant:
 - Require staff acknowledgment before using the app
 - Admin view: AnnouncementsManager to create/delete/view acknowledgment counts
 - Staff view: AnnouncementBanner with Acknowledge button
+- **Notification Bell with Polling**:
+  - Bell icon with badge showing unread count
+  - Dropdown with pending announcements and quick acknowledge
+  - Toast notifications with sound alert for new announcements
+  - 30-second polling interval for real-time updates
 - Endpoints:
   - `POST /api/messages` - Create announcement
   - `GET /api/announcements` - List all announcements

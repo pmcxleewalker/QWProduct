@@ -919,7 +919,7 @@ const TenantDashboard = () => {
             )}
 
             {/* All Cars Monthly Calendar (Admin Only) */}
-            {activeTab === 'all-cars' && isAdmin && (
+            {((activeTab === 'all-cars') || (activeTab === 'fleet' && activeSubTab === 'all-cars')) && isAdmin && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>

@@ -477,6 +477,124 @@ class PDFGenerator:
         buffer.seek(0)
         return buffer
 
+    def generate_tenant_reports_pdf(self, data: Dict, tenant_name: str) -> BytesIO:
+        """Generate a PDF report for tenant-specific analytics"""
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer, 
+            pagesize=A4,
+            rightMargin=50,
+            leftMargin=50,
+            topMargin=50,
+            bottomMargin=50
+        )
+        
+        elements = []
+        width = A4[0] - 100
+        
+        # Header
+        elements.append(Paragraph(f"{tenant_name}", self.styles['Title_Custom']))
+        elements.append(Paragraph("Franchise Analytics Report", self.styles['Subtitle']))
+        elements.append(Paragraph(f"Generated: {datetime.now().strftime('%d %B %Y, %H:%M')}", self.styles['Normal']))
+        elements.append(Spacer(1, 20))
+        elements.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor('#1e3a5f')))
+        elements.append(Spacer(1, 20))
+        
+        summary = data.get('summary', {})
+        
+        # Key Metrics Section
+        elements.append(Paragraph("Key Metrics", self.styles['SectionHeader']))
+        
+        metrics_data = [
+            ['Metric', 'Value'],
+            ['Total Vehicles', str(summary.get('total_vehicles', 0))],
+            ['Total Bookings', str(summary.get('total_bookings', 0))],
+            ['Bookings This Month', str(summary.get('bookings_this_month', 0))],
+            ['Bookings Last Month', str(summary.get('bookings_last_month', 0))],
+            ['Booking Trend', f"{summary.get('booking_trend_percent', 0)}%"],
+            ['Vehicles Used This Month', str(summary.get('vehicles_used_this_month', 0))],
+            ['Fleet Utilization', f"{summary.get('utilization_rate_percent', 0)}%"],
+            ['Team Members', str(summary.get('team_members', 0))],
+        ]
+        
+        metrics_table = Table(metrics_data, colWidths=[width * 0.6, width * 0.4])
+        metrics_table.setStyle(self._get_header_table_style())
+        metrics_table.setStyle(TableStyle([
+            ('ALIGN', (1, 0), (1, -1), 'CENTER'),
+        ]))
+        elements.append(metrics_table)
+        elements.append(Spacer(1, 30))
+        
+        # Vehicle Usage Section
+        elements.append(Paragraph("Vehicle Usage (Top 10)", self.styles['SectionHeader']))
+        
+        vehicle_usage = data.get('vehicle_usage', [])
+        if vehicle_usage:
+            vehicle_data = [['Rank', 'Vehicle', 'Registration', 'Bookings', 'Status']]
+            for i, vehicle in enumerate(vehicle_usage[:10], 1):
+                status = 'Blocked' if vehicle.get('is_blocked') else 'Available'
+                vehicle_data.append([
+                    str(i),
+                    vehicle.get('name', 'N/A'),
+                    vehicle.get('registration', 'N/A'),
+                    str(vehicle.get('total_bookings', 0)),
+                    status
+                ])
+            
+            col_widths = [width * 0.08, width * 0.32, width * 0.22, width * 0.18, width * 0.2]
+            vehicle_table = Table(vehicle_data, colWidths=col_widths)
+            vehicle_table.setStyle(self._get_header_table_style())
+            vehicle_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+                ('ALIGN', (3, 0), (3, -1), 'CENTER'),
+            ]))
+            elements.append(vehicle_table)
+        else:
+            elements.append(Paragraph("No vehicle usage data available.", self.styles['Normal']))
+        
+        elements.append(Spacer(1, 30))
+        
+        # Daily Booking Trend Section
+        elements.append(Paragraph("Bookings This Week", self.styles['SectionHeader']))
+        
+        daily_trend = data.get('daily_booking_trend', [])
+        if daily_trend:
+            trend_data = [['Date', 'Day', 'Bookings']]
+            for day in daily_trend:
+                date_str = day.get('date', '')
+                try:
+                    date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+                    day_name = date_obj.strftime('%A')
+                    formatted_date = date_obj.strftime('%d %b')
+                except:
+                    day_name = 'N/A'
+                    formatted_date = date_str
+                
+                trend_data.append([
+                    formatted_date,
+                    day_name,
+                    str(day.get('count', 0))
+                ])
+            
+            trend_table = Table(trend_data, colWidths=[width * 0.3, width * 0.4, width * 0.3])
+            trend_table.setStyle(self._get_header_table_style())
+            trend_table.setStyle(TableStyle([
+                ('ALIGN', (2, 0), (2, -1), 'CENTER'),
+            ]))
+            elements.append(trend_table)
+        else:
+            elements.append(Paragraph("No daily booking data available.", self.styles['Normal']))
+        
+        # Footer
+        elements.append(Spacer(1, 40))
+        elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#dddddd')))
+        elements.append(Spacer(1, 10))
+        elements.append(Paragraph(f"Report generated by Quick Wing Fleet Management", self.styles['Footer']))
+        
+        doc.build(elements)
+        buffer.seek(0)
+        return buffer
+
 
 # Singleton instance
 pdf_generator = PDFGenerator()

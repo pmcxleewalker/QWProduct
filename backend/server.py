@@ -2615,6 +2615,111 @@ async def delete_vehicle(
     return {"message": "Vehicle deleted"}
 
 
+# ==================== QR CODE SCAN UPDATE ====================
+
+class QRScanUpdate(BaseModel):
+    current_status: str
+    current_mileage: Optional[int] = None
+    location: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@api_router.post("/vehicles/{vehicle_id}/scan-update")
+async def scan_update_vehicle(
+    vehicle_id: str,
+    update_data: QRScanUpdate,
+    context: TenantContext = Depends(require_tenant_context),
+    request: Request = None
+):
+    """
+    Update vehicle status and mileage via QR code scan.
+    Any authenticated user in the tenant can update vehicle status.
+    """
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, vehicle_id)
+    vehicle = await db.vehicles.find_one(query, {"_id": 0})
+    
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    # Build update
+    update_dict = {
+        "current_status": update_data.current_status,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "last_updated_by": context.user_email,
+        "last_updated_by_user_id": context.user_id
+    }
+    
+    if update_data.current_mileage is not None:
+        update_dict["current_mileage"] = update_data.current_mileage
+    
+    if update_data.location:
+        update_dict["location"] = update_data.location
+    
+    await db.vehicles.update_one(query, {"$set": update_dict})
+    
+    # Create a status update record for history
+    status_update = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": context.tenant_id,
+        "car_id": vehicle_id,
+        "status": update_data.current_status,
+        "mileage": update_data.current_mileage,
+        "location": update_data.location or "",
+        "notes": update_data.notes or "",
+        "reported_by": context.user_email,
+        "reported_by_user_id": context.user_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "source": "qr_scan"
+    }
+    await db.status_updates.insert_one(status_update)
+    
+    # Audit log
+    await audit_service.log(
+        actor_user_id=context.user_id,
+        actor_email=context.user_email,
+        action=AuditAction.VEHICLE_STATUS_UPDATED,
+        tenant_id=context.tenant_id,
+        resource_type="vehicle",
+        resource_id=vehicle_id,
+        details={
+            "status": update_data.current_status,
+            "mileage": update_data.current_mileage,
+            "source": "qr_scan"
+        },
+        ip_address=request.client.host if request and request.client else None
+    )
+    
+    updated = await db.vehicles.find_one(query, {"_id": 0})
+    return {
+        "message": "Vehicle updated successfully",
+        "vehicle": updated
+    }
+
+
+@api_router.get("/vehicles/{vehicle_id}/status-history")
+async def get_vehicle_status_history(
+    vehicle_id: str,
+    limit: int = 20,
+    context: TenantContext = Depends(require_tenant_context)
+):
+    """Get status update history for a vehicle"""
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, vehicle_id)
+    vehicle = await db.vehicles.find_one(query, {"_id": 0})
+    
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    history = await db.status_updates.find(
+        {"tenant_id": context.tenant_id, "car_id": vehicle_id},
+        {"_id": 0}
+    ).sort("timestamp", -1).limit(limit).to_list(limit)
+    
+    return {
+        "vehicle_id": vehicle_id,
+        "history": history
+    }
+
+
 # Alias for backwards compatibility
 @api_router.get("/cars")
 async def list_cars(context: TenantContext = Depends(require_tenant_context)):

@@ -886,48 +886,25 @@ const TenantDashboard = () => {
                       <p className="text-sm mt-1">Add your first vehicle to get started</p>
                     </div>
                   ) : (
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehicle</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Registration</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                          {isAdmin && (
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                          )}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {vehicles.map(vehicle => (
-                          <tr key={vehicle.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3">
-                              <p className="font-medium text-gray-900">{vehicle.name}</p>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{vehicle.registration}</td>
-                            <td className="px-4 py-3">
-                              <span className={`px-2 py-1 rounded-full text-xs ${
-                                vehicle.is_blocked 
-                                  ? 'bg-red-100 text-red-700' 
-                                  : 'bg-green-100 text-green-700'
-                              }`}>
-                                {vehicle.is_blocked ? 'Blocked' : 'Available'}
-                              </span>
-                            </td>
-                            {isAdmin && (
-                              <td className="px-4 py-3">
-                                <button
-                                  onClick={() => handleDeleteVehicle(vehicle.id)}
-                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                                  title="Delete Vehicle"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </td>
-                            )}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
+                      {vehicles.map(vehicle => (
+                        <FleetVehicleCard
+                          key={vehicle.id}
+                          vehicle={vehicle}
+                          isAdmin={isAdmin}
+                          onQRClick={(v) => {
+                            setSelectedVehicleForQR(v);
+                            setShowQRCode(true);
+                          }}
+                          onEditClick={(v) => {
+                            setSelectedVehicleForEdit(v);
+                            setShowEditVehicle(true);
+                          }}
+                          onDeleteClick={(v) => handleDeleteVehicle(v.id)}
+                          onRefresh={() => fetchData()}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>

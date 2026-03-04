@@ -89,8 +89,9 @@ async def get_tenant_context(
         tenant_name = tenant.get("name")
         tenant_slug = tenant.get("slug")
         
-        # Verify user has membership in this tenant (unless super/master admin)
-        if role not in [UserRole.SUPER_ADMIN, UserRole.MASTER_ADMIN]:
+        # Verify user has membership in this tenant (unless super/master admin or impersonating)
+        # When impersonating, the original_role is preserved in the token, so we skip membership check
+        if role not in [UserRole.SUPER_ADMIN, UserRole.MASTER_ADMIN] and not is_impersonating:
             membership = await db.memberships.find_one({
                 "user_id": user_id,
                 "tenant_id": tenant_id

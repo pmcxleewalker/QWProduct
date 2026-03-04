@@ -256,6 +256,11 @@ When creating a new tenant:
 │   ├── Login.js           # Updated login flow with tenant support
 │   ├── Dashboard.js       # Main dashboard with wizard redirect
 │   └── Reports.js         # Reports & Billing with PDF export
+├── components/
+│   ├── CarBookingCalendar.js   # Individual car booking calendar (07:00-22:00)
+│   ├── AllCarsCalendar.js      # Monthly all-cars calendar with drill-down
+│   ├── RequestLiftButton.js    # Sticky bottom button for staff mobile
+│   └── AdminTraining.js        # In-app training guide
 └── components/ui/         # Shadcn UI components
 ```
 

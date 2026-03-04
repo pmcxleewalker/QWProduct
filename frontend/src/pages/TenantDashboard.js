@@ -69,6 +69,8 @@ const TenantDashboard = () => {
   const [showEditVehicle, setShowEditVehicle] = useState(false);
   const [selectedVehicleForEdit, setSelectedVehicleForEdit] = useState(null);
   const [serviceAlert, setServiceAlert] = useState(null);
+  const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0);
+  const [activeSubTab, setActiveSubTab] = useState(null); // For nested tabs
 
   // Modal states
   const [showAddVehicle, setShowAddVehicle] = useState(false);

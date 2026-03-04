@@ -184,6 +184,7 @@ class AuditAction(str, Enum):
     # Data actions
     VEHICLE_CREATED = "vehicle_created"
     VEHICLE_DELETED = "vehicle_deleted"
+    VEHICLE_STATUS_UPDATED = "vehicle_status_updated"
     BOOKING_CREATED = "booking_created"
     BOOKING_DELETED = "booking_deleted"
     DATA_EXPORTED = "data_exported"

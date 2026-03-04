@@ -1480,9 +1480,14 @@ const TenantDashboard = () => {
       <QRScanner
         isOpen={showQRScanner}
         onClose={() => setShowQRScanner(false)}
-        onSuccess={() => {
+        onSuccess={(alert) => {
           fetchData();
           setShowQRScanner(false);
+          if (alert) {
+            setServiceAlert(alert);
+            // Auto-dismiss after 10 seconds
+            setTimeout(() => setServiceAlert(null), 10000);
+          }
         }}
         tenantSlug={activeTenant?.tenant_slug}
       />

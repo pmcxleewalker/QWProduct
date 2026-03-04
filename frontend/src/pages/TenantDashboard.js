@@ -992,6 +992,15 @@ const TenantDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Admin Training Modal */}
+      {isAdmin && (
+        <AdminTraining 
+          isOpen={showTraining}
+          onClose={() => setShowTraining(false)}
+          franchiseName={activeTenant?.tenant_name}
+        />
+      )}
     </div>
   );
 };

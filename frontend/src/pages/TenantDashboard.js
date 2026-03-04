@@ -48,6 +48,7 @@ const TenantDashboard = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [tenantReports, setTenantReports] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   // Modal states
   const [showAddVehicle, setShowAddVehicle] = useState(false);
@@ -60,6 +61,39 @@ const TenantDashboard = () => {
 
   // Use the isAdminUser variable defined at top
   const isAdmin = isAdminUser;
+
+  // Export handlers for CSV and PDF
+  const handleExport = async (format) => {
+    setExporting(true);
+    try {
+      const endpoint = format === 'pdf' 
+        ? `${API}/tenant/reports/summary/pdf`
+        : `${API}/tenant/reports/summary/csv`;
+      
+      const response = await axios.get(endpoint, {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const contentType = format === 'pdf' ? 'application/pdf' : 'text/csv';
+      const extension = format === 'pdf' ? 'pdf' : 'csv';
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: contentType }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `franchise_analytics.${extension}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      setSuccess(`${format.toUpperCase()} exported successfully`);
+    } catch (err) {
+      setError(`Failed to export ${format.toUpperCase()}`);
+      console.error(err);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Check if new Master Admin needs setup wizard
   useEffect(() => {

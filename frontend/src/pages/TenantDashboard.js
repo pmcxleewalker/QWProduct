@@ -811,19 +811,41 @@ const TenantDashboard = () => {
             {/* Reports Tab (Admin Only) */}
             {activeTab === 'reports' && isAdmin && (
               <div className="space-y-6" data-testid="reports-tab">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">Franchise Reports</h2>
                     <p className="text-sm text-gray-500 mt-1">Analytics and insights for your franchise</p>
                   </div>
-                  <button
-                    onClick={fetchData}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                    data-testid="refresh-reports-btn"
-                  >
-                    <RefreshCw size={18} />
-                    <span>Refresh</span>
-                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => {
+                        window.open(`${API}/tenant/reports/summary/csv`, '_blank');
+                      }}
+                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      data-testid="export-csv-btn"
+                    >
+                      <Download size={18} />
+                      <span>Export CSV</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.open(`${API}/tenant/reports/summary/pdf`, '_blank');
+                      }}
+                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      data-testid="export-pdf-btn"
+                    >
+                      <FileText size={18} />
+                      <span>Export PDF</span>
+                    </button>
+                    <button
+                      onClick={fetchData}
+                      className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                      data-testid="refresh-reports-btn"
+                    >
+                      <RefreshCw size={18} />
+                      <span>Refresh</span>
+                    </button>
+                  </div>
                 </div>
 
                 {tenantReports ? (

@@ -281,7 +281,7 @@ const TenantDashboard = () => {
   };
 
   // Staff only see: Live Fleet, Bookings
-  // Admins and Master Admins see everything including Overview and Team management
+  // Admins and Master Admins see consolidated tabs with sub-tabs
   const tabs = isStaffUser 
     ? [
         { id: 'fleet-status', label: 'Live Fleet', icon: Car },
@@ -290,21 +290,58 @@ const TenantDashboard = () => {
       ]
     : [
         { id: 'overview', label: 'Overview', icon: BarChart3 },
-        { id: 'fleet-status', label: 'Live Fleet', icon: Car },
-        { id: 'car-calendars', label: 'Car Calendars', icon: CalendarDays },
-        { id: 'all-cars', label: 'All Cars', icon: Calendar },
-        { id: 'vehicles', label: 'Vehicles', icon: Car },
+        { 
+          id: 'fleet', 
+          label: 'Fleet', 
+          icon: Car,
+          subTabs: [
+            { id: 'live-fleet', label: 'Live Status' },
+            { id: 'car-calendars', label: 'Car Calendars' },
+            { id: 'all-cars', label: 'All Cars Calendar' },
+            { id: 'vehicles', label: 'Manage Vehicles' }
+          ]
+        },
+        { id: 'bookings', label: 'Bookings', icon: Calendar },
         { id: 'team', label: 'Team', icon: Users },
-        { id: 'fleet-reports', label: 'Fleet Reports', icon: ClipboardList },
-        { id: 'reports', label: 'Reports', icon: PieChart }
+        { 
+          id: 'reports', 
+          label: 'Reports', 
+          icon: PieChart,
+          subTabs: [
+            { id: 'analytics', label: 'Analytics' },
+            { id: 'fleet-reports', label: 'Fleet Reports' },
+            { id: 'daily-timeline', label: 'Daily Timeline' }
+          ]
+        },
+        { id: 'announcements', label: 'Announcements', icon: Megaphone, badge: unreadAnnouncementsCount }
       ];
+
+  // Fetch unread announcements count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await axios.get(`${API}/announcements/unread-count`);
+        setUnreadAnnouncementsCount(response.data.count || 0);
+      } catch (err) {
+        console.error('Failed to fetch unread count:', err);
+      }
+    };
+    fetchUnreadCount();
+  }, [activeTab]);
 
   // Staff default to fleet-status tab
   useEffect(() => {
     if (isStaffUser && activeTab === 'overview') {
       setActiveTab('fleet-status');
     }
-  }, [isStaffUser, activeTab]);
+    // Set default sub-tab when switching main tabs
+    if (activeTab === 'fleet' && !activeSubTab) {
+      setActiveSubTab('live-fleet');
+    }
+    if (activeTab === 'reports' && !activeSubTab) {
+      setActiveSubTab('analytics');
+    }
+  }, [isStaffUser, activeTab, activeSubTab]);
 
   return (
     <div className="min-h-screen bg-gray-50" data-testid="tenant-dashboard">

@@ -488,8 +488,18 @@ const TenantDashboard = () => {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-gray-900">Live Fleet Status</h2>
-                  <div className="text-sm text-gray-500">
-                    Auto-updates every 30 seconds
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => navigate(`/${activeTenant?.tenant_slug}/request-lift`)}
+                      className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 flex items-center space-x-2"
+                      data-testid="request-lift-btn"
+                    >
+                      <Car size={16} />
+                      <span>Request a Lift</span>
+                    </button>
+                    <div className="text-sm text-gray-500">
+                      Auto-updates every 30 seconds
+                    </div>
                   </div>
                 </div>
 

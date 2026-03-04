@@ -887,90 +887,165 @@ const PlatformAdmin = () => {
               </div>
             )}
 
-            {/* Tenants List */}
-            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tenant</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {tenants.map(tenant => (
-                    <tr key={tenant.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4">
+            {/* Tenants Grid - Card Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {tenants.map(tenant => {
+                const baseUrl = window.location.origin;
+                const franchiseUrl = `${baseUrl}/${tenant.slug}`;
+                const staffLoginUrl = `${baseUrl}/${tenant.slug}/login`;
+                
+                return (
+                  <div key={tenant.id} className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow">
+                    {/* Card Header */}
+                    <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <Building2 size={20} className="text-blue-600" />
+                          <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+                            <Building2 size={24} className="text-white" />
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">{tenant.name}</p>
-                            <p className="text-sm text-gray-500">{tenant.slug}</p>
+                            <h3 className="font-bold text-gray-900">{tenant.name}</h3>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getStatusColor(tenant.status)}`}>
+                              {tenant.status}
+                            </span>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className="capitalize">{tenant.plan}</span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(tenant.status)}`}>
-                          {tenant.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-500">
-                        {formatDate(tenant.created_at)}
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => fetchTenantDetails(tenant.id)}
-                            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-                            title="View Details"
-                          >
-                            <Eye size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleImpersonate(tenant.id)}
-                            className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg"
-                            title="Impersonate"
-                          >
-                            <Shield size={18} />
-                          </button>
-                          {tenant.status === 'active' ? (
-                            <button
-                              onClick={() => handleSuspendTenant(tenant.id)}
-                              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                              title="Suspend"
-                            >
-                              <Pause size={18} />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleReactivateTenant(tenant.id)}
-                              className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg"
-                              title="Reactivate"
-                            >
-                              <Play size={18} />
-                            </button>
-                          )}
+                        <div className="text-right">
+                          <span className="text-xs text-gray-500 block">Plan</span>
+                          <span className="text-sm font-medium text-gray-700 capitalize">{tenant.plan}</span>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              
-              {tenants.length === 0 && (
-                <div className="p-8 text-center text-gray-500">
-                  <Building2 size={40} className="mx-auto mb-3 opacity-50" />
-                  <p>No tenants yet. Create your first franchise!</p>
-                </div>
-              )}
+                      </div>
+                    </div>
+                    
+                    {/* Card Body - URLs and Credentials */}
+                    <div className="p-4 space-y-3">
+                      {/* Franchise URL */}
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 flex items-center">
+                          <Globe size={12} className="mr-1" /> Franchise URL
+                        </label>
+                        <div className="flex items-center mt-1 bg-gray-50 rounded-lg overflow-hidden">
+                          <code className="flex-1 px-3 py-2 text-xs font-mono text-blue-700 truncate">
+                            {franchiseUrl}
+                          </code>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(franchiseUrl);
+                              setSuccess('Franchise URL copied!');
+                            }}
+                            className="px-3 py-2 bg-blue-600 text-white text-xs hover:bg-blue-700"
+                            title="Copy URL"
+                          >
+                            <Copy size={14} />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Staff Login URL */}
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 flex items-center">
+                          <Users size={12} className="mr-1" /> Staff Login URL
+                        </label>
+                        <div className="flex items-center mt-1 bg-gray-50 rounded-lg overflow-hidden">
+                          <code className="flex-1 px-3 py-2 text-xs font-mono text-purple-700 truncate">
+                            {staffLoginUrl}
+                          </code>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(staffLoginUrl);
+                              setSuccess('Staff login URL copied!');
+                            }}
+                            className="px-3 py-2 bg-purple-600 text-white text-xs hover:bg-purple-700"
+                            title="Copy URL"
+                          >
+                            <Copy size={14} />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Master Admin Credentials */}
+                      <div className="pt-2 border-t">
+                        <label className="text-xs font-medium text-gray-500 flex items-center">
+                          <Key size={12} className="mr-1" /> Master Admin Login
+                        </label>
+                        <div className="mt-1 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <p className="text-xs">
+                                <span className="text-gray-500">Email: </span>
+                                <span className="font-mono font-medium text-gray-900">
+                                  {tenant.master_admin_email || `admin.${tenant.slug}@quickwing.com`}
+                                </span>
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Password: <span className="italic">Set during creation</span>
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(tenant.master_admin_email || `admin.${tenant.slug}@quickwing.com`);
+                                setSuccess('Admin email copied!');
+                              }}
+                              className="p-2 text-amber-700 hover:bg-amber-100 rounded"
+                              title="Copy email"
+                            >
+                              <Copy size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Card Footer - Actions */}
+                    <div className="px-4 py-3 bg-gray-50 border-t flex items-center justify-between">
+                      <span className="text-xs text-gray-500">
+                        Created {formatDate(tenant.created_at)}
+                      </span>
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={() => fetchTenantDetails(tenant.id)}
+                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                          title="View Details"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleImpersonate(tenant.id)}
+                          className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg"
+                          title="Impersonate"
+                        >
+                          <Shield size={16} />
+                        </button>
+                        {tenant.status === 'active' ? (
+                          <button
+                            onClick={() => handleSuspendTenant(tenant.id)}
+                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                            title="Suspend"
+                          >
+                            <Pause size={16} />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleReactivateTenant(tenant.id)}
+                            className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg"
+                            title="Reactivate"
+                          >
+                            <Play size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+              
+            {tenants.length === 0 && (
+              <div className="bg-white rounded-xl p-8 text-center text-gray-500 shadow-sm border">
+                <Building2 size={40} className="mx-auto mb-3 opacity-50" />
+                <p>No tenants yet. Create your first franchise!</p>
+              </div>
+            )}
 
             {/* Tenant Details Modal */}
             {selectedTenant && tenantDetails && (

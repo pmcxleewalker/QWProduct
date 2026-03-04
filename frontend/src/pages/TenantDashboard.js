@@ -293,6 +293,39 @@ const TenantDashboard = () => {
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
+                {/* Compliance Alerts */}
+                {isAdmin && vehicles.some(v => v.tax_expiry || v.service_due_at) && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <h3 className="font-semibold text-amber-800 mb-3 flex items-center">
+                      <AlertTriangle size={20} className="mr-2" />
+                      Compliance Alerts
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {vehicles.filter(v => {
+                        if (!v.tax_expiry) return false;
+                        const daysLeft = Math.ceil((new Date(v.tax_expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                        return daysLeft <= 30;
+                      }).map(vehicle => {
+                        const daysLeft = Math.ceil((new Date(vehicle.tax_expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                        return (
+                          <div 
+                            key={vehicle.id} 
+                            className={`p-3 rounded-lg ${
+                              daysLeft <= 7 ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            <p className="font-medium text-sm">{vehicle.name}</p>
+                            <p className="text-xs">{vehicle.registration}</p>
+                            <p className="text-xs mt-1 font-semibold">
+                              Tax: {daysLeft <= 0 ? 'EXPIRED' : `${daysLeft} days left`}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white rounded-xl p-6 shadow-sm border" data-testid="stats-vehicles">

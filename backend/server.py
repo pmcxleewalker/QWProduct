@@ -501,13 +501,31 @@ async def list_tenants(
     limit: int = 100,
     context: TenantContext = Depends(require_platform_admin)
 ):
-    """List all tenants (Super/Master Admin only)"""
+    """List all tenants (Super/Master Admin only) with master admin info"""
     query = {}
     if status:
         query["status"] = status
     
     tenants = await db.tenants.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     total = await db.tenants.count_documents(query)
+    
+    # Enrich each tenant with master admin info
+    for tenant in tenants:
+        # Find the master admin membership for this tenant
+        master_membership = await db.memberships.find_one({
+            "tenant_id": tenant["id"],
+            "role": "master_admin"
+        }, {"_id": 0})
+        
+        if master_membership:
+            # Get the user details
+            master_user = await db.users.find_one({
+                "id": master_membership["user_id"]
+            }, {"_id": 0, "id": 1, "email": 1, "name": 1})
+            
+            if master_user:
+                tenant["master_admin_email"] = master_user.get("email")
+                tenant["master_admin_name"] = master_user.get("name")
     
     return {"tenants": tenants, "total": total}
 

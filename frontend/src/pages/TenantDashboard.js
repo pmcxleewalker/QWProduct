@@ -852,24 +852,22 @@ const TenantDashboard = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => {
-                        window.open(`${API}/tenant/reports/summary/csv`, '_blank');
-                      }}
-                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      onClick={() => handleExport('csv')}
+                      disabled={exporting}
+                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                       data-testid="export-csv-btn"
                     >
                       <Download size={18} />
-                      <span>Export CSV</span>
+                      <span>{exporting ? 'Exporting...' : 'Export CSV'}</span>
                     </button>
                     <button
-                      onClick={() => {
-                        window.open(`${API}/tenant/reports/summary/pdf`, '_blank');
-                      }}
-                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      onClick={() => handleExport('pdf')}
+                      disabled={exporting}
+                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                       data-testid="export-pdf-btn"
                     >
                       <FileText size={18} />
-                      <span>Export PDF</span>
+                      <span>{exporting ? 'Exporting...' : 'Export PDF'}</span>
                     </button>
                     <button
                       onClick={fetchData}

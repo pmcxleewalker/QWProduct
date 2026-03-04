@@ -43,8 +43,12 @@ const TenantDashboard = () => {
   const { user, activeTenant } = useAuth();
   
   // Determine if user is staff-only (limited access)
-  const isAdminUser = activeTenant?.role === 'admin' || activeTenant?.role === 'master_admin' || 
-                      user?.role === 'super_admin' || user?.role === 'master_admin';
+  // Include 'tenant_admin' for impersonation and all admin-level roles
+  const isAdminUser = activeTenant?.role === 'admin' || 
+                      activeTenant?.role === 'master_admin' || 
+                      activeTenant?.role === 'tenant_admin' ||
+                      user?.role === 'super_admin' || 
+                      user?.role === 'master_admin';
   const isStaffUser = !isAdminUser;
   
   // Staff default to bookings tab, admins to overview

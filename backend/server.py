@@ -2681,7 +2681,7 @@ async def scan_update_vehicle(
         tenant_id=context.tenant_id,
         resource_type="vehicle",
         resource_id=vehicle_id,
-        details={
+        meta={
             "status": update_data.current_status,
             "mileage": update_data.current_mileage,
             "source": "qr_scan"

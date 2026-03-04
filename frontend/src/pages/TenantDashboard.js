@@ -120,6 +120,16 @@ const TenantDashboard = () => {
       }));
       setRecentActivity(recent);
 
+      // Fetch reports data if admin and on reports tab
+      if (isAdmin && activeTab === 'reports') {
+        try {
+          const reportsRes = await axios.get(`${API}/tenant/reports/summary`);
+          setTenantReports(reportsRes.data);
+        } catch (reportErr) {
+          console.error('Failed to load reports:', reportErr);
+        }
+      }
+
     } catch (err) {
       setError('Failed to load dashboard data');
       console.error(err);

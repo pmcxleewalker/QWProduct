@@ -2720,6 +2720,306 @@ async def get_vehicle_status_history(
     }
 
 
+class BlockVehicleRequest(BaseModel):
+    reason: str  # "Service", "Cleaning", "Other"
+    notes: Optional[str] = None
+
+
+@api_router.post("/vehicles/{vehicle_id}/block")
+async def block_vehicle_for_appointment(
+    vehicle_id: str,
+    block_data: BlockVehicleRequest,
+    context: TenantContext = Depends(require_admin),
+    request: Request = None
+):
+    """Block a vehicle for appointment (Service, Cleaning, Other)"""
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, vehicle_id)
+    vehicle = await db.vehicles.find_one(query, {"_id": 0})
+    
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    if vehicle.get("is_blocked"):
+        raise HTTPException(status_code=400, detail="Vehicle is already blocked")
+    
+    update_dict = {
+        "is_blocked": True,
+        "blocked_reason": block_data.reason,
+        "blocked_notes": block_data.notes or "",
+        "blocked_by": context.user_email,
+        "blocked_at": datetime.now(timezone.utc).isoformat(),
+        "current_status": f"Blocked - {block_data.reason}",
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.vehicles.update_one(query, {"$set": update_dict})
+    
+    # Log the block action
+    status_update = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": context.tenant_id,
+        "car_id": vehicle_id,
+        "status": f"Blocked - {block_data.reason}",
+        "notes": block_data.notes or "",
+        "reported_by": context.user_email,
+        "reported_by_user_id": context.user_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "source": "block_appointment"
+    }
+    await db.status_updates.insert_one(status_update)
+    
+    updated = await db.vehicles.find_one(query, {"_id": 0})
+    return {
+        "message": f"Vehicle blocked for {block_data.reason}",
+        "vehicle": updated
+    }
+
+
+@api_router.post("/vehicles/{vehicle_id}/unblock")
+async def unblock_vehicle(
+    vehicle_id: str,
+    context: TenantContext = Depends(require_admin),
+    request: Request = None
+):
+    """Unblock a vehicle and return it to the fleet"""
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, vehicle_id)
+    vehicle = await db.vehicles.find_one(query, {"_id": 0})
+    
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    if not vehicle.get("is_blocked"):
+        raise HTTPException(status_code=400, detail="Vehicle is not blocked")
+    
+    update_dict = {
+        "is_blocked": False,
+        "blocked_reason": None,
+        "blocked_notes": None,
+        "blocked_by": None,
+        "blocked_at": None,
+        "current_status": "Free",
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "unblocked_by": context.user_email,
+        "unblocked_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.vehicles.update_one(query, {"$set": update_dict})
+    
+    # Log the unblock action
+    status_update = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": context.tenant_id,
+        "car_id": vehicle_id,
+        "status": "Free",
+        "notes": "Vehicle returned to fleet",
+        "reported_by": context.user_email,
+        "reported_by_user_id": context.user_id,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "source": "unblock"
+    }
+    await db.status_updates.insert_one(status_update)
+    
+    updated = await db.vehicles.find_one(query, {"_id": 0})
+    return {
+        "message": "Vehicle unblocked and returned to fleet",
+        "vehicle": updated
+    }
+
+
+# ==================== FLEET REPORTS (TENANT-SCOPED) ====================
+
+@api_router.get("/tenant/fleet-reports")
+async def get_fleet_reports(
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
+    context: TenantContext = Depends(require_admin)
+):
+    """Get comprehensive fleet reports for the tenant"""
+    tenant_id = context.tenant_id
+    
+    # Get all vehicles
+    vehicles = await db.vehicles.find(
+        {"tenant_id": tenant_id},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Get all bookings
+    booking_query = {"tenant_id": tenant_id}
+    if from_date:
+        booking_query["created_at"] = {"$gte": from_date}
+    if to_date:
+        if "created_at" in booking_query:
+            booking_query["created_at"]["$lte"] = to_date
+        else:
+            booking_query["created_at"] = {"$lte": to_date}
+    
+    bookings = await db.bookings.find(booking_query, {"_id": 0}).to_list(100000)
+    
+    # Calculate stats
+    total_vehicles = len(vehicles)
+    total_bookings = len(bookings)
+    pending_bookings = len([b for b in bookings if b.get("status") == "pending"])
+    blocked_cars = len([v for v in vehicles if v.get("is_blocked")])
+    
+    # Most booked cars (ranked)
+    vehicle_booking_count = {}
+    for booking in bookings:
+        car_id = booking.get("car_id")
+        if car_id:
+            vehicle_booking_count[car_id] = vehicle_booking_count.get(car_id, 0) + 1
+    
+    most_booked = []
+    for vehicle in vehicles:
+        vid = vehicle["id"]
+        count = vehicle_booking_count.get(vid, 0)
+        most_booked.append({
+            "id": vid,
+            "name": vehicle["name"],
+            "registration": vehicle["registration"],
+            "bookings": count
+        })
+    
+    most_booked.sort(key=lambda x: x["bookings"], reverse=True)
+    
+    # Daily availability (today)
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+    
+    today_bookings = [
+        b for b in bookings
+        if b.get("start_time") and today_start.isoformat() <= b["start_time"] <= today_end.isoformat()
+    ]
+    
+    # Calculate availability
+    fully_free = 0
+    partially_free = 0
+    fully_booked = 0
+    blocked = 0
+    
+    for vehicle in vehicles:
+        if vehicle.get("is_blocked"):
+            blocked += 1
+            continue
+        
+        vehicle_today_bookings = [b for b in today_bookings if b.get("car_id") == vehicle["id"]]
+        if len(vehicle_today_bookings) == 0:
+            fully_free += 1
+        elif len(vehicle_today_bookings) >= 8:  # Assuming 8+ hours = fully booked
+            fully_booked += 1
+        else:
+            partially_free += 1
+    
+    # By location summary
+    location_summary = {}
+    for vehicle in vehicles:
+        loc = vehicle.get("base_location") or "Unassigned"
+        if loc not in location_summary:
+            location_summary[loc] = {"total": 0, "free": 0, "partial": 0, "booked": 0, "blocked": 0}
+        
+        location_summary[loc]["total"] += 1
+        
+        if vehicle.get("is_blocked"):
+            location_summary[loc]["blocked"] += 1
+        else:
+            vehicle_today_bookings = [b for b in today_bookings if b.get("car_id") == vehicle["id"]]
+            if len(vehicle_today_bookings) == 0:
+                location_summary[loc]["free"] += 1
+            elif len(vehicle_today_bookings) >= 8:
+                location_summary[loc]["booked"] += 1
+            else:
+                location_summary[loc]["partial"] += 1
+    
+    # Calculate utilization per location
+    for loc, data in location_summary.items():
+        if data["total"] > 0:
+            utilized = data["partial"] + data["booked"]
+            data["utilization"] = round((utilized / data["total"]) * 100, 1)
+        else:
+            data["utilization"] = 0
+    
+    return {
+        "summary": {
+            "total_vehicles": total_vehicles,
+            "total_bookings": total_bookings,
+            "pending_bookings": pending_bookings,
+            "blocked_cars": blocked_cars
+        },
+        "most_booked_cars": most_booked[:10],
+        "daily_availability": {
+            "date": now.strftime("%Y-%m-%d"),
+            "total_fleet": total_vehicles - blocked,
+            "fully_free": fully_free,
+            "partially_free": partially_free,
+            "fully_booked": fully_booked
+        },
+        "location_summary": [
+            {"location": loc, **data}
+            for loc, data in sorted(location_summary.items())
+        ],
+        "generated_at": now.isoformat()
+    }
+
+
+@api_router.get("/tenant/fleet-reports/csv")
+async def export_fleet_reports_csv(
+    context: TenantContext = Depends(require_admin)
+):
+    """Export fleet reports as CSV"""
+    import csv
+    from io import StringIO
+    
+    # Get the report data
+    tenant_id = context.tenant_id
+    vehicles = await db.vehicles.find({"tenant_id": tenant_id}, {"_id": 0}).to_list(1000)
+    bookings = await db.bookings.find({"tenant_id": tenant_id}, {"_id": 0}).to_list(100000)
+    
+    # Calculate booking counts
+    vehicle_booking_count = {}
+    for booking in bookings:
+        car_id = booking.get("car_id")
+        if car_id:
+            vehicle_booking_count[car_id] = vehicle_booking_count.get(car_id, 0) + 1
+    
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow(["Fleet Report - " + datetime.now().strftime("%Y-%m-%d")])
+    writer.writerow([])
+    
+    # Summary
+    writer.writerow(["=== Summary ==="])
+    writer.writerow(["Total Vehicles", len(vehicles)])
+    writer.writerow(["Total Bookings", len(bookings)])
+    writer.writerow(["Blocked Cars", len([v for v in vehicles if v.get("is_blocked")])])
+    writer.writerow([])
+    
+    # Vehicle details
+    writer.writerow(["=== Vehicle Details ==="])
+    writer.writerow(["Name", "Registration", "Status", "Current Mileage", "Service Due At", "Tax Due", "Location", "Total Bookings"])
+    
+    for vehicle in sorted(vehicles, key=lambda x: vehicle_booking_count.get(x["id"], 0), reverse=True):
+        writer.writerow([
+            vehicle.get("name", ""),
+            vehicle.get("registration", ""),
+            vehicle.get("current_status", "Free"),
+            vehicle.get("current_mileage", ""),
+            vehicle.get("service_due_mileage", ""),
+            vehicle.get("tax_due_date", ""),
+            vehicle.get("base_location", ""),
+            vehicle_booking_count.get(vehicle["id"], 0)
+        ])
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=fleet_report_{datetime.now().strftime('%Y%m%d')}.csv"}
+    )
+
+
 # Alias for backwards compatibility
 @api_router.get("/cars")
 async def list_cars(context: TenantContext = Depends(require_tenant_context)):

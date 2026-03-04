@@ -262,6 +262,52 @@ class TestTenantReportsAccessControl:
         self.session = requests.Session()
         self.session.headers.update({"Content-Type": "application/json"})
     
+    def test_staff_cannot_access_reports_summary(self):
+        """Test that staff users cannot access reports summary (admin only)"""
+        # Login as staff user
+        login_response = self.session.post(f"{BASE_URL}/api/auth/login", json={
+            "email": "staff.test-franchise@quickwing.com",
+            "password": "87xbq9WE56"
+        })
+        
+        if login_response.status_code != 200:
+            pytest.skip("Staff login failed - user may not exist")
+        
+        token = login_response.json().get("access_token")
+        
+        # Try to access reports as staff
+        response = self.session.get(
+            f"{BASE_URL}/api/tenant/reports/summary",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        
+        assert response.status_code == 403, f"Expected 403 for staff, got {response.status_code}"
+        assert "Admin access required" in response.text
+        print("✓ Staff user correctly denied access to reports summary")
+    
+    def test_staff_cannot_access_vehicle_utilization(self):
+        """Test that staff users cannot access vehicle utilization (admin only)"""
+        # Login as staff user
+        login_response = self.session.post(f"{BASE_URL}/api/auth/login", json={
+            "email": "staff.test-franchise@quickwing.com",
+            "password": "87xbq9WE56"
+        })
+        
+        if login_response.status_code != 200:
+            pytest.skip("Staff login failed - user may not exist")
+        
+        token = login_response.json().get("access_token")
+        
+        # Try to access vehicle utilization as staff
+        response = self.session.get(
+            f"{BASE_URL}/api/tenant/reports/vehicle-utilization",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        
+        assert response.status_code == 403, f"Expected 403 for staff, got {response.status_code}"
+        assert "Admin access required" in response.text
+        print("✓ Staff user correctly denied access to vehicle utilization")
+    
     def test_super_admin_cannot_access_without_tenant_context(self):
         """Test that super admin needs tenant context to access reports"""
         # Login as super admin

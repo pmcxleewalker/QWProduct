@@ -1115,12 +1115,18 @@ const TenantDashboard = () => {
             )}
 
             {/* Fleet Reports Tab (Admin Only) */}
-            {activeTab === 'fleet-reports' && isAdmin && (
+            {/* Fleet Reports Tab */}
+            {((activeTab === 'fleet-reports') || (activeTab === 'reports' && activeSubTab === 'fleet-reports')) && isAdmin && (
               <FleetReportsSection onRefresh={() => fetchData()} />
             )}
 
-            {/* Reports Tab (Admin Only) */}
-            {activeTab === 'reports' && isAdmin && (
+            {/* Daily Timeline Tab */}
+            {(activeTab === 'reports' && activeSubTab === 'daily-timeline') && isAdmin && (
+              <DailyTimelineChart />
+            )}
+
+            {/* Analytics Tab (was Reports Tab) */}
+            {((activeTab === 'reports' && activeSubTab === 'analytics') || (activeTab === 'reports' && !activeSubTab)) && isAdmin && (
               <div className="space-y-6" data-testid="reports-tab">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>

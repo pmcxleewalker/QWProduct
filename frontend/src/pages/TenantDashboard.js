@@ -54,6 +54,7 @@ const TenantDashboard = () => {
   const [newUserCredentials, setNewUserCredentials] = useState(null);
   const [vehicleForm, setVehicleForm] = useState({ name: '', registration: '' });
   const [userForm, setUserForm] = useState({ name: '', email: '', role: 'staff' });
+  const [showTraining, setShowTraining] = useState(false);
 
   // Use the isAdminUser variable defined at top
   const isAdmin = isAdminUser;

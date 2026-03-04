@@ -4,6 +4,7 @@ Vehicle, Booking, and other tenant-scoped models
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime, timezone
+from enum import Enum
 import uuid
 
 

@@ -3324,6 +3324,13 @@ const Admin = () => {
         </div>
       )}
 
+      {/* Admin Training Modal */}
+      <AdminTraining 
+        isOpen={showTraining}
+        onClose={handleCloseTraining}
+        franchiseName={activeTenant?.tenant_name}
+      />
+
     </div>
   );
 };

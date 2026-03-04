@@ -21,6 +21,7 @@ export const bookingAPI = {
   update: (id, data) => axios.put(`${API}/bookings/${id}`, data),
   delete: (id) => axios.delete(`${API}/bookings/${id}`),
   getSuggestions: () => Promise.resolve({ data: [] }), // Booking suggestions - placeholder
+  getPending: () => axios.get(`${API}/bookings/pending`).catch(() => ({ data: [] })), // Pending bookings
 };
 
 // Provider API (tenant-scoped)

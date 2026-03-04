@@ -699,6 +699,13 @@ const TenantDashboard = () => {
                           )}
                           
                           <div className="px-4 py-3">
+                            {/* Mileage Display */}
+                            {vehicle.current_mileage && (
+                              <div className="flex items-center text-xs text-gray-600 mb-2">
+                                <Gauge size={14} className="mr-1" />
+                                <span>{vehicle.current_mileage.toLocaleString()} km</span>
+                              </div>
+                            )}
                             {vehicle.location && (
                               <p className="text-xs text-gray-500 mb-2">
                                 📍 {vehicle.location}
@@ -708,16 +715,33 @@ const TenantDashboard = () => {
                               Updated: {vehicle.updated_at ? new Date(vehicle.updated_at).toLocaleString('en-IE', {
                                 day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
                               }) : 'N/A'}
+                              {vehicle.last_updated_by && (
+                                <span className="ml-1">by {vehicle.last_updated_by.split('@')[0]}</span>
+                              )}
                             </p>
                             
-                            {!vehicle.is_blocked && isAvailable && (
-                              <button
-                                onClick={() => navigate(`/${activeTenant?.tenant_slug}/bookings`)}
-                                className="mt-3 w-full py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-                              >
-                                Book This Car
-                              </button>
-                            )}
+                            <div className="flex space-x-2 mt-3">
+                              {!vehicle.is_blocked && isAvailable && (
+                                <button
+                                  onClick={() => navigate(`/${activeTenant?.tenant_slug}/bookings`)}
+                                  className="flex-1 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+                                >
+                                  Book This Car
+                                </button>
+                              )}
+                              {isAdmin && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedVehicleForQR(vehicle);
+                                    setShowQRCode(true);
+                                  }}
+                                  className="p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                                  title="View QR Code"
+                                >
+                                  <QrCode size={18} />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );

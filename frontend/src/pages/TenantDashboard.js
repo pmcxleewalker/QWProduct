@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
@@ -7,9 +7,12 @@ import {
   Building2, Receipt, FileText, TrendingUp, Clock, AlertTriangle,
   CheckCircle, XCircle, Edit2, Trash2, Eye, Download, UserPlus,
   ArrowRight, MoreVertical, BookOpen, HelpCircle, PieChart,
-  Activity, TrendingDown
+  Activity, TrendingDown, CalendarDays
 } from 'lucide-react';
 import AdminTraining from '../components/AdminTraining';
+import CarBookingCalendar from '../components/CarBookingCalendar';
+import AllCarsCalendar from '../components/AllCarsCalendar';
+import RequestLiftButton from '../components/RequestLiftButton';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

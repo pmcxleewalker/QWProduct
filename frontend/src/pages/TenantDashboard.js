@@ -1031,6 +1031,11 @@ const TenantDashboard = () => {
               </div>
             )}
 
+            {/* Fleet Reports Tab (Admin Only) */}
+            {activeTab === 'fleet-reports' && isAdmin && (
+              <FleetReportsSection onRefresh={() => fetchData()} />
+            )}
+
             {/* Reports Tab (Admin Only) */}
             {activeTab === 'reports' && isAdmin && (
               <div className="space-y-6" data-testid="reports-tab">

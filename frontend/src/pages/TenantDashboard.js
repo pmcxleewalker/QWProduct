@@ -438,6 +438,9 @@ const TenantDashboard = () => {
 
       {/* Alerts */}
       <div className="max-w-7xl mx-auto px-4 pt-4">
+        {/* Announcement Banner for Staff */}
+        {!isAdmin && <AnnouncementBanner />}
+        
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center text-red-700">
             <AlertTriangle size={18} className="mr-2" />

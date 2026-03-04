@@ -1,0 +1,87 @@
+{
+  "summary": "Completed comprehensive testing of Staff Announcements, Daily Timeline, and Consolidated Dashboard features. Fixed a critical bug in tenant middleware where impersonation was not properly bypassing membership checks. All 17 backend API tests passed (100%). Frontend UI verified: Dashboard tabs with sub-tabs, Announcements Manager, Daily Timeline chart, and Announcement Banner for staff with acknowledgment flow.",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  
+  "passed_tests": [
+    "Backend: POST /api/messages - Create announcement with title, content, priority, requires_acknowledgment",
+    "Backend: GET /api/announcements - List all announcements in tenant",
+    "Backend: GET /api/announcements/pending - Get unacknowledged announcements for current user",
+    "Backend: GET /api/announcements/unread-count - Get count of unread announcements",
+    "Backend: POST /api/messages/{id}/acknowledge - Acknowledge an announcement",
+    "Backend: POST /api/messages/{id}/acknowledge - Returns 404 for non-existent announcement",
+    "Backend: DELETE /api/announcements/{id} - Delete an announcement",
+    "Backend: DELETE /api/announcements/{id} - Returns 404 for non-existent announcement",
+    "Backend: Create announcements with all priorities (low, normal, high, urgent)",
+    "Backend: GET /api/tenant/reports/daily-timeline - Returns hourly availability data (07:00-22:00)",
+    "Backend: GET /api/tenant/reports/daily-timeline with date parameter",
+    "Backend: GET /api/tenant/reports/daily-timeline with past date",
+    "Backend: GET /api/tenant/reports/daily-timeline - Returns 400 for invalid date format",
+    "Backend: Daily timeline requires admin authentication",
+    "Backend: Timeline hours are correct (07:00 - 22:00, 16 slots)",
+    "Backend: Utilization percentages calculated correctly",
+    "Backend: Cleanup test announcements",
+    "Frontend: TenantDashboard loads without errors",
+    "Frontend: Dashboard has 6 main tabs (Overview, Fleet, Bookings, Team, Reports, Announcements)",
+    "Frontend: Fleet tab has 4 sub-tabs (Live Status, Car Calendars, All Cars Calendar, Manage Vehicles)",
+    "Frontend: Reports tab has 3 sub-tabs (Analytics, Fleet Reports, Daily Timeline)",
+    "Frontend: Daily Timeline chart displays hourly utilization bars",
+    "Frontend: Daily Timeline shows summary cards (Total Fleet, Available, Peak Hour, Avg Utilization)",
+    "Frontend: Announcements tab shows AnnouncementsManager component",
+    "Frontend: Create Announcement modal with title, message, priority, requires_acknowledgment fields",
+    "Frontend: Announcement created successfully with HIGH priority badge",
+    "Frontend: Staff view shows limited tabs (Live Fleet, Car Calendars, My Bookings)",
+    "Frontend: Staff sees Announcement Banner with Acknowledge button",
+    "Frontend: Acknowledge button dismisses announcement banner"
+  ],
+  
+  "test_report_links": [
+    "/app/backend/tests/test_announcements_timeline.py",
+    "/app/test_reports/pytest/pytest_announcements_timeline.xml"
+  ],
+  
+  "action_items": [],
+  
+  "critical_code_review_comments": [
+    "Fixed bug in /app/backend/middleware/tenant.py: Impersonation was not bypassing membership check, causing 403 errors when super admin impersonated a tenant",
+    "Announcements endpoints correctly scope data by tenant_id",
+    "Daily Timeline correctly calculates hourly utilization from 07:00 to 22:00",
+    "Frontend correctly shows consolidated tabs with sub-tabs for admin users",
+    "Staff users correctly see limited tabs and announcement banner"
+  ],
+  
+  "updated_files": [
+    "/app/backend/middleware/tenant.py",
+    "/app/backend/tests/test_announcements_timeline.py"
+  ],
+  
+  "success_rate": {
+    "backend": "100% (17/17 tests passed)",
+    "frontend": "100% (all UI features verified)"
+  },
+  
+  "test_credentials": {
+    "super_admin": {"email": "superadmin@quickwing.com", "password": "Super123"},
+    "tenant_admin": {"email": "admin@corkcitycabs.ie", "password": "Admin123"},
+    "staff_user": {"email": "staff@corkcitycabs.ie", "password": "Staff123!"}
+  },
+  
+  "seed_data_creation": "Created staff user (staff@corkcitycabs.ie) for testing announcement banner and acknowledgment flow",
+  
+  "retest_needed": false,
+  
+  "should_main_agent_self_test": true,
+  
+  "context_for_next_testing_agent": "Announcements and Daily Timeline features fully tested and working: 1) POST /api/messages creates announcements with title, content, priority (low/normal/high/urgent), requires_acknowledgment. 2) GET /api/announcements lists all announcements. 3) GET /api/announcements/pending returns unacknowledged announcements for current user. 4) GET /api/announcements/unread-count returns count. 5) POST /api/messages/{id}/acknowledge marks announcement as acknowledged. 6) DELETE /api/announcements/{id} deletes announcement. 7) GET /api/tenant/reports/daily-timeline returns hourly availability from 07:00-22:00 with utilization percentages. 8) Frontend Dashboard has consolidated tabs with sub-tabs: Fleet (Live Status, Car Calendars, All Cars Calendar, Manage Vehicles), Reports (Analytics, Fleet Reports, Daily Timeline). 9) Staff users see limited tabs and announcement banner with acknowledge button. 10) Fixed middleware bug where impersonation was not bypassing membership check.",
+  
+  "rca_of_the_issue": "Bug found in /app/backend/middleware/tenant.py: When super admin impersonated a tenant, the role was downgraded to 'admin' but the middleware still checked for membership. Since super admin doesn't have a membership in the tenant, it returned 403. Fixed by adding 'and not is_impersonating' to the membership check condition."
+}

@@ -236,6 +236,7 @@ const TenantRoutes = () => {
           <Route path="/live-sheet" element={<LiveSheet />} />
           <Route path="/bookings" element={<Bookings />} />
           <Route path="/assistance" element={<Assistance />} />
+          <Route path="/request-lift" element={<RequestLift />} />
           <Route path="/mileage" element={<MileageUpdate />} />
           <Route path="/setup-wizard" element={<SetupWizard />} />
           <Route

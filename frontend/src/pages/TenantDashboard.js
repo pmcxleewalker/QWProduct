@@ -1357,6 +1357,11 @@ const TenantDashboard = () => {
                 )}
               </div>
             )}
+
+            {/* Announcements Tab (Admin Only) */}
+            {activeTab === 'announcements' && isAdmin && (
+              <AnnouncementsManager onRefresh={() => fetchData()} />
+            )}
           </>
         )}
       </div>

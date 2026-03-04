@@ -6,8 +6,9 @@ import {
   Car, Users, Calendar, BarChart3, Settings, Plus, RefreshCw,
   Building2, Receipt, FileText, TrendingUp, Clock, AlertTriangle,
   CheckCircle, XCircle, Edit2, Trash2, Eye, Download, UserPlus,
-  ArrowRight, MoreVertical
+  ArrowRight, MoreVertical, BookOpen, HelpCircle
 } from 'lucide-react';
+import AdminTraining from '../components/AdminTraining';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

@@ -89,19 +89,25 @@ const QRScanner = ({ isOpen, onClose, onSuccess, tenantSlug }) => {
 
     try {
       // Update vehicle status and mileage
-      await axios.post(`${API}/vehicles/${scannedVehicle.id}/scan-update`, {
+      const response = await axios.post(`${API}/vehicles/${scannedVehicle.id}/scan-update`, {
         current_status: status,
         current_mileage: mileage ? parseInt(mileage) : null,
         location: location || undefined,
         notes: notes || undefined
       });
 
-      setSuccess(`${scannedVehicle.name} updated successfully!`);
+      // Check for service alert
+      if (response.data.service_alert) {
+        const alert = response.data.service_alert;
+        setSuccess(`${scannedVehicle.name} updated! ⚠️ ${alert.message}`);
+      } else {
+        setSuccess(`${scannedVehicle.name} updated successfully!`);
+      }
       
       setTimeout(() => {
-        if (onSuccess) onSuccess();
+        if (onSuccess) onSuccess(response.data.service_alert);
         handleClose();
-      }, 1500);
+      }, 2000);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to update vehicle');
     } finally {

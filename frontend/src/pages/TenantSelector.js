@@ -110,8 +110,17 @@ const TenantSelector = () => {
               <p className="text-sm mt-2">Contact your administrator.</p>
             </div>
           ) : tenants.length === 0 && isPlatformAdminUser ? (
-            <div className="text-center py-4 text-gray-500">
-              <p className="text-sm">No franchises assigned. Use the Command Centre to manage franchises.</p>
+            <div className="text-center py-6">
+              <Building2 size={48} className="mx-auto mb-4 text-indigo-400" />
+              <p className="text-gray-700 font-medium">No franchises created yet</p>
+              <p className="text-sm text-gray-500 mt-1 mb-4">Use the Command Centre to create and manage franchises.</p>
+              <button
+                onClick={() => navigate('/platform')}
+                className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg"
+              >
+                <Crown size={20} />
+                <span>Go to Command Centre</span>
+              </button>
             </div>
           ) : tenants.length > 0 ? (
             tenants.map((tenant) => (

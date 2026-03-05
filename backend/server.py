@@ -898,6 +898,141 @@ async def reset_user_password(
     return {"message": f"Password reset successfully for {user['email']}"}
 
 
+class DeleteUserRequest(BaseModel):
+    admin_password: str
+
+
+@api_router.delete("/platform/users/{user_id}")
+async def delete_user_completely(
+    user_id: str,
+    delete_request: DeleteUserRequest,
+    context: TenantContext = Depends(require_super_admin),
+    request: Request = None
+):
+    """
+    Super admin can delete a user completely.
+    This removes the user from all tenants and deletes their account.
+    Requires super admin password confirmation.
+    """
+    # Verify super admin password
+    admin = await db.users.find_one({"id": context.user_id}, {"_id": 0})
+    if not admin or not verify_password(delete_request.admin_password, admin["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid admin password")
+    
+    # Get target user
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent deleting super admin
+    if user.get("role") == "super_admin":
+        raise HTTPException(status_code=400, detail="Cannot delete super admin accounts")
+    
+    # Prevent self-deletion
+    if user_id == context.user_id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    user_email = user["email"]
+    
+    # Delete all memberships
+    deleted_memberships = await db.memberships.delete_many({"user_id": user_id})
+    
+    # Delete user
+    await db.users.delete_one({"id": user_id})
+    
+    # Log audit event
+    await audit_service.log(
+        actor_user_id=context.user_id,
+        actor_email=context.user_email,
+        action=AuditAction.USER_DELETED,
+        resource_type="user",
+        resource_id=user_id,
+        meta={
+            "target_email": user_email,
+            "memberships_deleted": deleted_memberships.deleted_count
+        },
+        ip_address=request.client.host if request and request.client else None
+    )
+    
+    return {
+        "message": f"User '{user_email}' deleted successfully",
+        "memberships_deleted": deleted_memberships.deleted_count
+    }
+
+
+class ChangeUserRoleRequest(BaseModel):
+    tenant_id: str
+    new_role: str  # Accept string instead of enum for flexibility
+    admin_password: str
+
+
+@api_router.put("/platform/users/{user_id}/change-role")
+async def change_user_role(
+    user_id: str,
+    role_request: ChangeUserRoleRequest,
+    context: TenantContext = Depends(require_super_admin),
+    request: Request = None
+):
+    """
+    Super admin can change any user's role within a tenant.
+    Requires super admin password confirmation.
+    """
+    # Verify super admin password
+    admin = await db.users.find_one({"id": context.user_id}, {"_id": 0})
+    if not admin or not verify_password(role_request.admin_password, admin["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid admin password")
+    
+    # Validate role
+    valid_roles = ["staff", "admin", "master_admin"]
+    if role_request.new_role not in valid_roles:
+        raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of: {', '.join(valid_roles)}")
+    
+    # Get target user
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get membership
+    membership = await db.memberships.find_one({
+        "user_id": user_id,
+        "tenant_id": role_request.tenant_id
+    }, {"_id": 0})
+    
+    if not membership:
+        raise HTTPException(status_code=404, detail="User is not a member of this tenant")
+    
+    old_role = membership["role"]
+    
+    # Update role
+    await db.memberships.update_one(
+        {"user_id": user_id, "tenant_id": role_request.tenant_id},
+        {"$set": {"role": role_request.new_role}}
+    )
+    
+    # Log audit event
+    await audit_service.log(
+        actor_user_id=context.user_id,
+        actor_email=context.user_email,
+        action=AuditAction.USER_UPDATED,
+        tenant_id=role_request.tenant_id,
+        resource_type="user",
+        resource_id=user_id,
+        meta={
+            "action": "role_change",
+            "target_email": user["email"],
+            "old_role": old_role,
+            "new_role": role_request.new_role
+        },
+        ip_address=request.client.host if request and request.client else None
+    )
+    
+    return {
+        "message": f"Role updated for {user['email']}",
+        "old_role": old_role,
+        "new_role": role_request.new_role
+    }
+
+
 class UpdateUserRoleRequest(BaseModel):
     tenant_id: str
     new_role: UserRole

@@ -522,11 +522,11 @@ const PlatformAdmin = () => {
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="bg-white rounded-lg px-3 py-1">
+              <div className="bg-white rounded-lg px-3 py-1.5">
                 <img 
                   src="/quick-wing-logo.png" 
                   alt="Quick Wing" 
-                  className="h-8 w-auto object-contain"
+                  className="h-10 w-auto object-contain"
                 />
               </div>
               <div className="border-l border-slate-600 pl-4">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogIn, AlertCircle, Car, Building2 } from 'lucide-react';
+import { LogIn, AlertCircle, Car, Building2, Shield } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,10 +17,8 @@ const Login = () => {
 
   const isQRRedirect = redirectUrl && redirectUrl.includes('/bookings?car=');
   
-  // If tenant slug provided, try to fetch tenant info for display
   useEffect(() => {
     if (tenantSlug) {
-      // We'll just show the slug for now - could fetch tenant name from API
       setTenantInfo({ slug: tenantSlug, name: tenantSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') });
     }
   }, [tenantSlug]);
@@ -33,7 +31,6 @@ const Login = () => {
     try {
       const result = await login(formData.email, formData.password, rememberMe);
       
-      // Direct navigation based on role
       if (result.success) {
         const userRole = result.user?.role;
         if (userRole === 'super_admin') {
@@ -41,13 +38,11 @@ const Login = () => {
         } else if (result.needsTenantSelection) {
           navigate('/select-tenant');
         } else if (result.tenants?.length === 1) {
-          // Single tenant - go to their branded URL
           navigate(`/${result.tenants[0].tenant_slug}`);
         } else {
           navigate('/');
         }
       } else {
-        // Ensure error is a string
         const errorMsg = typeof result.error === 'string' 
           ? result.error 
           : 'Login failed. Please check your credentials.';
@@ -68,50 +63,73 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Header with Logo */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-center">
-            <div className="bg-white rounded-xl px-6 py-3 inline-block">
-              <img 
-                src="/quick-wing-logo.png" 
-                alt="Quick Wing" 
-                className="h-16 w-auto object-contain"
-                data-testid="login-title"
-              />
-            </div>
-            {tenantInfo && (
-              <div className="mt-3 inline-flex items-center px-3 py-1 bg-white/20 rounded-full">
-                <Building2 size={14} className="mr-2 text-blue-100" />
-                <span className="text-sm text-white font-medium">{tenantInfo.name}</span>
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4 py-12 relative overflow-hidden">
+      {/* Abstract Background Pattern */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-blue-600/10 to-transparent rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-slate-700/20 to-transparent rounded-full blur-3xl"></div>
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
+      </div>
+
+      <div className="max-w-md w-full relative z-10">
+        {/* Main Card */}
+        <div className="bg-white rounded-2xl shadow-2xl shadow-black/20 overflow-hidden border border-slate-200/50">
+          
+          {/* Premium Header Section */}
+          <div className="relative bg-gradient-to-b from-slate-50 to-white border-b border-slate-100">
+            {/* Metallic accent line */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-slate-300 via-blue-500 to-slate-300"></div>
+            
+            <div className="px-8 pt-10 pb-8 text-center">
+              {/* Logo Container with subtle shadow */}
+              <div className="inline-block">
+                <img 
+                  src="/quick-wing-logo.png" 
+                  alt="Quick Wing" 
+                  className="h-20 w-auto object-contain drop-shadow-sm"
+                  data-testid="login-title"
+                />
               </div>
-            )}
+              
+              {/* Tenant Badge */}
+              {tenantInfo && (
+                <div className="mt-4 inline-flex items-center px-4 py-2 bg-slate-100 rounded-full border border-slate-200">
+                  <Building2 size={14} className="mr-2 text-slate-500" />
+                  <span className="text-sm text-slate-700 font-medium">{tenantInfo.name}</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="p-8">
+          {/* Form Section */}
+          <div className="p-8 bg-white">
             {/* QR Code Notice */}
             {isQRRedirect && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-center">
-                <Car className="text-blue-500 mr-3 flex-shrink-0" size={24} />
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 flex items-center">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                  <Car className="text-blue-600" size={20} />
+                </div>
                 <div>
-                  <p className="text-blue-800 font-medium text-sm">📱 QR Code Scanned</p>
-                  <p className="text-blue-600 text-xs">Sign in to book this car</p>
+                  <p className="text-slate-800 font-semibold text-sm">QR Code Scanned</p>
+                  <p className="text-slate-500 text-xs">Sign in to book this vehicle</p>
                 </div>
               </div>
             )}
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-center" data-testid="error-message">
-                <AlertCircle className="text-red-500 mr-2 flex-shrink-0" size={20} />
-                <p className="text-red-800 text-sm">{error}</p>
+              <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-6 flex items-center" data-testid="error-message">
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                  <AlertCircle className="text-red-600" size={20} />
+                </div>
+                <p className="text-red-800 text-sm font-medium">{error}</p>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Email Address
                 </label>
                 <input
@@ -119,14 +137,14 @@ const Login = () => {
                   data-testid="email-input"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
-                  placeholder="you@example.com"
+                  className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
+                  placeholder="you@company.com"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Password
                 </label>
                 <input
@@ -134,21 +152,21 @@ const Login = () => {
                   data-testid="password-input"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                  className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
                   placeholder="••••••••"
                   required
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <label className="flex items-center">
+              <div className="flex items-center justify-between pt-1">
+                <label className="flex items-center cursor-pointer group">
                   <input
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 focus:ring-2"
                   />
-                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                  <span className="ml-2.5 text-sm text-slate-600 group-hover:text-slate-800 transition-colors">Remember me</span>
                 </label>
               </div>
 
@@ -156,33 +174,37 @@ const Login = () => {
                 type="submit"
                 disabled={loading}
                 data-testid="login-button"
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
+                className="w-full bg-slate-900 text-white py-4 rounded-xl font-semibold hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-lg shadow-slate-900/20 hover:shadow-xl hover:shadow-slate-900/30"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <>
-                    <LogIn size={18} className="mr-2" />
+                    <LogIn size={18} className="mr-2.5" />
                     Sign In
                   </>
                 )}
               </button>
             </form>
 
-            {/* Multi-tenant info */}
-            <div className="mt-6 pt-6 border-t text-center">
-              <div className="flex items-center justify-center text-sm text-gray-500">
-                <Building2 size={16} className="mr-2" />
-                <span>Multi-franchise platform</span>
+            {/* Security Badge */}
+            <div className="mt-8 pt-6 border-t border-slate-100">
+              <div className="flex items-center justify-center text-sm text-slate-400">
+                <Shield size={14} className="mr-2" />
+                <span>Enterprise-grade security</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6 text-sm text-slate-400">
-          <p>© {new Date().getFullYear()} Quick Wing Fleet Management</p>
-          <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+        <div className="text-center mt-8 space-y-2">
+          <p className="text-sm text-slate-500">© {new Date().getFullYear()} Quick Wing Fleet Management</p>
+          <div className="flex items-center justify-center space-x-4 text-xs text-slate-500">
+            <Link to="/terms" className="hover:text-slate-300 transition-colors">Terms of Service</Link>
+            <span className="text-slate-600">•</span>
+            <Link to="/privacy" className="hover:text-slate-300 transition-colors">Privacy Policy</Link>
+          </div>
         </div>
       </div>
     </div>

@@ -125,12 +125,14 @@ const TenantLogin = () => {
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
           {/* Header with Tenant Branding and Logo */}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-center">
-            <img 
-              src="/quick-wing-logo.png" 
-              alt="Quick Wing" 
-              className="h-20 w-auto object-contain mx-auto mb-2"
-              data-testid="tenant-login-title"
-            />
+            <div className="bg-white rounded-xl px-6 py-3 inline-block mb-3">
+              <img 
+                src="/quick-wing-logo.png" 
+                alt="Quick Wing" 
+                className="h-14 w-auto object-contain"
+                data-testid="tenant-login-title"
+              />
+            </div>
             <p className="text-blue-100 text-sm">Fleet Management Portal</p>
             {tenantInfo && (
               <div className="mt-3 inline-flex items-center px-3 py-1 bg-white/20 rounded-full">

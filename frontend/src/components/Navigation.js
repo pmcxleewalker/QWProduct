@@ -57,16 +57,21 @@ const Navigation = ({ tenantSlug }) => {
   // Push notification hook
   const { isSupported, isSubscribed, permission, subscribe, unsubscribe } = usePushNotifications(user);
   
-  const isActive = (path) => location.pathname === path;
+  // Check if path is active (accounting for tenant prefix)
+  const isActive = (path) => {
+    const fullPath = getTenantPath(path);
+    return location.pathname === fullPath || location.pathname === path;
+  };
   
   // Check if user is pmcxleewalker (show fish icon instead of "Live Sheet")
   const isPmcxUser = user?.email?.toLowerCase().split('@')[0] === 'pmcxleewalker';
   
+  // Navigation items with tenant-scoped paths
   const navItems = [
-    { path: '/', icon: Home, label: 'Dashboard' },
-    { path: '/live-sheet', icon: isPmcxUser ? Fish : FileSpreadsheet, label: isPmcxUser ? '' : 'Live Sheet', isFishIcon: isPmcxUser },
-    { path: '/bookings', icon: Calendar, label: 'Bookings' },
-    { path: '/assistance', icon: PhoneCall, label: 'Assistance' },
+    { path: getTenantPath('/'), icon: Home, label: 'Dashboard' },
+    { path: getTenantPath('/live-sheet'), icon: isPmcxUser ? Fish : FileSpreadsheet, label: isPmcxUser ? '' : 'Live Sheet', isFishIcon: isPmcxUser },
+    { path: getTenantPath('/bookings'), icon: Calendar, label: 'Bookings' },
+    { path: getTenantPath('/assistance'), icon: PhoneCall, label: 'Assistance' },
   ];
 
   // Handle push notification toggle
@@ -81,8 +86,8 @@ const Navigation = ({ tenantSlug }) => {
 
   // Only show Admin for admin users
   if (isTenantAdmin()) {
-    navItems.push({ path: '/reports', icon: BarChart3, label: 'Reports' });
-    navItems.push({ path: '/admin', icon: Settings, label: 'Admin' });
+    navItems.push({ path: getTenantPath('/reports'), icon: BarChart3, label: 'Reports' });
+    navItems.push({ path: getTenantPath('/admin'), icon: Settings, label: 'Admin' });
   }
 
   // Close dropdown when clicking outside

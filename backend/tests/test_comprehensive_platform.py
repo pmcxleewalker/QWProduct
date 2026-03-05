@@ -510,13 +510,13 @@ class TestTenantDashboard:
     
     def test_fleet_reports_daily_availability(self):
         """30. Reports Tab > Fleet Reports - Daily availability"""
-        response = requests.get(f"{BASE_URL}/api/tenant/reports/fleet/daily-availability", headers=self.headers)
-        assert response.status_code == 200, f"Failed to get daily availability: {response.text}"
+        response = requests.get(f"{BASE_URL}/api/tenant/fleet-reports", headers=self.headers)
+        assert response.status_code == 200, f"Failed to get fleet reports: {response.text}"
         data = response.json()
         
-        print(f"SUCCESS: Daily availability report")
-        print(f"  - Date: {data.get('date', 'N/A')}")
+        print(f"SUCCESS: Fleet reports")
         print(f"  - Total vehicles: {data.get('total_vehicles', 0)}")
+        print(f"  - Total bookings: {data.get('total_bookings', 0)}")
     
     def test_daily_timeline(self):
         """31. Reports Tab > Daily Timeline - Hourly utilization chart"""

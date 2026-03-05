@@ -125,11 +125,11 @@ const TenantLogin = () => {
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
           {/* Header with Tenant Branding and Logo */}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-center">
-            <div className="bg-white rounded-xl px-8 py-4 inline-block mb-3">
+            <div className="bg-white rounded-xl px-4 py-2 inline-block mb-3">
               <img 
                 src="/quick-wing-logo.png" 
                 alt="Quick Wing" 
-                className="h-16 w-auto object-contain"
+                className="h-20 w-auto object-contain"
                 data-testid="tenant-login-title"
               />
             </div>

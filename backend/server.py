@@ -2049,9 +2049,14 @@ async def create_tenant_user(
         
         return {"message": "User added to tenant", "user_id": existing["id"], "temporary_password": None}
     
-    # Generate temporary password for new users
-    alphabet = string.ascii_letters + string.digits
-    temp_password = user_data.password if user_data.password else ''.join(secrets.choice(alphabet) for _ in range(10))
+    # Generate temporary password for new users: firstname + "123"
+    # Extract first name from email (before @ and before any dots) or from name field
+    if user_data.password:
+        temp_password = user_data.password
+    else:
+        email_prefix = user_data.email.split('@')[0]
+        first_name = email_prefix.split('.')[0] if '.' in email_prefix else email_prefix
+        temp_password = f"{first_name}123"
     
     # Create new user with require_password_change flag
     user_id = str(uuid.uuid4())

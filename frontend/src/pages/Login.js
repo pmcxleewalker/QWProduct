@@ -72,12 +72,12 @@ const Login = () => {
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Header with Logo */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-center">
-            <div className="bg-white rounded-xl p-3 inline-block mb-3 shadow-lg">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-8 text-center">
+            <div className="bg-white rounded-xl p-4 inline-block mb-4 shadow-lg">
               <img 
                 src="/quick-wing-logo.png" 
                 alt="Quick Wing" 
-                className="h-12 w-auto object-contain"
+                className="h-16 w-auto object-contain"
               />
             </div>
             <h1 className="text-2xl font-bold text-white" data-testid="login-title">

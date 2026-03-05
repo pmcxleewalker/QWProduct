@@ -524,9 +524,9 @@ class TestTenantDashboard:
         assert response.status_code == 200, f"Failed to get daily timeline: {response.text}"
         data = response.json()
         
-        assert "hours" in data
-        print(f"SUCCESS: Daily timeline - {len(data['hours'])} hours")
-        print(f"  - Total fleet: {data.get('total_fleet', 0)}")
+        assert "timeline" in data
+        print(f"SUCCESS: Daily timeline - {len(data['timeline'])} hours")
+        print(f"  - Total fleet: {data.get('available_fleet', 0)}")
     
     def test_announcements(self):
         """32-33. Announcements Tab - Create and view announcements"""

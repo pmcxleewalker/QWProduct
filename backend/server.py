@@ -1982,7 +1982,12 @@ async def create_platform_user(
         ip_address=request.client.host if request and request.client else None
     )
     
-    return {"message": "User created successfully", "user_id": user_id}
+    return {
+        "message": "User created successfully", 
+        "user_id": user_id,
+        "temporary_password": password,
+        "must_change_password": True
+    }
 
 
 @api_router.get("/platform/users")

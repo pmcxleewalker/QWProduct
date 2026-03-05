@@ -3,11 +3,23 @@ import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Calendar, Settings, User, BarChart3, FileSpreadsheet } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-const MobileBottomNav = () => {
+const MobileBottomNav = ({ tenantSlug }) => {
   const location = useLocation();
   const { user, activeTenant, isTenantAdmin } = useAuth();
   
-  const isActive = (path) => location.pathname === path || location.pathname.endsWith(path);
+  // Get the base path for tenant-scoped navigation
+  const basePath = tenantSlug ? `/${tenantSlug}` : (activeTenant?.tenant_slug ? `/${activeTenant.tenant_slug}` : '');
+  
+  // Helper function to build tenant-scoped paths
+  const getTenantPath = (path) => {
+    if (path === '/') return basePath || '/';
+    return `${basePath}${path}`;
+  };
+  
+  const isActive = (path) => {
+    const fullPath = getTenantPath(path);
+    return location.pathname === fullPath || location.pathname === path || location.pathname.endsWith(path);
+  };
   
   const isAdmin = isTenantAdmin ? isTenantAdmin() : (
     activeTenant?.role === 'admin' || 
@@ -17,15 +29,15 @@ const MobileBottomNav = () => {
   );
   
   const navItems = [
-    { path: '/', icon: LayoutDashboard, label: 'Home' },
-    { path: '/live-sheet', icon: FileSpreadsheet, label: 'Live' },
-    { path: '/bookings', icon: Calendar, label: 'Bookings' },
+    { path: getTenantPath('/'), icon: LayoutDashboard, label: 'Home' },
+    { path: getTenantPath('/live-sheet'), icon: FileSpreadsheet, label: 'Live' },
+    { path: getTenantPath('/bookings'), icon: Calendar, label: 'Bookings' },
   ];
   
   // Add Admin link for admin users
   if (isAdmin) {
-    navItems.push({ path: '/reports', icon: BarChart3, label: 'Reports' });
-    navItems.push({ path: '/admin', icon: Settings, label: 'Admin' });
+    navItems.push({ path: getTenantPath('/reports'), icon: BarChart3, label: 'Reports' });
+    navItems.push({ path: getTenantPath('/admin'), icon: Settings, label: 'Admin' });
   }
 
   return (

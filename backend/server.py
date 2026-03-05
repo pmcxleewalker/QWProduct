@@ -422,9 +422,11 @@ async def create_tenant(
     master_email = tenant_data.master_admin_email or f"admin.{tenant_data.slug}@quickwing.com"
     master_name = tenant_data.master_admin_name or f"{tenant_data.name} Admin"
     
-    # Generate secure random password (12 chars: letters + digits)
-    alphabet = string.ascii_letters + string.digits
-    master_password = ''.join(secrets.choice(alphabet) for _ in range(12))
+    # Default password rule: firstname + "123" (e.g., admin123, john123)
+    # Extract first name from email (before @ and before any dots)
+    email_prefix = master_email.split('@')[0]
+    first_name = email_prefix.split('.')[0] if '.' in email_prefix else email_prefix
+    master_password = f"{first_name}123"
     
     # Check if user with this email already exists
     existing_user = await db.users.find_one({"email": master_email}, {"_id": 0})
@@ -434,7 +436,7 @@ async def create_tenant(
         user_id = existing_user["id"]
         master_password = None  # Don't show password for existing user
     else:
-        # Create new Master Admin user
+        # Create new Master Admin user with must_change_password flag
         user_id = str(uuid.uuid4())
         master_user = {
             "id": user_id,
@@ -442,6 +444,7 @@ async def create_tenant(
             "name": master_name,
             "password_hash": get_password_hash(master_password),
             "is_active": True,
+            "must_change_password": True,  # Force password change on first login
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         await db.users.insert_one(master_user)
@@ -455,6 +458,25 @@ async def create_tenant(
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.memberships.insert_one(membership)
+    
+    # AUTO-ADD SUPERADMIN AS ADMIN FOR REMOTE SUPPORT
+    # superadmin@quickwing.com gets admin access to every franchise for support
+    superadmin = await db.users.find_one({"email": "superadmin@quickwing.com"}, {"_id": 0})
+    if superadmin:
+        # Check if superadmin already has membership to this tenant
+        existing_sa_membership = await db.memberships.find_one({
+            "user_id": superadmin["id"],
+            "tenant_id": tenant_id
+        })
+        if not existing_sa_membership:
+            sa_membership = {
+                "id": str(uuid.uuid4()),
+                "user_id": superadmin["id"],
+                "tenant_id": tenant_id,
+                "role": UserRole.ADMIN.value,  # Admin role for support access
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.memberships.insert_one(sa_membership)
     
     # Log audit event
     await audit_service.log_tenant_action(

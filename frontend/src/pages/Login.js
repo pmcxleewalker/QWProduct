@@ -72,18 +72,14 @@ const Login = () => {
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Header with Logo */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-8 text-center">
-            <div className="bg-white rounded-xl p-4 inline-block mb-4 shadow-lg">
-              <img 
-                src="/quick-wing-logo.png" 
-                alt="Quick Wing" 
-                className="h-16 w-auto object-contain"
-              />
-            </div>
-            <h1 className="text-2xl font-bold text-white" data-testid="login-title">
-              {process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}
-            </h1>
-            <p className="text-blue-100 text-sm mt-1">Fleet Management Platform</p>
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-center">
+            <img 
+              src="/quick-wing-logo.png" 
+              alt="Quick Wing" 
+              className="h-20 w-auto object-contain mx-auto mb-2"
+              data-testid="login-title"
+            />
+            <p className="text-blue-100 text-sm">Fleet Management Platform</p>
             {tenantInfo && (
               <div className="mt-3 inline-flex items-center px-3 py-1 bg-white/20 rounded-full">
                 <Building2 size={14} className="mr-2 text-blue-100" />

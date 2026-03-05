@@ -519,39 +519,41 @@ const PlatformAdmin = () => {
 
       {/* Header */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <img 
-                src="/quick-wing-logo.png" 
-                alt="Quick Wing" 
-                className="h-14 w-auto object-contain"
-              />
-              <div className="border-l border-slate-600 pl-4">
-                <h1 className="text-xl font-bold tracking-tight">Franchise Command Centre</h1>
-                <p className="text-slate-400 text-sm">Platform Administration</p>
+            <div className="flex items-center space-x-3">
+              <div className="bg-white rounded-lg p-1.5 shadow-lg">
+                <img 
+                  src="/quick-wing-logo.png" 
+                  alt="Quick Wing" 
+                  className="h-10 w-auto object-contain"
+                />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold tracking-tight">Franchise Command Centre</h1>
+                <p className="text-slate-400 text-xs">Platform Administration</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <button
                 onClick={fetchData}
-                className="flex items-center space-x-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors"
+                className="flex items-center space-x-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm transition-colors"
               >
-                <RefreshCw size={16} />
+                <RefreshCw size={14} />
                 <span>Refresh</span>
               </button>
               <div className="flex items-center space-x-2 pl-3 border-l border-slate-600">
-                <span className="text-sm text-slate-300">{user?.email}</span>
-                <span className="px-3 py-1 bg-emerald-600 rounded-full text-xs font-medium">
+                <span className="text-xs text-slate-300">{user?.email}</span>
+                <span className="px-2 py-1 bg-emerald-600 rounded-full text-xs font-medium">
                   {isSuperAdmin() ? 'Super Admin' : 'Master Admin'}
                 </span>
               </div>
               <button
                 onClick={logout}
-                className="flex items-center space-x-2 px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm transition-colors"
+                className="flex items-center space-x-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded-lg text-sm transition-colors"
                 data-testid="logout-button"
               >
-                <LogOut size={16} />
+                <LogOut size={14} />
                 <span>Logout</span>
               </button>
             </div>

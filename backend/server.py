@@ -3512,19 +3512,29 @@ async def get_daily_availability_timeline(
         
         # Count vehicles in use during this hour
         vehicles_in_use = set()
+        # Make hour_start and hour_end timezone-aware for comparison
+        hour_start_aware = hour_start.replace(tzinfo=timezone.utc)
+        hour_end_aware = hour_end.replace(tzinfo=timezone.utc)
+        
         for booking in bookings:
             try:
-                booking_start = datetime.fromisoformat(booking["start_time"].replace("Z", "+00:00"))
-                booking_end = datetime.fromisoformat(booking["end_time"].replace("Z", "+00:00"))
+                # Parse booking times and ensure they are timezone-aware
+                start_str = booking["start_time"].replace("Z", "+00:00")
+                end_str = booking["end_time"].replace("Z", "+00:00")
+                
+                booking_start = datetime.fromisoformat(start_str)
+                booking_end = datetime.fromisoformat(end_str)
+                
+                # Make timezone-aware if naive
+                if booking_start.tzinfo is None:
+                    booking_start = booking_start.replace(tzinfo=timezone.utc)
+                if booking_end.tzinfo is None:
+                    booking_end = booking_end.replace(tzinfo=timezone.utc)
                 
                 # Check if booking overlaps with this hour
-                # Make hour_start and hour_end timezone-aware for comparison
-                hour_start_aware = hour_start.replace(tzinfo=timezone.utc)
-                hour_end_aware = hour_end.replace(tzinfo=timezone.utc)
-                
                 if booking_start <= hour_end_aware and booking_end >= hour_start_aware:
                     vehicles_in_use.add(booking["car_id"])
-            except (ValueError, KeyError):
+            except (ValueError, KeyError, TypeError):
                 continue
         
         in_use_count = len(vehicles_in_use)

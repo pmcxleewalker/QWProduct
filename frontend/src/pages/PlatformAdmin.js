@@ -518,16 +518,18 @@ const PlatformAdmin = () => {
       )}
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-                <Crown size={24} />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Franchise Command Centre</h1>
-                <p className="text-slate-300 text-sm">Platform Administration</p>
+              <img 
+                src="/quick-wing-logo.png" 
+                alt="Quick Wing" 
+                className="h-14 w-auto object-contain"
+              />
+              <div className="border-l border-slate-600 pl-4">
+                <h1 className="text-xl font-bold tracking-tight">Franchise Command Centre</h1>
+                <p className="text-slate-400 text-sm">Platform Administration</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -538,10 +540,12 @@ const PlatformAdmin = () => {
                 <RefreshCw size={16} />
                 <span>Refresh</span>
               </button>
-              <span className="text-sm text-slate-300">{user?.email}</span>
-              <span className="px-3 py-1 bg-blue-600 rounded-full text-xs font-medium">
-                {isSuperAdmin() ? 'Super Admin' : 'Master Admin'}
-              </span>
+              <div className="flex items-center space-x-2 pl-3 border-l border-slate-600">
+                <span className="text-sm text-slate-300">{user?.email}</span>
+                <span className="px-3 py-1 bg-emerald-600 rounded-full text-xs font-medium">
+                  {isSuperAdmin() ? 'Super Admin' : 'Master Admin'}
+                </span>
+              </div>
               <button
                 onClick={logout}
                 className="flex items-center space-x-2 px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm transition-colors"

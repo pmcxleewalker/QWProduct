@@ -565,6 +565,17 @@ const Navigation = ({ tenantSlug }) => {
                     </span>
                   </div>
                 )}
+                {/* Command Centre Button for Super Admin - Desktop */}
+                {user?.role === 'super_admin' && (
+                  <Link
+                    to="/platform"
+                    className="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all shadow-sm"
+                    title="Franchise Command Centre"
+                  >
+                    <Building2 size={16} />
+                    <span>Command Centre</span>
+                  </Link>
+                )}
                 {/* Show change password only for staff */}
                 {!isTenantAdmin() && (
                   <button

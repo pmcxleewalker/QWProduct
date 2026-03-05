@@ -7,7 +7,7 @@ import requests
 import os
 from datetime import datetime, timedelta
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://saas-fleet-mgmt.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://quickwing-saas.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 SUPER_ADMIN = {"email": "superadmin@quickwing.com", "password": "Super123"}

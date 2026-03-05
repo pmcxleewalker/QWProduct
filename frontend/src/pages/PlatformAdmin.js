@@ -1451,17 +1451,19 @@ const PlatformAdmin = () => {
                                   <div className="flex items-center space-x-1">
                                     <button
                                       onClick={() => {
-                                        setEditRoleData({
+                                        setChangeRoleData({
+                                          userId: userDetails.user.id,
+                                          userEmail: userDetails.user.email,
                                           tenantId: m.tenant_id,
                                           tenantName: m.tenant_name,
                                           currentRole: m.role,
-                                          newRole: m.role,
+                                          newRole: '',
                                           adminPassword: ''
                                         });
-                                        setShowEditRoleModal(true);
+                                        setShowChangeRoleModal(true);
                                       }}
-                                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
-                                      title="Edit Role"
+                                      className="p-1.5 text-purple-600 hover:bg-purple-50 rounded"
+                                      title="Change Role"
                                     >
                                       <Edit2 size={14} />
                                     </button>

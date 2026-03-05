@@ -123,10 +123,14 @@ const TenantLogin = () => {
       <div className="w-full max-w-md">
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header with Tenant Branding */}
+          {/* Header with Tenant Branding and Logo */}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-center">
-            <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <Car size={28} className="text-white" />
+            <div className="bg-white rounded-xl p-2.5 inline-block mb-3 shadow-lg">
+              <img 
+                src="/quick-wing-logo.png" 
+                alt="Quick Wing" 
+                className="h-10 w-auto object-contain"
+              />
             </div>
             <h1 className="text-2xl font-bold text-white" data-testid="tenant-login-title">
               {tenantInfo?.name || 'Quick Wing'}

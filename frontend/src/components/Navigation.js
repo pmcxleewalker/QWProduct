@@ -6,7 +6,7 @@ import { liftRequestAPI } from '../api/api';
 import ChangePasswordModal from './ChangePasswordModal';
 import usePushNotifications from '../hooks/usePushNotifications';
 
-const Navigation = () => {
+const Navigation = ({ tenantSlug }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, isTenantAdmin, isPlatformAdmin, isImpersonating, stopImpersonation, activeTenant } = useAuth();
@@ -19,6 +19,16 @@ const Navigation = () => {
   const notificationRef = useRef(null);
   const deploymentRef = useRef(null);
   const seenRequestIds = useRef(new Set());
+  
+  // Get the base path for tenant-scoped navigation
+  // Use tenantSlug prop first, then activeTenant, then fallback
+  const basePath = tenantSlug ? `/${tenantSlug}` : (activeTenant?.tenant_slug ? `/${activeTenant.tenant_slug}` : '');
+  
+  // Helper function to build tenant-scoped paths
+  const getTenantPath = (path) => {
+    if (path === '/') return basePath || '/';
+    return `${basePath}${path}`;
+  };
   
   // Deployment updates for admins
   const deploymentUpdates = [

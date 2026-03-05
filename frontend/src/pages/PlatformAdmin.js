@@ -1359,6 +1359,21 @@ const PlatformAdmin = () => {
                           >
                             <Key size={14} />
                           </button>
+                          <button
+                            onClick={() => {
+                              setDeleteUserData({
+                                userId: u.id,
+                                userEmail: u.email,
+                                adminPassword: ''
+                              });
+                              setShowDeleteUserModal(true);
+                            }}
+                            className="flex items-center space-x-1 px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100"
+                            title="Delete User"
+                            data-testid={`delete-user-${u.id}`}
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </td>
                     </tr>

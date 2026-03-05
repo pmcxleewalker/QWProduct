@@ -646,11 +646,14 @@ class TestVehicleManagement:
         assert response.status_code == 200, f"Failed to add vehicle: {response.text}"
         data = response.json()
         
-        assert data["name"] == vehicle_data["name"]
-        assert data["registration"] == vehicle_data["registration"]
+        # Response format is {"message": "...", "vehicle": {...}}
+        assert "vehicle" in data
+        vehicle = data["vehicle"]
+        assert vehicle["name"] == vehicle_data["name"]
+        assert vehicle["registration"] == vehicle_data["registration"]
         
-        print(f"SUCCESS: Added vehicle {data['name']}")
-        return data["id"]
+        print(f"SUCCESS: Added vehicle {vehicle['name']}")
+        return vehicle["id"]
     
     def test_edit_vehicle(self):
         """26. Fleet Tab > Manage Vehicles - Edit vehicle"""

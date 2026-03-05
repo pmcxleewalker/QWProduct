@@ -1,0 +1,101 @@
+{
+  "identity": {
+    "name": "Quick Wing",
+    "tone": "Ultra-Professional, Executive, Precision, Automotive",
+    "archetype": "The Performance Pro (Archetype 2) mixed with Swiss High-Contrast (Archetype 4)",
+    "keywords": ["Fleet", "Precision", "Control", "Executive", "Silver", "Aero"]
+  },
+  "typography": {
+    "primary_font": "Inter",
+    "secondary_font": "Barlow",
+    "mono_font": "JetBrains Mono",
+    "scale": {
+      "h1": "text-4xl md:text-5xl font-bold tracking-tight",
+      "h2": "text-3xl font-semibold tracking-tight",
+      "h3": "text-2xl font-medium tracking-tight",
+      "body": "text-base leading-relaxed text-slate-600",
+      "caption": "text-sm text-slate-500 uppercase tracking-widest"
+    },
+    "instructions": "Use Barlow for all Headings (h1-h3) to give an automotive/dashboard feel. Use Inter for body text for maximum legibility."
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "DEFAULT": "#0B1120",
+        "foreground": "#FFFFFF"
+      },
+      "secondary": {
+        "DEFAULT": "#F1F5F9",
+        "foreground": "#0F172A"
+      },
+      "accent": {
+        "DEFAULT": "#3B82F6",
+        "foreground": "#FFFFFF"
+      },
+      "background": "#F8FAFC",
+      "surface": "#FFFFFF",
+      "border": "#E2E8F0",
+      "muted": "#64748B"
+    },
+    "gradients": {
+      "subtle_silver": "bg-gradient-to-b from-white to-slate-50",
+      "metallic_sheen": "bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200"
+    },
+    "semantic": {
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444",
+      "info": "#3B82F6"
+    }
+  },
+  "layout": {
+    "structure": "Centered Card Layout with 'Floating' Header or Split Screen (Brand Left, Form Right)",
+    "spacing": {
+      "container_padding": "p-8 md:p-12",
+      "element_gap": "gap-6",
+      "section_gap": "gap-12"
+    },
+    "grid_system": "Grid cols-1 for mobile, max-w-md mx-auto for login card."
+  },
+  "components": {
+    "LoginHeader": {
+      "description": "The focal point. Must look 'Ultra Professional'.",
+      "style": "Clean, minimalist, possibly glassmorphic or solid white with a subtle bottom border. Avoid the old 'blue-to-indigo' gradient block. Use whitespace to frame the logo.",
+      "logo_treatment": "The logo should have plenty of breathing room. If the logo text is dark blue, place it on White or Silver. If the logo is light, place it on Deep Navy.",
+      "instructions": "Redesign the header to be a distinct, premium section at the top of the login card. Use a subtle 'metallic' gradient (very light grey/silver) or pure white. Add a delicate bottom border."
+    },
+    "LoginForm": {
+      "style": "Clean inputs with 'ring' focus states. Primary button should be Deep Navy or Electric Blue."
+    },
+    "Background": {
+      "style": "Use a subtle abstract automotive background or a clean, high-end gradient.",
+      "image_url": "https://images.unsplash.com/photo-1665579213714-5470c2f13e45?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjh8MHwxfHNlYXJjaHw0fHxhYnN0cmFjdCUyMHNpbHZlciUyMGJsdWUlMjBtZXRhbGxpYyUyMGF1dG9tb3RpdmUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3Mjc1MzMwNHww&ixlib=rb-4.1.0&q=85",
+      "overlay": "bg-slate-900/50 (if using image) or bg-slate-50 (if solid)"
+    }
+  },
+  "visual_enhancers": {
+    "shadows": "shadow-xl shadow-slate-200/50",
+    "borders": "border border-slate-200",
+    "radius": "rounded-xl",
+    "glassmorphism": "backdrop-blur-xl bg-white/80 border-white/20"
+  },
+  "assets": {
+    "logo_placeholder": "If actual SVG is missing, create a composite logo using Lucide-React icons (Wing or Activity) + Text. Style: Icon in Blue (#3B82F6) + Silver (#94A3B8), Text in Dark Navy (#0F172A).",
+    "icons": "Lucide React"
+  },
+  "instructions_to_main_agent": [
+    "1. Install 'lucide-react' if not present.",
+    "2. Modify the Login page to use a 'Card' based layout.",
+    "3. The 'Header' is the top section of this card.",
+    "4. Remove the old 'blue-to-indigo' gradient. Replace it with a 'Premium White/Silver' aesthetic.",
+    "5. Ensure the 'Quick Wing' logo is prominent and aligned with the 'Ultra Professional' goal.",
+    "6. Use the provided car grill image as a subtle background for the entire page (with heavy overlay) or as a side panel if doing a split layout.",
+    "7. Use 'Barlow' font for the 'Quick Wing' and 'Car Fleet Management' text to match the automotive theme."
+  ],
+  "universal_guidelines": [
+    "Do not use generic gradients.",
+    "Ensure high contrast for accessibility.",
+    "Use 'data-testid' on all inputs and buttons.",
+    "Add micro-interactions (hover, focus) to all elements."
+  ]
+}

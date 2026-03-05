@@ -1926,13 +1926,22 @@ async def create_platform_user(
     if existing:
         raise HTTPException(status_code=400, detail="User with this email already exists")
     
+    # Generate password: if provided use it, otherwise use firstname + "123"
+    if user_data.password:
+        password = user_data.password
+    else:
+        email_prefix = user_data.email.split('@')[0]
+        first_name = email_prefix.split('.')[0] if '.' in email_prefix else email_prefix
+        password = f"{first_name}123"
+    
     user_id = str(uuid.uuid4())
     user = {
         "id": user_id,
         "email": user_data.email,
         "name": user_data.name,
-        "password_hash": get_password_hash(user_data.password),
+        "password_hash": get_password_hash(password),
         "is_active": True,
+        "must_change_password": True,  # Force password change on first login
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     

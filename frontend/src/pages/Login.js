@@ -71,10 +71,14 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Header */}
+          {/* Header with Logo */}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-center">
-            <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <Car size={28} className="text-white" />
+            <div className="bg-white rounded-xl p-3 inline-block mb-3 shadow-lg">
+              <img 
+                src="/quick-wing-logo.png" 
+                alt="Quick Wing" 
+                className="h-12 w-auto object-contain"
+              />
             </div>
             <h1 className="text-2xl font-bold text-white" data-testid="login-title">
               {process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}

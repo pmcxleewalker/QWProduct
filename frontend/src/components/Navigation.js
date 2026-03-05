@@ -387,6 +387,17 @@ const Navigation = ({ tenantSlug }) => {
                 {isPlatformAdmin() ? '👑 Master Admin' : 'Admin'}
               </span>
             )}
+            {/* Command Centre Button for Super Admin */}
+            {user?.role === 'super_admin' && (
+              <Link
+                to="/platform"
+                className="flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all shadow-sm"
+                title="Franchise Command Centre"
+              >
+                <Building size={14} />
+                <span className="hidden sm:inline">Command Centre</span>
+              </Link>
+            )}
             <button
               onClick={() => setShowChangePassword(true)}
               className="flex items-center p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"

@@ -684,7 +684,7 @@ class TestVehicleManagement:
         create_response = requests.post(f"{BASE_URL}/api/vehicles", json=vehicle_data, headers=self.headers)
         
         if create_response.status_code == 200:
-            vehicle_id = create_response.json()["id"]
+            vehicle_id = create_response.json()["vehicle"]["id"]
             
             # Delete vehicle
             response = requests.delete(f"{BASE_URL}/api/vehicles/{vehicle_id}", headers=self.headers)

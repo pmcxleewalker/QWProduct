@@ -159,14 +159,11 @@ async def login(credentials: UserLogin, request: Request):
                     default_tenant_id = tenant["id"]
                     user_role = UserRole(membership["role"])
     
-    # Check for super/master admin (no tenant membership required)
-    super_membership = await db.memberships.find_one({
-        "user_id": user["id"],
-        "role": {"$in": [UserRole.SUPER_ADMIN.value, UserRole.MASTER_ADMIN.value]}
-    }, {"_id": 0})
-    
-    if super_membership:
-        user_role = UserRole(super_membership["role"])
+    # Check for super/master admin from USER record (not memberships)
+    # Super admin role is stored directly on the user document
+    user_db_role = user.get("role")
+    if user_db_role in [UserRole.SUPER_ADMIN.value, UserRole.MASTER_ADMIN.value]:
+        user_role = UserRole(user_db_role)
     
     # Build token payload
     token_data = {

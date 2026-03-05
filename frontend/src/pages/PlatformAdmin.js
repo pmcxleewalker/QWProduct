@@ -365,6 +365,46 @@ const PlatformAdmin = () => {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!deleteUserData.userId || !deleteUserData.adminPassword) return;
+    
+    try {
+      await axios.delete(`${API}/platform/users/${deleteUserData.userId}`, {
+        data: { admin_password: deleteUserData.adminPassword }
+      });
+      setSuccess(`User "${deleteUserData.userEmail}" deleted successfully`);
+      setShowDeleteUserModal(false);
+      setDeleteUserData({ userId: '', userEmail: '', adminPassword: '' });
+      fetchData();
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail;
+      setError(typeof errorMsg === 'string' ? errorMsg : 'Failed to delete user');
+    }
+  };
+
+  const handleChangeUserRole = async () => {
+    if (!changeRoleData.userId || !changeRoleData.newRole || !changeRoleData.adminPassword) return;
+    
+    try {
+      await axios.put(`${API}/platform/users/${changeRoleData.userId}/change-role`, {
+        tenant_id: changeRoleData.tenantId,
+        new_role: changeRoleData.newRole,
+        admin_password: changeRoleData.adminPassword
+      });
+      setSuccess(`Role changed to "${changeRoleData.newRole}" for ${changeRoleData.userEmail}`);
+      setShowChangeRoleModal(false);
+      setChangeRoleData({ userId: '', userEmail: '', currentRole: '', newRole: '', tenantId: '', tenantName: '', adminPassword: '' });
+      fetchData();
+      // Refresh user details if viewing
+      if (userDetails && userDetails.user?.id === changeRoleData.userId) {
+        fetchUserDetails(changeRoleData.userId);
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail;
+      setError(typeof errorMsg === 'string' ? errorMsg : 'Failed to change user role');
+    }
+  };
+
   const handleImpersonate = async (tenantId) => {
     if (!window.confirm('You are about to impersonate this tenant. All actions will be logged.')) return;
     

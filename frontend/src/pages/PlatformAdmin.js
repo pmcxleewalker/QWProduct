@@ -63,6 +63,14 @@ const PlatformAdmin = () => {
   const [editRoleData, setEditRoleData] = useState({ tenantId: '', tenantName: '', currentRole: '', newRole: '', adminPassword: '' });
   const [removeFromTenantData, setRemoveFromTenantData] = useState({ tenantId: '', tenantName: '', adminPassword: '' });
   const [addToTenantData, setAddToTenantData] = useState({ tenantId: '', role: 'staff', adminPassword: '' });
+  
+  // Delete user state
+  const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
+  const [deleteUserData, setDeleteUserData] = useState({ userId: '', userEmail: '', adminPassword: '' });
+  
+  // Change user role state  
+  const [showChangeRoleModal, setShowChangeRoleModal] = useState(false);
+  const [changeRoleData, setChangeRoleData] = useState({ userId: '', userEmail: '', currentRole: '', newRole: '', tenantId: '', tenantName: '', adminPassword: '' });
 
   // Reports & Billing state
   const [reportsTab, setReportsTab] = useState('executive');

@@ -199,7 +199,9 @@ const PlatformAdmin = () => {
       setEditSettings(false);
       fetchReportsData();
     } catch (err) {
-      setError('Failed to save settings');
+      console.error('Save settings error:', err.response?.data || err.message);
+      const errorMsg = getErrorMessage(err, 'Failed to save settings');
+      setError(errorMsg);
     }
   };
 

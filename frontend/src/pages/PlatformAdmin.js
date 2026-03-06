@@ -194,10 +194,13 @@ const PlatformAdmin = () => {
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${API}/platform/settings`, settingsForm);
-      setSuccess('Settings saved successfully');
+      const response = await axios.put(`${API}/platform/settings`, settingsForm);
+      // Close the edit form first
       setEditSettings(false);
-      fetchReportsData();
+      // Update the displayed settings with the response
+      setCompanySettings(response.data.settings);
+      setSettingsForm(response.data.settings || {});
+      setSuccess('Settings saved successfully');
     } catch (err) {
       console.error('Save settings error:', err.response?.data || err.message);
       const errorMsg = getErrorMessage(err, 'Failed to save settings');

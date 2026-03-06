@@ -1,145 +1,56 @@
-PROPRIETARY SOFTWARE LICENSE AGREEMENT
-=======================================
+PROPRIETARY SOFTWARE LICENSE
 
-Quick Wing Fleet Management System
-Copyright (c) 2026 Lee Walker. All Rights Reserved.
+Copyright (c) 2025 Lee Walker. All Rights Reserved.
 
-NOTICE TO USER:
+QUICK WING - Car Fleet Management Platform
 
-This is a legally binding agreement between you ("User", "Licensee") and Lee Walker 
-("Owner", "Licensor") for the use of Quick Wing Fleet Management System ("Software").
+================================================================================
 
-BY INSTALLING, COPYING, OR OTHERWISE USING THIS SOFTWARE, YOU ACKNOWLEDGE THAT YOU 
-HAVE READ, UNDERSTOOD, AND AGREE TO BE BOUND BY THE TERMS OF THIS LICENSE AGREEMENT. 
-IF YOU DO NOT AGREE TO THESE TERMS, DO NOT INSTALL OR USE THE SOFTWARE.
+NOTICE: This software and associated documentation files (the "Software") are
+the proprietary property of Lee Walker, established December 2025.
 
---------------------------------------------------------------------------------
+NO LICENSE IS GRANTED
 
-1. GRANT OF LICENSE
+This Software is proprietary and confidential. No license, express or implied,
+is granted to any party to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software.
 
-Subject to the terms and conditions of this Agreement, Licensor grants to Licensee a 
-limited, non-exclusive, non-transferable, revocable license to use the Software solely 
-for internal fleet management operations within Licensee's authorized organization.
+RESTRICTIONS
 
-2. RESTRICTIONS
+You may NOT:
+- Use the Software for any purpose without explicit written permission
+- Copy, modify, or distribute the Software or any portion thereof
+- Reverse engineer, decompile, or disassemble the Software
+- Remove or alter any proprietary notices, labels, or marks on the Software
+- Use the Software to create derivative works
+- Transfer, assign, or sublicense your rights (if any) in the Software
 
-Licensee shall NOT:
+CONFIDENTIALITY
 
-   a) Copy, reproduce, or duplicate the Software or any portion thereof;
-   
-   b) Modify, adapt, translate, reverse engineer, decompile, disassemble, or create 
-      derivative works based on the Software;
-   
-   c) Distribute, sell, lease, rent, sublicense, or otherwise transfer the Software 
-      or any rights therein to any third party;
-   
-   d) Remove, alter, or obscure any proprietary notices, labels, or marks on or in 
-      the Software;
-   
-   e) Use the Software for any unlawful purpose or in violation of any applicable 
-      laws or regulations;
-   
-   f) Use the Software to develop any product or service that competes with the 
-      Software or any other product or service offered by Licensor;
-   
-   g) Permit any third party to do any of the foregoing.
+The Software contains trade secrets and proprietary information belonging to
+Lee Walker. You agree to maintain the confidentiality of the Software and not
+to disclose it to any third party without prior written consent.
 
-3. OWNERSHIP AND INTELLECTUAL PROPERTY
+OWNERSHIP
 
-The Software, including but not limited to all source code, object code, algorithms, 
-data structures, user interfaces, graphics, documentation, and all other components, 
-is and shall remain the sole and exclusive property of Lee Walker.
+Lee Walker retains all right, title, and interest in and to the Software,
+including all intellectual property rights therein. This notice does not grant
+you any rights to use the Quick Wing name, logo, or trademarks.
 
-This Agreement does not convey to Licensee any ownership interest in or to the Software, 
-but only a limited right of use revocable in accordance with the terms of this Agreement.
+DISCLAIMER
 
-All rights not expressly granted herein are reserved by Licensor.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED. IN NO EVENT SHALL LEE WALKER BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+OTHER LIABILITY ARISING FROM THE SOFTWARE.
 
-4. CONFIDENTIALITY
+GOVERNING LAW
 
-Licensee acknowledges that the Software contains trade secrets and confidential 
-information of Licensor. Licensee agrees to maintain the confidentiality of the 
-Software and not to disclose the Software or any information derived therefrom to 
-any third party without the prior written consent of Licensor.
+This license shall be governed by and construed in accordance with the laws
+of Ireland.
 
-5. TERM AND TERMINATION
+================================================================================
 
-This Agreement is effective until terminated. Licensor may terminate this Agreement 
-at any time, with or without cause, upon written notice to Licensee. Upon termination:
+For licensing inquiries, please contact the owner.
 
-   a) All rights granted to Licensee under this Agreement shall immediately cease;
-   
-   b) Licensee shall immediately cease all use of the Software;
-   
-   c) Licensee shall destroy all copies of the Software in its possession or control;
-   
-   d) Sections 3, 4, 6, 7, and 8 shall survive termination.
-
-6. DISCLAIMER OF WARRANTIES
-
-THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
-PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.
-
-LICENSOR DOES NOT WARRANT THAT THE SOFTWARE WILL MEET LICENSEE'S REQUIREMENTS, THAT 
-THE OPERATION OF THE SOFTWARE WILL BE UNINTERRUPTED OR ERROR-FREE, OR THAT DEFECTS 
-IN THE SOFTWARE WILL BE CORRECTED.
-
-7. LIMITATION OF LIABILITY
-
-IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, 
-CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, 
-LOSS OF DATA, BUSINESS INTERRUPTION, OR ANY OTHER COMMERCIAL DAMAGES OR LOSSES, 
-ARISING OUT OF OR RELATED TO THIS AGREEMENT OR THE USE OF OR INABILITY TO USE THE 
-SOFTWARE, REGARDLESS OF THE THEORY OF LIABILITY (CONTRACT, TORT, OR OTHERWISE) AND 
-EVEN IF LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
-
-IN NO EVENT SHALL LICENSOR'S TOTAL LIABILITY TO LICENSEE FOR ALL DAMAGES EXCEED THE 
-AMOUNT PAID BY LICENSEE FOR THE SOFTWARE.
-
-8. GOVERNING LAW AND JURISDICTION
-
-This Agreement shall be governed by and construed in accordance with the laws of 
-Ireland, without regard to its conflict of law principles.
-
-Any dispute arising out of or relating to this Agreement shall be subject to the 
-exclusive jurisdiction of the courts of Ireland.
-
-9. ENTIRE AGREEMENT
-
-This Agreement constitutes the entire agreement between the parties with respect to 
-the subject matter hereof and supersedes all prior or contemporaneous understandings 
-or agreements, whether written or oral, regarding such subject matter.
-
-10. AMENDMENTS
-
-This Agreement may not be amended or modified except by a written instrument signed 
-by both parties.
-
-11. SEVERABILITY
-
-If any provision of this Agreement is held to be invalid or unenforceable, such 
-provision shall be struck and the remaining provisions shall remain in full force 
-and effect.
-
-12. WAIVER
-
-The failure of either party to enforce any right or provision of this Agreement shall 
-not constitute a waiver of such right or provision.
-
---------------------------------------------------------------------------------
-
-ACKNOWLEDGMENT
-
-BY USING THE QUICK WING FLEET MANAGEMENT SYSTEM, YOU ACKNOWLEDGE THAT YOU HAVE READ 
-THIS LICENSE AGREEMENT, UNDERSTAND IT, AND AGREE TO BE BOUND BY ITS TERMS AND CONDITIONS.
-
---------------------------------------------------------------------------------
-
-Copyright (c) 2026 Lee Walker
-All Rights Reserved.
-
-Quick Wing Fleet Management System
-Proprietary Software - Unauthorized copying, distribution, or use is strictly prohibited.
-
-For inquiries, contact the software owner or your system administrator.
+Quick Wing - Established December 2025
+© 2025 Lee Walker. All Rights Reserved.

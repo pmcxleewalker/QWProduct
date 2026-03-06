@@ -46,9 +46,12 @@ const LoginRedirect = () => {
   
   // If authenticated, redirect based on role
   if (isAuthenticated && user) {
-    const isPlatformAdminUser = user.role === 'super_admin' || user.role === 'master_admin';
-    
-    if (isPlatformAdminUser && !hasTenantContext) {
+    // Super admin ALWAYS goes to platform command centre
+    if (user.role === 'super_admin') {
+      return <Navigate to="/platform" replace />;
+    }
+    // Master admin without tenant context goes to platform
+    if (user.role === 'master_admin' && !hasTenantContext) {
       return <Navigate to="/platform" replace />;
     }
     if (hasTenantContext) {

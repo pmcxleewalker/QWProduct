@@ -1079,7 +1079,7 @@ const PlatformAdmin = () => {
                         {tenant.status === 'active' ? (
                           <button
                             onClick={() => handleSuspendTenant(tenant.id)}
-                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                            className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg"
                             title="Suspend"
                           >
                             <Pause size={16} />
@@ -1093,6 +1093,17 @@ const PlatformAdmin = () => {
                             <Play size={16} />
                           </button>
                         )}
+                        <button
+                          onClick={() => {
+                            setTenantToDelete(tenant);
+                            setShowDeleteModal(true);
+                          }}
+                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                          title="Delete Franchise"
+                          data-testid={`delete-tenant-${tenant.id}`}
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </div>
                   </div>

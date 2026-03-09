@@ -752,20 +752,46 @@ const PlatformAdmin = () => {
         {/* Tenants Tab */}
         {activeTab === 'tenants' && (
           <div className="space-y-6">
-            {/* Header */}
+            {/* Header with Sub-tabs */}
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Manage Tenants</h2>
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                <Plus size={18} />
-                <span>Create Tenant</span>
-              </button>
+              <div className="flex items-center space-x-1 bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setTenantsSubTab('franchises')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    tenantsSubTab === 'franchises' 
+                      ? 'bg-white text-blue-600 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Building2 size={16} className="inline mr-2" />
+                  Franchises
+                </button>
+                <button
+                  onClick={() => setTenantsSubTab('admins')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    tenantsSubTab === 'admins' 
+                      ? 'bg-white text-blue-600 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Crown size={16} className="inline mr-2" />
+                  Admins
+                </button>
+              </div>
+              {tenantsSubTab === 'franchises' && (
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  <Plus size={18} />
+                  <span>Create Tenant</span>
+                </button>
+              )}
             </div>
 
-            {/* Create Tenant Form */}
-            {showCreateForm && (
+            {/* Franchises Sub-Tab */}
+            {tenantsSubTab === 'franchises' && (
+              <>
               <div className="bg-white rounded-xl p-6 shadow-sm border">
                 <h3 className="font-semibold text-gray-900 mb-4">Create New Franchise</h3>
                 <form onSubmit={handleCreateTenant} className="space-y-4">

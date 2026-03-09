@@ -1251,6 +1251,168 @@ const PlatformAdmin = () => {
                 </div>
               </div>
             )}
+              </>
+            )}
+
+            {/* Admins Sub-Tab */}
+            {tenantsSubTab === 'admins' && (
+              <div className="space-y-6">
+                {/* Super Admin Card */}
+                <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-14 h-14 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg">
+                        <Crown size={28} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-lg">{user?.name || 'Super Admin'}</h3>
+                        <p className="text-gray-600">{user?.email}</p>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500 text-white mt-1">
+                          Super Admin
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">Platform Owner</p>
+                      <p className="text-xs text-gray-400">Full system access</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Master Admins List */}
+                <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                  <div className="p-4 border-b bg-gray-50">
+                    <h3 className="font-semibold text-gray-900 flex items-center">
+                      <Users size={18} className="mr-2 text-blue-600" />
+                      Franchise Master Admins
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">Manage franchise owners and reset their passwords</p>
+                  </div>
+                  
+                  <div className="divide-y">
+                    {tenants.map(tenant => {
+                      // Find master admin for this tenant
+                      const masterAdmin = allUsers.find(u => 
+                        u.memberships?.some(m => m.tenant_id === tenant.id && m.role === 'master_admin')
+                      );
+                      
+                      return (
+                        <div key={tenant.id} className="p-4 hover:bg-gray-50">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                <Building2 size={24} className="text-blue-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-900">{tenant.name}</h4>
+                                {masterAdmin ? (
+                                  <div className="text-sm text-gray-600">
+                                    <span className="font-medium">{masterAdmin.name}</span>
+                                    <span className="mx-2">•</span>
+                                    <span>{masterAdmin.email}</span>
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-gray-400 italic">No master admin assigned</p>
+                                )}
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-1 ${getStatusColor(tenant.status)}`}>
+                                  {tenant.status}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2">
+                              {masterAdmin && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setResetPasswordData({
+                                        userId: masterAdmin.id,
+                                        userEmail: masterAdmin.email,
+                                        newPassword: '',
+                                        adminPassword: ''
+                                      });
+                                      setShowResetPasswordModal(true);
+                                    }}
+                                    className="flex items-center space-x-1 px-3 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 text-sm font-medium"
+                                    title="Reset Password"
+                                  >
+                                    <Key size={16} />
+                                    <span>Reset Password</span>
+                                  </button>
+                                  <button
+                                    onClick={() => fetchUserDetails(masterAdmin.id)}
+                                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                                    title="View Details"
+                                  >
+                                    <Eye size={18} />
+                                  </button>
+                                </>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setNewUser({ email: '', password: '', name: '', role: 'admin', tenant_id: tenant.id });
+                                  setShowCreateUserForm(true);
+                                }}
+                                className="flex items-center space-x-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm font-medium"
+                                title="Create Backup Admin"
+                              >
+                                <UserPlus size={16} />
+                                <span>Add Admin</span>
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {/* Show other admins for this tenant */}
+                          {(() => {
+                            const otherAdmins = allUsers.filter(u => 
+                              u.memberships?.some(m => m.tenant_id === tenant.id && m.role === 'admin') &&
+                              u.id !== masterAdmin?.id
+                            );
+                            if (otherAdmins.length === 0) return null;
+                            return (
+                              <div className="mt-3 ml-16 pl-4 border-l-2 border-gray-200">
+                                <p className="text-xs text-gray-500 mb-2">Additional Admins:</p>
+                                {otherAdmins.map(admin => (
+                                  <div key={admin.id} className="flex items-center justify-between py-1">
+                                    <div className="flex items-center space-x-2">
+                                      <Shield size={14} className="text-gray-400" />
+                                      <span className="text-sm text-gray-700">{admin.name}</span>
+                                      <span className="text-xs text-gray-500">({admin.email})</span>
+                                    </div>
+                                    <button
+                                      onClick={() => {
+                                        setResetPasswordData({
+                                          userId: admin.id,
+                                          userEmail: admin.email,
+                                          newPassword: '',
+                                          adminPassword: ''
+                                        });
+                                        setShowResetPasswordModal(true);
+                                      }}
+                                      className="p-1 text-amber-600 hover:bg-amber-50 rounded"
+                                      title="Reset Password"
+                                    >
+                                      <Key size={14} />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      );
+                    })}
+                    
+                    {tenants.length === 0 && (
+                      <div className="p-8 text-center text-gray-500">
+                        <Building2 size={40} className="mx-auto mb-3 opacity-50" />
+                        <p>No franchises created yet</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

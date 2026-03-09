@@ -31,6 +31,7 @@ const PlatformAdmin = () => {
   
   const [activeTab, setActiveTab] = useState('overview');
   const [tenantsSubTab, setTenantsSubTab] = useState('franchises'); // 'franchises' or 'admins'
+  const [auditLogTab, setAuditLogTab] = useState('all'); // 'all', 'command-centre', or tenant_id
   const [tenants, setTenants] = useState([]);
   const [stats, setStats] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);

@@ -2318,9 +2318,92 @@ const PlatformAdmin = () => {
         {/* Audit Log Tab */}
         {activeTab === 'audit' && (
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-900">Audit Log</h2>
-            
+            {/* Header with Export */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">Audit Log</h2>
+              <button
+                onClick={() => {
+                  const params = auditLogTab === 'all' ? '' : 
+                    auditLogTab === 'command-centre' ? '?filter_type=command-centre' :
+                    `?tenant_id=${auditLogTab}&filter_type=${auditLogTab}`;
+                  downloadPdf(`/platform/audit-log/pdf${params}`, `audit_log_${auditLogTab}.pdf`);
+                }}
+                disabled={downloadingPdf}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                <Download size={18} />
+                <span>{downloadingPdf ? 'Generating...' : 'Export PDF'}</span>
+              </button>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="bg-white rounded-xl shadow-sm border p-2">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setAuditLogTab('all')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    auditLogTab === 'all' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <Activity size={14} className="inline mr-2" />
+                  All Activity
+                </button>
+                <button
+                  onClick={() => setAuditLogTab('command-centre')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    auditLogTab === 'command-centre' 
+                      ? 'bg-amber-500 text-white' 
+                      : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                  }`}
+                >
+                  <Crown size={14} className="inline mr-2" />
+                  Command Centre
+                </button>
+                {tenants.map(tenant => (
+                  <button
+                    key={tenant.id}
+                    onClick={() => setAuditLogTab(tenant.id)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      auditLogTab === tenant.id 
+                        ? 'bg-indigo-600 text-white' 
+                        : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                    }`}
+                  >
+                    <Building2 size={14} className="inline mr-2" />
+                    {tenant.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Filtered Log Table */}
             <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="p-4 border-b bg-gray-50 flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900">
+                    {auditLogTab === 'all' ? 'All Activity' : 
+                     auditLogTab === 'command-centre' ? 'Command Centre Activity' :
+                     tenants.find(t => t.id === auditLogTab)?.name + ' Activity'}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    {auditLogTab === 'command-centre' 
+                      ? 'Platform-level administrative actions' 
+                      : auditLogTab === 'all'
+                      ? 'All system activity across franchises'
+                      : 'Franchise-specific activity log'}
+                  </p>
+                </div>
+                <span className="text-sm text-gray-500">
+                  {(() => {
+                    const filtered = auditLogTab === 'all' ? auditLogs :
+                      auditLogTab === 'command-centre' ? auditLogs.filter(l => !l.tenant_id) :
+                      auditLogs.filter(l => l.tenant_id === auditLogTab);
+                    return `${filtered.length} events`;
+                  })()}
+                </span>
+              </div>
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
@@ -2332,41 +2415,58 @@ const PlatformAdmin = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {auditLogs.map(log => (
-                    <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {formatDate(log.created_at)}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {log.actor_email}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          log.action.includes('suspend') ? 'bg-red-100 text-red-700' :
-                          log.action.includes('create') ? 'bg-green-100 text-green-700' :
-                          log.action.includes('impersonation') ? 'bg-purple-100 text-purple-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {log.action}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {log.resource_type}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {log.meta ? JSON.stringify(log.meta).substring(0, 50) : '-'}
-                      </td>
-                    </tr>
-                  ))}
+                  {(() => {
+                    const filteredLogs = auditLogTab === 'all' ? auditLogs :
+                      auditLogTab === 'command-centre' ? auditLogs.filter(l => !l.tenant_id) :
+                      auditLogs.filter(l => l.tenant_id === auditLogTab);
+                    
+                    return filteredLogs.map(log => (
+                      <tr key={log.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm text-gray-500">
+                          {formatDate(log.created_at)}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {log.actor_email}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            log.action.includes('suspend') ? 'bg-red-100 text-red-700' :
+                            log.action.includes('delete') ? 'bg-red-100 text-red-700' :
+                            log.action.includes('create') ? 'bg-green-100 text-green-700' :
+                            log.action.includes('impersonation') ? 'bg-purple-100 text-purple-700' :
+                            log.action.includes('login') ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {log.action}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">
+                          {log.resource_type}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">
+                          {log.meta ? JSON.stringify(log.meta).substring(0, 50) : '-'}
+                        </td>
+                      </tr>
+                    ));
+                  })()}
                 </tbody>
               </table>
               
-              {auditLogs.length === 0 && (
-                <div className="p-8 text-center text-gray-500">
-                  <FileText size={40} className="mx-auto mb-3 opacity-50" />
-                  <p>No audit events recorded yet</p>
-                </div>
-              )}
+              {(() => {
+                const filteredLogs = auditLogTab === 'all' ? auditLogs :
+                  auditLogTab === 'command-centre' ? auditLogs.filter(l => !l.tenant_id) :
+                  auditLogs.filter(l => l.tenant_id === auditLogTab);
+                
+                if (filteredLogs.length === 0) {
+                  return (
+                    <div className="p-8 text-center text-gray-500">
+                      <FileText size={40} className="mx-auto mb-3 opacity-50" />
+                      <p>No audit events recorded for this filter</p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </div>
         )}

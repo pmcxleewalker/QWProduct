@@ -30,6 +30,7 @@ const PlatformAdmin = () => {
   const { user, isPlatformAdmin, isSuperAdmin, impersonateTenant, isImpersonating, stopImpersonation, activeTenant, logout } = useAuth();
   
   const [activeTab, setActiveTab] = useState('overview');
+  const [tenantsSubTab, setTenantsSubTab] = useState('franchises'); // 'franchises' or 'admins'
   const [tenants, setTenants] = useState([]);
   const [stats, setStats] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
@@ -37,6 +38,9 @@ const PlatformAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // Master admins list
+  const [masterAdmins, setMasterAdmins] = useState([]);
   
   // Create tenant form
   const [showCreateForm, setShowCreateForm] = useState(false);

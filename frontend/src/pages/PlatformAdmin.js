@@ -792,6 +792,8 @@ const PlatformAdmin = () => {
             {/* Franchises Sub-Tab */}
             {tenantsSubTab === 'franchises' && (
               <>
+            {/* Create Tenant Form */}
+            {showCreateForm && (
               <div className="bg-white rounded-xl p-6 shadow-sm border">
                 <h3 className="font-semibold text-gray-900 mb-4">Create New Franchise</h3>
                 <form onSubmit={handleCreateTenant} className="space-y-4">

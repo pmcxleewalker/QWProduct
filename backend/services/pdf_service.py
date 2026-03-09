@@ -595,6 +595,100 @@ class PDFGenerator:
         buffer.seek(0)
         return buffer
 
+    def generate_audit_log_pdf(self, audit_events: List[Dict], settings: Dict, 
+                                filter_name: str = "All Activity", tenant_name: str = None) -> BytesIO:
+        """Generate Audit Log PDF with company branding"""
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=40, rightMargin=40, topMargin=40, bottomMargin=40)
+        elements = []
+        
+        company_name = settings.get('company_name', 'Quick Wing Fleet Management')
+        
+        # Header with company branding
+        header_data = [
+            [Paragraph(f"<b>{company_name}</b>", self.styles['Title_Custom'])],
+            [Paragraph("Audit Log Report", self.styles['Subtitle'])]
+        ]
+        header_table = Table(header_data, colWidths=[500])
+        header_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ]))
+        elements.append(header_table)
+        
+        # Logo placeholder line
+        elements.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor('#1e3a5f')))
+        elements.append(Spacer(1, 20))
+        
+        # Report info
+        report_title = tenant_name if tenant_name else filter_name
+        info_data = [
+            ['Report Type:', f"Audit Log - {report_title}"],
+            ['Generated:', datetime.now().strftime('%B %d, %Y at %H:%M')],
+            ['Total Events:', str(len(audit_events))],
+        ]
+        info_table = Table(info_data, colWidths=[120, 380])
+        info_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#666666')),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ]))
+        elements.append(info_table)
+        elements.append(Spacer(1, 20))
+        
+        # Audit events table
+        elements.append(Paragraph("Audit Events", self.styles['SectionHeader']))
+        
+        if audit_events:
+            table_data = [['Timestamp', 'Actor', 'Action', 'Resource', 'Details']]
+            
+            for event in audit_events:
+                timestamp = event.get('created_at', '')
+                if timestamp:
+                    try:
+                        dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                        timestamp = dt.strftime('%Y-%m-%d %H:%M')
+                    except:
+                        pass
+                
+                actor = event.get('actor_email', 'System')[:25]
+                action = event.get('action', '-')
+                resource = event.get('resource_type', '-')
+                meta = event.get('meta', {})
+                details = str(meta)[:40] + '...' if meta and len(str(meta)) > 40 else str(meta) if meta else '-'
+                
+                table_data.append([timestamp, actor, action, resource, details])
+            
+            # Limit rows for readability
+            if len(table_data) > 51:
+                table_data = table_data[:51]
+                table_data.append(['...', f'And {len(audit_events) - 50} more events', '', '', ''])
+            
+            table = Table(table_data, colWidths=[85, 100, 90, 80, 145])
+            table.setStyle(self._get_header_table_style())
+            table.setStyle(TableStyle([
+                ('FONTSIZE', (0, 1), (-1, -1), 8),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8f9fa')]),
+            ]))
+            elements.append(table)
+        else:
+            elements.append(Paragraph("No audit events found for this filter.", self.styles['Normal']))
+        
+        # Footer with branding
+        elements.append(Spacer(1, 40))
+        elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#dddddd')))
+        elements.append(Spacer(1, 10))
+        elements.append(Paragraph(
+            f"Audit Log Report • {company_name} • Generated on {datetime.now().strftime('%B %d, %Y')}",
+            self.styles['Footer']
+        ))
+        
+        doc.build(elements)
+        buffer.seek(0)
+        return buffer
+
 
 # Singleton instance
 pdf_generator = PDFGenerator()

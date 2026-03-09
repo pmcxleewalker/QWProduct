@@ -1363,6 +1363,53 @@ async def get_platform_audit_log(
     return {"events": events}
 
 
+@api_router.get("/platform/audit-log/pdf")
+async def download_audit_log_pdf(
+    tenant_id: Optional[str] = None,
+    filter_type: str = "all",  # 'all', 'command-centre', or tenant_id
+    context: TenantContext = Depends(require_platform_admin)
+):
+    """Download Audit Log as PDF with company branding"""
+    from services.pdf_service import pdf_generator
+    
+    query = {}
+    filter_name = "All Activity"
+    tenant_name = None
+    
+    if filter_type == "command-centre":
+        # Platform-level events only (no tenant_id)
+        query["tenant_id"] = {"$exists": False}
+        filter_name = "Command Centre"
+    elif tenant_id:
+        query["tenant_id"] = tenant_id
+        # Get tenant name
+        tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0, "name": 1})
+        if tenant:
+            tenant_name = tenant.get("name")
+            filter_name = tenant_name
+    
+    events = await db.audit_events.find(
+        query,
+        {"_id": 0}
+    ).sort("created_at", -1).limit(500).to_list(500)
+    
+    # Get company settings for branding
+    settings = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0})
+    if not settings:
+        settings = {"company_name": "Quick Wing Fleet Management"}
+    
+    # Generate PDF
+    pdf_buffer = pdf_generator.generate_audit_log_pdf(events, settings, filter_name, tenant_name)
+    
+    filename = f"audit_log_{filter_type}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
 # ==================== COMPANY SETTINGS ====================
 
 @api_router.get("/platform/settings")

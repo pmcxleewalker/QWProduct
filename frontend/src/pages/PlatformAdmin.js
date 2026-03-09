@@ -121,6 +121,14 @@ const PlatformAdmin = () => {
       setStats(statsRes.data);
       setAuditLogs(logsRes.data.events || []);
       setAllUsers(usersRes.data.users || []);
+      
+      // Extract master admins (super_admin + master_admin roles)
+      const users = usersRes.data.users || [];
+      const admins = users.filter(u => 
+        u.role === 'super_admin' || 
+        u.memberships?.some(m => m.role === 'master_admin')
+      );
+      setMasterAdmins(admins);
     } catch (err) {
       setError('Failed to load platform data');
       console.error(err);

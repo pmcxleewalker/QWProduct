@@ -32,7 +32,7 @@ This Certificate of Ownership and Copyright hereby certifies and declares that:
 
 **Application Type:** Web-Based Software Application (Full-Stack)
 
-**Primary URL:** https://cartrack-19.emergent.host
+**Primary URL:** https://cartrack-19.emergent.host and quick-wing.com
 
 **Version at Registration:** 1.1
 

@@ -201,7 +201,7 @@ For licensing inquiries, permissions, or to report copyright infringement:
 
 **Owner:** Lee Walker
 
-**Email:** [Contact Email]
+**Email:** lee.quickwing@gmail.com
 
 **Application URL:** https://cartrack-19.emergent.host
 

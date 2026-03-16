@@ -355,6 +355,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppContent />
+        <Toaster position="top-right" richColors closeButton />
       </AuthProvider>
     </BrowserRouter>
   );

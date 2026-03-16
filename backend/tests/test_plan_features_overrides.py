@@ -54,12 +54,12 @@ class TestPlanConfigurations:
         plans = data["plans"]
         
         expected_feature_keys = [
-            "basic_fleet_management",
-            "booking_management",
+            "vehicle_booking",
+            "fleet_compliance",
+            "basic_reports",
             "enhanced_reports",
-            "api_access",
-            "priority_support",
-            "custom_branding"
+            "detailed_reports",
+            "staff_calendars"
         ]
         
         for plan in plans:
@@ -447,7 +447,7 @@ class TestFeatureGating:
         # Verify features dict
         features = data["features"]
         assert "enhanced_reports" in features
-        assert "basic_fleet_management" in features
+        assert "vehicle_booking" in features
         
         print(f"✓ My plan returns features: {list(features.keys())}")
         print(f"  Plan: {data['plan']['name']}, Enhanced Reports: {features.get('enhanced_reports')}")

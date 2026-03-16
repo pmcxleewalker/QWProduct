@@ -105,10 +105,15 @@ class UserRole(str, Enum):
 class TenantCreate(BaseModel):
     name: str
     slug: str  # URL-friendly identifier
-    plan: TenantPlan = TenantPlan.STARTER
+    plan: TenantPlan = TenantPlan.STANDARD
     # Optional: Master Admin credentials. If not provided, will be auto-generated
     master_admin_email: Optional[EmailStr] = None  # Now validates email format
     master_admin_name: Optional[str] = None
+    # Custom limits (super admin can override plan defaults)
+    custom_max_vehicles: Optional[int] = None
+    custom_max_users: Optional[int] = None
+    # Feature overrides (super admin can enable/disable specific features)
+    feature_overrides: Optional[dict] = None
     
 
 class TenantUpdate(BaseModel):

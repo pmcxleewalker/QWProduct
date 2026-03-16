@@ -753,6 +753,12 @@ const Admin = () => {
       setCreateUserForm({ email: '', password: '', role: 'staff' });
       fetchData();
     } catch (err) {
+      // Handle plan limit errors (403)
+      if (err.response?.status === 403) {
+        toast.error(err.response?.data?.detail || 'User limit reached. Please upgrade your plan.');
+        setShowCreateUserForm(false);
+        return;
+      }
       setError(err.response?.data?.detail || 'Failed to create user');
     }
   };

@@ -6,7 +6,7 @@ import {
   Building2, Users, Car, Calendar, TrendingUp, Plus, 
   Pause, Play, Eye, Shield, Crown, AlertTriangle,
   Search, Filter, MoreVertical, ChevronDown, ChevronUp,
-  Activity, DollarSign, Clock, CheckCircle, XCircle,
+  Activity, DollarSign, Clock, CheckCircle, XCircle, Check,
   FileText, Settings, RefreshCw, LogOut, Trash2, Key,
   Receipt, Download, Send, Edit2, UserPlus, UserMinus,
   Globe, Copy, Layers, Star, Zap

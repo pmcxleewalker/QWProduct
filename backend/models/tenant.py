@@ -16,10 +16,81 @@ class TenantStatus(str, Enum):
 
 
 class TenantPlan(str, Enum):
-    FREE = "free"
-    STARTER = "starter"
-    PROFESSIONAL = "professional"
-    ENTERPRISE = "enterprise"
+    STANDARD = "standard"       # Quick Wing Standard - €179/month
+    ESSENTIAL = "essential"     # Quick Wing Essential - €279/month (Most Popular)
+    PROFESSIONAL = "professional"  # Quick Wing Professional - €399/month
+
+
+# Plan configuration with features and limits
+PLAN_CONFIG = {
+    TenantPlan.STANDARD: {
+        "name": "Quick Wing Standard",
+        "price": 179,
+        "currency": "EUR",
+        "max_vehicles": 10,
+        "max_users": 20,
+        "customizations_per_month": 1,
+        "features": {
+            "vehicle_booking": True,
+            "fleet_compliance": True,  # Tax, insurance, NCT, service km's
+            "basic_reports": True,
+            "enhanced_reports": False,
+            "detailed_reports": False,
+            "staff_calendars": True,
+            "admin_all_cars_calendar": True,
+            "booking_visibility_enhanced": False,
+            "booking_admin_control": False,
+            "compliance_oversight_broad": False,
+        },
+        "description": "A practical fleet system for smaller franchises",
+        "tagline": "Simple structure for smaller teams that need control without complexity"
+    },
+    TenantPlan.ESSENTIAL: {
+        "name": "Quick Wing Essential",
+        "price": 279,
+        "currency": "EUR",
+        "max_vehicles": 25,
+        "max_users": 35,
+        "customizations_per_month": 2,
+        "is_popular": True,
+        "features": {
+            "vehicle_booking": True,
+            "fleet_compliance": True,
+            "basic_reports": True,
+            "enhanced_reports": True,  # Enhanced fleet reports
+            "detailed_reports": False,
+            "staff_calendars": True,
+            "admin_all_cars_calendar": True,
+            "booking_visibility_enhanced": True,  # Stronger booking visibility
+            "booking_admin_control": True,  # Admin control over bookings
+            "compliance_oversight_broad": True,  # Broader compliance oversight
+        },
+        "description": "The best fit for growing franchises that need more control",
+        "tagline": "Built to be the sweet spot for value, scale and day-to-day control"
+    },
+    TenantPlan.PROFESSIONAL: {
+        "name": "Quick Wing Professional",
+        "price": 399,
+        "currency": "EUR",
+        "max_vehicles": 50,
+        "max_users": 50,
+        "customizations_per_month": 4,
+        "features": {
+            "vehicle_booking": True,
+            "fleet_compliance": True,
+            "basic_reports": True,
+            "enhanced_reports": True,
+            "detailed_reports": True,  # Stronger detailed reporting
+            "staff_calendars": True,
+            "admin_all_cars_calendar": True,
+            "booking_visibility_enhanced": True,
+            "booking_admin_control": True,
+            "compliance_oversight_broad": True,
+        },
+        "description": "For larger franchises that need more scale and visibility",
+        "tagline": "Designed for larger teams that need flexibility and structure at scale"
+    }
+}
 
 
 class UserRole(str, Enum):

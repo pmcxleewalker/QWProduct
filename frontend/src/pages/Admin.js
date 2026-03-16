@@ -160,6 +160,10 @@ const Admin = () => {
   const [clearEndDate, setClearEndDate] = useState('');
   const [clearingBookings, setClearingBookings] = useState(false);
 
+  // Credentials State
+  const [tenantCredentials, setTenantCredentials] = useState(null);
+  const [credentialsLoading, setCredentialsLoading] = useState(false);
+
   useEffect(() => {
     fetchData();
   }, [activeTab]);

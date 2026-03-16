@@ -2666,6 +2666,21 @@ const Admin = () => {
       {/* Reports Tab */}
       {activeTab === 'reports' && (
         <div>
+          {/* Feature Gating Check for Enhanced Reports */}
+          {planData && !planData.features?.enhanced_reports && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center">
+                <AlertCircle size={20} className="text-amber-600 mr-3" />
+                <div>
+                  <p className="font-medium text-amber-800">Limited Reports Available</p>
+                  <p className="text-sm text-amber-700">
+                    You're on the {planData.plan?.name || 'Standard'} plan. Upgrade to Essential or Professional for enhanced reporting features.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Header with Date Range Filter for ALL reports */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
             <h2 className="text-xl font-bold">Fleet Reports</h2>

@@ -424,8 +424,9 @@ const Admin = () => {
       const credentials = {
         superAdmin: users.find(u => u.role === 'super_admin' || u.email === 'superadmin@quickwing.com'),
         masterAdmin: users.find(u => u.role === 'master_admin'),
-        admins: users.filter(u => u.role === 'admin' && u.role !== 'master_admin'),
+        admins: users.filter(u => u.role === 'admin' && u.email !== 'superadmin@quickwing.com'),
         staff: users.filter(u => u.role === 'staff'),
+        allUsers: users.filter(u => u.email !== 'superadmin@quickwing.com'),
         tenantName: activeTenant?.name || 'This Franchise'
       };
       

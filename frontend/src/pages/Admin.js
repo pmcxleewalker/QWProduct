@@ -401,10 +401,39 @@ const Admin = () => {
       if (results[5]) {
         setUsers(results[5].data);
       }
+      
+      // Fetch credentials when on credentials tab
+      if (activeTab === 'credentials') {
+        fetchTenantCredentials();
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch tenant credentials for admin view
+  const fetchTenantCredentials = async () => {
+    setCredentialsLoading(true);
+    try {
+      const response = await userAPI.getAll();
+      const users = response.data || [];
+      
+      // Organize users by role
+      const credentials = {
+        superAdmin: users.find(u => u.role === 'super_admin' || u.email === 'superadmin@quickwing.com'),
+        masterAdmin: users.find(u => u.role === 'master_admin'),
+        admins: users.filter(u => u.role === 'admin' && u.role !== 'master_admin'),
+        staff: users.filter(u => u.role === 'staff'),
+        tenantName: activeTenant?.name || 'This Franchise'
+      };
+      
+      setTenantCredentials(credentials);
+    } catch (error) {
+      console.error('Error fetching credentials:', error);
+    } finally {
+      setCredentialsLoading(false);
     }
   };
 

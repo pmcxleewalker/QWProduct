@@ -389,6 +389,7 @@ const Admin = () => {
         bookingAPI.getPending(),
         messageAPI.getAll(),
         todoAPI.getAll(),
+        planAPI.getMyPlan(), // Fetch plan data
       ];
       
       if (activeTab === 'users') {
@@ -401,9 +402,10 @@ const Admin = () => {
       setPendingBookings(results[2].data);
       setMessages(results[3].data);
       setTodos(results[4].data);
+      setPlanData(results[5].data); // Set plan data
       
-      if (results[5]) {
-        setUsers(results[5].data);
+      if (results[6]) {
+        setUsers(results[6].data);
       }
       
       // Fetch credentials when on credentials tab

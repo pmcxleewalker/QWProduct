@@ -2251,6 +2251,17 @@ async def create_tenant_user(
     import secrets
     import string
     
+    # Check plan limits for users
+    tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    current_user_count = await db.memberships.count_documents({"tenant_id": context.tenant_id})
+    max_users = tenant.get("max_users", 20)
+    
+    if current_user_count >= max_users:
+        raise HTTPException(
+            status_code=403,
+            detail=f"User limit reached ({max_users}). Please upgrade your plan to add more users."
+        )
+    
     # Check if user exists
     existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
     

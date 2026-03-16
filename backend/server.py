@@ -368,6 +368,112 @@ async def get_tenant_by_slug(slug: str):
 
 # ==================== SUPER ADMIN - PLATFORM MANAGEMENT ====================
 
+@api_router.get("/platform/plans")
+async def get_plan_configurations():
+    """
+    Get all available plan configurations with features and limits.
+    Public endpoint for displaying plan options during tenant creation.
+    """
+    plans = []
+    for plan_key, config in PLAN_CONFIG.items():
+        plans.append({
+            "id": plan_key.value,
+            "name": config["name"],
+            "price": config["price"],
+            "currency": config["currency"],
+            "max_vehicles": config["max_vehicles"],
+            "max_users": config["max_users"],
+            "customizations_per_month": config["customizations_per_month"],
+            "features": config["features"],
+            "description": config["description"],
+            "tagline": config["tagline"],
+            "is_popular": config.get("is_popular", False)
+        })
+    return {"plans": plans}
+
+
+@api_router.get("/platform/tenants/{tenant_id}/features")
+async def get_tenant_features(
+    tenant_id: str,
+    context: TenantContext = Depends(require_platform_admin)
+):
+    """
+    Get the effective features for a tenant (plan features + overrides).
+    """
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    plan = TenantPlan(tenant.get("plan", "standard"))
+    plan_config = PLAN_CONFIG.get(plan, PLAN_CONFIG[TenantPlan.STANDARD])
+    
+    # Get base features from plan
+    features = plan_config["features"].copy()
+    
+    # Apply any feature overrides
+    overrides = tenant.get("feature_overrides", {})
+    for key, value in overrides.items():
+        features[key] = value
+    
+    return {
+        "tenant_id": tenant_id,
+        "plan": plan.value,
+        "plan_name": plan_config["name"],
+        "features": features,
+        "limits": {
+            "max_vehicles": tenant.get("max_vehicles", plan_config["max_vehicles"]),
+            "max_users": tenant.get("max_users", plan_config["max_users"]),
+            "customizations_remaining": tenant.get("customizations_remaining", plan_config["customizations_per_month"]),
+            "customizations_per_month": plan_config["customizations_per_month"]
+        },
+        "feature_overrides": overrides
+    }
+
+
+@api_router.put("/platform/tenants/{tenant_id}/features")
+async def update_tenant_features(
+    tenant_id: str,
+    feature_updates: dict,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """
+    Update feature overrides for a tenant (super admin only).
+    Can enable/disable specific features or adjust limits.
+    """
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    
+    # Handle feature overrides
+    if "features" in feature_updates:
+        current_overrides = tenant.get("feature_overrides", {})
+        current_overrides.update(feature_updates["features"])
+        update_data["feature_overrides"] = current_overrides
+    
+    # Handle limit overrides
+    if "max_vehicles" in feature_updates:
+        update_data["max_vehicles"] = feature_updates["max_vehicles"]
+    if "max_users" in feature_updates:
+        update_data["max_users"] = feature_updates["max_users"]
+    
+    await db.tenants.update_one({"id": tenant_id}, {"$set": update_data})
+    
+    # Log audit event
+    await log_audit_event(
+        context.user_id,
+        context.user_email,
+        None,  # Platform level
+        AuditAction.TENANT_UPDATED,
+        "tenant",
+        tenant_id,
+        {"action": "features_updated", "updates": feature_updates}
+    )
+    
+    return {"message": "Features updated successfully", "updates": update_data}
+
+
 @api_router.post("/platform/tenants", response_model=dict)
 async def create_tenant(
     tenant_data: TenantCreate,

@@ -762,8 +762,17 @@ async def get_my_plan(context: TenantContext = Depends(require_tenant_context)):
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
     
-    # Get plan configuration
-    plan = TenantPlan(tenant.get("plan", "standard"))
+    # Get plan configuration - handle legacy plan names
+    plan_value = tenant.get("plan", "standard")
+    # Map legacy plan names to new ones
+    plan_mapping = {"starter": "standard", "basic": "standard", "pro": "professional"}
+    plan_value = plan_mapping.get(plan_value, plan_value)
+    
+    try:
+        plan = TenantPlan(plan_value)
+    except ValueError:
+        plan = TenantPlan.STANDARD  # Default to standard if unknown plan
+    
     plan_config = PLAN_CONFIG.get(plan, PLAN_CONFIG[TenantPlan.STANDARD])
     
     # Get effective features (plan features + overrides)

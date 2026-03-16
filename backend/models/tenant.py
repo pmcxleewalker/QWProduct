@@ -124,6 +124,9 @@ class TenantUpdate(BaseModel):
     max_vehicles: Optional[int] = None
     max_users: Optional[int] = None
     notes: Optional[str] = None
+    # Feature overrides for super admin
+    feature_overrides: Optional[dict] = None
+    customizations_remaining: Optional[int] = None
 
 
 class Tenant(BaseModel):

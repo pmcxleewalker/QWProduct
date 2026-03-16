@@ -600,6 +600,12 @@ const Admin = () => {
       setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_mileage: '', base_location: '' });
       fetchData();
     } catch (err) {
+      // Handle plan limit errors (403)
+      if (err.response?.status === 403) {
+        toast.error(err.response?.data?.detail || 'Plan limit reached. Please upgrade your plan.');
+        setShowCarForm(false);
+        return;
+      }
       // Handle validation errors properly
       const errorDetail = err.response?.data?.detail;
       if (Array.isArray(errorDetail)) {

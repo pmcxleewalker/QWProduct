@@ -405,7 +405,9 @@ const Admin = () => {
       setPlanData(results[5].data); // Set plan data
       
       if (results[6]) {
-        setUsers(results[6].data);
+        // Handle both array response and { users: [] } response
+        const usersData = results[6].data;
+        setUsers(Array.isArray(usersData) ? usersData : (usersData?.users || []));
       }
       
       // Fetch credentials when on credentials tab

@@ -34,6 +34,9 @@ const Admin = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showTraining, setShowTraining] = useState(false);
+  
+  // Plan and usage limits state
+  const [planData, setPlanData] = useState(null);
 
   // Check if this is first time admin visits - show training
   useEffect(() => {

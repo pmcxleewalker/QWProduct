@@ -2426,6 +2426,212 @@ const Admin = () => {
         </div>
       )}
 
+      {/* Credentials Tab */}
+      {activeTab === 'credentials' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Access Credentials</h2>
+              <p className="text-sm text-gray-500 mt-1">Login credentials for {tenantCredentials?.tenantName || 'this franchise'}</p>
+            </div>
+            <button
+              onClick={fetchTenantCredentials}
+              disabled={credentialsLoading}
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+            >
+              {credentialsLoading ? (
+                <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <Activity size={16} />
+              )}
+              <span>Refresh</span>
+            </button>
+          </div>
+
+          {credentialsLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Quick Wing Support Access */}
+              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg">
+                      <Crown size={28} className="text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-lg">Quick Wing Support</h3>
+                      <p className="text-gray-600 text-sm">Platform support account for remote assistance</p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full">SUPPORT</span>
+                </div>
+                <div className="mt-4 p-4 bg-white rounded-lg border border-amber-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase">Email</label>
+                      <div className="flex items-center mt-1">
+                        <code className="text-sm font-mono bg-gray-100 px-3 py-2 rounded flex-1">
+                          {tenantCredentials?.superAdmin?.email || 'superadmin@quickwing.com'}
+                        </code>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase">Access Level</label>
+                      <div className="mt-1">
+                        <span className="text-sm text-gray-700">Full administrative access for support</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-3 flex items-center">
+                    <ShieldAlert size={14} className="mr-1 text-amber-600" />
+                    This account is managed by Quick Wing for franchise support purposes
+                  </p>
+                </div>
+              </div>
+
+              {/* Master Admin */}
+              {tenantCredentials?.masterAdmin && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <ShieldAlert size={28} className="text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-lg">Master Admin</h3>
+                        <p className="text-gray-600 text-sm">Franchise owner account</p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">OWNER</span>
+                  </div>
+                  <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 uppercase">Name</label>
+                        <p className="text-sm font-medium text-gray-900 mt-1">{tenantCredentials.masterAdmin.name || '-'}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 uppercase">Email</label>
+                        <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded block mt-1">
+                          {tenantCredentials.masterAdmin.email}
+                        </code>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 uppercase">Default Password</label>
+                        <code className="text-sm font-mono bg-amber-100 text-amber-800 px-2 py-1 rounded block mt-1">
+                          {tenantCredentials.masterAdmin.name?.split(' ')[0] || 'Admin'}123
+                        </code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Admins */}
+              {tenantCredentials?.admins?.length > 0 && (
+                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                  <div className="p-4 border-b bg-gray-50">
+                    <h3 className="font-semibold text-gray-900 flex items-center">
+                      <Key size={18} className="mr-2 text-purple-600" />
+                      Admin Accounts ({tenantCredentials.admins.length})
+                    </h3>
+                  </div>
+                  <div className="divide-y">
+                    {tenantCredentials.admins.map(admin => (
+                      <div key={admin.id} className="p-4 hover:bg-gray-50">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 uppercase">Name</label>
+                            <p className="text-sm font-medium text-gray-900">{admin.name || '-'}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 uppercase">Email</label>
+                            <code className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+                              {admin.email}
+                            </code>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 uppercase">Default Password</label>
+                            <code className="text-xs font-mono bg-amber-100 text-amber-800 px-2 py-1 rounded">
+                              {admin.name?.split(' ')[0] || 'User'}123
+                            </code>
+                          </div>
+                          <div>
+                            <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded">
+                              Admin
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Staff */}
+              {tenantCredentials?.staff?.length > 0 && (
+                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                  <div className="p-4 border-b bg-gray-50">
+                    <h3 className="font-semibold text-gray-900 flex items-center">
+                      <Users size={18} className="mr-2 text-green-600" />
+                      Staff Accounts ({tenantCredentials.staff.length})
+                    </h3>
+                  </div>
+                  <div className="divide-y">
+                    {tenantCredentials.staff.map(staffMember => (
+                      <div key={staffMember.id} className="p-4 hover:bg-gray-50">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 uppercase">Name</label>
+                            <p className="text-sm font-medium text-gray-900">{staffMember.name || '-'}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 uppercase">Email</label>
+                            <code className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+                              {staffMember.email}
+                            </code>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 uppercase">Default Password</label>
+                            <code className="text-xs font-mono bg-amber-100 text-amber-800 px-2 py-1 rounded">
+                              {staffMember.name?.split(' ')[0] || 'User'}123
+                            </code>
+                          </div>
+                          <div>
+                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                              Staff
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Help Note */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-start space-x-3">
+                  <HelpCircle size={20} className="text-blue-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-blue-900">Password Information</h4>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Default passwords follow the format: <code className="bg-blue-100 px-1 rounded">FirstName123</code>
+                      <br />
+                      Users are prompted to change their password on first login. If a user forgets their password, 
+                      contact Quick Wing support for a password reset.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Reports Tab */}
       {activeTab === 'reports' && (
         <div>

@@ -418,7 +418,8 @@ const Admin = () => {
     setCredentialsLoading(true);
     try {
       const response = await userAPI.getAll();
-      const users = response.data || [];
+      // Handle both array response and { users: [] } response
+      const users = Array.isArray(response.data) ? response.data : (response.data?.users || response.data || []);
       
       // Organize users by role
       const credentials = {

@@ -386,14 +386,13 @@ async def create_tenant(
     if existing:
         raise HTTPException(status_code=400, detail="Tenant slug already exists")
     
-    # Set plan limits
-    plan_limits = {
-        TenantPlan.FREE: {"max_vehicles": 3, "max_users": 5},
-        TenantPlan.STARTER: {"max_vehicles": 10, "max_users": 20},
-        TenantPlan.PROFESSIONAL: {"max_vehicles": 50, "max_users": 100},
-        TenantPlan.ENTERPRISE: {"max_vehicles": 999, "max_users": 999},
-    }
-    limits = plan_limits.get(tenant_data.plan, plan_limits[TenantPlan.STARTER])
+    # Get plan configuration
+    plan_config = PLAN_CONFIG.get(tenant_data.plan, PLAN_CONFIG[TenantPlan.STANDARD])
+    
+    # Use custom limits if provided by super admin, otherwise use plan defaults
+    max_vehicles = tenant_data.custom_max_vehicles or plan_config["max_vehicles"]
+    max_users = tenant_data.custom_max_users or plan_config["max_users"]
+    customizations = plan_config["customizations_per_month"]
     
     tenant_id = str(uuid.uuid4())
     tenant = {
@@ -402,8 +401,11 @@ async def create_tenant(
         "slug": tenant_data.slug,
         "status": TenantStatus.ACTIVE.value,
         "plan": tenant_data.plan.value,
-        "max_vehicles": limits["max_vehicles"],
-        "max_users": limits["max_users"],
+        "max_vehicles": max_vehicles,
+        "max_users": max_users,
+        "customizations_remaining": customizations,
+        "customizations_reset_date": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+        "feature_overrides": tenant_data.feature_overrides or {},
         "subscription_expires_at": None,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()

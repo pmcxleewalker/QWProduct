@@ -607,14 +607,12 @@ async def update_tenant_plan(
     )
     
     # Log audit event
-    await log_audit_event(
-        context.user_id,
-        context.user_email,
-        None,
-        AuditAction.TENANT_UPDATED,
-        "tenant",
-        tenant_id,
-        {"action": "plan_changed", "old_plan": tenant.get("plan"), "new_plan": plan.value}
+    await audit_service.log_tenant_action(
+        actor_user_id=context.user_id,
+        actor_email=context.user_email,
+        action=AuditAction.TENANT_UPDATED,
+        tenant_id=tenant_id,
+        meta={"action": "plan_changed", "old_plan": tenant.get("plan"), "new_plan": plan.value}
     )
     
     return {

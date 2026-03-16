@@ -662,7 +662,7 @@ async def get_tenant(
     tenant_id: str,
     context: TenantContext = Depends(require_platform_admin)
 ):
-    """Get tenant details with usage stats"""
+    """Get tenant details with usage stats and plan features"""
     tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
@@ -680,16 +680,35 @@ async def get_tenant(
         "created_at": {"$gte": month_start.isoformat()}
     })
     
+    # Get plan configuration
+    plan = TenantPlan(tenant.get("plan", "standard"))
+    plan_config = PLAN_CONFIG.get(plan, PLAN_CONFIG[TenantPlan.STANDARD])
+    
+    # Get effective features (plan features + overrides)
+    features = plan_config["features"].copy()
+    overrides = tenant.get("feature_overrides", {})
+    for key, value in overrides.items():
+        features[key] = value
+    
     return {
         "tenant": tenant,
         "usage": {
             "vehicles": vehicles_count,
-            "max_vehicles": tenant.get("max_vehicles", 10),
+            "max_vehicles": tenant.get("max_vehicles", plan_config["max_vehicles"]),
             "users": users_count,
-            "max_users": tenant.get("max_users", 20),
+            "max_users": tenant.get("max_users", plan_config["max_users"]),
             "bookings_total": bookings_count,
             "bookings_this_month": bookings_this_month
-        }
+        },
+        "plan_config": {
+            "name": plan_config["name"],
+            "price": plan_config["price"],
+            "currency": plan_config["currency"],
+            "customizations_per_month": plan_config["customizations_per_month"],
+            "description": plan_config["description"]
+        },
+        "features": features,
+        "feature_overrides": overrides
     }
 
 

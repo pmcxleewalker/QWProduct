@@ -61,6 +61,11 @@ export const reportsAPI = {
   getSummary: () => axios.get(`${API}/reports/summary`),
 };
 
+// Plan API (tenant-scoped)
+export const planAPI = {
+  getMyPlan: () => axios.get(`${API}/my-plan`),
+};
+
 // Tenant User API (tenant admin)
 export const userAPI = {
   getAll: () => axios.get(`${API}/tenant/users`),

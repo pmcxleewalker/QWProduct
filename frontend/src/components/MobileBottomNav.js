@@ -34,9 +34,8 @@ const MobileBottomNav = ({ tenantSlug }) => {
     { path: getTenantPath('/bookings'), icon: Calendar, label: 'Bookings' },
   ];
   
-  // Add Admin link for admin users
+  // Add Admin link for admin users (Reports is in Admin tab, not separate page)
   if (isAdmin) {
-    navItems.push({ path: getTenantPath('/reports'), icon: BarChart3, label: 'Reports' });
     navItems.push({ path: getTenantPath('/admin'), icon: Settings, label: 'Admin' });
   }
 

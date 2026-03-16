@@ -750,9 +750,9 @@ async def create_tenant(
     )
     
     # Build the tenant login URL - Path-based branded URL
-    # Format: https://quick-wing.com/{tenant_slug}/login
-    # HARDCODED to quick-wing.com - ignore any environment variables
-    base_url = 'https://quick-wing.com'
+    # Format: {FRONTEND_URL}/{tenant_slug}/login
+    # Uses environment variable for deployment flexibility
+    base_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
     tenant_login_url = f"{base_url}/{tenant_data.slug}/login"
     staff_login_url = f"{base_url}/{tenant_data.slug}/login"
     
@@ -2502,7 +2502,8 @@ async def create_tenant_user(
     
     # Get tenant slug for login URL
     tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
-    staff_login_url = f"https://quick-wing.com/{tenant['slug']}/login" if tenant else None
+    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+    staff_login_url = f"{frontend_url}/{tenant['slug']}/login" if tenant else None
     
     return {
         "message": "User created successfully", 
@@ -4250,8 +4251,8 @@ async def get_vehicle_qr(
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     
-    # Generate QR with tenant context - HARDCODED to quick-wing.com
-    base_url = 'https://quick-wing.com'
+    # Generate QR with tenant context - uses environment variable for deployment flexibility
+    base_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
     qr_url = f"{base_url}/{context.tenant_slug}/book/{vehicle_id}"
     
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
@@ -4453,7 +4454,7 @@ async def seed_super_admin():
         logger.info("ADMIN CREDENTIALS:")
         logger.info(f"  Email: {SUPER_ADMIN_EMAIL}")
         logger.info(f"  Password: {SUPER_ADMIN_PASSWORD}")
-        logger.info(f"  URL: https://quick-wing.com/login")
+        logger.info(f"  URL: {os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/login")
         logger.info("="*50)
         
     except Exception as e:

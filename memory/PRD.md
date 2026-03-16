@@ -13,6 +13,29 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 - Color-coded usage indicators: green (< 80%), amber (80-99%), red (100%)
 - Legacy plan names (`starter`, `basic`, `pro`) mapped to new tiers
 
+### Plan Comparison Page - COMPLETED ✅ (March 16, 2026)
+- New "Plans" tab in Command Centre navigation
+- Side-by-side comparison of all 3 plans with pricing
+- Feature comparison with checkmarks for each plan tier
+- "Most Popular" badge on Essential plan
+
+### Feature Gating - COMPLETED ✅ (March 16, 2026)
+- Reports tab shows "Limited Reports Available" warning for Standard plan
+- Feature availability based on `planData.features` from /api/my-plan endpoint
+- UI elements adapt based on tenant's effective features
+
+### Monthly Customization Credits - COMPLETED ✅ (March 16, 2026)
+- Customization credits tracking per tenant (Standard: 1, Essential: 2, Professional: 4)
+- "Use Credit" and "Reset Credits" buttons in Feature Override Modal
+- Credits visible in Manage Franchise section
+
+### Super Admin Feature Overrides - COMPLETED ✅ (March 16, 2026)
+- Feature Override Modal accessible from franchise cards in Plans tab
+- Plan change buttons (Standard/Essential/Professional)
+- Limit overrides: Max Vehicles and Max Users editable fields
+- Feature toggles to override plan defaults per tenant
+- Save Changes persists overrides to database
+
 ## Production Domain
 - **URL:** https://quick-wing.com
 - Path-based tenant URLs: `https://quick-wing.com/{tenant-slug}/login`

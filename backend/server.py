@@ -482,6 +482,154 @@ async def update_tenant_features(
     return {"message": "Features updated successfully", "updates": update_data}
 
 
+@api_router.post("/platform/tenants/{tenant_id}/use-customization")
+async def use_customization_credit(
+    tenant_id: str,
+    description: str = "",
+    context: TenantContext = Depends(require_super_admin)
+):
+    """
+    Use one customization credit for a tenant.
+    Returns error if no credits remaining.
+    """
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    # Get plan config for monthly limit
+    plan_value = tenant.get("plan", "standard")
+    plan_mapping = {"starter": "standard", "basic": "standard", "pro": "professional"}
+    plan_value = plan_mapping.get(plan_value, plan_value)
+    try:
+        plan = TenantPlan(plan_value)
+    except ValueError:
+        plan = TenantPlan.STANDARD
+    plan_config = PLAN_CONFIG.get(plan, PLAN_CONFIG[TenantPlan.STANDARD])
+    
+    # Check remaining credits
+    remaining = tenant.get("customizations_remaining", plan_config["customizations_per_month"])
+    if remaining <= 0:
+        raise HTTPException(
+            status_code=403,
+            detail=f"No customization credits remaining. Next reset at month end."
+        )
+    
+    # Deduct one credit
+    await db.tenants.update_one(
+        {"id": tenant_id},
+        {
+            "$set": {"customizations_remaining": remaining - 1},
+            "$push": {
+                "customization_history": {
+                    "date": datetime.now(timezone.utc).isoformat(),
+                    "description": description,
+                    "used_by": context.user_email
+                }
+            }
+        }
+    )
+    
+    return {
+        "message": "Customization credit used",
+        "credits_remaining": remaining - 1,
+        "credits_per_month": plan_config["customizations_per_month"]
+    }
+
+
+@api_router.post("/platform/tenants/{tenant_id}/reset-customizations")
+async def reset_customization_credits(
+    tenant_id: str,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """
+    Manually reset customization credits for a tenant (super admin only).
+    Useful for testing or granting bonus credits.
+    """
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    # Get plan config
+    plan_value = tenant.get("plan", "standard")
+    plan_mapping = {"starter": "standard", "basic": "standard", "pro": "professional"}
+    plan_value = plan_mapping.get(plan_value, plan_value)
+    try:
+        plan = TenantPlan(plan_value)
+    except ValueError:
+        plan = TenantPlan.STANDARD
+    plan_config = PLAN_CONFIG.get(plan, PLAN_CONFIG[TenantPlan.STANDARD])
+    
+    # Reset to plan's monthly limit
+    await db.tenants.update_one(
+        {"id": tenant_id},
+        {"$set": {
+            "customizations_remaining": plan_config["customizations_per_month"],
+            "customizations_reset_date": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {
+        "message": "Customization credits reset",
+        "credits_remaining": plan_config["customizations_per_month"]
+    }
+
+
+@api_router.put("/platform/tenants/{tenant_id}/plan")
+async def update_tenant_plan(
+    tenant_id: str,
+    new_plan: str,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """
+    Change a tenant's subscription plan (super admin only).
+    Updates plan, limits, and features according to new plan.
+    """
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    # Validate plan
+    try:
+        plan = TenantPlan(new_plan)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid plan: {new_plan}. Must be 'standard', 'essential', or 'professional'")
+    
+    plan_config = PLAN_CONFIG[plan]
+    
+    # Update tenant with new plan and limits
+    await db.tenants.update_one(
+        {"id": tenant_id},
+        {"$set": {
+            "plan": plan.value,
+            "max_vehicles": plan_config["max_vehicles"],
+            "max_users": plan_config["max_users"],
+            "customizations_remaining": plan_config["customizations_per_month"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Log audit event
+    await log_audit_event(
+        context.user_id,
+        context.user_email,
+        None,
+        AuditAction.TENANT_UPDATED,
+        "tenant",
+        tenant_id,
+        {"action": "plan_changed", "old_plan": tenant.get("plan"), "new_plan": plan.value}
+    )
+    
+    return {
+        "message": f"Plan updated to {plan_config['name']}",
+        "plan": plan.value,
+        "new_limits": {
+            "max_vehicles": plan_config["max_vehicles"],
+            "max_users": plan_config["max_users"],
+            "customizations_per_month": plan_config["customizations_per_month"]
+        }
+    }
+
+
 @api_router.post("/platform/tenants", response_model=dict)
 async def create_tenant(
     tenant_data: TenantCreate,

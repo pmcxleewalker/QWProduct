@@ -36,7 +36,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Import models
 from models.tenant import (
-    UserRole, TenantStatus, TenantPlan,
+    UserRole, TenantStatus, TenantPlan, PLAN_CONFIG,
     TenantCreate, TenantUpdate, Tenant, TenantUsageStats,
     UserCreate, UserLogin, User, UserResponse, UserWithMemberships,
     MembershipCreate, Membership,

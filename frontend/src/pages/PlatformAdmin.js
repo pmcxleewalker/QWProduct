@@ -2395,6 +2395,376 @@ const PlatformAdmin = () => {
           </div>
         )}
 
+        {/* Plans Tab */}
+        {activeTab === 'plans' && (
+          <div className="space-y-6">
+            {/* Plan Comparison Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Subscription Plans</h2>
+                <p className="text-sm text-gray-500">Compare plans and manage franchise subscriptions</p>
+              </div>
+            </div>
+
+            {/* Plan Comparison Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {planConfigs.map((plan) => (
+                <div 
+                  key={plan.id}
+                  className={`bg-white rounded-xl shadow-sm border-2 p-6 relative ${
+                    plan.is_popular ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200'
+                  }`}
+                >
+                  {plan.is_popular && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center">
+                        <Star size={12} className="mr-1" /> Most Popular
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="text-center mb-6">
+                    <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
+                    <div className="mt-2">
+                      <span className="text-3xl font-bold text-gray-900">€{plan.price}</span>
+                      <span className="text-gray-500">/month</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2">{plan.tagline}</p>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <span className="text-gray-600">Vehicles</span>
+                      <span className="font-semibold">{plan.max_vehicles}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <span className="text-gray-600">Users</span>
+                      <span className="font-semibold">{plan.max_users}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <span className="text-gray-600">Customizations/month</span>
+                      <span className="font-semibold">{plan.customizations_per_month}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-gray-700 text-sm">Features</h4>
+                    {Object.entries(plan.features).map(([key, enabled]) => (
+                      <div key={key} className="flex items-center text-sm">
+                        {enabled ? (
+                          <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
+                        ) : (
+                          <XCircle size={16} className="text-gray-300 mr-2 flex-shrink-0" />
+                        )}
+                        <span className={enabled ? 'text-gray-700' : 'text-gray-400'}>
+                          {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tenant Plan Management Section */}
+            <div className="bg-white rounded-xl shadow-sm border p-6 mt-8">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                <Settings size={20} className="mr-2 text-blue-600" />
+                Manage Franchise Plans & Features
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Click on a franchise to view and override plan features, or change their subscription plan.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {tenants.map((tenant) => {
+                  const planConfig = planConfigs.find(p => p.id === tenant.plan) || planConfigs[0];
+                  const usageVehicles = tenant.vehicles_count || 0;
+                  const usageUsers = tenant.users_count || 0;
+                  const vehiclePercent = (usageVehicles / (tenant.max_vehicles || 10)) * 100;
+                  const userPercent = (usageUsers / (tenant.max_users || 20)) * 100;
+                  
+                  return (
+                    <div 
+                      key={tenant.id}
+                      className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => {
+                        setFeatureModalTenant(tenant);
+                        setFeatureEdits({});
+                        setShowFeatureModal(true);
+                      }}
+                      data-testid={`plan-manage-${tenant.slug}`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-gray-900">{tenant.name}</h4>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          tenant.plan === 'professional' ? 'bg-purple-100 text-purple-700' :
+                          tenant.plan === 'essential' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {planConfig?.name?.split(' ').pop() || 'Standard'}
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <div className="flex justify-between text-gray-600 mb-1">
+                            <span>Vehicles</span>
+                            <span>{usageVehicles}/{tenant.max_vehicles || 10}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full ${
+                                vehiclePercent >= 100 ? 'bg-red-500' :
+                                vehiclePercent >= 80 ? 'bg-amber-500' : 'bg-green-500'
+                              }`}
+                              style={{ width: `${Math.min(vehiclePercent, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <div className="flex justify-between text-gray-600 mb-1">
+                            <span>Users</span>
+                            <span>{usageUsers}/{tenant.max_users || 20}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full ${
+                                userPercent >= 100 ? 'bg-red-500' :
+                                userPercent >= 80 ? 'bg-amber-500' : 'bg-green-500'
+                              }`}
+                              style={{ width: `${Math.min(userPercent, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t mt-2">
+                          <span className="text-gray-500">Customizations</span>
+                          <span className="font-medium">
+                            {tenant.customizations_remaining ?? planConfig?.customizations_per_month ?? 1} / {planConfig?.customizations_per_month ?? 1}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Feature Override Modal */}
+        {showFeatureModal && featureModalTenant && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b sticky top-0 bg-white z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">{featureModalTenant.name}</h3>
+                    <p className="text-sm text-gray-500">Manage plan and features</p>
+                  </div>
+                  <button 
+                    onClick={() => setShowFeatureModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <XCircle size={24} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Change Plan Section */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <Layers size={18} className="mr-2 text-blue-600" />
+                    Subscription Plan
+                  </h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    {planConfigs.map((plan) => (
+                      <button
+                        key={plan.id}
+                        onClick={async () => {
+                          if (plan.id === featureModalTenant.plan) return;
+                          try {
+                            await axios.put(`${API}/platform/tenants/${featureModalTenant.id}/plan`, null, {
+                              params: { new_plan: plan.id }
+                            });
+                            toast.success(`Plan changed to ${plan.name}`);
+                            fetchTenants();
+                            setShowFeatureModal(false);
+                          } catch (err) {
+                            toast.error(getErrorMessage(err, 'Failed to change plan'));
+                          }
+                        }}
+                        className={`p-3 rounded-lg border-2 text-center transition-all ${
+                          plan.id === featureModalTenant.plan
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300'
+                        }`}
+                      >
+                        <div className="font-semibold text-sm">{plan.name.split(' ').pop()}</div>
+                        <div className="text-xs text-gray-500">€{plan.price}/mo</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Customization Credits Section */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <Zap size={18} className="mr-2 text-amber-500" />
+                    Customization Credits
+                  </h4>
+                  <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {featureModalTenant.customizations_remaining ?? 
+                          (planConfigs.find(p => p.id === featureModalTenant.plan)?.customizations_per_month ?? 1)}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        of {planConfigs.find(p => p.id === featureModalTenant.plan)?.customizations_per_month ?? 1} remaining
+                      </p>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={async () => {
+                          try {
+                            await axios.post(`${API}/platform/tenants/${featureModalTenant.id}/use-customization`, null, {
+                              params: { description: 'Manual deduction' }
+                            });
+                            toast.success('Customization credit used');
+                            fetchTenants();
+                          } catch (err) {
+                            toast.error(getErrorMessage(err, 'No credits remaining'));
+                          }
+                        }}
+                        className="px-3 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 text-sm font-medium"
+                      >
+                        Use Credit
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await axios.post(`${API}/platform/tenants/${featureModalTenant.id}/reset-customizations`);
+                            toast.success('Credits reset to monthly limit');
+                            fetchTenants();
+                          } catch (err) {
+                            toast.error(getErrorMessage(err, 'Failed to reset credits'));
+                          }
+                        }}
+                        className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm font-medium"
+                      >
+                        Reset Credits
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Limit Overrides Section */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <Settings size={18} className="mr-2 text-gray-600" />
+                    Limit Overrides
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Max Vehicles</label>
+                      <input
+                        type="number"
+                        value={featureEdits.max_vehicles ?? featureModalTenant.max_vehicles ?? 10}
+                        onChange={(e) => setFeatureEdits({...featureEdits, max_vehicles: parseInt(e.target.value)})}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        min={1}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Max Users</label>
+                      <input
+                        type="number"
+                        value={featureEdits.max_users ?? featureModalTenant.max_users ?? 20}
+                        onChange={(e) => setFeatureEdits({...featureEdits, max_users: parseInt(e.target.value)})}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        min={1}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feature Overrides Section */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <CheckCircle size={18} className="mr-2 text-green-600" />
+                    Feature Overrides
+                  </h4>
+                  <p className="text-sm text-gray-500 mb-3">
+                    Toggle features on/off to override the plan defaults for this franchise.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {planConfigs[0]?.features && Object.keys(planConfigs[0].features).map((featureKey) => {
+                      const planDefault = planConfigs.find(p => p.id === featureModalTenant.plan)?.features?.[featureKey] ?? false;
+                      const currentOverride = featureModalTenant.feature_overrides?.[featureKey];
+                      const effectiveValue = featureEdits.features?.[featureKey] ?? currentOverride ?? planDefault;
+                      const isOverridden = currentOverride !== undefined || featureEdits.features?.[featureKey] !== undefined;
+                      
+                      return (
+                        <div 
+                          key={featureKey}
+                          className={`flex items-center justify-between p-3 rounded-lg border ${
+                            isOverridden ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                          }`}
+                        >
+                          <span className="text-sm text-gray-700">
+                            {featureKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </span>
+                          <button
+                            onClick={() => {
+                              const newFeatures = {...(featureEdits.features || {})};
+                              newFeatures[featureKey] = !effectiveValue;
+                              setFeatureEdits({...featureEdits, features: newFeatures});
+                            }}
+                            className={`w-12 h-6 rounded-full transition-colors ${
+                              effectiveValue ? 'bg-green-500' : 'bg-gray-300'
+                            }`}
+                          >
+                            <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
+                              effectiveValue ? 'translate-x-6' : 'translate-x-0.5'
+                            }`} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 border-t bg-gray-50 flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowFeatureModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await axios.put(`${API}/platform/tenants/${featureModalTenant.id}/features`, featureEdits);
+                      toast.success('Features and limits updated');
+                      fetchTenants();
+                      setShowFeatureModal(false);
+                    } catch (err) {
+                      toast.error(getErrorMessage(err, 'Failed to update features'));
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Audit Log Tab */}
         {activeTab === 'audit' && (
           <div className="space-y-6">

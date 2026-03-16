@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import { toast } from 'sonner';
 import { 
   Building2, Users, Car, Calendar, TrendingUp, Plus, 
   Pause, Play, Eye, Shield, Crown, AlertTriangle,
@@ -8,7 +9,7 @@ import {
   Activity, DollarSign, Clock, CheckCircle, XCircle,
   FileText, Settings, RefreshCw, LogOut, Trash2, Key,
   Receipt, Download, Send, Edit2, UserPlus, UserMinus,
-  Globe, Copy
+  Globe, Copy, Layers, Star, Zap
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;

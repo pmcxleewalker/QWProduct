@@ -86,7 +86,6 @@ const Navigation = ({ tenantSlug }) => {
 
   // Only show Admin for admin users
   if (isTenantAdmin()) {
-    navItems.push({ path: getTenantPath('/reports'), icon: BarChart3, label: 'Reports' });
     navItems.push({ path: getTenantPath('/admin'), icon: Settings, label: 'Admin' });
   }
 

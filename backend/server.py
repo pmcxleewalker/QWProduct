@@ -755,6 +755,48 @@ async def update_tenant(
     return {"message": "Tenant updated successfully", "tenant": updated}
 
 
+@api_router.get("/my-plan")
+async def get_my_plan(context: TenantContext = Depends(require_tenant_context)):
+    """Get the current tenant's plan, features, and usage limits"""
+    tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    # Get plan configuration
+    plan = TenantPlan(tenant.get("plan", "standard"))
+    plan_config = PLAN_CONFIG.get(plan, PLAN_CONFIG[TenantPlan.STANDARD])
+    
+    # Get effective features (plan features + overrides)
+    features = plan_config["features"].copy()
+    overrides = tenant.get("feature_overrides", {})
+    for key, value in overrides.items():
+        features[key] = value
+    
+    # Get current usage
+    vehicles_count = await db.vehicles.count_documents({"tenant_id": context.tenant_id})
+    users_count = await db.memberships.count_documents({"tenant_id": context.tenant_id})
+    
+    return {
+        "plan": {
+            "id": plan.value,
+            "name": plan_config["name"],
+            "description": plan_config["description"],
+            "tagline": plan_config["tagline"]
+        },
+        "limits": {
+            "max_vehicles": tenant.get("max_vehicles", plan_config["max_vehicles"]),
+            "max_users": tenant.get("max_users", plan_config["max_users"]),
+            "customizations_remaining": tenant.get("customizations_remaining", plan_config["customizations_per_month"]),
+            "customizations_per_month": plan_config["customizations_per_month"]
+        },
+        "usage": {
+            "vehicles": vehicles_count,
+            "users": users_count
+        },
+        "features": features
+    }
+
+
 @api_router.post("/platform/tenants/{tenant_id}/suspend")
 async def suspend_tenant(
     tenant_id: str,

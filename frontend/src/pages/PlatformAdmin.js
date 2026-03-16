@@ -606,6 +606,7 @@ const PlatformAdmin = () => {
               { id: 'overview', label: 'Overview', icon: Activity },
               { id: 'tenants', label: 'Tenants', icon: Building2 },
               { id: 'users', label: 'Users', icon: Users },
+              { id: 'plans', label: 'Plans', icon: Layers },
               { id: 'reports', label: 'Reports & Billing', icon: Receipt },
               { id: 'audit', label: 'Audit Log', icon: FileText }
             ].map(tab => (

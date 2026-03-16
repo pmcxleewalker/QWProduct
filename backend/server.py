@@ -469,14 +469,12 @@ async def update_tenant_features(
     await db.tenants.update_one({"id": tenant_id}, {"$set": update_data})
     
     # Log audit event
-    await log_audit_event(
-        context.user_id,
-        context.user_email,
-        None,  # Platform level
-        AuditAction.TENANT_UPDATED,
-        "tenant",
-        tenant_id,
-        {"action": "features_updated", "updates": feature_updates}
+    await audit_service.log_tenant_action(
+        actor_user_id=context.user_id,
+        actor_email=context.user_email,
+        action=AuditAction.TENANT_UPDATED,
+        tenant_id=tenant_id,
+        meta={"action": "features_updated", "updates": feature_updates}
     )
     
     return {"message": "Features updated successfully", "updates": update_data}

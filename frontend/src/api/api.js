@@ -93,6 +93,14 @@ export const platformAPI = {
   // Stats & Audit
   getStats: () => axios.get(`${API}/platform/stats`),
   getAuditLog: (tenantId, action, limit) => axios.get(`${API}/platform/audit-log`, { params: { tenant_id: tenantId, action, limit } }),
+  
+  // Plans & Features
+  getPlans: () => axios.get(`${API}/platform/plans`),
+  getTenantFeatures: (tenantId) => axios.get(`${API}/platform/tenants/${tenantId}/features`),
+  updateTenantFeatures: (tenantId, features) => axios.put(`${API}/platform/tenants/${tenantId}/features`, features),
+  updateTenantPlan: (tenantId, plan) => axios.put(`${API}/platform/tenants/${tenantId}/plan`, null, { params: { new_plan: plan } }),
+  useCustomization: (tenantId, description) => axios.post(`${API}/platform/tenants/${tenantId}/use-customization`, null, { params: { description } }),
+  resetCustomizations: (tenantId) => axios.post(`${API}/platform/tenants/${tenantId}/reset-customizations`),
 };
 
 // Auth API

@@ -365,9 +365,27 @@ When creating a new tenant:
 | PDF exports | Working | Required | ✅ Ready |
 | Invoicing | CRUD + PDF | Required | ✅ Ready |
 
-### Plan Limits
-- **Starter**: 10 vehicles, 20 users
-- **Professional**: 50 vehicles, 100 users  
-- **Enterprise**: 999 vehicles, 999 users
+### Plan Limits (Updated March 2026)
+The platform now uses a 3-tier subscription model:
 
-**Recommendation**: Use **Professional** or **Enterprise** plan for franchises with 15+ users and 20+ vehicles.
+| Plan | Price | Max Vehicles | Max Users | Monthly Customizations |
+|------|-------|--------------|-----------|----------------------|
+| **Quick Wing Standard** | €179/month | 10 | 20 | 1 |
+| **Quick Wing Essential** | €279/month | 25 | 35 | 2 |
+| **Quick Wing Professional** | €399/month | 50 | 50 | 4 |
+
+#### Feature Availability by Plan
+| Feature | Standard | Essential | Professional |
+|---------|----------|-----------|--------------|
+| Vehicle Booking | ✅ | ✅ | ✅ |
+| Fleet Compliance | ✅ | ✅ | ✅ |
+| Basic Reports | ✅ | ✅ | ✅ |
+| Enhanced Reports | ❌ | ✅ | ✅ |
+| Detailed Reports | ❌ | ❌ | ✅ |
+| Staff Calendars | ✅ | ✅ | ✅ |
+| Admin All Cars Calendar | ✅ | ✅ | ✅ |
+| Enhanced Booking Visibility | ❌ | ✅ | ✅ |
+| Booking Admin Control | ❌ | ✅ | ✅ |
+| Broader Compliance Oversight | ❌ | ✅ | ✅ |
+
+**Recommendation**: Use **Essential** plan (most popular) for growing franchises with 15-35 users. Use **Professional** for larger operations.

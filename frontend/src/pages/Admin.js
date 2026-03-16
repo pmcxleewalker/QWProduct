@@ -1088,15 +1088,37 @@ const Admin = () => {
       {activeTab === 'cars' && (
         <div>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">Fleet Vehicles</h2>
+            <div className="flex items-center space-x-4">
+              <h2 className="text-xl font-bold">Fleet Vehicles</h2>
+              {planData && (
+                <span className={`text-sm px-3 py-1 rounded-full ${
+                  planData.usage.vehicles >= planData.limits.max_vehicles 
+                    ? 'bg-red-100 text-red-700' 
+                    : planData.usage.vehicles >= planData.limits.max_vehicles * 0.8 
+                      ? 'bg-amber-100 text-amber-700' 
+                      : 'bg-green-100 text-green-700'
+                }`}>
+                  {planData.usage.vehicles}/{planData.limits.max_vehicles} vehicles
+                </span>
+              )}
+            </div>
             <button
               onClick={() => {
+                if (planData && planData.usage.vehicles >= planData.limits.max_vehicles) {
+                  toast.error(`Vehicle limit reached (${planData.limits.max_vehicles}). Please upgrade your plan.`);
+                  return;
+                }
                 setShowCarForm(true);
                 setEditingCar(null);
                 setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_mileage: '' });
               }}
               data-testid="add-car-button"
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              disabled={planData && planData.usage.vehicles >= planData.limits.max_vehicles}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
+                planData && planData.usage.vehicles >= planData.limits.max_vehicles
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
             >
               <Plus size={18} />
               <span>Add Car</span>

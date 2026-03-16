@@ -3,6 +3,16 @@
 ## Product Overview
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
+## Recent Changes (March 2026)
+
+### 3-Tier Subscription Plan System - COMPLETED ✅
+- Implemented Standard (€179), Essential (€279), and Professional (€399) plans
+- Backend enforcement: API returns 403 when vehicle/user limits are reached
+- Frontend: Usage indicators show X/Y vehicles and X/Y users
+- Frontend: Add buttons disabled with toast notifications when at limit
+- Color-coded usage indicators: green (< 80%), amber (80-99%), red (100%)
+- Legacy plan names (`starter`, `basic`, `pro`) mapped to new tiers
+
 ## Production Domain
 - **URL:** https://quick-wing.com
 - Path-based tenant URLs: `https://quick-wing.com/{tenant-slug}/login`

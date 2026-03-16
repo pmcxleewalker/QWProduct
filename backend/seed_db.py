@@ -117,7 +117,7 @@ async def seed_database():
         print(f"\nSuper Admin Credentials:")
         print(f"  Email: {SUPER_ADMIN_EMAIL}")
         print(f"  Password: {SUPER_ADMIN_PASSWORD}")
-        print(f"\nLogin URL: https://quick-wing.com/login")
+        print(f"\nLogin URL: {os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/login")
         print("="*50 + "\n")
         
     except Exception as e:

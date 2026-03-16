@@ -2531,8 +2531,55 @@ const Admin = () => {
                 </div>
               )}
 
-              {/* Admins */}
-              {tenantCredentials?.admins?.length > 0 && (
+              {/* All Franchise Users - shown when there's no master_admin or in addition */}
+              {tenantCredentials?.allUsers?.length > 0 && (
+                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                  <div className="p-4 border-b bg-gray-50">
+                    <h3 className="font-semibold text-gray-900 flex items-center">
+                      <Users size={18} className="mr-2 text-blue-600" />
+                      Franchise Users ({tenantCredentials.allUsers.length})
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">All users with access to this franchise</p>
+                  </div>
+                  <div className="divide-y">
+                    {tenantCredentials.allUsers.map(user => (
+                      <div key={user.id} className="p-4 hover:bg-gray-50">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 uppercase">Name</label>
+                            <p className="text-sm font-medium text-gray-900">{user.name || '-'}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 uppercase">Email</label>
+                            <code className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+                              {user.email}
+                            </code>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-gray-500 uppercase">Default Password</label>
+                            <code className="text-xs font-mono bg-amber-100 text-amber-800 px-2 py-1 rounded">
+                              {user.name?.split(' ')[0] || 'User'}123
+                            </code>
+                          </div>
+                          <div>
+                            <span className={`px-2 py-1 text-xs font-medium rounded ${
+                              user.role === 'master_admin' ? 'bg-blue-100 text-blue-700' :
+                              user.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                              'bg-green-100 text-green-700'
+                            }`}>
+                              {user.role === 'master_admin' ? 'Master Admin' :
+                               user.role === 'admin' ? 'Admin' : 'Staff'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Admins - keep for backward compatibility but hide if allUsers shown */}
+              {!tenantCredentials?.allUsers?.length && tenantCredentials?.admins?.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                   <div className="p-4 border-b bg-gray-50">
                     <h3 className="font-semibold text-gray-900 flex items-center">

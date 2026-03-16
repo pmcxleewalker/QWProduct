@@ -43,9 +43,20 @@ const PlatformAdmin = () => {
   // Master admins list
   const [masterAdmins, setMasterAdmins] = useState([]);
   
+  // Plan configurations
+  const [planConfigs, setPlanConfigs] = useState([]);
+  
   // Create tenant form
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newTenant, setNewTenant] = useState({ name: '', slug: '', plan: 'starter', master_admin_email: '', master_admin_name: '' });
+  const [newTenant, setNewTenant] = useState({ 
+    name: '', 
+    slug: '', 
+    plan: 'standard',
+    master_admin_email: '', 
+    master_admin_name: '',
+    custom_max_vehicles: null,
+    custom_max_users: null
+  });
   
   // Created tenant result (to show credentials)
   const [createdTenantResult, setCreatedTenantResult] = useState(null);
@@ -53,6 +64,11 @@ const PlatformAdmin = () => {
   // Selected tenant for details
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [tenantDetails, setTenantDetails] = useState(null);
+  
+  // Feature management modal
+  const [showFeatureModal, setShowFeatureModal] = useState(false);
+  const [featureModalTenant, setFeatureModalTenant] = useState(null);
+  const [featureEdits, setFeatureEdits] = useState({});
   
   // Create user form
   const [showCreateUserForm, setShowCreateUserForm] = useState(false);

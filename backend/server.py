@@ -688,8 +688,14 @@ async def get_tenant(
         "created_at": {"$gte": month_start.isoformat()}
     })
     
-    # Get plan configuration
-    plan = TenantPlan(tenant.get("plan", "standard"))
+    # Get plan configuration - handle legacy plan names
+    plan_value = tenant.get("plan", "standard")
+    plan_mapping = {"starter": "standard", "basic": "standard", "pro": "professional"}
+    plan_value = plan_mapping.get(plan_value, plan_value)
+    try:
+        plan = TenantPlan(plan_value)
+    except ValueError:
+        plan = TenantPlan.STANDARD
     plan_config = PLAN_CONFIG.get(plan, PLAN_CONFIG[TenantPlan.STANDARD])
     
     # Get effective features (plan features + overrides)

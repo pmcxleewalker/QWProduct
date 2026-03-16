@@ -1597,14 +1597,36 @@ const Admin = () => {
       {activeTab === 'users' && (
         <div>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">User Management</h2>
+            <div className="flex items-center space-x-4">
+              <h2 className="text-xl font-bold">User Management</h2>
+              {planData && (
+                <span className={`text-sm px-3 py-1 rounded-full ${
+                  planData.usage.users >= planData.limits.max_users 
+                    ? 'bg-red-100 text-red-700' 
+                    : planData.usage.users >= planData.limits.max_users * 0.8 
+                      ? 'bg-amber-100 text-amber-700' 
+                      : 'bg-green-100 text-green-700'
+                }`}>
+                  {planData.usage.users}/{planData.limits.max_users} users
+                </span>
+              )}
+            </div>
             <button
               onClick={() => {
+                if (planData && planData.usage.users >= planData.limits.max_users) {
+                  toast.error(`User limit reached (${planData.limits.max_users}). Please upgrade your plan.`);
+                  return;
+                }
                 setShowCreateUserForm(true);
                 setCreateUserForm({ email: '', password: '', role: 'staff' });
               }}
               data-testid="create-user-button"
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              disabled={planData && planData.usage.users >= planData.limits.max_users}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
+                planData && planData.usage.users >= planData.limits.max_users
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              }`}
             >
               <Plus size={18} />
               <span>Create User</span>

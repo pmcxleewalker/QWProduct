@@ -135,10 +135,13 @@ class Tenant(BaseModel):
     name: str
     slug: str  # URL-friendly identifier (e.g., "bluebird-care")
     status: TenantStatus = TenantStatus.ACTIVE
-    plan: TenantPlan = TenantPlan.STARTER
+    plan: TenantPlan = TenantPlan.STANDARD
     subscription_expires_at: Optional[datetime] = None
     max_vehicles: int = 10  # Plan limits
     max_users: int = 20
+    customizations_remaining: int = 1  # Monthly customizations
+    customizations_reset_date: Optional[datetime] = None
+    feature_overrides: Optional[dict] = None  # Super admin can override features
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

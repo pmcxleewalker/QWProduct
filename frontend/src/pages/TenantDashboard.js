@@ -11,7 +11,7 @@ import {
   ArrowRight, MoreVertical, BookOpen, HelpCircle, PieChart,
   Activity, TrendingDown, CalendarDays, QrCode, Camera, Gauge,
   ClipboardList, Bell, Megaphone, Crown, Star, Zap, Palette, DollarSign,
-  Save, X
+  Save, X, Sparkles
 } from 'lucide-react';
 import AdminTraining from '../components/AdminTraining';
 import CarBookingCalendar from '../components/CarBookingCalendar';

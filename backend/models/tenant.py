@@ -42,9 +42,9 @@ PLAN_CONFIG = {
             "booking_admin_control": False,
             "compliance_oversight_broad": False,
             "multi_location_support": False,
-            "api_access": False,
             "priority_support": False,
             "custom_branding": False,
+            "cost_analytics": False,
         },
         "description": "A practical fleet system for smaller franchises",
         "tagline": "Simple structure for smaller teams that need control without complexity"
@@ -69,9 +69,9 @@ PLAN_CONFIG = {
             "booking_admin_control": True,  # Admin control over bookings
             "compliance_oversight_broad": True,  # Broader compliance oversight
             "multi_location_support": False,
-            "api_access": False,
             "priority_support": False,
             "custom_branding": False,
+            "cost_analytics": False,
         },
         "description": "The best fit for growing franchises that need more control",
         "tagline": "Built to be the sweet spot for value, scale and day-to-day control"

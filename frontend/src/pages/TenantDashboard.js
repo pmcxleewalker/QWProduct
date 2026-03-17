@@ -408,17 +408,41 @@ const TenantDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50" data-testid="tenant-dashboard">
-      {/* Header */}
-      <div className="bg-white border-b">
+      {/* Tier-styled Header */}
+      <div className={`bg-gradient-to-r ${tierStyle.headerGradient} text-white shadow-lg`}>
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900" data-testid="dashboard-title">
-                {activeTenant?.tenant_name || 'Dashboard'}
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">Fleet Management Dashboard</p>
+            <div className="flex items-center space-x-4">
+              {/* Tier Badge */}
+              <div className="text-4xl">{tierStyle.icon}</div>
+              <div>
+                <div className="flex items-center space-x-3">
+                  <h1 className="text-2xl font-bold text-white" data-testid="dashboard-title">
+                    {activeTenant?.tenant_name || 'Dashboard'}
+                  </h1>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${tierStyle.badge} shadow-md`}>
+                    {tierStyle.name}
+                  </span>
+                </div>
+                <p className="text-sm text-white/80 mt-1">{tierStyle.tagline}</p>
+              </div>
             </div>
             <div className="flex items-center space-x-3">
+              {/* Plan Usage Indicator */}
+              {planData && (
+                <div className="hidden md:flex items-center space-x-4 mr-4 px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <div className="text-center">
+                    <p className="text-xs text-white/70">Vehicles</p>
+                    <p className="text-sm font-bold">{planData.usage?.vehicles || 0}/{planData.limits?.max_vehicles || 10}</p>
+                  </div>
+                  <div className="w-px h-8 bg-white/20" />
+                  <div className="text-center">
+                    <p className="text-xs text-white/70">Users</p>
+                    <p className="text-sm font-bold">{planData.usage?.users || 0}/{planData.limits?.max_users || 20}</p>
+                  </div>
+                </div>
+              )}
+              
               {/* Notification Bell */}
               <NotificationBell 
                 onAnnouncementClick={() => {
@@ -429,7 +453,7 @@ const TenantDashboard = () => {
               
               <button
                 onClick={fetchData}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="flex items-center space-x-2 px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 backdrop-blur-sm"
                 data-testid="refresh-button"
               >
                 <RefreshCw size={18} />
@@ -438,7 +462,7 @@ const TenantDashboard = () => {
               {isAdmin && (
                 <button
                   onClick={() => setShowTraining(true)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200"
+                  className="flex items-center space-x-2 px-4 py-2 bg-white text-gray-800 rounded-lg hover:bg-gray-100 font-medium"
                   data-testid="help-button"
                 >
                   <HelpCircle size={18} />
@@ -450,7 +474,7 @@ const TenantDashboard = () => {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs - with tier accent color */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex space-x-1 overflow-x-auto">
@@ -467,7 +491,7 @@ const TenantDashboard = () => {
                 }}
                 className={`flex items-center space-x-2 px-4 py-3 border-b-2 whitespace-nowrap transition-colors ${
                   activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
+                    ? `border-current ${tierStyle.accent}`
                     : 'border-transparent text-gray-600 hover:text-gray-900'
                 }`}
                 data-testid={`tab-${tab.id}`}

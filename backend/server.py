@@ -1,8 +1,9 @@
 """
 Quick Wing Fleet Management - Multi-Tenant SaaS Platform
 """
-from fastapi import FastAPI, APIRouter, HTTPException, Query, Depends, Request
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, APIRouter, HTTPException, Query, Depends, Request, UploadFile, File
+from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -18,6 +19,7 @@ from io import BytesIO
 from passlib.context import CryptContext
 from jose import jwt
 import httpx
+import shutil
 
 # Load environment
 ROOT_DIR = Path(__file__).parent

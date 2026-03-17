@@ -3858,6 +3858,7 @@ const Admin = () => {
         isOpen={showTraining}
         onClose={handleCloseTraining}
         franchiseName={activeTenant?.tenant_name}
+        planData={planData}
       />
 
     </div>

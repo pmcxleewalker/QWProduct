@@ -13,6 +13,7 @@ import Bookings from './pages/Bookings';
 import Assistance from './pages/Assistance';
 import Admin from './pages/Admin';
 import MileageUpdate from './pages/MileageUpdate';
+import MileageLog from './pages/MileageLog';
 import Setup from './pages/Setup';
 import SetupWizard from './pages/SetupWizard';
 import TermsOfService from './pages/TermsOfService';

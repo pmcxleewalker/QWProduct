@@ -395,6 +395,80 @@ const TenantDashboard = () => {
     }
   };
 
+  // Booking Management Handlers
+  const handleManageBooking = (booking) => {
+    setSelectedBooking(booking);
+    setShowManageBooking(true);
+  };
+
+  const handleUpdateBooking = async (bookingId, updateData) => {
+    try {
+      await bookingAPI.update(bookingId, updateData);
+      toast.success('Booking updated successfully');
+      setShowManageBooking(false);
+      setSelectedBooking(null);
+      fetchData();
+    } catch (err) {
+      toast.error('Failed to update booking');
+      console.error(err);
+    }
+  };
+
+  const handleDeleteBooking = async (bookingId) => {
+    if (!window.confirm('Are you sure you want to delete this booking?')) return;
+    try {
+      await bookingAPI.delete(bookingId);
+      toast.success('Booking deleted');
+      setShowManageBooking(false);
+      setSelectedBooking(null);
+      fetchData();
+    } catch (err) {
+      toast.error('Failed to delete booking');
+      console.error(err);
+    }
+  };
+
+  // Settings Handlers (Professional tier)
+  const handleSaveSettings = async () => {
+    try {
+      await settingsAPI.update(settingsForm);
+      toast.success('Settings saved successfully');
+      setShowSettings(false);
+      fetchData();
+    } catch (err) {
+      toast.error('Failed to save settings');
+      console.error(err);
+    }
+  };
+
+  // Calculate cost analytics based on settings
+  const calculateCostAnalytics = () => {
+    if (!tenantSettings?.cost_analytics?.enabled) return null;
+    
+    const rate = settingsForm.mileage_rate || 0.35;
+    const fuelCost = settingsForm.fuel_cost_per_km || 0.12;
+    const maintenanceCost = settingsForm.maintenance_cost_per_km || 0.08;
+    const currency = settingsForm.currency || 'EUR';
+    const unit = settingsForm.distance_unit || 'km';
+    
+    // Calculate total mileage from vehicles
+    const totalMileage = vehicles.reduce((sum, v) => sum + (v.current_mileage || 0), 0);
+    const totalCost = totalMileage * rate;
+    const totalFuelCost = totalMileage * fuelCost;
+    const totalMaintenanceCost = totalMileage * maintenanceCost;
+    
+    return {
+      totalMileage,
+      totalCost,
+      totalFuelCost,
+      totalMaintenanceCost,
+      ratePerUnit: rate,
+      currency,
+      unit,
+      avgCostPerVehicle: vehicles.length > 0 ? (totalCost / vehicles.length).toFixed(2) : 0
+    };
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString('en-IE', { 

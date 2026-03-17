@@ -192,8 +192,53 @@ const DailyTimelineChart = () => {
       <div className="bg-white rounded-xl p-6 shadow-sm border">
         <div className="space-y-2">
           {timeline.map((slot, index) => {
-            const barWidth = available_fleet > 0 ? (slot.in_use / available_fleet) * 100 : 0;
             const isPeakHour = slot.hour === summary.peak_hour;
+            
+            // For single vehicle view
+            if (isViewingSingleVehicle) {
+              const isBooked = slot.in_use > 0;
+              return (
+                <div 
+                  key={slot.hour} 
+                  className="flex items-center space-x-3 group"
+                  data-testid={`timeline-slot-${slot.hour}`}
+                >
+                  <span className={`w-14 text-sm font-medium ${isBooked ? 'text-purple-600' : 'text-gray-600'}`}>
+                    {slot.hour}
+                  </span>
+                  
+                  <div className="flex-1 h-8 bg-gray-100 rounded-full overflow-hidden relative">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        isBooked 
+                          ? 'bg-gradient-to-r from-purple-400 to-purple-600 w-full' 
+                          : 'bg-gradient-to-r from-green-300 to-green-400 w-full'
+                      }`}
+                    />
+                    
+                    {/* Status label */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className={`text-xs font-semibold ${isBooked ? 'text-white' : 'text-green-800'}`}>
+                        {isBooked ? 'BOOKED' : 'AVAILABLE'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="w-20 text-right">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      isBooked 
+                        ? 'bg-purple-100 text-purple-700' 
+                        : 'bg-green-100 text-green-700'
+                    }`}>
+                      {slot.status}
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+            
+            // For all vehicles view
+            const barWidth = available_fleet > 0 ? (slot.in_use / available_fleet) * 100 : 0;
             
             return (
               <div 
@@ -241,18 +286,33 @@ const DailyTimelineChart = () => {
 
         {/* Legend */}
         <div className="flex items-center justify-center space-x-6 mt-6 pt-4 border-t text-sm">
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded bg-gradient-to-r from-blue-400 to-blue-500"></div>
-            <span className="text-gray-600">Normal Usage</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded bg-gradient-to-r from-purple-400 to-purple-500"></div>
-            <span className="text-gray-600">High Usage (&gt;70%)</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 rounded bg-gradient-to-r from-orange-400 to-orange-500"></div>
-            <span className="text-gray-600">Peak Hour</span>
-          </div>
+          {isViewingSingleVehicle ? (
+            <>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 rounded bg-gradient-to-r from-green-300 to-green-400"></div>
+                <span className="text-gray-600">Available</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 rounded bg-gradient-to-r from-purple-400 to-purple-600"></div>
+                <span className="text-gray-600">Booked</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 rounded bg-gradient-to-r from-blue-400 to-blue-500"></div>
+                <span className="text-gray-600">Normal Usage</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 rounded bg-gradient-to-r from-purple-400 to-purple-500"></div>
+                <span className="text-gray-600">High Usage (&gt;70%)</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 rounded bg-gradient-to-r from-orange-400 to-orange-500"></div>
+                <span className="text-gray-600">Peak Hour</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

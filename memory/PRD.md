@@ -483,3 +483,31 @@ The platform now uses a 3-tier subscription model:
   - Returns `selected_vehicle` info when filtering by specific vehicle
 - Works across all subscription tiers (Standard, Essential, Professional)
 
+### March 17, 2026 - Professional Tier Additional Fixes ✅
+**Fixed 4 additional issues reported by user:**
+
+1. **QR Codes Now Link to Mileage Input Page** ✅
+   - QR codes now link to `/{tenant}/vehicle/{id}/mileage` instead of booking page
+   - New `MileageLog.js` page created:
+     - Shows login screen if not authenticated
+     - After login, shows vehicle name, last recorded mileage, and input form
+     - Input fields: Current Mileage (km), Notes (optional)
+     - "Log Mileage" button saves to database and updates vehicle record
+   - New backend endpoint: `POST /api/vehicles/{id}/log-mileage`
+   - Mileage history tracked in `mileage_logs` collection
+
+2. **Team Tab Reorganized** ✅
+   - **Administrators Section** (purple header): Shows admin accounts with "Change Password" button for self
+   - **Staff Members Section** (blue header): Shows staff with "Reset Password" and "Remove" buttons
+   - Clear visual separation between roles
+
+3. **Logo Upload Replaced URL Input** ✅
+   - **Upload Logo** button with file picker
+   - Preview box shows uploaded logo
+   - "Remove logo" link to clear
+   - Supported formats: PNG, JPG, WEBP, SVG (max 2MB)
+   - New backend endpoint: `POST /api/tenant/upload-logo`
+   - Files stored in `/app/backend/uploads/logos/`
+
+4. **All Cars Calendar** - Already correctly inside Fleet tab as a sub-tab
+

@@ -216,11 +216,12 @@ const TenantDashboard = () => {
     if (!silent) setLoading(true);
     setError('');
     try {
-      // Always fetch overview data
-      const [vehiclesRes, bookingsRes, usersRes] = await Promise.all([
+      // Fetch plan data along with other data
+      const [vehiclesRes, bookingsRes, usersRes, planRes] = await Promise.all([
         axios.get(`${API}/vehicles`),
         axios.get(`${API}/bookings`),
-        isAdmin ? axios.get(`${API}/tenant/users`) : Promise.resolve({ data: { users: [] } })
+        isAdmin ? axios.get(`${API}/tenant/users`) : Promise.resolve({ data: { users: [] } }),
+        planAPI.getMyPlan().catch(() => ({ data: null }))
       ]);
 
       const vehicleList = vehiclesRes.data || [];
@@ -236,6 +237,11 @@ const TenantDashboard = () => {
         users: userList.length
       });
       setLastUpdated(new Date());
+      
+      // Set plan data for tier styling
+      if (planRes.data) {
+        setPlanData(planRes.data);
+      }
 
       // Generate recent activity from bookings
       const recent = bookingList.slice(0, 5).map(b => ({

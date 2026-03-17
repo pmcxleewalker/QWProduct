@@ -1,0 +1,188 @@
+<analysis>**original_problem_statement**: The user wants to build a full-scale multi-tenant SaaS platform named Quick Wing for fleet management. The core requirement is to replicate all features from an existing application and make them the default setup for every new franchise created on the platform. The project has evolved with numerous feature additions, and the current focus is on implementing and refining a comprehensive 3-tier subscription plan system (Standard, Essential, Professional) that governs the features and limits (vehicles, users) available to each franchise.
+
+**PRODUCT REQUIREMENTS**:
+-   **Architecture**: A true multi-tenant application with a single deployment serving multiple franchises.
+-   **Subscription Plans**: A functional 3-tier system (Standard, Essential, Professional) that gates features and enforces resource limits. The system must provide tangible, increasing value at each tier.
+-   **Tenant Management**: A Franchise Command Centre for the  to create, view, and manage tenants, including assigning and overriding plans and features.
+-   **Tier-Specific Experience**: The UI/UX within each franchise's dashboard must reflect its subscription tier through unique styling, branding, and feature availability.
+-   **Core Features**: Key functionalities include vehicle and user management, booking calendars, compliance tracking, and a robust reporting system.
+-   **Access Control**: Strict role-based access for , , and , including the ability for admins to reset staff passwords.
+
+**User's preferred language**: English
+
+**what currently exists?**
+The application is a functional multi-tenant SaaS platform with a FastAPI backend and React frontend. It features a robust Franchise Command Centre and a complete 3-tier subscription system with backend enforcement and a tier-aware frontend. The UI has been significantly enhanced with professional styling, including tier-specific themes (colors, icons, gradients) that are applied to franchise dashboards and plan comparison pages. A script has been created and run to populate the dev environment with three demo franchises, one for each tier (Standard Fleet Co, Essential Care Fleet, Professional Transport Group), replacing the old ones. Key functionalities like role-based access, password management for staff, and restructured navigation are in place.
+
+**Last working item**:
+-   **Last item agent was working**: The agent was about to begin work on a critical list of bugs and missing features for the **Professional Tier**, which the user reported as being inadequate for its price point. The user's feedback is the top priority.
+-   **Status**: IN PROGRESS
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: both. This involves fixing multiple bugs and implementing new features.
+    1.  **Backend**: Use  to test fixed endpoints (e.g., booking management, new reporting data).
+    2.  **Frontend**: Use the screenshot tool to verify UI changes (tab restructuring, working buttons, new branding options, QR codes).
+    3.  **E2E**: After implementing all fixes, call the  to perform comprehensive regression testing on the Professional tier, specifically targeting the reported issues.
+-   **User Testing Done**: N
+
+**All Pending/In progress Issue list**:
+-   **Issue 1: Overhaul Professional Tier to Justify Price (P0)**
+    -   **Description**: The user has identified several critical issues making the elite Professional tier feel no better than the Standard tier.
+    -   **Issues Detail**:
+        -   **Issue 1.1: QR Codes Don't Work**
+            -   **Next debug checklist**:
+                1.  Inspect the code generating QR codes in .
+                2.  Verify the URL being encoded. It should be a dynamic, correct, and publicly accessible URL based on the  environment variable and the specific vehicle ID.
+            -   **Why fix this issue**: Core functionality for asset management is broken.
+            -   **Status**: NOT STARTED
+            -   **Should Test**: frontend/backend/both after fix? both
+        -   **Issue 1.2: Disorganized All Cars Calendar**
+            -   **Next debug checklist**:
+                1.  Locate the tab structure in .
+                2.  Move the All cars Calendar view into the main Calendar or Fleet tab as a sub-view, instead of it being a separate top-level tab.
+            -   **Why fix this issue**: Improves UI/UX by logically grouping related features.
+            -   **Status**: NOT STARTED
+            -   **Should Test**: frontend
+        -   **Issue 1.3: Manage Button in Bookings is Non-functional**
+            -   **Next debug checklist**:
+                1.  Find the  handler for the Manage button in the bookings list in .
+                2.  Implement or fix the intended action (e.g., opening a modal to edit the booking).
+            -   **Why fix this issue**: A key interactive element for managing bookings is broken.
+            -   **Status**: NOT STARTED
+            -   **Should Test**: frontend
+        -   **Issue 1.4: Professional Reports Lack Depth**
+            -   **Attempted fixes**: Previous attempts to add tier-based reports were deemed insufficient by the user.
+            -   **Next debug checklist**:
+                1.  Re-implement the Reports tab in  for the Professional tier.
+                2.  Add genuinely advanced features like predictive maintenance alerts, cost-per-mile analytics, and driver performance leaderboards. These may require new backend aggregations.
+                3.  Ensure the UI is visually distinct and data-rich compared to lower tiers.
+            -   **Why fix this issue**: This is a primary value driver for the top tier.
+            -   **Status**: IN PROGRESS
+            -   **Is recurring issue?**: Y
+            -   **Should Test**: both
+        -   **Issue 1.5: Remove Unimplemented API Access Feature**
+            -   **Next debug checklist**:
+                1.  Remove the  key from the Professional plan definition in .
+                2.  Remove any mention of API Access from the frontend plan comparison UI in  and .
+            -   **Why fix this issue**: Prevents advertising features that don't exist.
+            -   **Status**: NOT STARTED
+            -   **Should Test**: frontend
+        -   **Issue 1.6: Implement Custom Branding Feature**
+            -   **Next debug checklist**:
+                1.  **Backend**: Add fields to the  collection for  and . Create an endpoint for franchise admins to update these.
+                2.  **Frontend**: In , add a Branding section (for Professional tier only) with a logo upload and color picker.
+                3.  Update components like  to use these custom values, overriding default tier themes.
+            -   **Why fix this issue**: Fulfills a key promised feature for the Professional tier.
+            -   **Status**: NOT STARTED
+            -   **Should Test**: both
+
+**In progress Task List**:
+-   **Task 1: Overhaul Professional Tier (P0)**
+    -   **Where to resume**: Start by addressing the list of six issues reported by the user for the Professional tier. The agent has just acknowledged the user's feedback.
+    -   **What will be achieved with this?**: A Professional tier that provides significant, tangible value over the lower tiers, justifying its price and fixing all reported bugs.
+    -   **Status**: IN PROGRESS
+    -   **Should Test**: both
+    -   **Blocked on something**: No.
+
+**Upcoming and Future Tasks**
+-   **Upcoming Tasks**:
+    -   **(P1) Refactor **: URGENT. Monolithic file is over 4400 lines.
+    -   **(P1) Refactor **: URGENT. Monolithic file is over 3800 lines.
+    -   **(P1) Refactor **: URGENT. Monolithic file is over 3200 lines.
+-   **Future Tasks**:
+    -   **(P2) Stripe Integration**: Automate subscription management and payments.
+    -   **(P3) Email Invoices**: Generate and email PDF invoices to tenants.
+    -   **(P4) Email User Credentials**: Automate sending credentials to new users.
+
+**Completed work in this session**
+-   **Subscription Enforcement**: Implemented and tested backend logic and frontend UI to enforce user/vehicle limits based on plans.
+-   **Command Centre Enhancements**: Added a Plans tab with a comparison table and a modal for super admins to override tenant plans, features, and limits.
+-   **Deployment Readiness**: Fixed all deployment-blocking issues, primarily by removing hardcoded URLs from the codebase.
+-   **Bug Fixes**: Resolved a JS error (Check is not defined) that broke the Create Tenant form, and a  caused by legacy plan data.
+-   **Premium UI/UX Overhaul**:
+    -   Implemented tier-based visual styling (gradients, icons, colors) for plan cards and franchise dashboards.
+    -   Restructured navigation tabs in both the Command Centre and franchise admin panels for better clarity.
+    -   Replaced the childish star icon with a more premium  icon for the Essential plan.
+-   **Feature Implementation**:
+    -   Added functionality for franchise admins to reset staff passwords.
+    -   Expanded the list of Irish locations for vehicle assignment.
+    -   Implemented more detailed, tier-gated reporting and booking insights sections.
+-   **Demo Environment Setup**: Created and executed a script () to clear old tenants and create three new, fully populated demo franchises, one for each subscription tier.
+-   **Tier-Specific Training**: Updated the in-app training manual to be dynamic and show content relevant to the franchise's specific plan.
+-   **Race Condition Fix**: Solved an issue where the training modal appeared with incorrect data before plan information was loaded.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Tiered Subscription Gating**: Using backend logic and a centralized  to control feature access and resource limits.
+-   **Dynamic Frontend Theming**: Applying CSS variables and conditional classes based on fetched plan data to create a tier-specific look and feel.
+-   **Component-Based Feature Gating**: Conditionally rendering UI components or sections based on the  object within the tenant's plan data.
+-   **Monolithic Codebases**: The primary technical debt is the existence of several extremely large files (, , ) that urgently require refactoring into smaller, manageable modules/components.
+
+**key DB schema**
+-   **tenants**: Each document now contains:
+    -   : (String, e.g., standard, essential, professional)
+    -   : (Object) A snapshot of the plan's limits and features at the time of creation/update (e.g., ).
+    -   : (Object, optional) Stores super-admin-defined overrides for limits and features.
+    -   : (Object) Tracks monthly customization credits.
+
+**All files of reference**
+-   
+-   
+-   
+-   
+-   
+
+**Areas that need refactoring**:
+-    (URGENT)
+-    (URGENT)
+-    (URGENT)
+
+**key api endpoints**
+-   : Tenant-scoped endpoint for the frontend to fetch its current plan, limits, and usage.
+-   : Allows tenant admins to reset staff passwords.
+-   : Allows super admins to override features for a tenant.
+-   : Uses a customization credit for a tenant.
+-   : Now returns  and  for each tenant.
+
+**Critical Info for New Agent**
+-   **The user's latest feedback on the Professional tier is the absolute P0 priority.** All six issues they raised must be addressed before any other work. The user is frustrated that the most expensive tier is buggy and lacks value.
+-   **Do not ask the user to test on production.** The user has deployed the app, but you only have access to the dev environment. Explain that database changes are not part of deployment and that production issues must go through support.
+-   **Refactoring is urgently needed**, but the immediate priority is fixing the user-reported issues with the Professional tier. Propose refactoring *after* the current P0 issues are resolved and verified by the user.
+
+**documents and test reports created in this job**
+-   
+-   
+-   
+-    (updated)
+
+**Last 10 User Messages and any pending HUMAN messages**
+10.  (COMPLETED - Agent explained dev vs prod DB)
+9.   (COMPLETED - Agent explained deployment only pushes code)
+8.   (COMPLETED - Agent explained security boundaries)
+7.   (COMPLETED - Agent implemented more detailed tier-gated reports)
+6.  User uploaded an image for inspiration and requested more locations, a premium look for the Essential header, tier-based theming, and a new icon for the Essential plan. (COMPLETED - Agent implemented all styling changes)
+5.  ** (PENDING - This is the current P0 task list: broken QR codes, disorganized calendar, broken manage button, poor reporting, and missing features)**
+4.  User provided a list of urgent fixes needed for the Professional tier. (PENDING)
+3.  User wants the Professional tier to feel amazing and give admins full control. (PENDING)
+2.  User asked to change the star icon in the essential tier. (COMPLETED)
+1.  User requested more Irish locations. (COMPLETED)
+
+**Project Health Check:**
+-   **Broken**: The Professional tier has several broken/missing features as per the user's latest message.
+-   **Mocked**: None.
+
+**3rd Party Integrations**
+-   **reportlab**: Used for backend PDF generation.
+-   **lucide-react**: Used for frontend icons.
+-   **sonner**: Used for toast notifications.
+
+**Testing status**
+-   **Testing agent used after significant changes**: YES. Was used to verify the subscription enforcement feature and the Command Centre plan management UI.
+-   **Test files created**: None.
+-   **Known regressions**: User reported multiple regressions/bugs in the Professional tier.
+
+**Credentials to test flow:**
+-   **Super Admin**:  / 
+-   **Standard Demo**:  / 
+-   **Essential Demo**:  / 
+-   **Professional Demo**:  / </analysis>

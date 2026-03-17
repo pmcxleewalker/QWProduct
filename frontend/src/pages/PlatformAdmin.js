@@ -2417,11 +2417,11 @@ const PlatformAdmin = () => {
               {planConfigs.map((plan) => {
                 const tierStyles = {
                   standard: {
-                    border: 'border-slate-200',
-                    header: 'bg-gradient-to-br from-slate-50 to-slate-100',
-                    badge: 'bg-slate-600',
+                    border: 'border-blue-200',
+                    header: 'bg-gradient-to-br from-blue-50 to-sky-100',
+                    badge: 'bg-blue-500',
                     icon: '🚐',
-                    accent: 'text-slate-700'
+                    accent: 'text-blue-700'
                   },
                   essential: {
                     border: 'border-sky-400 ring-2 ring-sky-100',

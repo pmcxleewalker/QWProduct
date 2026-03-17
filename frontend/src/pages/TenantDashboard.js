@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { planAPI } from '../api/api';
+import { planAPI, bookingAPI, settingsAPI } from '../api/api';
 import { 
   Car, Users, Calendar, BarChart3, Settings, Plus, RefreshCw,
   Building2, Receipt, FileText, TrendingUp, Clock, AlertTriangle,
   CheckCircle, XCircle, Edit2, Trash2, Eye, Download, UserPlus,
   ArrowRight, MoreVertical, BookOpen, HelpCircle, PieChart,
   Activity, TrendingDown, CalendarDays, QrCode, Camera, Gauge,
-  ClipboardList, Bell, Megaphone, Crown, Star, Zap
+  ClipboardList, Bell, Megaphone, Crown, Star, Zap, Palette, DollarSign,
+  Save, X
 } from 'lucide-react';
 import AdminTraining from '../components/AdminTraining';
 import CarBookingCalendar from '../components/CarBookingCalendar';

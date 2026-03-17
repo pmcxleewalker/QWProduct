@@ -468,3 +468,18 @@ The platform now uses a 3-tier subscription model:
 
 **Test Report:** `/app/test_reports/iteration_17.json` - 23/23 tests passed (100%)
 
+### March 17, 2026 - Daily Timeline Vehicle Dropdown ✅
+**Added individual vehicle filtering to Daily Availability Timeline (all tiers):**
+
+- **Vehicle Dropdown** added to Daily Timeline showing "All Vehicles (N)" by default
+- **Individual vehicle view** shows:
+  - Vehicle name and registration
+  - Status Today (Active/Idle)
+  - Hours Booked count
+  - Hourly status bars (Available/Booked) instead of utilization percentages
+- **Backend updated** (`GET /api/tenant/reports/daily-timeline`):
+  - Added `vehicle_id` query parameter for filtering
+  - Returns `vehicle_list` array for dropdown population
+  - Returns `selected_vehicle` info when filtering by specific vehicle
+- Works across all subscription tiers (Standard, Essential, Professional)
+

@@ -95,9 +95,9 @@ PLAN_CONFIG = {
             "booking_admin_control": True,
             "compliance_oversight_broad": True,
             "multi_location_support": True,  # Manage multiple depot locations
-            "api_access": True,  # REST API access for integrations
             "priority_support": True,  # Priority customer support
             "custom_branding": True,  # Custom logo and color scheme
+            "cost_analytics": True,  # Customizable cost-per-mile analytics
         },
         "description": "For larger franchises that need more scale and visibility",
         "tagline": "Designed for larger teams that need flexibility and structure at scale"

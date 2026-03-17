@@ -9,7 +9,7 @@ import {
   Activity, DollarSign, Clock, CheckCircle, XCircle, Check,
   FileText, Settings, RefreshCw, LogOut, Trash2, Key,
   Receipt, Download, Send, Edit2, UserPlus, UserMinus,
-  Globe, Copy, Layers, Star, Zap
+  Globe, Copy, Layers, Star, Zap, ArrowRight
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;

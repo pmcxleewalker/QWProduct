@@ -2,13 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import { toast } from 'sonner';
+import { planAPI } from '../api/api';
 import { 
   Car, Users, Calendar, BarChart3, Settings, Plus, RefreshCw,
   Building2, Receipt, FileText, TrendingUp, Clock, AlertTriangle,
   CheckCircle, XCircle, Edit2, Trash2, Eye, Download, UserPlus,
   ArrowRight, MoreVertical, BookOpen, HelpCircle, PieChart,
   Activity, TrendingDown, CalendarDays, QrCode, Camera, Gauge,
-  ClipboardList, Bell, Megaphone
+  ClipboardList, Bell, Megaphone, Crown, Star, Zap
 } from 'lucide-react';
 import AdminTraining from '../components/AdminTraining';
 import CarBookingCalendar from '../components/CarBookingCalendar';
@@ -25,6 +27,46 @@ import DailyTimelineChart from '../components/DailyTimelineChart';
 import NotificationBell from '../components/NotificationBell';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+// Tier styling configurations
+const TIER_STYLES = {
+  standard: {
+    primary: 'bg-gray-600',
+    secondary: 'bg-gray-100',
+    accent: 'text-gray-700',
+    border: 'border-gray-300',
+    gradient: 'from-gray-50 to-gray-100',
+    headerGradient: 'from-gray-700 via-gray-600 to-gray-700',
+    badge: 'bg-gray-600 text-white',
+    icon: '🚗',
+    name: 'Standard',
+    tagline: 'Essential Fleet Management'
+  },
+  essential: {
+    primary: 'bg-blue-600',
+    secondary: 'bg-blue-50',
+    accent: 'text-blue-700',
+    border: 'border-blue-300',
+    gradient: 'from-blue-50 via-indigo-50 to-blue-100',
+    headerGradient: 'from-blue-700 via-indigo-600 to-blue-700',
+    badge: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white',
+    icon: '⭐',
+    name: 'Essential',
+    tagline: 'Enhanced Control & Insights'
+  },
+  professional: {
+    primary: 'bg-purple-600',
+    secondary: 'bg-purple-50',
+    accent: 'text-purple-700',
+    border: 'border-purple-300',
+    gradient: 'from-purple-50 via-pink-50 to-purple-100',
+    headerGradient: 'from-purple-700 via-pink-600 to-purple-700',
+    badge: 'bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white',
+    icon: '👑',
+    name: 'Professional',
+    tagline: 'Enterprise-Grade Fleet Platform'
+  }
+};
 
 // Helper to extract error message from various error formats
 const getErrorMessage = (err, defaultMsg = 'An error occurred') => {

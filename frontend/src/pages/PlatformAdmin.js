@@ -2471,7 +2471,7 @@ const PlatformAdmin = () => {
                         <span className={`text-4xl font-black ${isColoredHeader ? 'text-white' : style.accent}`}>€{plan.price}</span>
                         <span className={`text-sm ${isColoredHeader ? 'text-white/80' : 'text-gray-500'}`}>/month</span>
                       </div>
-                      <p className="text-sm text-gray-600 mt-2 italic">{plan.tagline}</p>
+                      <p className={`text-sm mt-2 italic ${isColoredHeader ? 'text-white/90' : 'text-gray-600'}`}>{plan.tagline}</p>
                     </div>
 
                     {/* Plan Details */}
@@ -2499,14 +2499,12 @@ const PlatformAdmin = () => {
 
                       <div className="space-y-2">
                         <h4 className={`font-bold text-sm mb-3 ${style.accent}`}>Features Included</h4>
-                        {Object.entries(plan.features).map(([key, enabled]) => (
+                        {Object.entries(plan.features)
+                          .filter(([key, enabled]) => enabled)  // Only show enabled features
+                          .map(([key, enabled]) => (
                           <div key={key} className="flex items-center text-sm py-1">
-                            {enabled ? (
-                              <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
-                            ) : (
-                              <XCircle size={16} className="text-gray-200 mr-2 flex-shrink-0" />
-                            )}
-                            <span className={enabled ? 'text-gray-700' : 'text-gray-300 line-through'}>
+                            <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
+                            <span className="text-gray-700">
                               {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </span>
                           </div>

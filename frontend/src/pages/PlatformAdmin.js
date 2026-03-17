@@ -2417,28 +2417,31 @@ const PlatformAdmin = () => {
               {planConfigs.map((plan) => {
                 const tierStyles = {
                   standard: {
-                    border: 'border-gray-200',
-                    header: 'bg-gradient-to-br from-gray-50 to-gray-100',
-                    badge: 'bg-gray-600',
-                    icon: '🚗',
-                    accent: 'text-gray-700'
+                    border: 'border-slate-200',
+                    header: 'bg-gradient-to-br from-slate-50 to-slate-100',
+                    badge: 'bg-slate-600',
+                    icon: '🚐',
+                    accent: 'text-slate-700'
                   },
                   essential: {
-                    border: 'border-blue-400 ring-2 ring-blue-100',
-                    header: 'bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100',
-                    badge: 'bg-gradient-to-r from-blue-600 to-indigo-600',
-                    icon: '⭐',
-                    accent: 'text-blue-700'
+                    border: 'border-sky-400 ring-2 ring-sky-100',
+                    header: 'bg-gradient-to-br from-sky-600 via-cyan-600 to-sky-700',
+                    badge: 'bg-gradient-to-r from-sky-500 to-cyan-500',
+                    icon: '◆',
+                    accent: 'text-white',
+                    headerText: 'text-white'
                   },
                   professional: {
-                    border: 'border-purple-400 ring-2 ring-purple-100',
-                    header: 'bg-gradient-to-br from-purple-50 via-purple-100 to-pink-100',
-                    badge: 'bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700',
-                    icon: '👑',
-                    accent: 'text-purple-700'
+                    border: 'border-violet-400 ring-2 ring-violet-100',
+                    header: 'bg-gradient-to-br from-violet-700 via-purple-700 to-fuchsia-800',
+                    badge: 'bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500',
+                    icon: '♛',
+                    accent: 'text-white',
+                    headerText: 'text-white'
                   }
                 };
                 const style = tierStyles[plan.id] || tierStyles.standard;
+                const isColoredHeader = plan.id === 'essential' || plan.id === 'professional';
                 
                 return (
                   <div 
@@ -2450,7 +2453,7 @@ const PlatformAdmin = () => {
                       {plan.is_popular && (
                         <div className="absolute -top-1 left-1/2 transform -translate-x-1/2">
                           <span className={`${style.badge} text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center shadow-lg`}>
-                            <Star size={12} className="mr-1" /> Most Popular
+                            <Zap size={12} className="mr-1" /> Most Popular
                           </span>
                         </div>
                       )}
@@ -2462,11 +2465,11 @@ const PlatformAdmin = () => {
                         </div>
                       )}
                       
-                      <div className="text-4xl mb-2 mt-4">{style.icon}</div>
-                      <h3 className={`text-xl font-bold ${style.accent}`}>{plan.name}</h3>
+                      <div className={`text-4xl mb-2 mt-4 ${isColoredHeader ? 'drop-shadow-lg' : ''}`}>{style.icon}</div>
+                      <h3 className={`text-xl font-bold ${isColoredHeader ? 'text-white' : style.accent}`}>{plan.name}</h3>
                       <div className="mt-3">
-                        <span className={`text-4xl font-black ${style.accent}`}>€{plan.price}</span>
-                        <span className="text-gray-500 text-sm">/month</span>
+                        <span className={`text-4xl font-black ${isColoredHeader ? 'text-white' : style.accent}`}>€{plan.price}</span>
+                        <span className={`text-sm ${isColoredHeader ? 'text-white/80' : 'text-gray-500'}`}>/month</span>
                       </div>
                       <p className="text-sm text-gray-600 mt-2 italic">{plan.tagline}</p>
                     </div>

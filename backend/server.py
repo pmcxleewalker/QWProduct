@@ -4471,16 +4471,16 @@ async def get_vehicle_qr(
     vehicle_id: str,
     context: TenantContext = Depends(require_tenant_context)
 ):
-    """Get QR code for a vehicle"""
+    """Get QR code for a vehicle - links to mileage logging page"""
     query = TenantQueryBuilder.scope_by_id(context.tenant_id, vehicle_id)
     vehicle = await db.vehicles.find_one(query, {"_id": 0})
     
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     
-    # Generate QR with tenant context - uses environment variable for deployment flexibility
+    # Generate QR with tenant context - links to mileage log page
     base_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
-    qr_url = f"{base_url}/{context.tenant_slug}/book/{vehicle_id}"
+    qr_url = f"{base_url}/{context.tenant_slug}/vehicle/{vehicle_id}/mileage"
     
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
     qr.add_data(qr_url)
@@ -4492,6 +4492,85 @@ async def get_vehicle_qr(
     buffer.seek(0)
     
     return StreamingResponse(buffer, media_type="image/png")
+
+
+class MileageLogRequest(BaseModel):
+    """Request model for logging vehicle mileage"""
+    mileage: int
+    notes: Optional[str] = None
+    logged_via: Optional[str] = "manual"  # manual, qr_scan, etc.
+
+
+@api_router.post("/vehicles/{vehicle_id}/log-mileage")
+async def log_vehicle_mileage(
+    vehicle_id: str,
+    request: MileageLogRequest,
+    context: TenantContext = Depends(require_tenant_context)
+):
+    """Log mileage for a vehicle (via QR scan or manual entry)"""
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, vehicle_id)
+    vehicle = await db.vehicles.find_one(query, {"_id": 0})
+    
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    # Create mileage log entry
+    mileage_log = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": context.tenant_id,
+        "vehicle_id": vehicle_id,
+        "mileage": request.mileage,
+        "previous_mileage": vehicle.get("current_mileage"),
+        "difference": request.mileage - vehicle.get("current_mileage", 0) if vehicle.get("current_mileage") else None,
+        "notes": request.notes,
+        "logged_by": context.user_email,
+        "logged_via": request.logged_via,
+        "logged_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Insert mileage log
+    await db.mileage_logs.insert_one(mileage_log)
+    
+    # Update vehicle's current mileage
+    await db.vehicles.update_one(
+        query,
+        {"$set": {
+            "current_mileage": request.mileage,
+            "last_mileage_update": datetime.now(timezone.utc).isoformat(),
+            "last_mileage_logged_by": context.user_email
+        }}
+    )
+    
+    return {
+        "message": "Mileage logged successfully",
+        "mileage_log": {k: v for k, v in mileage_log.items() if k != "_id"}
+    }
+
+
+@api_router.get("/vehicles/{vehicle_id}/mileage-history")
+async def get_vehicle_mileage_history(
+    vehicle_id: str,
+    limit: int = 20,
+    context: TenantContext = Depends(require_tenant_context)
+):
+    """Get mileage history for a vehicle"""
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, vehicle_id)
+    vehicle = await db.vehicles.find_one(query, {"_id": 0})
+    
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    # Get mileage logs
+    logs = await db.mileage_logs.find(
+        {"tenant_id": context.tenant_id, "vehicle_id": vehicle_id},
+        {"_id": 0}
+    ).sort("logged_at", -1).limit(limit).to_list(limit)
+    
+    return {
+        "vehicle_id": vehicle_id,
+        "current_mileage": vehicle.get("current_mileage"),
+        "history": logs
+    }
 
 
 # ==================== REPORTS (TENANT-SCOPED) ====================

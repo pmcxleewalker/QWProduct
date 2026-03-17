@@ -601,27 +601,33 @@ const PlatformAdmin = () => {
       {/* Navigation Tabs */}
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4">
+          {/* Main Tabs */}
           <div className="flex space-x-1 py-2">
             {[
-              { id: 'overview', label: 'Overview', icon: Activity },
-              { id: 'tenants', label: 'Tenants', icon: Building2 },
-              { id: 'users', label: 'Users', icon: Users },
-              { id: 'plans', label: 'Plans', icon: Layers },
-              { id: 'reports', label: 'Reports & Billing', icon: Receipt },
-              { id: 'audit', label: 'Audit Log', icon: FileText }
+              { id: 'overview', label: 'Dashboard', sublabel: 'Platform Overview', icon: Activity },
+              { id: 'tenants', label: 'Franchises', sublabel: 'Manage Tenants', icon: Building2 },
+              { id: 'users', label: 'Team', sublabel: 'User Management', icon: Users },
+              { id: 'plans', label: 'Subscriptions', sublabel: 'Plans & Features', icon: Layers },
+              { id: 'reports', label: 'Finance', sublabel: 'Reports & Billing', icon: Receipt },
+              { id: 'audit', label: 'Activity', sublabel: 'Audit Log', icon: FileText }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                className={`flex flex-col items-center px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   activeTab === tab.id
-                    ? 'bg-blue-100 text-blue-700'
+                    ? 'bg-blue-600 text-white shadow-md'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
                 data-testid={`tab-${tab.id}`}
               >
-                <tab.icon size={18} />
-                <span>{tab.label}</span>
+                <div className="flex items-center space-x-2">
+                  <tab.icon size={18} />
+                  <span className="font-semibold">{tab.label}</span>
+                </div>
+                <span className={`text-xs mt-0.5 ${activeTab === tab.id ? 'text-blue-100' : 'text-gray-400'}`}>
+                  {tab.sublabel}
+                </span>
               </button>
             ))}
           </div>

@@ -1252,8 +1252,49 @@ const Admin = () => {
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">Select Location</option>
-                        <option value="Tralee">Tralee</option>
-                        <option value="Bantry">Bantry</option>
+                        <optgroup label="Connacht">
+                          <option value="Galway">Galway</option>
+                          <option value="Sligo">Sligo</option>
+                          <option value="Mayo">Mayo</option>
+                          <option value="Roscommon">Roscommon</option>
+                          <option value="Leitrim">Leitrim</option>
+                        </optgroup>
+                        <optgroup label="Leinster">
+                          <option value="Dublin">Dublin</option>
+                          <option value="Dublin North">Dublin North</option>
+                          <option value="Dublin South">Dublin South</option>
+                          <option value="Dublin West">Dublin West</option>
+                          <option value="Wicklow">Wicklow</option>
+                          <option value="Wexford">Wexford</option>
+                          <option value="Kilkenny">Kilkenny</option>
+                          <option value="Carlow">Carlow</option>
+                          <option value="Kildare">Kildare</option>
+                          <option value="Meath">Meath</option>
+                          <option value="Louth">Louth</option>
+                          <option value="Westmeath">Westmeath</option>
+                          <option value="Offaly">Offaly</option>
+                          <option value="Laois">Laois</option>
+                          <option value="Longford">Longford</option>
+                        </optgroup>
+                        <optgroup label="Munster">
+                          <option value="Cork">Cork</option>
+                          <option value="Cork City">Cork City</option>
+                          <option value="Cork North">Cork North</option>
+                          <option value="Cork West">Cork West</option>
+                          <option value="Kerry">Kerry</option>
+                          <option value="Tralee">Tralee</option>
+                          <option value="Killarney">Killarney</option>
+                          <option value="Limerick">Limerick</option>
+                          <option value="Tipperary">Tipperary</option>
+                          <option value="Clare">Clare</option>
+                          <option value="Waterford">Waterford</option>
+                          <option value="Bantry">Bantry</option>
+                        </optgroup>
+                        <optgroup label="Ulster (ROI)">
+                          <option value="Donegal">Donegal</option>
+                          <option value="Cavan">Cavan</option>
+                          <option value="Monaghan">Monaghan</option>
+                        </optgroup>
                       </select>
                       <p className="text-xs text-gray-500 mt-1">Used for location-based reports</p>
                     </div>

@@ -2369,18 +2369,82 @@ const TenantDashboard = () => {
                     <h4 className="font-bold text-indigo-900">Custom Branding</h4>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    {/* Logo Upload */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
-                      <input
-                        type="url"
-                        placeholder="https://your-logo.com/logo.png"
-                        value={settingsForm.logo_url}
-                        onChange={(e) => setSettingsForm({ ...settingsForm, logo_url: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Company Logo</label>
+                      <div className="flex items-start space-x-4">
+                        {/* Preview */}
+                        <div className="w-24 h-24 bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden">
+                          {settingsForm.logo_url ? (
+                            <img 
+                              src={settingsForm.logo_url} 
+                              alt="Logo" 
+                              className="max-w-full max-h-full object-contain"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <Camera className="text-gray-400" size={32} />
+                          )}
+                        </div>
+                        
+                        {/* Upload button */}
+                        <div className="flex-1">
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              
+                              // Validate size
+                              if (file.size > 2 * 1024 * 1024) {
+                                toast.error('File too large. Maximum size is 2MB');
+                                return;
+                              }
+                              
+                              const formData = new FormData();
+                              formData.append('file', file);
+                              
+                              try {
+                                const response = await axios.post(`${API}/tenant/upload-logo`, formData, {
+                                  headers: { 'Content-Type': 'multipart/form-data' }
+                                });
+                                setSettingsForm({ ...settingsForm, logo_url: response.data.logo_url });
+                                toast.success('Logo uploaded!');
+                              } catch (err) {
+                                toast.error(err.response?.data?.detail || 'Failed to upload logo');
+                              }
+                            }}
+                            className="hidden"
+                            id="logo-upload"
+                          />
+                          <label
+                            htmlFor="logo-upload"
+                            className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg cursor-pointer hover:bg-indigo-700"
+                          >
+                            <Camera size={16} className="mr-2" />
+                            Upload Logo
+                          </label>
+                          <p className="text-xs text-gray-500 mt-2">
+                            PNG, JPG, WEBP or SVG. Max 2MB.
+                          </p>
+                          {settingsForm.logo_url && (
+                            <button
+                              type="button"
+                              onClick={() => setSettingsForm({ ...settingsForm, logo_url: '' })}
+                              className="text-xs text-red-600 hover:text-red-800 mt-1"
+                            >
+                              Remove logo
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     
+                    {/* Brand Color */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Brand Color</label>
                       <div className="flex items-center space-x-2">

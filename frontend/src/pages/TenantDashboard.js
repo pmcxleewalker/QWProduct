@@ -496,7 +496,7 @@ const TenantDashboard = () => {
       </div>
 
       {/* Tabs - with tier accent color */}
-      <div className="bg-white border-b">
+      <div className="bg-white border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex space-x-1 overflow-x-auto">
             {tabs.map(tab => (
@@ -510,17 +510,17 @@ const TenantDashboard = () => {
                     setActiveSubTab(null);
                   }
                 }}
-                className={`flex items-center space-x-2 px-4 py-3 border-b-2 whitespace-nowrap transition-colors ${
+                className={`flex items-center space-x-2 px-4 py-3 border-b-2 whitespace-nowrap transition-all font-medium ${
                   activeTab === tab.id
-                    ? `border-current ${tierStyle.accent}`
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                    ? `${tierStyle.tabActiveClass} border-current`
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
                 data-testid={`tab-${tab.id}`}
               >
-                <tab.icon size={18} />
+                <tab.icon size={18} className={activeTab === tab.id ? '' : 'opacity-70'} />
                 <span>{tab.label}</span>
                 {tab.badge > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                  <span className={`ml-1 px-1.5 py-0.5 text-xs text-white rounded-full ${tierStyle.primary}`}>
                     {tab.badge}
                   </span>
                 )}

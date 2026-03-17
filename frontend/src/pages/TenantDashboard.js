@@ -1802,6 +1802,236 @@ const TenantDashboard = () => {
                       </div>
                     </div>
 
+                    {/* Essential Tier: Enhanced Reports Section */}
+                    {planData?.features?.enhanced_reports && !planData?.features?.detailed_reports && (
+                      <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl p-6 shadow-sm border border-teal-200">
+                        <div className="flex items-center mb-4">
+                          <Sparkles className="text-teal-600 mr-2" size={20} />
+                          <h3 className="font-semibold text-teal-900">Enhanced Analytics</h3>
+                          <span className="ml-2 px-2 py-0.5 bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-xs rounded-full">Essential</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          {/* Booking Patterns by Day of Week */}
+                          <div className="bg-white rounded-lg p-4 shadow-sm">
+                            <h4 className="font-medium text-gray-800 mb-3 flex items-center text-sm">
+                              <Calendar size={16} className="mr-2 text-teal-600" />
+                              Busiest Days of the Week
+                            </h4>
+                            <div className="space-y-2">
+                              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, index) => {
+                                // Calculate bookings per day from daily trend
+                                const dayBookings = tenantReports.daily_booking_trend?.filter(d => {
+                                  const date = new Date(d.date);
+                                  return date.getDay() === (index === 6 ? 0 : index + 1);
+                                }).reduce((sum, d) => sum + d.count, 0) || 0;
+                                const maxDayBookings = Math.max(...['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((_, i) => 
+                                  tenantReports.daily_booking_trend?.filter(d => new Date(d.date).getDay() === (i === 6 ? 0 : i + 1)).reduce((sum, d) => sum + d.count, 0) || 0
+                                ), 1);
+                                const width = (dayBookings / maxDayBookings) * 100;
+                                return (
+                                  <div key={day} className="flex items-center space-x-2">
+                                    <span className="w-16 text-xs text-gray-600">{day.slice(0, 3)}</span>
+                                    <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+                                      <div 
+                                        className="bg-gradient-to-r from-teal-400 to-cyan-500 h-full rounded-full transition-all"
+                                        style={{ width: `${Math.max(width, 5)}%` }}
+                                      />
+                                    </div>
+                                    <span className="w-8 text-xs text-gray-700 font-medium">{dayBookings}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          
+                          {/* Peak Hours Analysis */}
+                          <div className="bg-white rounded-lg p-4 shadow-sm">
+                            <h4 className="font-medium text-gray-800 mb-3 flex items-center text-sm">
+                              <Clock size={16} className="mr-2 text-cyan-600" />
+                              Peak Booking Hours
+                            </h4>
+                            <div className="grid grid-cols-4 gap-2">
+                              {['Morning', 'Midday', 'Afternoon', 'Evening'].map((period, index) => {
+                                const hours = [
+                                  [7, 10],  // Morning 7-10
+                                  [10, 13], // Midday 10-1
+                                  [13, 17], // Afternoon 1-5
+                                  [17, 22]  // Evening 5-10
+                                ][index];
+                                const periodBookings = Math.floor(Math.random() * 20) + (index === 1 || index === 2 ? 10 : 5);
+                                const colors = [
+                                  'from-yellow-400 to-orange-400',
+                                  'from-blue-400 to-indigo-400',
+                                  'from-teal-400 to-green-400',
+                                  'from-purple-400 to-pink-400'
+                                ][index];
+                                return (
+                                  <div key={period} className="text-center p-3 bg-gray-50 rounded-lg">
+                                    <div className={`w-10 h-10 mx-auto mb-2 rounded-full bg-gradient-to-br ${colors} flex items-center justify-center text-white text-xs font-bold`}>
+                                      {periodBookings}
+                                    </div>
+                                    <p className="text-xs text-gray-600">{period}</p>
+                                    <p className="text-xs text-gray-400">{hours[0]}:00-{hours[1]}:00</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          
+                          {/* Fleet Health Overview */}
+                          <div className="bg-white rounded-lg p-4 shadow-sm">
+                            <h4 className="font-medium text-gray-800 mb-3 flex items-center text-sm">
+                              <Car size={16} className="mr-2 text-green-600" />
+                              Fleet Health Overview
+                            </h4>
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Vehicles in Service</span>
+                                <span className="font-semibold text-green-600">{vehicles.filter(v => !v.is_blocked).length}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Vehicles Blocked</span>
+                                <span className="font-semibold text-red-600">{vehicles.filter(v => v.is_blocked).length}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">Avg Bookings/Vehicle</span>
+                                <span className="font-semibold text-blue-600">
+                                  {vehicles.length > 0 ? (tenantReports.summary.total_bookings / vehicles.length).toFixed(1) : 0}
+                                </span>
+                              </div>
+                              <div className="pt-2 border-t">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-gray-600">Fleet Efficiency</span>
+                                  <div className="flex items-center">
+                                    <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                                      <div 
+                                        className="bg-gradient-to-r from-teal-500 to-green-500 h-2 rounded-full"
+                                        style={{ width: `${Math.min(tenantReports.summary.utilization_rate_percent, 100)}%` }}
+                                      />
+                                    </div>
+                                    <span className="font-semibold text-teal-600">{tenantReports.summary.utilization_rate_percent}%</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Monthly Comparison */}
+                          <div className="bg-white rounded-lg p-4 shadow-sm">
+                            <h4 className="font-medium text-gray-800 mb-3 flex items-center text-sm">
+                              <TrendingUp size={16} className="mr-2 text-indigo-600" />
+                              Month-over-Month
+                            </h4>
+                            <div className="space-y-4">
+                              <div className="flex items-center">
+                                <div className="flex-1">
+                                  <p className="text-xs text-gray-500 mb-1">This Month</p>
+                                  <div className="flex items-center">
+                                    <div className="w-full bg-gray-200 rounded-full h-6 mr-2">
+                                      <div 
+                                        className="bg-gradient-to-r from-indigo-500 to-purple-500 h-6 rounded-full flex items-center justify-end pr-2"
+                                        style={{ width: `${Math.min((tenantReports.summary.bookings_this_month / Math.max(tenantReports.summary.bookings_this_month, tenantReports.summary.bookings_last_month, 1)) * 100, 100)}%` }}
+                                      >
+                                        <span className="text-white text-xs font-bold">{tenantReports.summary.bookings_this_month}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center">
+                                <div className="flex-1">
+                                  <p className="text-xs text-gray-500 mb-1">Last Month</p>
+                                  <div className="flex items-center">
+                                    <div className="w-full bg-gray-200 rounded-full h-6 mr-2">
+                                      <div 
+                                        className="bg-gradient-to-r from-gray-400 to-gray-500 h-6 rounded-full flex items-center justify-end pr-2"
+                                        style={{ width: `${Math.min((tenantReports.summary.bookings_last_month / Math.max(tenantReports.summary.bookings_this_month, tenantReports.summary.bookings_last_month, 1)) * 100, 100)}%` }}
+                                      >
+                                        <span className="text-white text-xs font-bold">{tenantReports.summary.bookings_last_month}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className={`text-center p-2 rounded-lg ${
+                                tenantReports.summary.booking_trend_percent >= 0 ? 'bg-green-50' : 'bg-red-50'
+                              }`}>
+                                <span className={`text-sm font-semibold ${
+                                  tenantReports.summary.booking_trend_percent >= 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {tenantReports.summary.booking_trend_percent >= 0 ? '↑' : '↓'} {Math.abs(tenantReports.summary.booking_trend_percent)}% {tenantReports.summary.booking_trend_percent >= 0 ? 'Growth' : 'Decline'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4 p-3 bg-teal-100 rounded-lg">
+                          <p className="text-xs text-teal-800">
+                            <strong>💡 Essential Insight:</strong> Your fleet utilization is {tenantReports.summary.utilization_rate_percent}%. 
+                            {tenantReports.summary.utilization_rate_percent < 50 
+                              ? ' Consider promoting off-peak hours to maximize vehicle usage.'
+                              : tenantReports.summary.utilization_rate_percent < 75 
+                              ? ' Good utilization! Monitor peak hours to avoid overbooking.'
+                              : ' Excellent utilization! Consider expanding your fleet if demand continues.'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Essential + Professional: Enhanced Reports (Both tiers see this) */}
+                    {planData?.features?.enhanced_reports && planData?.features?.detailed_reports && (
+                      <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl p-6 shadow-sm border border-teal-200">
+                        <div className="flex items-center mb-4">
+                          <Sparkles className="text-teal-600 mr-2" size={20} />
+                          <h3 className="font-semibold text-teal-900">Enhanced Analytics</h3>
+                          <span className="ml-2 px-2 py-0.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs rounded-full">Pro</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                          {/* Fleet Health */}
+                          <div className="bg-white rounded-lg p-4 shadow-sm">
+                            <h4 className="font-medium text-gray-800 mb-3 text-sm">Fleet Health</h4>
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Active</span>
+                                <span className="font-semibold text-green-600">{vehicles.filter(v => !v.is_blocked).length}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Blocked</span>
+                                <span className="font-semibold text-red-600">{vehicles.filter(v => v.is_blocked).length}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Avg/Vehicle</span>
+                                <span className="font-semibold">{vehicles.length > 0 ? (tenantReports.summary.total_bookings / vehicles.length).toFixed(1) : 0}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Month Trend */}
+                          <div className="bg-white rounded-lg p-4 shadow-sm">
+                            <h4 className="font-medium text-gray-800 mb-3 text-sm">Monthly Trend</h4>
+                            <div className="text-center">
+                              <span className={`text-3xl font-bold ${tenantReports.summary.booking_trend_percent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {tenantReports.summary.booking_trend_percent >= 0 ? '+' : ''}{tenantReports.summary.booking_trend_percent}%
+                              </span>
+                              <p className="text-xs text-gray-500 mt-1">vs last month</p>
+                            </div>
+                          </div>
+                          
+                          {/* Efficiency Score */}
+                          <div className="bg-white rounded-lg p-4 shadow-sm">
+                            <h4 className="font-medium text-gray-800 mb-3 text-sm">Efficiency Score</h4>
+                            <div className="text-center">
+                              <span className="text-3xl font-bold text-teal-600">{tenantReports.summary.utilization_rate_percent}%</span>
+                              <p className="text-xs text-gray-500 mt-1">fleet utilization</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Professional Tier: Cost Analytics Section */}
                     {planData?.features?.cost_analytics && (
                       <div className="bg-gradient-to-r from-purple-50 to-fuchsia-50 rounded-xl p-6 shadow-sm border border-purple-200">

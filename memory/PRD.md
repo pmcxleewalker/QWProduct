@@ -420,5 +420,51 @@ The platform now uses a 3-tier subscription model:
 | Enhanced Booking Visibility | ❌ | ✅ | ✅ |
 | Booking Admin Control | ❌ | ✅ | ✅ |
 | Broader Compliance Oversight | ❌ | ✅ | ✅ |
+| Multi-Location Support | ❌ | ❌ | ✅ |
+| Priority Support | ❌ | ❌ | ✅ |
+| Custom Branding | ❌ | ❌ | ✅ |
+| Cost Analytics | ❌ | ❌ | ✅ |
 
-**Recommendation**: Use **Essential** plan (most popular) for growing franchises with 15-35 users. Use **Professional** for larger operations.
+**Recommendation**: Use **Essential** plan (most popular) for growing franchises with 15-35 users. Use **Professional** for larger operations requiring cost analytics and custom branding.
+
+---
+
+## Changelog
+
+### March 17, 2026 - Professional Tier Overhaul ✅
+**Fixed 6 critical issues reported by user:**
+
+1. **QR Codes** - Verified working. Endpoint `/api/vehicles/{id}/qr` generates valid PNG image with correct URL.
+
+2. **"Manage" Button in Bookings** - Now functional! Opens a booking management modal with:
+   - Booking details (User, Vehicle, Date, Status, Purpose, Location)
+   - Delete Booking action
+   - Approve/Cancel actions for pending/approved bookings
+
+3. **Reports Depth** - Added Cost Analytics section for Professional tier:
+   - Customizable mileage rate (€ per km/mile)
+   - Fuel cost per km/mile
+   - Maintenance cost per km/mile
+   - Currency selection (EUR/GBP/USD)
+   - Distance unit selection (km/miles)
+   - Real-time cost calculations based on fleet mileage
+
+4. **API Access Feature** - Removed from PLAN_CONFIG as it was unimplemented.
+
+5. **Custom Branding** - Implemented for Professional tier:
+   - Logo URL upload
+   - Brand color picker
+   - Settings saved to tenant's database record
+
+6. **Tenant Settings Modal** - New feature for Professional tier:
+   - "Settings" button in header
+   - Cost Analytics Configuration section
+   - Custom Branding section
+   - Save/Cancel functionality
+
+**New Endpoints:**
+- `GET /api/tenant/settings` - Fetch tenant branding and cost analytics settings
+- `PUT /api/tenant/settings` - Update tenant settings (admin only)
+
+**Test Report:** `/app/test_reports/iteration_17.json` - 23/23 tests passed (100%)
+

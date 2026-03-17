@@ -2403,125 +2403,201 @@ const PlatformAdmin = () => {
 
         {/* Plans Tab */}
         {activeTab === 'plans' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Plan Comparison Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Subscription Plans</h2>
-                <p className="text-sm text-gray-500">Compare plans and manage franchise subscriptions</p>
-              </div>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900">Subscription Plans</h2>
+              <p className="text-gray-500 mt-2">Choose the plan that fits your fleet management needs</p>
             </div>
 
             {/* Plan Comparison Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
               {planConfigs.map((plan) => {
                 const tierStyles = {
                   standard: {
-                    border: 'border-blue-200',
-                    header: 'bg-gradient-to-br from-blue-50 to-sky-100',
+                    border: 'border-blue-200 hover:border-blue-300',
+                    header: 'bg-gradient-to-br from-blue-50 via-sky-50 to-blue-100',
                     badge: 'bg-blue-500',
                     icon: '🚐',
-                    accent: 'text-blue-700'
+                    accent: 'text-blue-700',
+                    accentBg: 'bg-blue-50',
+                    checkColor: 'text-blue-500'
                   },
                   essential: {
-                    border: 'border-sky-400 ring-2 ring-sky-100',
-                    header: 'bg-gradient-to-br from-sky-600 via-cyan-600 to-sky-700',
+                    border: 'border-sky-400 ring-2 ring-sky-200 shadow-sky-100',
+                    header: 'bg-gradient-to-br from-sky-600 via-cyan-600 to-teal-600',
                     badge: 'bg-gradient-to-r from-sky-500 to-cyan-500',
-                    icon: '◆',
+                    icon: '✦',
                     accent: 'text-white',
+                    accentBg: 'bg-sky-50',
+                    checkColor: 'text-sky-500',
                     headerText: 'text-white'
                   },
                   professional: {
-                    border: 'border-violet-400 ring-2 ring-violet-100',
-                    header: 'bg-gradient-to-br from-violet-700 via-purple-700 to-fuchsia-800',
+                    border: 'border-violet-400 ring-2 ring-violet-200 shadow-violet-100',
+                    header: 'bg-gradient-to-br from-violet-700 via-purple-700 to-fuchsia-700',
                     badge: 'bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500',
                     icon: '♛',
                     accent: 'text-white',
+                    accentBg: 'bg-violet-50',
+                    checkColor: 'text-violet-500',
                     headerText: 'text-white'
                   }
                 };
                 const style = tierStyles[plan.id] || tierStyles.standard;
                 const isColoredHeader = plan.id === 'essential' || plan.id === 'professional';
                 
+                // Feature display names mapping
+                const featureNames = {
+                  vehicle_booking: 'Vehicle Booking',
+                  fleet_compliance: 'Fleet Compliance',
+                  basic_reports: 'Basic Reports',
+                  staff_calendars: 'Staff Calendars',
+                  admin_all_cars_calendar: 'Admin All Cars Calendar',
+                  email_support: 'Email Support',
+                  standard_onboarding: 'Standard Onboarding',
+                  enhanced_reports: 'Enhanced Reports',
+                  booking_visibility_enhanced: 'Booking Visibility Enhanced',
+                  booking_admin_control: 'Booking Admin Control',
+                  compliance_oversight_broad: 'Compliance Oversight Broad',
+                  cost_analytics: 'Cost Analytics',
+                  faster_support: 'Faster Support Response',
+                  detailed_reports: 'Detailed Reporting Dashboard',
+                  priority_support: 'Priority Support',
+                  multi_site_oversight: 'Multi-Site / Franchise Oversight',
+                  advanced_permissions: 'Advanced Permissions',
+                  custom_exports: 'Custom Exports'
+                };
+
+                // Get features to display based on tier
+                const getDisplayFeatures = () => {
+                  if (plan.id === 'standard') {
+                    return [
+                      'vehicle_booking', 'fleet_compliance', 'basic_reports', 
+                      'staff_calendars', 'admin_all_cars_calendar', 
+                      'email_support', 'standard_onboarding'
+                    ];
+                  } else if (plan.id === 'essential') {
+                    return [
+                      { text: 'Everything in Standard', isHeader: true },
+                      'enhanced_reports', 'booking_visibility_enhanced', 
+                      'booking_admin_control', 'compliance_oversight_broad',
+                      'cost_analytics', 'faster_support'
+                    ];
+                  } else {
+                    return [
+                      { text: 'Everything in Essential', isHeader: true },
+                      'detailed_reports', 'priority_support', 
+                      'multi_site_oversight', 'advanced_permissions',
+                      'custom_exports',
+                      { text: 'Greater Operational Visibility', isFeature: true }
+                    ];
+                  }
+                };
+                
                 return (
                   <div 
                     key={plan.id}
-                    className={`rounded-xl shadow-lg border-2 relative overflow-hidden transition-transform hover:scale-[1.02] ${style.border}`}
+                    className={`rounded-2xl shadow-lg border-2 relative overflow-hidden transition-all duration-300 hover:shadow-xl flex flex-col ${style.border} ${plan.is_popular ? 'md:-mt-4 md:mb-4' : ''}`}
                   >
-                    {/* Premium Header */}
-                    <div className={`${style.header} p-6 text-center relative`}>
-                      {plan.is_popular && (
-                        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2">
-                          <span className={`${style.badge} text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center shadow-lg`}>
-                            <Zap size={12} className="mr-1" /> Most Popular
-                          </span>
-                        </div>
-                      )}
-                      {plan.id === 'professional' && (
-                        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2">
-                          <span className={`${style.badge} text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center shadow-lg`}>
-                            <Crown size={12} className="mr-1" /> Enterprise
-                          </span>
-                        </div>
-                      )}
-                      
-                      <div className={`text-4xl mb-2 mt-4 ${isColoredHeader ? 'drop-shadow-lg' : ''}`}>{style.icon}</div>
+                    {/* Badge */}
+                    {plan.is_popular && (
+                      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+                        <span className={`${style.badge} text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center shadow-lg`}>
+                          <Zap size={12} className="mr-1" /> Most Popular
+                        </span>
+                      </div>
+                    )}
+                    {plan.id === 'professional' && (
+                      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+                        <span className={`${style.badge} text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center shadow-lg`}>
+                          <Crown size={12} className="mr-1" /> Enterprise
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Header */}
+                    <div className={`${style.header} p-6 pt-10 text-center`}>
+                      <div className={`text-4xl mb-3 ${isColoredHeader ? 'drop-shadow-lg' : ''}`}>{style.icon}</div>
                       <h3 className={`text-xl font-bold ${isColoredHeader ? 'text-white' : style.accent}`}>{plan.name}</h3>
-                      <div className="mt-3">
-                        <span className={`text-4xl font-black ${isColoredHeader ? 'text-white' : style.accent}`}>€{plan.price}</span>
+                      
+                      {/* Price */}
+                      <div className="mt-4">
+                        <span className={`text-5xl font-black ${isColoredHeader ? 'text-white' : style.accent}`}>€{plan.price}</span>
                         <span className={`text-sm ${isColoredHeader ? 'text-white/80' : 'text-gray-500'}`}>/month</span>
                       </div>
-                      <p className={`text-sm mt-2 italic ${isColoredHeader ? 'text-white/90' : 'text-gray-600'}`}>{plan.tagline}</p>
+                      
+                      {/* Sub-label */}
+                      <div className={`mt-2 inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                        isColoredHeader ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {plan.sub_label || (plan.id === 'standard' ? 'Best for small teams' : plan.id === 'essential' ? 'Best value' : 'Best for multi-site operations')}
+                      </div>
+                      
+                      {/* Tagline */}
+                      <p className={`text-sm mt-3 ${isColoredHeader ? 'text-white/90' : 'text-gray-600'}`}>
+                        {plan.tagline}
+                      </p>
                     </div>
 
                     {/* Plan Details */}
-                    <div className="bg-white p-6">
-                      {/* Limits Section - More Prominent */}
-                      <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                        <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="bg-white p-6 flex-1 flex flex-col">
+                      {/* Limits Section */}
+                      <div className={`${style.accentBg} rounded-xl p-4 mb-6`}>
+                        <div className="grid grid-cols-3 gap-3 text-center">
                           <div>
-                            <div className="flex items-center justify-center mb-1">
-                              <Car size={18} className={plan.id === 'standard' ? 'text-blue-600' : plan.id === 'essential' ? 'text-sky-600' : 'text-violet-600'} />
-                            </div>
+                            <Car size={20} className={plan.id === 'standard' ? 'text-blue-600 mx-auto mb-1' : plan.id === 'essential' ? 'text-sky-600 mx-auto mb-1' : 'text-violet-600 mx-auto mb-1'} />
                             <p className={`text-2xl font-black ${plan.id === 'standard' ? 'text-blue-700' : plan.id === 'essential' ? 'text-sky-700' : 'text-violet-700'}`}>
                               {plan.max_vehicles}
                             </p>
-                            <p className="text-xs text-gray-500 font-medium">Vehicles</p>
+                            <p className="text-xs text-gray-600 font-medium">Vehicles</p>
                           </div>
                           <div>
-                            <div className="flex items-center justify-center mb-1">
-                              <Users size={18} className={plan.id === 'standard' ? 'text-blue-600' : plan.id === 'essential' ? 'text-sky-600' : 'text-violet-600'} />
-                            </div>
+                            <Users size={20} className={plan.id === 'standard' ? 'text-blue-600 mx-auto mb-1' : plan.id === 'essential' ? 'text-sky-600 mx-auto mb-1' : 'text-violet-600 mx-auto mb-1'} />
                             <p className={`text-2xl font-black ${plan.id === 'standard' ? 'text-blue-700' : plan.id === 'essential' ? 'text-sky-700' : 'text-violet-700'}`}>
                               {plan.max_users}
                             </p>
-                            <p className="text-xs text-gray-500 font-medium">Users</p>
+                            <p className="text-xs text-gray-600 font-medium">Users</p>
                           </div>
                           <div>
-                            <div className="flex items-center justify-center mb-1">
-                              <Zap size={18} className={plan.id === 'standard' ? 'text-blue-600' : plan.id === 'essential' ? 'text-sky-600' : 'text-violet-600'} />
-                            </div>
+                            <Zap size={20} className={plan.id === 'standard' ? 'text-blue-600 mx-auto mb-1' : plan.id === 'essential' ? 'text-sky-600 mx-auto mb-1' : 'text-violet-600 mx-auto mb-1'} />
                             <p className={`text-2xl font-black ${plan.id === 'standard' ? 'text-blue-700' : plan.id === 'essential' ? 'text-sky-700' : 'text-violet-700'}`}>
                               {plan.customizations_per_month}
                             </p>
-                            <p className="text-xs text-gray-500 font-medium">Custom/mo</p>
+                            <p className="text-xs text-gray-600 font-medium leading-tight">Credit{plan.customizations_per_month > 1 ? 's' : ''}/mo</p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <h4 className={`font-bold text-sm mb-3 ${style.accent}`}>Features Included</h4>
-                        {Object.entries(plan.features)
-                          .filter(([key, enabled]) => enabled)  // Only show enabled features
-                          .filter(([key]) => !['multi_location_support', 'custom_branding'].includes(key))  // Hide these features
-                          .map(([key, enabled]) => (
-                          <div key={key} className="flex items-center text-sm py-1">
-                            <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
-                            <span className="text-gray-700">
-                              {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                            </span>
-                          </div>
-                        ))}
+                      {/* Features */}
+                      <div className="space-y-2.5 flex-1">
+                        <h4 className={`font-bold text-sm mb-3 ${plan.id === 'standard' ? 'text-blue-700' : plan.id === 'essential' ? 'text-sky-700' : 'text-violet-700'}`}>
+                          Features Included
+                        </h4>
+                        {getDisplayFeatures().map((feature, idx) => {
+                          if (typeof feature === 'object' && feature.isHeader) {
+                            return (
+                              <div key={idx} className={`flex items-center text-sm py-1.5 font-semibold ${plan.id === 'essential' ? 'text-sky-700' : 'text-violet-700'}`}>
+                                <ArrowRight size={14} className="mr-2 flex-shrink-0" />
+                                <span>{feature.text}</span>
+                              </div>
+                            );
+                          }
+                          if (typeof feature === 'object' && feature.isFeature) {
+                            return (
+                              <div key={idx} className="flex items-center text-sm py-1">
+                                <CheckCircle size={16} className={`${style.checkColor} mr-2 flex-shrink-0`} />
+                                <span className="text-gray-700">{feature.text}</span>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={feature} className="flex items-center text-sm py-1">
+                              <CheckCircle size={16} className={`${style.checkColor} mr-2 flex-shrink-0`} />
+                              <span className="text-gray-700">{featureNames[feature] || feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -2529,8 +2605,15 @@ const PlatformAdmin = () => {
               })}
             </div>
 
+            {/* Customisation Credits Clarification */}
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center max-w-3xl mx-auto">
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold text-gray-700">Minor customisation credits</span> cover small changes such as layout tweaks, field additions, or report adjustments. They do not include major new feature development.
+              </p>
+            </div>
+
             {/* Tenant Plan Management Section */}
-            <div className="bg-white rounded-xl shadow-sm border p-6 mt-8">
+            <div className="bg-white rounded-xl shadow-sm border p-6 mt-4">
               <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
                 <Settings size={20} className="mr-2 text-blue-600" />
                 Manage Franchise Plans & Features

@@ -66,6 +66,12 @@ export const planAPI = {
   getMyPlan: () => axios.get(`${API}/my-plan`),
 };
 
+// Tenant Settings API (tenant-scoped)
+export const settingsAPI = {
+  get: () => axios.get(`${API}/tenant/settings`),
+  update: (data) => axios.put(`${API}/tenant/settings`, data),
+};
+
 // Tenant User API (tenant admin)
 export const userAPI = {
   getAll: () => axios.get(`${API}/tenant/users`),

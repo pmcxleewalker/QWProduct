@@ -153,6 +153,24 @@ const TenantDashboard = () => {
   const [vehicleForm, setVehicleForm] = useState({ name: '', registration: '' });
   const [userForm, setUserForm] = useState({ name: '', email: '', role: 'staff' });
   const [showTraining, setShowTraining] = useState(false);
+  
+  // Booking Management Modal States
+  const [showManageBooking, setShowManageBooking] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [bookingAction, setBookingAction] = useState(''); // 'edit' or 'delete'
+  
+  // Settings Modal States (Professional tier)
+  const [showSettings, setShowSettings] = useState(false);
+  const [tenantSettings, setTenantSettings] = useState(null);
+  const [settingsForm, setSettingsForm] = useState({
+    mileage_rate: 0.35,
+    fuel_cost_per_km: 0.12,
+    maintenance_cost_per_km: 0.08,
+    currency: 'EUR',
+    distance_unit: 'km',
+    logo_url: '',
+    primary_color: '#7c3aed'
+  });
 
   // Use the isAdminUser variable defined at top
   const isAdmin = isAdminUser;

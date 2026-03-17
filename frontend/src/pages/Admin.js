@@ -2690,20 +2690,58 @@ const Admin = () => {
       {/* Reports Tab */}
       {activeTab === 'reports' && (
         <div>
-          {/* Feature Gating Check for Enhanced Reports */}
-          {planData && !planData.features?.enhanced_reports && (
-            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="flex items-center">
-                <AlertCircle size={20} className="text-amber-600 mr-3" />
+          {/* Tier Badge Header */}
+          <div className={`mb-6 p-4 rounded-xl ${
+            planData?.plan?.id === 'professional' ? 'bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200' :
+            planData?.plan?.id === 'essential' ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200' :
+            'bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl">
+                  {planData?.plan?.id === 'professional' ? '👑' : planData?.plan?.id === 'essential' ? '⭐' : '🚗'}
+                </span>
                 <div>
-                  <p className="font-medium text-amber-800">Limited Reports Available</p>
-                  <p className="text-sm text-amber-700">
-                    You're on the {planData.plan?.name || 'Standard'} plan. Upgrade to Essential or Professional for enhanced reporting features.
+                  <h2 className="text-xl font-bold text-gray-900">Fleet Reports & Analytics</h2>
+                  <p className={`text-sm ${
+                    planData?.plan?.id === 'professional' ? 'text-purple-600' :
+                    planData?.plan?.id === 'essential' ? 'text-blue-600' : 'text-gray-600'
+                  }`}>
+                    {planData?.plan?.id === 'professional' ? 'Full Analytics Suite • Predictive Insights • Custom Exports' :
+                     planData?.plan?.id === 'essential' ? 'Enhanced Reporting • Utilization Metrics • Trend Analysis' :
+                     'Basic Fleet Statistics • Standard Reports'}
                   </p>
                 </div>
               </div>
+              {planData?.plan?.id === 'standard' && (
+                <div className="hidden md:block px-4 py-2 bg-amber-100 rounded-lg">
+                  <p className="text-xs text-amber-800 font-medium">
+                    ⬆️ Upgrade to Essential for Enhanced Reports
+                  </p>
+                </div>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Feature Access Indicators */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <div className={`p-3 rounded-lg text-center ${planData?.features?.basic_reports ? 'bg-green-50 border border-green-200' : 'bg-gray-100'}`}>
+              <p className="text-xs font-medium text-gray-600">Basic Stats</p>
+              <p className="text-lg">{planData?.features?.basic_reports ? '✅' : '🔒'}</p>
+            </div>
+            <div className={`p-3 rounded-lg text-center ${planData?.features?.enhanced_reports ? 'bg-green-50 border border-green-200' : 'bg-gray-100'}`}>
+              <p className="text-xs font-medium text-gray-600">Utilization</p>
+              <p className="text-lg">{planData?.features?.enhanced_reports ? '✅' : '🔒'}</p>
+            </div>
+            <div className={`p-3 rounded-lg text-center ${planData?.features?.detailed_reports ? 'bg-green-50 border border-green-200' : 'bg-gray-100'}`}>
+              <p className="text-xs font-medium text-gray-600">Predictive</p>
+              <p className="text-lg">{planData?.features?.detailed_reports ? '✅' : '🔒'}</p>
+            </div>
+            <div className={`p-3 rounded-lg text-center ${planData?.features?.api_access ? 'bg-green-50 border border-green-200' : 'bg-gray-100'}`}>
+              <p className="text-xs font-medium text-gray-600">API Export</p>
+              <p className="text-lg">{planData?.features?.api_access ? '✅' : '🔒'}</p>
+            </div>
+          </div>
 
           {/* Header with Date Range Filter for ALL reports */}
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">

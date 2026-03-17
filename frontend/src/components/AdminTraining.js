@@ -40,7 +40,7 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
               `Up to ${planData?.limits?.max_users || 20} team members`,
               features.enhanced_reports ? '✅ Enhanced Reports' : '❌ Enhanced Reports (upgrade to Essential)',
               features.detailed_reports ? '✅ Detailed Analytics' : '❌ Detailed Analytics (upgrade to Professional)',
-              features.api_access ? '✅ API Access' : '❌ API Access (Professional only)',
+              features.cost_analytics ? '✅ Cost Analytics (customizable rates)' : '❌ Cost Analytics (Professional only)',
               features.priority_support ? '✅ Priority Support' : '❌ Priority Support (Professional only)'
             ]
           },
@@ -57,7 +57,7 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
         tip: planId === 'standard' 
           ? 'Upgrade to Essential for enhanced reports and booking controls!' 
           : planId === 'essential'
-          ? 'Upgrade to Professional for API access and detailed analytics!'
+          ? 'Upgrade to Professional for cost analytics and custom branding!'
           : 'You have access to all premium features!'
       }
     },

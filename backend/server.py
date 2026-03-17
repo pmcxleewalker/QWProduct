@@ -2612,6 +2612,64 @@ async def remove_user_from_tenant(
     return {"message": "User removed from tenant"}
 
 
+class TenantResetPasswordRequest(BaseModel):
+    admin_password: str
+    new_password: str
+
+
+@api_router.post("/tenant/users/{user_id}/reset-password")
+async def reset_tenant_user_password(
+    user_id: str,
+    reset_request: TenantResetPasswordRequest,
+    context: TenantContext = Depends(require_admin),
+    request: Request = None
+):
+    """
+    Franchise admin can reset staff passwords within their tenant.
+    Requires admin password confirmation.
+    Available on ALL plan types.
+    """
+    # Verify admin's password
+    admin = await db.users.find_one({"id": context.user_id}, {"_id": 0})
+    if not admin or not verify_password(reset_request.admin_password, admin["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid admin password")
+    
+    # Check that target user is in this tenant
+    membership = await db.memberships.find_one({
+        "user_id": user_id,
+        "tenant_id": context.tenant_id
+    }, {"_id": 0})
+    
+    if not membership:
+        raise HTTPException(status_code=404, detail="User not found in this franchise")
+    
+    # Don't allow resetting master_admin password (they should reset their own)
+    if membership.get("role") == "master_admin" and context.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Only the master admin can change their own password")
+    
+    # Get target user details
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update password
+    new_hash = get_password_hash(reset_request.new_password)
+    await db.users.update_one({"id": user_id}, {"$set": {"password_hash": new_hash}})
+    
+    # Log audit event
+    await audit_service.log_user_action(
+        actor_user_id=context.user_id,
+        actor_email=context.user_email,
+        action=AuditAction.USER_UPDATED,
+        target_user_id=user_id,
+        tenant_id=context.tenant_id,
+        meta={"action": "password_reset", "target_email": user["email"]},
+        ip_address=request.client.host if request and request.client else None
+    )
+    
+    return {"message": f"Password reset successfully for {user['email']}"}
+
+
 # ==================== TENANT REPORTS (TENANT-SCOPED) ====================
 
 @api_router.get("/tenant/reports/summary")

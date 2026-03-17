@@ -1,14 +1,19 @@
 import React, { useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { X, Download, Printer, Car } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 
 const VehicleQRCode = ({ vehicle, isOpen, onClose }) => {
   const qrRef = useRef(null);
+  const { tenantSlug } = useParams();
   
   if (!isOpen || !vehicle) return null;
 
-  // Generate QR code value - format: "QUICKWING:VEHICLE:{vehicle_id}"
-  const qrValue = `QUICKWING:VEHICLE:${vehicle.id}`;
+  // Get the base URL from environment or current location
+  const baseUrl = process.env.REACT_APP_FRONTEND_URL || window.location.origin;
+  
+  // Generate QR code value - URL to mileage log page
+  const qrValue = `${baseUrl}/${tenantSlug}/vehicle/${vehicle.id}/mileage`;
 
   const handleDownload = () => {
     const svg = qrRef.current?.querySelector('svg');

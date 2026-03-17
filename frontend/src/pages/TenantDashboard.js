@@ -1664,6 +1664,7 @@ const TenantDashboard = () => {
           isOpen={showTraining}
           onClose={() => setShowTraining(false)}
           franchiseName={activeTenant?.tenant_name}
+          planData={planData}
         />
       )}
 

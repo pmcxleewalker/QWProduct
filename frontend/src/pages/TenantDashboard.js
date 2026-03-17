@@ -281,6 +281,25 @@ const TenantDashboard = () => {
       // Set plan data for tier styling
       if (planRes.data) {
         setPlanData(planRes.data);
+        
+        // Fetch tenant settings if professional tier
+        if (planRes.data?.features?.cost_analytics || planRes.data?.features?.custom_branding) {
+          try {
+            const settingsRes = await settingsAPI.get();
+            setTenantSettings(settingsRes.data);
+            setSettingsForm({
+              mileage_rate: settingsRes.data?.cost_analytics?.mileage_rate || 0.35,
+              fuel_cost_per_km: settingsRes.data?.cost_analytics?.fuel_cost_per_km || 0.12,
+              maintenance_cost_per_km: settingsRes.data?.cost_analytics?.maintenance_cost_per_km || 0.08,
+              currency: settingsRes.data?.cost_analytics?.currency || 'EUR',
+              distance_unit: settingsRes.data?.cost_analytics?.distance_unit || 'km',
+              logo_url: settingsRes.data?.branding?.logo_url || '',
+              primary_color: settingsRes.data?.branding?.primary_color || '#7c3aed'
+            });
+          } catch (err) {
+            console.error('Failed to load tenant settings:', err);
+          }
+        }
       }
 
       // Generate recent activity from bookings

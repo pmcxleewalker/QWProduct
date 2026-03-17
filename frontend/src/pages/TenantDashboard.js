@@ -1991,6 +1991,261 @@ const TenantDashboard = () => {
         <RequestLiftButton tenantSlug={activeTenant?.tenant_slug} />
       )}
 
+      {/* Booking Management Modal */}
+      {showManageBooking && selectedBooking && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white">Manage Booking</h3>
+                <button 
+                  onClick={() => { setShowManageBooking(false); setSelectedBooking(null); }}
+                  className="text-white/80 hover:text-white"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase">User</label>
+                    <p className="font-medium text-gray-900">{selectedBooking.user_name}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase">Vehicle</label>
+                    <p className="font-medium text-gray-900">{selectedBooking.vehicle_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase">Date</label>
+                    <p className="font-medium text-gray-900">{formatDate(selectedBooking.date || selectedBooking.start_time)}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase">Status</label>
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      selectedBooking.status === 'approved' || selectedBooking.status === 'confirmed'
+                        ? 'bg-green-100 text-green-700' 
+                        : selectedBooking.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {selectedBooking.status}
+                    </span>
+                  </div>
+                </div>
+                
+                {selectedBooking.purpose && (
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase">Purpose</label>
+                    <p className="text-gray-700">{selectedBooking.purpose}</p>
+                  </div>
+                )}
+                
+                {selectedBooking.location && (
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase">Location</label>
+                    <p className="text-gray-700">{selectedBooking.location}</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-6 pt-4 border-t flex justify-between">
+                <button
+                  onClick={() => handleDeleteBooking(selectedBooking.id)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  <Trash2 size={16} />
+                  <span>Delete Booking</span>
+                </button>
+                
+                <div className="flex space-x-2">
+                  {selectedBooking.status === 'pending' && (
+                    <button
+                      onClick={() => handleUpdateBooking(selectedBooking.id, { status: 'approved' })}
+                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    >
+                      <CheckCircle size={16} />
+                      <span>Approve</span>
+                    </button>
+                  )}
+                  {selectedBooking.status === 'approved' && (
+                    <button
+                      onClick={() => handleUpdateBooking(selectedBooking.id, { status: 'cancelled' })}
+                      className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                    >
+                      <XCircle size={16} />
+                      <span>Cancel</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Professional Settings Modal */}
+      {showSettings && planData?.features?.cost_analytics && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-purple-600 to-fuchsia-600 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Crown className="text-yellow-300" size={24} />
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Professional Settings</h3>
+                    <p className="text-purple-100 text-sm">Customize your analytics & branding</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowSettings(false)}
+                  className="text-white/80 hover:text-white"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-6">
+              {/* Cost Analytics Settings */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
+                <div className="flex items-center mb-4">
+                  <DollarSign className="text-purple-600 mr-2" size={20} />
+                  <h4 className="font-bold text-purple-900">Cost Analytics Configuration</h4>
+                </div>
+                <p className="text-sm text-purple-700 mb-4">
+                  Set your own rates to calculate accurate cost-per-mile analytics for your fleet.
+                </p>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mileage Rate (€ per {settingsForm.distance_unit})
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={settingsForm.mileage_rate}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, mileage_rate: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Total cost per km/mile</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Fuel Cost (€ per {settingsForm.distance_unit})
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={settingsForm.fuel_cost_per_km}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, fuel_cost_per_km: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Maintenance Cost (€ per {settingsForm.distance_unit})
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={settingsForm.maintenance_cost_per_km}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, maintenance_cost_per_km: parseFloat(e.target.value) })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Distance Unit</label>
+                    <select
+                      value={settingsForm.distance_unit}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, distance_unit: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="km">Kilometers (km)</option>
+                      <option value="miles">Miles</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                    <select
+                      value={settingsForm.currency}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, currency: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="EUR">Euro (€)</option>
+                      <option value="GBP">Pound Sterling (£)</option>
+                      <option value="USD">US Dollar ($)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Custom Branding Settings */}
+              {planData?.features?.custom_branding && (
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200">
+                  <div className="flex items-center mb-4">
+                    <Palette className="text-indigo-600 mr-2" size={20} />
+                    <h4 className="font-bold text-indigo-900">Custom Branding</h4>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
+                      <input
+                        type="url"
+                        placeholder="https://your-logo.com/logo.png"
+                        value={settingsForm.logo_url}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, logo_url: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Brand Color</label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="color"
+                          value={settingsForm.primary_color}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, primary_color: e.target.value })}
+                          className="w-12 h-10 rounded border cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={settingsForm.primary_color}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, primary_color: e.target.value })}
+                          className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveSettings}
+                  className="flex items-center space-x-2 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                >
+                  <Save size={16} />
+                  <span>Save Settings</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add padding at bottom for sticky button on mobile */}
       {isStaffUser && <div className="h-24 md:hidden"></div>}
     </div>

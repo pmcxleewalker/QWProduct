@@ -72,6 +72,8 @@ export const userAPI = {
   create: (data, role = 'staff') => axios.post(`${API}/tenant/users`, data, { params: { role } }),
   updateRole: (userId, role) => axios.put(`${API}/tenant/users/${userId}/role`, null, { params: { role } }),
   remove: (userId) => axios.delete(`${API}/tenant/users/${userId}`),
+  resetPassword: (userId, adminPassword, newPassword) => 
+    axios.post(`${API}/tenant/users/${userId}/reset-password`, { admin_password: adminPassword, new_password: newPassword }),
 };
 
 // Platform API (super/master admin only)

@@ -118,6 +118,10 @@ const TenantDashboard = () => {
   const [serviceAlert, setServiceAlert] = useState(null);
   const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0);
   const [activeSubTab, setActiveSubTab] = useState(null); // For nested tabs
+  
+  // Plan data for tier-based styling
+  const [planData, setPlanData] = useState(null);
+  const tierStyle = planData?.plan?.id ? TIER_STYLES[planData.plan.id] : TIER_STYLES.standard;
 
   // Modal states
   const [showAddVehicle, setShowAddVehicle] = useState(false);

@@ -1103,6 +1103,89 @@ async def update_tenant_settings(
     }
 
 
+# Create uploads directory
+UPLOADS_DIR = ROOT_DIR / "uploads" / "logos"
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+@api_router.post("/tenant/upload-logo")
+async def upload_tenant_logo(
+    file: UploadFile = File(...),
+    context: TenantContext = Depends(require_admin)
+):
+    """Upload a logo image for the tenant (Professional tier only)"""
+    # Check if tenant has custom_branding feature
+    tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    plan_value = tenant.get("plan", "standard")
+    plan_mapping = {"starter": "standard", "basic": "standard", "pro": "professional"}
+    plan_value = plan_mapping.get(plan_value, plan_value)
+    
+    try:
+        plan = TenantPlan(plan_value)
+    except ValueError:
+        plan = TenantPlan.STANDARD
+    
+    plan_config = PLAN_CONFIG.get(plan, PLAN_CONFIG[TenantPlan.STANDARD])
+    features = plan_config["features"].copy()
+    overrides = tenant.get("feature_overrides", {})
+    for key, value in overrides.items():
+        features[key] = value
+    
+    if not features.get("custom_branding"):
+        raise HTTPException(status_code=403, detail="Custom branding not available on your plan")
+    
+    # Validate file type
+    allowed_types = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid file type. Allowed: PNG, JPG, WEBP, SVG")
+    
+    # Validate file size (max 2MB)
+    contents = await file.read()
+    if len(contents) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 2MB")
+    
+    # Generate unique filename
+    ext = file.filename.split('.')[-1] if '.' in file.filename else 'png'
+    filename = f"{context.tenant_id}_{uuid.uuid4().hex[:8]}.{ext}"
+    filepath = UPLOADS_DIR / filename
+    
+    # Save file
+    with open(filepath, "wb") as f:
+        f.write(contents)
+    
+    # Generate URL
+    base_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
+    logo_url = f"{base_url}/api/uploads/logos/{filename}"
+    
+    # Update tenant settings
+    await db.tenants.update_one(
+        {"id": context.tenant_id},
+        {"$set": {
+            "settings.logo_url": logo_url,
+            "settings.logo_filename": filename,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {
+        "message": "Logo uploaded successfully",
+        "logo_url": logo_url
+    }
+
+
+@api_router.get("/uploads/logos/{filename}")
+async def get_logo(filename: str):
+    """Serve uploaded logo files"""
+    filepath = UPLOADS_DIR / filename
+    if not filepath.exists():
+        raise HTTPException(status_code=404, detail="Logo not found")
+    
+    return FileResponse(filepath)
+
+
 @api_router.post("/platform/tenants/{tenant_id}/suspend")
 async def suspend_tenant(
     tenant_id: str,

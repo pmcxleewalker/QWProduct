@@ -51,14 +51,28 @@ const QRScanner = ({ isOpen, onClose, onSuccess, tenantSlug }) => {
     setScanning(false);
 
     try {
-      // Parse QR code - expected format: "QUICKWING:VEHICLE:{vehicle_id}"
-      const parts = decodedText.split(':');
-      if (parts.length !== 3 || parts[0] !== 'QUICKWING' || parts[1] !== 'VEHICLE') {
+      // Parse QR code - handle both URL format and legacy format
+      let vehicleId = null;
+      
+      // Check if it's a URL (new format)
+      if (decodedText.startsWith('http')) {
+        // Extract vehicle ID from URL like: https://domain.com/{tenant}/vehicle/{vehicle_id}/mileage
+        const urlMatch = decodedText.match(/\/vehicle\/([a-zA-Z0-9-]+)/);
+        if (urlMatch) {
+          vehicleId = urlMatch[1];
+        }
+      } else {
+        // Legacy format: "QUICKWING:VEHICLE:{vehicle_id}"
+        const parts = decodedText.split(':');
+        if (parts.length === 3 && parts[0] === 'QUICKWING' && parts[1] === 'VEHICLE') {
+          vehicleId = parts[2];
+        }
+      }
+      
+      if (!vehicleId) {
         setError('Invalid QR code format. Please scan a valid Quick Wing vehicle QR code.');
         return;
       }
-
-      const vehicleId = parts[2];
       
       // Fetch vehicle details
       const response = await axios.get(`${API}/vehicles/${vehicleId}`);

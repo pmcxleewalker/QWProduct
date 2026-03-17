@@ -1409,7 +1409,7 @@ const TenantDashboard = () => {
             {activeTab === 'team' && isAdmin && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Team Members</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Team Management</h2>
                   <button
                     onClick={() => setShowAddUser(true)}
                     className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -1420,56 +1420,136 @@ const TenantDashboard = () => {
                   </button>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                  {teamMembers.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500">
-                      <Users size={48} className="mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium">No team members yet</p>
-                      <p className="text-sm mt-1">Add team members to give them access</p>
-                    </div>
-                  ) : (
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {teamMembers.map(member => (
-                          <tr key={member.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3">
-                              <p className="font-medium text-gray-900">{member.name}</p>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{member.email}</td>
-                            <td className="px-4 py-3">
-                              <span className={`px-2 py-1 rounded-full text-xs ${
-                                member.role === 'admin' || member.role === 'master_admin'
-                                  ? 'bg-purple-100 text-purple-700' 
-                                  : 'bg-gray-100 text-gray-700'
-                              }`}>
-                                {member.role}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              {member.role !== 'master_admin' && member.id !== user?.id && (
-                                <button
-                                  onClick={() => handleRemoveUser(member.id)}
-                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                                  title="Remove Member"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              )}
-                            </td>
+                {teamMembers.length === 0 ? (
+                  <div className="bg-white rounded-xl shadow-sm border p-12 text-center text-gray-500">
+                    <Users size={48} className="mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium">No team members yet</p>
+                    <p className="text-sm mt-1">Add team members to give them access</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Admin Section */}
+                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3">
+                        <h3 className="text-white font-semibold flex items-center">
+                          <Crown size={18} className="mr-2" />
+                          Administrators
+                        </h3>
+                        <p className="text-purple-100 text-xs">Can manage vehicles, staff, and settings</p>
+                      </div>
+                      <table className="w-full">
+                        <thead className="bg-purple-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-purple-700 uppercase">Name</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-purple-700 uppercase">Email</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-purple-700 uppercase">Role</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-purple-700 uppercase">Actions</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
+                        </thead>
+                        <tbody className="divide-y">
+                          {teamMembers.filter(m => m.role === 'admin' || m.role === 'master_admin').map(member => (
+                            <tr key={member.id} className="hover:bg-purple-50/50">
+                              <td className="px-4 py-3">
+                                <p className="font-medium text-gray-900">{member.name}</p>
+                                {member.id === user?.id && (
+                                  <span className="text-xs text-blue-600">(You)</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{member.email}</td>
+                              <td className="px-4 py-3">
+                                <span className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700">
+                                  {member.role === 'master_admin' ? 'Owner' : 'Admin'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center space-x-2">
+                                  {/* Admins can change their own password */}
+                                  {member.id === user?.id && (
+                                    <button
+                                      onClick={() => handleResetPassword(member.id, member.name)}
+                                      className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                      title="Change your password"
+                                    >
+                                      Change Password
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          {teamMembers.filter(m => m.role === 'admin' || m.role === 'master_admin').length === 0 && (
+                            <tr>
+                              <td colSpan={4} className="px-4 py-6 text-center text-gray-500 text-sm">
+                                No administrators
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Staff Section */}
+                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                      <div className="bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-3">
+                        <h3 className="text-white font-semibold flex items-center">
+                          <Users size={18} className="mr-2" />
+                          Staff Members
+                        </h3>
+                        <p className="text-blue-100 text-xs">Can view and book vehicles</p>
+                      </div>
+                      <table className="w-full">
+                        <thead className="bg-blue-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-blue-700 uppercase">Name</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-blue-700 uppercase">Email</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-blue-700 uppercase">Status</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-blue-700 uppercase">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {teamMembers.filter(m => m.role === 'staff').map(member => (
+                            <tr key={member.id} className="hover:bg-blue-50/50">
+                              <td className="px-4 py-3">
+                                <p className="font-medium text-gray-900">{member.name}</p>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{member.email}</td>
+                              <td className="px-4 py-3">
+                                <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                                  Active
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center space-x-2">
+                                  <button
+                                    onClick={() => handleResetPassword(member.id, member.name)}
+                                    className="px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded hover:bg-amber-200"
+                                    title="Reset staff password"
+                                  >
+                                    Reset Password
+                                  </button>
+                                  <button
+                                    onClick={() => handleRemoveUser(member.id)}
+                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                                    title="Remove Member"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                          {teamMembers.filter(m => m.role === 'staff').length === 0 && (
+                            <tr>
+                              <td colSpan={4} className="px-4 py-6 text-center text-gray-500 text-sm">
+                                No staff members yet. Click "Add Member" to add staff.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

@@ -469,6 +469,26 @@ const TenantDashboard = () => {
     };
   };
 
+  // Handle password reset for team members
+  const handleResetPassword = async (userId, userName) => {
+    const newPassword = window.prompt(`Enter new password for ${userName}:`);
+    if (!newPassword) return;
+    
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    
+    try {
+      await axios.post(`${API}/tenant/users/${userId}/reset-password`, {
+        new_password: newPassword
+      });
+      toast.success(`Password updated for ${userName}`);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to reset password');
+    }
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString('en-IE', { 

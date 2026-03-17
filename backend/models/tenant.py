@@ -27,24 +27,30 @@ PLAN_CONFIG = {
         "name": "Quick Wing Standard",
         "price": 179,
         "currency": "EUR",
-        "max_vehicles": 10,
-        "max_users": 20,
+        "max_vehicles": 15,
+        "max_users": 25,
         "customizations_per_month": 1,
+        "sub_label": "Best for small teams",
         "features": {
             "vehicle_booking": True,
-            "fleet_compliance": True,  # Tax, insurance, NCT, service km's
+            "fleet_compliance": True,
             "basic_reports": True,
-            "enhanced_reports": False,
-            "detailed_reports": False,
             "staff_calendars": True,
             "admin_all_cars_calendar": True,
+            "email_support": True,
+            "standard_onboarding": True,
+            # Not included in Standard
+            "enhanced_reports": False,
+            "detailed_reports": False,
             "booking_visibility_enhanced": False,
             "booking_admin_control": False,
             "compliance_oversight_broad": False,
-            "multi_location_support": False,
-            "priority_support": False,
-            "custom_branding": False,
             "cost_analytics": False,
+            "faster_support": False,
+            "priority_support": False,
+            "multi_site_oversight": False,
+            "advanced_permissions": False,
+            "custom_exports": False,
         },
         "description": "A practical fleet system for smaller franchises",
         "tagline": "Simple structure for smaller teams that need control without complexity"
@@ -57,50 +63,61 @@ PLAN_CONFIG = {
         "max_users": 35,
         "customizations_per_month": 2,
         "is_popular": True,
+        "sub_label": "Best value",
         "features": {
             "vehicle_booking": True,
             "fleet_compliance": True,
             "basic_reports": True,
-            "enhanced_reports": True,  # Enhanced fleet reports
-            "detailed_reports": False,
             "staff_calendars": True,
             "admin_all_cars_calendar": True,
-            "booking_visibility_enhanced": True,  # Stronger booking visibility
-            "booking_admin_control": True,  # Admin control over bookings
-            "compliance_oversight_broad": True,  # Broader compliance oversight
-            "multi_location_support": False,
+            "email_support": True,
+            "standard_onboarding": True,
+            "enhanced_reports": True,
+            "booking_visibility_enhanced": True,
+            "booking_admin_control": True,
+            "compliance_oversight_broad": True,
+            "cost_analytics": True,
+            "faster_support": True,
+            # Not included in Essential
+            "detailed_reports": False,
             "priority_support": False,
-            "custom_branding": False,
-            "cost_analytics": True,  # Cost analytics included in Essential
+            "multi_site_oversight": False,
+            "advanced_permissions": False,
+            "custom_exports": False,
         },
         "description": "The best fit for growing franchises that need more control",
         "tagline": "Built to be the sweet spot for value, scale and day-to-day control"
     },
     TenantPlan.PROFESSIONAL: {
         "name": "Quick Wing Professional",
-        "price": 399,
+        "price": 449,
         "currency": "EUR",
         "max_vehicles": 50,
         "max_users": 50,
         "customizations_per_month": 4,
+        "sub_label": "Best for multi-site operations",
         "features": {
             "vehicle_booking": True,
             "fleet_compliance": True,
             "basic_reports": True,
-            "enhanced_reports": True,
-            "detailed_reports": True,  # Full detailed reporting & analytics
             "staff_calendars": True,
             "admin_all_cars_calendar": True,
+            "email_support": True,
+            "standard_onboarding": True,
+            "enhanced_reports": True,
             "booking_visibility_enhanced": True,
             "booking_admin_control": True,
             "compliance_oversight_broad": True,
-            "multi_location_support": True,  # Manage multiple depot locations
-            "priority_support": True,  # Priority customer support
-            "custom_branding": True,  # Custom logo and color scheme
-            "cost_analytics": True,  # Customizable cost-per-mile analytics
+            "cost_analytics": True,
+            "faster_support": True,
+            "detailed_reports": True,
+            "priority_support": True,
+            "multi_site_oversight": True,
+            "advanced_permissions": True,
+            "custom_exports": True,
         },
         "description": "For larger franchises that need more scale and visibility",
-        "tagline": "Designed for larger teams that need flexibility and structure at scale"
+        "tagline": "Designed for larger teams that need flexibility, oversight and structure at scale"
     }
 }
 

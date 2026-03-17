@@ -71,7 +71,7 @@ PLAN_CONFIG = {
             "multi_location_support": False,
             "priority_support": False,
             "custom_branding": False,
-            "cost_analytics": False,
+            "cost_analytics": True,  # Cost analytics included in Essential
         },
         "description": "The best fit for growing franchises that need more control",
         "tagline": "Built to be the sweet spot for value, scale and day-to-day control"

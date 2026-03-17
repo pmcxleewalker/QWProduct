@@ -220,7 +220,8 @@ class TestPlanFeatures:
             headers={"Authorization": f"Bearer {super_admin_token}"}
         )
         assert response.status_code == 200
-        plans = response.json()
+        data = response.json()
+        plans = data.get("plans", [])
         
         for plan in plans:
             features = plan.get("features", {})

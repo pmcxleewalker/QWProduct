@@ -315,6 +315,9 @@ const AppContent = () => {
         {/* Path-based Tenant Routes: /{tenant-slug}/... */}
         <Route path="/:tenantSlug/login" element={<TenantLogin />} />
         
+        {/* QR Code Mileage Log - Semi-public route (handles own auth) */}
+        <Route path="/:tenantSlug/vehicle/:vehicleId/mileage" element={<MileageLog />} />
+        
         <Route path="/:tenantSlug/*" element={<TenantRoutes />} />
         
         {/* Legacy tenant-scoped routes (for backward compatibility) */}

@@ -602,6 +602,18 @@ const TenantDashboard = () => {
                   <span>Help</span>
                 </button>
               )}
+              
+              {/* Professional Tier Settings Button */}
+              {isAdmin && planData?.features?.cost_analytics && (
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+                  data-testid="settings-button"
+                >
+                  <Settings size={18} />
+                  <span>Settings</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

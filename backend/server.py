@@ -4094,10 +4094,13 @@ async def delete_announcement(
 @api_router.get("/tenant/reports/daily-timeline")
 async def get_daily_availability_timeline(
     date: Optional[str] = None,
+    vehicle_id: Optional[str] = None,
     context: TenantContext = Depends(require_admin)
 ):
     """
-    Get hourly availability timeline for all vehicles on a specific day.
+    Get hourly availability timeline for vehicles on a specific day.
+    If vehicle_id is provided, shows data for that specific vehicle.
+    Otherwise, shows aggregated data for all vehicles.
     Returns data for each hour from 07:00 to 22:00.
     """
     tenant_id = context.tenant_id
@@ -4125,12 +4128,26 @@ async def get_daily_availability_timeline(
     blocked_vehicles = len([v for v in vehicles if v.get("is_blocked")])
     available_fleet = total_vehicles - blocked_vehicles
     
+    # Build vehicle list for dropdown
+    vehicle_list = [{"id": v["id"], "name": v.get("name", v.get("registration", "Unknown")), "registration": v.get("registration", "")} for v in vehicles if not v.get("is_blocked")]
+    
+    # If filtering by specific vehicle
+    selected_vehicle = None
+    if vehicle_id:
+        selected_vehicle = next((v for v in vehicles if v["id"] == vehicle_id), None)
+        if not selected_vehicle:
+            raise HTTPException(status_code=404, detail="Vehicle not found")
+    
     # Get bookings for this day
-    bookings = await db.bookings.find({
+    booking_query = {
         "tenant_id": tenant_id,
         "start_time": {"$lte": day_end.isoformat()},
         "end_time": {"$gte": day_start.isoformat()}
-    }, {"_id": 0}).to_list(10000)
+    }
+    if vehicle_id:
+        booking_query["car_id"] = vehicle_id
+    
+    bookings = await db.bookings.find(booking_query, {"_id": 0}).to_list(10000)
     
     # Build hourly timeline (07:00 - 22:00)
     timeline = []
@@ -4166,16 +4183,29 @@ async def get_daily_availability_timeline(
                 continue
         
         in_use_count = len(vehicles_in_use)
-        free_count = available_fleet - in_use_count
         
-        timeline.append({
-            "hour": f"{hour:02d}:00",
-            "hour_24": hour,
-            "total_fleet": available_fleet,
-            "in_use": in_use_count,
-            "free": max(0, free_count),
-            "utilization_percent": round((in_use_count / available_fleet * 100), 1) if available_fleet > 0 else 0
-        })
+        # For single vehicle view, show if booked (1) or free (0)
+        if vehicle_id:
+            is_booked = vehicle_id in vehicles_in_use
+            timeline.append({
+                "hour": f"{hour:02d}:00",
+                "hour_24": hour,
+                "total_fleet": 1,
+                "in_use": 1 if is_booked else 0,
+                "free": 0 if is_booked else 1,
+                "utilization_percent": 100 if is_booked else 0,
+                "status": "Booked" if is_booked else "Available"
+            })
+        else:
+            free_count = available_fleet - in_use_count
+            timeline.append({
+                "hour": f"{hour:02d}:00",
+                "hour_24": hour,
+                "total_fleet": available_fleet,
+                "in_use": in_use_count,
+                "free": max(0, free_count),
+                "utilization_percent": round((in_use_count / available_fleet * 100), 1) if available_fleet > 0 else 0
+            })
     
     # Calculate peak hours
     peak_hour = max(timeline, key=lambda x: x["in_use"]) if timeline else None
@@ -4186,6 +4216,12 @@ async def get_daily_availability_timeline(
         "total_vehicles": total_vehicles,
         "blocked_vehicles": blocked_vehicles,
         "available_fleet": available_fleet,
+        "vehicle_list": vehicle_list,
+        "selected_vehicle": {
+            "id": selected_vehicle["id"],
+            "name": selected_vehicle.get("name", selected_vehicle.get("registration", "Unknown")),
+            "registration": selected_vehicle.get("registration", "")
+        } if selected_vehicle else None,
         "timeline": timeline,
         "summary": {
             "peak_hour": peak_hour["hour"] if peak_hour else None,

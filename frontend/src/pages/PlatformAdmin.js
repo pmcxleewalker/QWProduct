@@ -2476,24 +2476,36 @@ const PlatformAdmin = () => {
 
                     {/* Plan Details */}
                     <div className="bg-white p-6">
-                      <div className="space-y-3 mb-6">
-                        <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                          <span className="text-gray-600 flex items-center">
-                            <Car size={16} className="mr-2 text-gray-400" /> Vehicles
-                          </span>
-                          <span className={`font-bold ${style.accent}`}>{plan.max_vehicles}</span>
-                        </div>
-                        <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                          <span className="text-gray-600 flex items-center">
-                            <Users size={16} className="mr-2 text-gray-400" /> Users
-                          </span>
-                          <span className={`font-bold ${style.accent}`}>{plan.max_users}</span>
-                        </div>
-                        <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                          <span className="text-gray-600 flex items-center">
-                            <Zap size={16} className="mr-2 text-gray-400" /> Customizations
-                          </span>
-                          <span className={`font-bold ${style.accent}`}>{plan.customizations_per_month}/mo</span>
+                      {/* Limits Section - More Prominent */}
+                      <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                          <div>
+                            <div className="flex items-center justify-center mb-1">
+                              <Car size={18} className={plan.id === 'standard' ? 'text-slate-600' : plan.id === 'essential' ? 'text-sky-600' : 'text-violet-600'} />
+                            </div>
+                            <p className={`text-2xl font-black ${plan.id === 'standard' ? 'text-slate-700' : plan.id === 'essential' ? 'text-sky-700' : 'text-violet-700'}`}>
+                              {plan.max_vehicles}
+                            </p>
+                            <p className="text-xs text-gray-500 font-medium">Vehicles</p>
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-center mb-1">
+                              <Users size={18} className={plan.id === 'standard' ? 'text-slate-600' : plan.id === 'essential' ? 'text-sky-600' : 'text-violet-600'} />
+                            </div>
+                            <p className={`text-2xl font-black ${plan.id === 'standard' ? 'text-slate-700' : plan.id === 'essential' ? 'text-sky-700' : 'text-violet-700'}`}>
+                              {plan.max_users}
+                            </p>
+                            <p className="text-xs text-gray-500 font-medium">Users</p>
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-center mb-1">
+                              <Zap size={18} className={plan.id === 'standard' ? 'text-slate-600' : plan.id === 'essential' ? 'text-sky-600' : 'text-violet-600'} />
+                            </div>
+                            <p className={`text-2xl font-black ${plan.id === 'standard' ? 'text-slate-700' : plan.id === 'essential' ? 'text-sky-700' : 'text-violet-700'}`}>
+                              {plan.customizations_per_month}
+                            </p>
+                            <p className="text-xs text-gray-500 font-medium">Custom/mo</p>
+                          </div>
                         </div>
                       </div>
 
@@ -2501,6 +2513,7 @@ const PlatformAdmin = () => {
                         <h4 className={`font-bold text-sm mb-3 ${style.accent}`}>Features Included</h4>
                         {Object.entries(plan.features)
                           .filter(([key, enabled]) => enabled)  // Only show enabled features
+                          .filter(([key]) => !['multi_location_support', 'custom_branding'].includes(key))  // Hide these features
                           .map(([key, enabled]) => (
                           <div key={key} className="flex items-center text-sm py-1">
                             <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />

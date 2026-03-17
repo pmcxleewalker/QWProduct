@@ -101,10 +101,6 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
         tip: `You're using ${planData?.usage?.users || 0} of ${planData?.limits?.max_users || 20} available user slots.`
       }
     },
-        ],
-        tip: 'Staff members must change their temporary password on first login for security.'
-      }
-    },
     {
       id: 'vehicles',
       title: 'Fleet Management',
@@ -112,7 +108,7 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
       color: 'purple',
       content: {
         heading: 'Setting Up Your Vehicle Fleet',
-        description: 'Add vehicles, track compliance, and generate QR codes.',
+        description: `Your ${planName} plan allows up to ${planData?.limits?.max_vehicles || 10} vehicles.`,
         sections: [
           {
             title: 'Adding a New Vehicle',

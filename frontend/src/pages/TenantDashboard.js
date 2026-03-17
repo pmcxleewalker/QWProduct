@@ -1394,7 +1394,6 @@ const TenantDashboard = () => {
                                 >
                                   Manage
                                 </button>
-                                </button>
                               </td>
                             )}
                           </tr>

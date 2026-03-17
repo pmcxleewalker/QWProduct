@@ -38,18 +38,18 @@ const Admin = () => {
   // Plan and usage limits state
   const [planData, setPlanData] = useState(null);
 
-  // Check if this is first time admin visits - show training
+  // Show training for new admins (but only after planData is loaded)
   useEffect(() => {
     const trainingKey = `training_completed_${activeTenant?.tenant_id || 'default'}`;
     const trainingCompleted = localStorage.getItem(trainingKey);
-    if (!trainingCompleted && activeTenant?.tenant_id) {
-      // Show training for new admins after a short delay
+    if (!trainingCompleted && activeTenant?.tenant_id && planData) {
+      // Show training for new admins after planData is available
       const timer = setTimeout(() => {
         setShowTraining(true);
-      }, 1500);
+      }, 500);
       return () => clearTimeout(timer);
     }
-  }, [activeTenant?.tenant_id]);
+  }, [activeTenant?.tenant_id, planData]);
 
   const handleCloseTraining = () => {
     setShowTraining(false);

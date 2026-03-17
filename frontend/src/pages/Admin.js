@@ -841,14 +841,22 @@ const Admin = () => {
       setError('Password must be at least 6 characters');
       return;
     }
+    if (!adminConfirmPassword) {
+      setError('Please enter your admin password to confirm');
+      return;
+    }
     try {
-      await userAPI.resetPassword(resetPasswordUser.id, newPassword);
+      await userAPI.resetPassword(resetPasswordUser.id, adminConfirmPassword, newPassword);
       setSuccess(`Password reset successfully for ${getUsername(resetPasswordUser.email)}`);
+      toast.success(`Password reset for ${getUsername(resetPasswordUser.email)}`);
       setShowResetPasswordModal(false);
       setResetPasswordUser(null);
       setNewPassword('');
+      setAdminConfirmPassword('');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to reset password');
+      const errorMsg = err.response?.data?.detail || 'Failed to reset password';
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 

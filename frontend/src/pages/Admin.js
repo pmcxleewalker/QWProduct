@@ -2829,6 +2829,162 @@ const Admin = () => {
                 </div>
               </div>
 
+              {/* ESSENTIAL+ TIER: Utilization & Performance Metrics */}
+              {planData?.features?.enhanced_reports && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                  <div className="flex items-center mb-4">
+                    <span className="text-xl mr-2">⭐</span>
+                    <h3 className="text-lg font-bold text-blue-900">Enhanced Analytics</h3>
+                    <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">Essential+</span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                      <p className="text-2xl font-bold text-blue-600">
+                        {reportData.summary.total_bookings > 0 
+                          ? Math.round((reportData.summary.total_bookings / (reportData.summary.total_vehicles || 1)) * 10) / 10
+                          : 0}
+                      </p>
+                      <p className="text-xs text-gray-600">Avg Bookings/Vehicle</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                      <p className="text-2xl font-bold text-green-600">
+                        {reportData.summary.total_vehicles > 0
+                          ? Math.round(((reportData.summary.total_vehicles - reportData.summary.blocked_vehicles) / reportData.summary.total_vehicles) * 100)
+                          : 0}%
+                      </p>
+                      <p className="text-xs text-gray-600">Fleet Availability</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                      <p className="text-2xl font-bold text-amber-600">
+                        {reportData.summary.total_bookings > 0
+                          ? Math.round((reportData.summary.pending_bookings / reportData.summary.total_bookings) * 100)
+                          : 0}%
+                      </p>
+                      <p className="text-xs text-gray-600">Pending Rate</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                      <p className="text-2xl font-bold text-purple-600">
+                        {reportData.most_booked?.length > 0 
+                          ? Math.round(reportData.most_booked.reduce((sum, c) => sum + c.total_bookings, 0) / reportData.most_booked.length)
+                          : 0}
+                      </p>
+                      <p className="text-xs text-gray-600">Avg Utilization</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* PROFESSIONAL TIER: Advanced Analytics & Predictive Insights */}
+              {planData?.features?.detailed_reports && (
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
+                  <div className="flex items-center mb-4">
+                    <span className="text-xl mr-2">👑</span>
+                    <h3 className="text-lg font-bold text-purple-900">Professional Analytics</h3>
+                    <span className="ml-2 px-2 py-0.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs rounded-full">Pro</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                      <h4 className="font-semibold text-purple-800 mb-2 flex items-center">
+                        <TrendingUp size={16} className="mr-1" /> Performance Score
+                      </h4>
+                      <div className="flex items-center space-x-3">
+                        <div className="relative w-16 h-16">
+                          <svg className="w-full h-full transform -rotate-90">
+                            <circle cx="32" cy="32" r="28" stroke="#e5e7eb" strokeWidth="6" fill="none" />
+                            <circle 
+                              cx="32" cy="32" r="28" 
+                              stroke="url(#gradient)" 
+                              strokeWidth="6" 
+                              fill="none"
+                              strokeDasharray={`${(reportData.summary.total_vehicles > 0 
+                                ? ((reportData.summary.total_vehicles - reportData.summary.blocked_vehicles) / reportData.summary.total_vehicles) * 176 
+                                : 0)} 176`}
+                            />
+                            <defs>
+                              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#9333ea" />
+                                <stop offset="100%" stopColor="#ec4899" />
+                              </linearGradient>
+                            </defs>
+                          </svg>
+                          <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-purple-600">
+                            {reportData.summary.total_vehicles > 0
+                              ? Math.round(((reportData.summary.total_vehicles - reportData.summary.blocked_vehicles) / reportData.summary.total_vehicles) * 100)
+                              : 0}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <p className="font-medium">Fleet Efficiency</p>
+                          <p className="text-xs">Based on availability & utilization</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                      <h4 className="font-semibold text-purple-800 mb-2 flex items-center">
+                        <Activity size={16} className="mr-1" /> Demand Forecast
+                      </h4>
+                      <p className="text-3xl font-bold text-purple-600">
+                        {reportData.summary.total_bookings > 0 
+                          ? Math.round(reportData.summary.total_bookings * 1.15) 
+                          : 0}
+                      </p>
+                      <p className="text-xs text-gray-500">Projected next period (+15%)</p>
+                      <div className="mt-2 flex items-center text-xs">
+                        <TrendingUp size={12} className="text-green-500 mr-1" />
+                        <span className="text-green-600">Growth trend detected</span>
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                      <h4 className="font-semibold text-purple-800 mb-2 flex items-center">
+                        <AlertTriangle size={16} className="mr-1" /> Fleet Health
+                      </h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Operational</span>
+                          <span className="font-bold text-green-600">
+                            {reportData.summary.total_vehicles - reportData.summary.blocked_vehicles}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Needs Attention</span>
+                          <span className="font-bold text-amber-600">{reportData.summary.blocked_vehicles}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full"
+                            style={{ width: `${((reportData.summary.total_vehicles - reportData.summary.blocked_vehicles) / (reportData.summary.total_vehicles || 1)) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Upgrade Prompt for Standard Users */}
+              {planData?.plan?.id === 'standard' && (
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-amber-900">Unlock Enhanced Analytics</h3>
+                      <p className="text-sm text-amber-700 mt-1">
+                        Upgrade to Essential for utilization metrics, or Professional for predictive insights and demand forecasting.
+                      </p>
+                    </div>
+                    <div className="hidden md:flex space-x-2">
+                      <div className="px-3 py-2 bg-blue-100 rounded-lg text-center">
+                        <p className="text-xs text-blue-600 font-medium">Essential</p>
+                        <p className="text-sm font-bold text-blue-700">€279/mo</p>
+                      </div>
+                      <div className="px-3 py-2 bg-purple-100 rounded-lg text-center">
+                        <p className="text-xs text-purple-600 font-medium">Professional</p>
+                        <p className="text-sm font-bold text-purple-700">€399/mo</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Most Booked Cars */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">

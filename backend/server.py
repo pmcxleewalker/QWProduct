@@ -509,7 +509,7 @@ async def use_customization_credit(
     if remaining <= 0:
         raise HTTPException(
             status_code=403,
-            detail=f"No customization credits remaining. Next reset at month end."
+            detail="No customization credits remaining. Next reset at month end."
         )
     
     # Deduct one credit
@@ -4599,7 +4599,7 @@ async def seed_super_admin():
                         {"user_id": user_id},
                         {"$set": {"role": "super_admin", "tenant_id": None}}
                     )
-                    logger.info(f"Updated existing membership to super_admin role")
+                    logger.info("Updated existing membership to super_admin role")
                 else:
                     # Create new super_admin membership
                     membership = {
@@ -4610,7 +4610,7 @@ async def seed_super_admin():
                         "created_at": datetime.now(timezone.utc).isoformat()
                     }
                     await db.memberships.insert_one(membership)
-                    logger.info(f"Created super_admin membership for existing user")
+                    logger.info("Created super_admin membership for existing user")
             else:
                 logger.info("Super admin membership already exists")
         else:
@@ -4639,7 +4639,7 @@ async def seed_super_admin():
                 "created_at": datetime.now(timezone.utc).isoformat()
             }
             await db.memberships.insert_one(membership)
-            logger.info(f"Created super_admin membership")
+            logger.info("Created super_admin membership")
         
         logger.info("="*50)
         logger.info("ADMIN CREDENTIALS:")

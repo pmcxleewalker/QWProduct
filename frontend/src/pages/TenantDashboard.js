@@ -1702,6 +1702,71 @@ const TenantDashboard = () => {
                         </div>
                       </div>
                     </div>
+
+                    {/* Professional Tier: Cost Analytics Section */}
+                    {planData?.features?.cost_analytics && (
+                      <div className="bg-gradient-to-r from-purple-50 to-fuchsia-50 rounded-xl p-6 shadow-sm border border-purple-200">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center">
+                            <Crown className="text-purple-600 mr-2" size={20} />
+                            <h3 className="font-semibold text-purple-900">Cost Analytics</h3>
+                            <span className="ml-2 px-2 py-0.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white text-xs rounded-full">Pro</span>
+                          </div>
+                          <button
+                            onClick={() => setShowSettings(true)}
+                            className="flex items-center space-x-1 text-sm text-purple-600 hover:text-purple-800"
+                          >
+                            <Settings size={14} />
+                            <span>Configure Rates</span>
+                          </button>
+                        </div>
+                        
+                        <p className="text-sm text-purple-700 mb-4">
+                          Based on your configured rate of <strong>€{settingsForm.mileage_rate}/{settingsForm.distance_unit}</strong>
+                        </p>
+                        
+                        {(() => {
+                          const costData = calculateCostAnalytics();
+                          if (!costData) return null;
+                          
+                          return (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                              <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                                <p className="text-2xl font-bold text-purple-600">
+                                  {costData.totalMileage.toLocaleString()}
+                                </p>
+                                <p className="text-xs text-gray-500">Total {costData.unit}</p>
+                              </div>
+                              <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                                <p className="text-2xl font-bold text-green-600">
+                                  €{costData.totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
+                                <p className="text-xs text-gray-500">Total Cost</p>
+                              </div>
+                              <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                                <p className="text-2xl font-bold text-blue-600">
+                                  €{costData.avgCostPerVehicle}
+                                </p>
+                                <p className="text-xs text-gray-500">Avg Cost/Vehicle</p>
+                              </div>
+                              <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                                <p className="text-2xl font-bold text-amber-600">
+                                  €{(costData.totalFuelCost + costData.totalMaintenanceCost).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
+                                <p className="text-xs text-gray-500">Fuel + Maintenance</p>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        
+                        <div className="mt-4 p-3 bg-purple-100 rounded-lg">
+                          <p className="text-xs text-purple-800">
+                            <strong>💡 Pro Tip:</strong> Click "Configure Rates" to set your own mileage, fuel, and maintenance rates. 
+                            Your costs are calculated based on recorded vehicle mileage.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="bg-white rounded-xl p-12 shadow-sm border text-center">

@@ -933,71 +933,86 @@ const Admin = () => {
           )}
         </div>
 
-        {/* Main navigation - clean pill tabs */}
+        {/* Main navigation - clean pill tabs with sublabels */}
         <div className="flex flex-wrap gap-2 p-1 bg-gray-100 rounded-xl w-fit">
           <button
             onClick={() => setActiveTab('cars')}
             data-testid="tab-cars"
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex flex-col items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'cars'
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <Car size={16} />
-            <span>Fleet</span>
+            <div className="flex items-center space-x-1">
+              <Car size={16} />
+              <span className="font-semibold">Fleet</span>
+            </div>
+            <span className="text-xs text-gray-400">Vehicles</span>
           </button>
           
           <button
             onClick={() => setActiveTab('staffmap')}
             data-testid="tab-staffmap"
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex flex-col items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'staffmap'
                 ? 'bg-white text-emerald-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <Map size={16} />
-            <span>Map</span>
+            <div className="flex items-center space-x-1">
+              <Map size={16} />
+              <span className="font-semibold">Map</span>
+            </div>
+            <span className="text-xs text-gray-400">Locations</span>
           </button>
           
           <button
             onClick={() => setActiveTab('users')}
             data-testid="tab-users"
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex flex-col items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'users'
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <Users size={16} />
-            <span>Users</span>
+            <div className="flex items-center space-x-1">
+              <Users size={16} />
+              <span className="font-semibold">Team</span>
+            </div>
+            <span className="text-xs text-gray-400">Staff</span>
           </button>
           
           <button
             onClick={() => setActiveTab('credentials')}
             data-testid="tab-credentials"
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex flex-col items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'credentials'
                 ? 'bg-white text-amber-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <Key size={16} />
-            <span>Credentials</span>
+            <div className="flex items-center space-x-1">
+              <Key size={16} />
+              <span className="font-semibold">Access</span>
+            </div>
+            <span className="text-xs text-gray-400">Logins</span>
           </button>
           
           <button
             onClick={() => setActiveTab('reports')}
             data-testid="tab-reports"
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`flex flex-col items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               activeTab === 'reports'
                 ? 'bg-white text-indigo-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <BarChart3 size={16} />
-            <span>Reports</span>
+            <div className="flex items-center space-x-1">
+              <BarChart3 size={16} />
+              <span className="font-semibold">Reports</span>
+            </div>
+            <span className="text-xs text-gray-400">Analytics</span>
           </button>
           
           {/* More dropdown for less used items */}

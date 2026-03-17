@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Clock, TrendingUp, Download, RefreshCw, Calendar, Car } from 'lucide-react';
+import { Clock, TrendingUp, Download, RefreshCw, Calendar, Car, ChevronDown } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -8,19 +8,27 @@ const DailyTimelineChart = () => {
   const [timelineData, setTimelineData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedVehicle, setSelectedVehicle] = useState('all'); // 'all' or vehicle ID
+  const [vehicleList, setVehicleList] = useState([]);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     fetchTimeline();
-  }, [selectedDate]);
+  }, [selectedDate, selectedVehicle]);
 
   const fetchTimeline = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API}/tenant/reports/daily-timeline`, {
-        params: { date: selectedDate }
-      });
+      const params = { date: selectedDate };
+      if (selectedVehicle !== 'all') {
+        params.vehicle_id = selectedVehicle;
+      }
+      const response = await axios.get(`${API}/tenant/reports/daily-timeline`, { params });
       setTimelineData(response.data);
+      // Update vehicle list from response
+      if (response.data.vehicle_list) {
+        setVehicleList(response.data.vehicle_list);
+      }
     } catch (err) {
       console.error('Failed to fetch timeline:', err);
     } finally {

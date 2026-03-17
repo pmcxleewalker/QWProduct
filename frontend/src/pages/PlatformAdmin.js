@@ -2408,62 +2408,105 @@ const PlatformAdmin = () => {
 
             {/* Plan Comparison Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {planConfigs.map((plan) => (
-                <div 
-                  key={plan.id}
-                  className={`bg-white rounded-xl shadow-sm border-2 p-6 relative ${
-                    plan.is_popular ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200'
-                  }`}
-                >
-                  {plan.is_popular && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center">
-                        <Star size={12} className="mr-1" /> Most Popular
-                      </span>
-                    </div>
-                  )}
-                  
-                  <div className="text-center mb-6">
-                    <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
-                    <div className="mt-2">
-                      <span className="text-3xl font-bold text-gray-900">€{plan.price}</span>
-                      <span className="text-gray-500">/month</span>
-                    </div>
-                    <p className="text-sm text-gray-500 mt-2">{plan.tagline}</p>
-                  </div>
-
-                  <div className="space-y-4 mb-6">
-                    <div className="flex items-center justify-between py-2 border-b">
-                      <span className="text-gray-600">Vehicles</span>
-                      <span className="font-semibold">{plan.max_vehicles}</span>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-b">
-                      <span className="text-gray-600">Users</span>
-                      <span className="font-semibold">{plan.max_users}</span>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-b">
-                      <span className="text-gray-600">Customizations/month</span>
-                      <span className="font-semibold">{plan.customizations_per_month}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-gray-700 text-sm">Features</h4>
-                    {Object.entries(plan.features).map(([key, enabled]) => (
-                      <div key={key} className="flex items-center text-sm">
-                        {enabled ? (
-                          <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
-                        ) : (
-                          <XCircle size={16} className="text-gray-300 mr-2 flex-shrink-0" />
-                        )}
-                        <span className={enabled ? 'text-gray-700' : 'text-gray-400'}>
-                          {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </span>
+              {planConfigs.map((plan) => {
+                const tierStyles = {
+                  standard: {
+                    border: 'border-gray-200',
+                    header: 'bg-gradient-to-br from-gray-50 to-gray-100',
+                    badge: 'bg-gray-600',
+                    icon: '🚗',
+                    accent: 'text-gray-700'
+                  },
+                  essential: {
+                    border: 'border-blue-400 ring-2 ring-blue-100',
+                    header: 'bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100',
+                    badge: 'bg-gradient-to-r from-blue-600 to-indigo-600',
+                    icon: '⭐',
+                    accent: 'text-blue-700'
+                  },
+                  professional: {
+                    border: 'border-purple-400 ring-2 ring-purple-100',
+                    header: 'bg-gradient-to-br from-purple-50 via-purple-100 to-pink-100',
+                    badge: 'bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700',
+                    icon: '👑',
+                    accent: 'text-purple-700'
+                  }
+                };
+                const style = tierStyles[plan.id] || tierStyles.standard;
+                
+                return (
+                  <div 
+                    key={plan.id}
+                    className={`rounded-xl shadow-lg border-2 relative overflow-hidden transition-transform hover:scale-[1.02] ${style.border}`}
+                  >
+                    {/* Premium Header */}
+                    <div className={`${style.header} p-6 text-center relative`}>
+                      {plan.is_popular && (
+                        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2">
+                          <span className={`${style.badge} text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center shadow-lg`}>
+                            <Star size={12} className="mr-1" /> Most Popular
+                          </span>
+                        </div>
+                      )}
+                      {plan.id === 'professional' && (
+                        <div className="absolute -top-1 left-1/2 transform -translate-x-1/2">
+                          <span className={`${style.badge} text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center shadow-lg`}>
+                            <Crown size={12} className="mr-1" /> Enterprise
+                          </span>
+                        </div>
+                      )}
+                      
+                      <div className="text-4xl mb-2 mt-4">{style.icon}</div>
+                      <h3 className={`text-xl font-bold ${style.accent}`}>{plan.name}</h3>
+                      <div className="mt-3">
+                        <span className={`text-4xl font-black ${style.accent}`}>€{plan.price}</span>
+                        <span className="text-gray-500 text-sm">/month</span>
                       </div>
-                    ))}
+                      <p className="text-sm text-gray-600 mt-2 italic">{plan.tagline}</p>
+                    </div>
+
+                    {/* Plan Details */}
+                    <div className="bg-white p-6">
+                      <div className="space-y-3 mb-6">
+                        <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                          <span className="text-gray-600 flex items-center">
+                            <Car size={16} className="mr-2 text-gray-400" /> Vehicles
+                          </span>
+                          <span className={`font-bold ${style.accent}`}>{plan.max_vehicles}</span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                          <span className="text-gray-600 flex items-center">
+                            <Users size={16} className="mr-2 text-gray-400" /> Users
+                          </span>
+                          <span className={`font-bold ${style.accent}`}>{plan.max_users}</span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                          <span className="text-gray-600 flex items-center">
+                            <Zap size={16} className="mr-2 text-gray-400" /> Customizations
+                          </span>
+                          <span className={`font-bold ${style.accent}`}>{plan.customizations_per_month}/mo</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h4 className={`font-bold text-sm mb-3 ${style.accent}`}>Features Included</h4>
+                        {Object.entries(plan.features).map(([key, enabled]) => (
+                          <div key={key} className="flex items-center text-sm py-1">
+                            {enabled ? (
+                              <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
+                            ) : (
+                              <XCircle size={16} className="text-gray-200 mr-2 flex-shrink-0" />
+                            )}
+                            <span className={enabled ? 'text-gray-700' : 'text-gray-300 line-through'}>
+                              {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Tenant Plan Management Section */}

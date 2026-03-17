@@ -1375,8 +1375,13 @@ const TenantDashboard = () => {
                             </td>
                             {planData?.features?.booking_admin_control && (
                               <td className="px-4 py-3">
-                                <button className="text-xs text-blue-600 hover:text-blue-800">
+                                <button 
+                                  onClick={() => handleManageBooking(booking)}
+                                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                  data-testid={`manage-booking-${booking.id}`}
+                                >
                                   Manage
+                                </button>
                                 </button>
                               </td>
                             )}

@@ -968,6 +968,139 @@ async def get_my_plan(context: TenantContext = Depends(require_tenant_context)):
     }
 
 
+# ==================== TENANT SETTINGS (BRANDING & ANALYTICS) ====================
+
+class TenantSettingsUpdate(BaseModel):
+    """Update tenant settings for branding and analytics"""
+    logo_url: Optional[str] = None
+    primary_color: Optional[str] = None  # Hex color code
+    mileage_rate: Optional[float] = None  # Cost per km/mile
+    fuel_cost_per_km: Optional[float] = None  # Fuel cost per km
+    maintenance_cost_per_km: Optional[float] = None  # Maintenance cost per km
+    currency: Optional[str] = None  # EUR, GBP, USD
+    distance_unit: Optional[str] = None  # km or miles
+
+
+@api_router.get("/tenant/settings")
+async def get_tenant_settings(context: TenantContext = Depends(require_tenant_context)):
+    """Get tenant settings including branding and analytics configuration"""
+    tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    # Get plan to check feature access
+    plan_value = tenant.get("plan", "standard")
+    plan_mapping = {"starter": "standard", "basic": "standard", "pro": "professional"}
+    plan_value = plan_mapping.get(plan_value, plan_value)
+    
+    try:
+        plan = TenantPlan(plan_value)
+    except ValueError:
+        plan = TenantPlan.STANDARD
+    
+    plan_config = PLAN_CONFIG.get(plan, PLAN_CONFIG[TenantPlan.STANDARD])
+    features = plan_config["features"].copy()
+    overrides = tenant.get("feature_overrides", {})
+    for key, value in overrides.items():
+        features[key] = value
+    
+    # Return settings
+    settings = tenant.get("settings", {})
+    return {
+        "branding": {
+            "logo_url": settings.get("logo_url"),
+            "primary_color": settings.get("primary_color", "#7c3aed"),  # Default purple for Pro
+            "enabled": features.get("custom_branding", False)
+        },
+        "cost_analytics": {
+            "mileage_rate": settings.get("mileage_rate", 0.35),  # Default €0.35 per km
+            "fuel_cost_per_km": settings.get("fuel_cost_per_km", 0.12),
+            "maintenance_cost_per_km": settings.get("maintenance_cost_per_km", 0.08),
+            "currency": settings.get("currency", "EUR"),
+            "distance_unit": settings.get("distance_unit", "km"),
+            "enabled": features.get("cost_analytics", False)
+        }
+    }
+
+
+@api_router.put("/tenant/settings")
+async def update_tenant_settings(
+    settings_data: TenantSettingsUpdate,
+    context: TenantContext = Depends(require_admin)
+):
+    """Update tenant settings (admin only)"""
+    tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    # Get plan to check feature access
+    plan_value = tenant.get("plan", "standard")
+    plan_mapping = {"starter": "standard", "basic": "standard", "pro": "professional"}
+    plan_value = plan_mapping.get(plan_value, plan_value)
+    
+    try:
+        plan = TenantPlan(plan_value)
+    except ValueError:
+        plan = TenantPlan.STANDARD
+    
+    plan_config = PLAN_CONFIG.get(plan, PLAN_CONFIG[TenantPlan.STANDARD])
+    features = plan_config["features"].copy()
+    overrides = tenant.get("feature_overrides", {})
+    for key, value in overrides.items():
+        features[key] = value
+    
+    # Build update dict
+    current_settings = tenant.get("settings", {})
+    update_fields = {}
+    
+    # Branding settings (requires custom_branding feature)
+    if features.get("custom_branding"):
+        if settings_data.logo_url is not None:
+            update_fields["settings.logo_url"] = settings_data.logo_url
+        if settings_data.primary_color is not None:
+            update_fields["settings.primary_color"] = settings_data.primary_color
+    
+    # Cost analytics settings (requires cost_analytics feature)
+    if features.get("cost_analytics"):
+        if settings_data.mileage_rate is not None:
+            update_fields["settings.mileage_rate"] = settings_data.mileage_rate
+        if settings_data.fuel_cost_per_km is not None:
+            update_fields["settings.fuel_cost_per_km"] = settings_data.fuel_cost_per_km
+        if settings_data.maintenance_cost_per_km is not None:
+            update_fields["settings.maintenance_cost_per_km"] = settings_data.maintenance_cost_per_km
+        if settings_data.currency is not None:
+            update_fields["settings.currency"] = settings_data.currency
+        if settings_data.distance_unit is not None:
+            update_fields["settings.distance_unit"] = settings_data.distance_unit
+    
+    if update_fields:
+        update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.tenants.update_one({"id": context.tenant_id}, {"$set": update_fields})
+    
+    # Return updated settings
+    updated_tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    updated_settings = updated_tenant.get("settings", {})
+    
+    return {
+        "message": "Settings updated successfully",
+        "settings": {
+            "branding": {
+                "logo_url": updated_settings.get("logo_url"),
+                "primary_color": updated_settings.get("primary_color", "#7c3aed"),
+                "enabled": features.get("custom_branding", False)
+            },
+            "cost_analytics": {
+                "mileage_rate": updated_settings.get("mileage_rate", 0.35),
+                "fuel_cost_per_km": updated_settings.get("fuel_cost_per_km", 0.12),
+                "maintenance_cost_per_km": updated_settings.get("maintenance_cost_per_km", 0.08),
+                "currency": updated_settings.get("currency", "EUR"),
+                "distance_unit": updated_settings.get("distance_unit", "km"),
+                "enabled": features.get("cost_analytics", False)
+            }
+        }
+    }
+
+
 @api_router.post("/platform/tenants/{tenant_id}/suspend")
 async def suspend_tenant(
     tenant_id: str,

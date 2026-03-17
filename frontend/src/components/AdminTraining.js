@@ -2,45 +2,63 @@ import React, { useState } from 'react';
 import { 
   X, ChevronRight, ChevronLeft, CheckCircle, Users, Car, Calendar, 
   BarChart3, Settings, FileText, QrCode, Shield, Bell, HelpCircle,
-  Play, BookOpen, Lightbulb
+  Play, BookOpen, Lightbulb, Crown, Star, Lock
 } from 'lucide-react';
 
-const AdminTraining = ({ isOpen, onClose, franchiseName }) => {
+const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
   const [currentModule, setCurrentModule] = useState(0);
   const [completedModules, setCompletedModules] = useState([]);
   const [showVideo, setShowVideo] = useState(false);
+  
+  // Get tier info
+  const planId = planData?.plan?.id || 'standard';
+  const planName = planData?.plan?.name || 'Standard';
+  const features = planData?.features || {};
+  
+  // Tier styling
+  const tierStyles = {
+    standard: { color: 'gray', icon: '🚗', badge: 'bg-gray-600' },
+    essential: { color: 'blue', icon: '⭐', badge: 'bg-gradient-to-r from-blue-600 to-indigo-600' },
+    professional: { color: 'purple', icon: '👑', badge: 'bg-gradient-to-r from-purple-600 to-pink-600' }
+  };
+  const tierStyle = tierStyles[planId] || tierStyles.standard;
 
   const modules = [
     {
       id: 'welcome',
       title: 'Welcome to Quick Wing',
       icon: BookOpen,
-      color: 'blue',
+      color: tierStyle.color,
       content: {
         heading: `Welcome to ${franchiseName || 'Your Franchise'}!`,
-        description: 'This training guide will help you set up and manage your fleet management system effectively.',
+        description: `You're on the ${planName} plan. This training guide will help you get the most out of your fleet management system.`,
         sections: [
           {
-            title: 'What You\'ll Learn',
+            title: `Your ${planName} Plan Includes`,
             items: [
-              'How to add and manage your team (Admins & Staff)',
-              'Setting up your vehicle fleet',
-              'Managing bookings and calendars',
-              'Using reports to track performance',
-              'Advanced features and tips'
+              `Up to ${planData?.limits?.max_vehicles || 10} vehicles`,
+              `Up to ${planData?.limits?.max_users || 20} team members`,
+              features.enhanced_reports ? '✅ Enhanced Reports' : '❌ Enhanced Reports (upgrade to Essential)',
+              features.detailed_reports ? '✅ Detailed Analytics' : '❌ Detailed Analytics (upgrade to Professional)',
+              features.api_access ? '✅ API Access' : '❌ API Access (Professional only)',
+              features.priority_support ? '✅ Priority Support' : '❌ Priority Support (Professional only)'
             ]
           },
           {
             title: 'Your Role as Admin',
             items: [
-              'Full access to all franchise features',
+              'Full access to all franchise features within your plan',
               'Ability to create and manage user accounts',
               'Vehicle fleet management and compliance tracking',
               'Booking oversight and reporting'
             ]
           }
         ],
-        tip: 'You can access this training anytime from Admin Panel → More → Training Guide'
+        tip: planId === 'standard' 
+          ? 'Upgrade to Essential for enhanced reports and booking controls!' 
+          : planId === 'essential'
+          ? 'Upgrade to Professional for API access and detailed analytics!'
+          : 'You have access to all premium features!'
       }
     },
     {
@@ -50,7 +68,7 @@ const AdminTraining = ({ isOpen, onClose, franchiseName }) => {
       color: 'green',
       content: {
         heading: 'Adding & Managing Team Members',
-        description: 'Learn how to add administrators and staff to your franchise.',
+        description: `Your ${planName} plan allows up to ${planData?.limits?.max_users || 20} team members.`,
         sections: [
           {
             title: 'Adding a New Team Member',
@@ -73,12 +91,16 @@ const AdminTraining = ({ isOpen, onClose, franchiseName }) => {
           {
             title: 'Managing Existing Users',
             items: [
-              'View all users in Admin Panel → Users tab',
+              'View all users in Admin Panel → Team tab',
               'Change user roles using the dropdown',
-              'Reset passwords for users who forgot theirs',
-              'Deactivate users who no longer need access'
+              'Reset passwords for staff members (requires your admin password)',
+              'Remove users who no longer need access'
             ]
           }
+        ],
+        tip: `You're using ${planData?.usage?.users || 0} of ${planData?.limits?.max_users || 20} available user slots.`
+      }
+    },
         ],
         tip: 'Staff members must change their temporary password on first login for security.'
       }

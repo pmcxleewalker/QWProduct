@@ -41,6 +41,10 @@ PLAN_CONFIG = {
             "booking_visibility_enhanced": False,
             "booking_admin_control": False,
             "compliance_oversight_broad": False,
+            "multi_location_support": False,
+            "api_access": False,
+            "priority_support": False,
+            "custom_branding": False,
         },
         "description": "A practical fleet system for smaller franchises",
         "tagline": "Simple structure for smaller teams that need control without complexity"
@@ -64,6 +68,10 @@ PLAN_CONFIG = {
             "booking_visibility_enhanced": True,  # Stronger booking visibility
             "booking_admin_control": True,  # Admin control over bookings
             "compliance_oversight_broad": True,  # Broader compliance oversight
+            "multi_location_support": False,
+            "api_access": False,
+            "priority_support": False,
+            "custom_branding": False,
         },
         "description": "The best fit for growing franchises that need more control",
         "tagline": "Built to be the sweet spot for value, scale and day-to-day control"
@@ -80,12 +88,16 @@ PLAN_CONFIG = {
             "fleet_compliance": True,
             "basic_reports": True,
             "enhanced_reports": True,
-            "detailed_reports": True,  # Stronger detailed reporting
+            "detailed_reports": True,  # Full detailed reporting & analytics
             "staff_calendars": True,
             "admin_all_cars_calendar": True,
             "booking_visibility_enhanced": True,
             "booking_admin_control": True,
             "compliance_oversight_broad": True,
+            "multi_location_support": True,  # Manage multiple depot locations
+            "api_access": True,  # REST API access for integrations
+            "priority_support": True,  # Priority customer support
+            "custom_branding": True,  # Custom logo and color scheme
         },
         "description": "For larger franchises that need more scale and visibility",
         "tagline": "Designed for larger teams that need flexibility and structure at scale"

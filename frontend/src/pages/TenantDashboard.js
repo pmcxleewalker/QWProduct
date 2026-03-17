@@ -1093,9 +1093,108 @@ const TenantDashboard = () => {
             {/* Bookings Tab */}
             {activeTab === 'bookings' && (
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Bookings</h2>
+                {/* Tier-specific Booking Header */}
+                <div className={`p-4 rounded-xl ${
+                  planData?.plan?.id === 'professional' ? 'bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200' :
+                  planData?.plan?.id === 'essential' ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200' :
+                  'bg-white border border-gray-200'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Calendar size={24} className={
+                        planData?.plan?.id === 'professional' ? 'text-purple-600' :
+                        planData?.plan?.id === 'essential' ? 'text-blue-600' : 'text-gray-600'
+                      } />
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-900">Bookings</h2>
+                        <p className="text-sm text-gray-500">
+                          {planData?.plan?.id === 'professional' ? 'Full booking management with insights' :
+                           planData?.plan?.id === 'essential' ? 'Enhanced booking visibility' :
+                           'Basic booking view'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-gray-900">{bookings.length}</p>
+                      <p className="text-xs text-gray-500">Total Bookings</p>
+                    </div>
+                  </div>
                 </div>
+
+                {/* ESSENTIAL+ TIER: Booking Insights Panel */}
+                {planData?.features?.booking_visibility_enhanced && bookings.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-green-50 rounded-lg p-4 text-center border border-green-200">
+                      <p className="text-2xl font-bold text-green-600">
+                        {bookings.filter(b => b.status === 'approved' || b.status === 'confirmed').length}
+                      </p>
+                      <p className="text-xs text-green-700">Confirmed</p>
+                    </div>
+                    <div className="bg-amber-50 rounded-lg p-4 text-center border border-amber-200">
+                      <p className="text-2xl font-bold text-amber-600">
+                        {bookings.filter(b => b.status === 'pending').length}
+                      </p>
+                      <p className="text-xs text-amber-700">Pending</p>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-4 text-center border border-blue-200">
+                      <p className="text-2xl font-bold text-blue-600">
+                        {new Set(bookings.map(b => b.vehicle_id)).size}
+                      </p>
+                      <p className="text-xs text-blue-700">Vehicles Used</p>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-4 text-center border border-purple-200">
+                      <p className="text-2xl font-bold text-purple-600">
+                        {new Set(bookings.map(b => b.user_id)).size}
+                      </p>
+                      <p className="text-xs text-purple-700">Unique Users</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* PROFESSIONAL TIER: Advanced Booking Analytics */}
+                {planData?.features?.detailed_reports && bookings.length > 0 && (
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-200">
+                    <div className="flex items-center mb-4">
+                      <span className="text-lg mr-2">👑</span>
+                      <h3 className="font-bold text-purple-900">Booking Intelligence</h3>
+                      <span className="ml-2 px-2 py-0.5 bg-purple-600 text-white text-xs rounded-full">Pro</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                        <h4 className="text-sm font-semibold text-purple-800 mb-2">Peak Booking Day</h4>
+                        <p className="text-xl font-bold text-purple-600">
+                          {(() => {
+                            const dayCounts = {};
+                            bookings.forEach(b => {
+                              const day = new Date(b.date || b.start_time).toLocaleDateString('en-US', { weekday: 'long' });
+                              dayCounts[day] = (dayCounts[day] || 0) + 1;
+                            });
+                            return Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+                          })()}
+                        </p>
+                        <p className="text-xs text-gray-500">Most bookings occur this day</p>
+                      </div>
+                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                        <h4 className="text-sm font-semibold text-purple-800 mb-2">Avg Bookings/Day</h4>
+                        <p className="text-xl font-bold text-purple-600">
+                          {bookings.length > 0 
+                            ? (bookings.length / Math.max(1, new Set(bookings.map(b => b.date || b.start_time?.split('T')[0])).size)).toFixed(1)
+                            : 0}
+                        </p>
+                        <p className="text-xs text-gray-500">Daily booking average</p>
+                      </div>
+                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                        <h4 className="text-sm font-semibold text-purple-800 mb-2">Utilization Rate</h4>
+                        <p className="text-xl font-bold text-purple-600">
+                          {vehicles.length > 0 
+                            ? Math.round((new Set(bookings.map(b => b.vehicle_id)).size / vehicles.length) * 100)
+                            : 0}%
+                        </p>
+                        <p className="text-xs text-gray-500">Vehicles with bookings</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
                   {bookings.length === 0 ? (
@@ -1109,8 +1208,12 @@ const TenantDashboard = () => {
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehicle</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                          {planData?.features?.booking_admin_control && (
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="divide-y">
@@ -1121,11 +1224,14 @@ const TenantDashboard = () => {
                               <p className="text-xs text-gray-500">{booking.created_by_email}</p>
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600">
-                              {formatDate(booking.start_time)}
+                              {booking.vehicle_name || 'N/A'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {formatDate(booking.date || booking.start_time)}
                             </td>
                             <td className="px-4 py-3">
                               <span className={`px-2 py-1 rounded-full text-xs ${
-                                booking.status === 'approved' 
+                                booking.status === 'approved' || booking.status === 'confirmed'
                                   ? 'bg-green-100 text-green-700' 
                                   : booking.status === 'pending'
                                   ? 'bg-yellow-100 text-yellow-700'
@@ -1134,6 +1240,13 @@ const TenantDashboard = () => {
                                 {booking.status}
                               </span>
                             </td>
+                            {planData?.features?.booking_admin_control && (
+                              <td className="px-4 py-3">
+                                <button className="text-xs text-blue-600 hover:text-blue-800">
+                                  Manage
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>

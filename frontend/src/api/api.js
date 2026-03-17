@@ -145,6 +145,6 @@ export const bookingLocationsAPI = {
 
 export default { 
   carAPI, bookingAPI, providerAPI, messageAPI, todoAPI, liftRequestAPI, 
-  reportsAPI, userAPI, platformAPI, authAPI, assistanceAPI, complianceAPI, 
+  reportsAPI, planAPI, settingsAPI, userAPI, platformAPI, authAPI, assistanceAPI, complianceAPI, 
   statusAPI, pushAPI, liftNotificationAPI, bookingNotificationAPI, bookingLocationsAPI
 };

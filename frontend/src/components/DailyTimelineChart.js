@@ -81,8 +81,9 @@ const DailyTimelineChart = () => {
     );
   }
 
-  const { timeline, summary, available_fleet, blocked_vehicles, total_vehicles } = timelineData;
+  const { timeline, summary, available_fleet, blocked_vehicles, total_vehicles, selected_vehicle } = timelineData;
   const maxInUse = Math.max(...timeline.map(t => t.in_use), 1);
+  const isViewingSingleVehicle = selectedVehicle !== 'all';
 
   return (
     <div className="space-y-6" data-testid="daily-timeline">
@@ -93,10 +94,32 @@ const DailyTimelineChart = () => {
             <Clock size={20} className="mr-2 text-blue-600" />
             Daily Availability Timeline
           </h3>
-          <p className="text-sm text-gray-500">Hourly fleet utilization (07:00 - 22:00)</p>
+          <p className="text-sm text-gray-500">
+            {isViewingSingleVehicle 
+              ? `Viewing: ${selected_vehicle?.name || 'Selected Vehicle'} (${selected_vehicle?.registration || ''})` 
+              : 'Hourly fleet utilization (07:00 - 22:00)'}
+          </p>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 flex-wrap gap-2">
+          {/* Vehicle Dropdown */}
+          <div className="relative">
+            <select
+              value={selectedVehicle}
+              onChange={(e) => setSelectedVehicle(e.target.value)}
+              className="appearance-none pl-3 pr-10 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white min-w-[180px]"
+              data-testid="vehicle-selector"
+            >
+              <option value="all">All Vehicles ({available_fleet})</option>
+              {vehicleList.map((vehicle) => (
+                <option key={vehicle.id} value={vehicle.id}>
+                  {vehicle.name} {vehicle.registration ? `(${vehicle.registration})` : ''}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+          
           <input
             type="date"
             value={selectedDate}
@@ -123,22 +146,46 @@ const DailyTimelineChart = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white rounded-lg p-4 border shadow-sm">
-          <p className="text-xs text-gray-500">Total Fleet</p>
-          <p className="text-2xl font-bold text-gray-900">{total_vehicles}</p>
-        </div>
-        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-          <p className="text-xs text-blue-600">Available</p>
-          <p className="text-2xl font-bold text-blue-700">{available_fleet}</p>
-        </div>
-        <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-          <p className="text-xs text-orange-600">Peak Hour</p>
-          <p className="text-2xl font-bold text-orange-700">{summary.peak_hour || 'N/A'}</p>
-        </div>
-        <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-          <p className="text-xs text-purple-600">Avg Utilization</p>
-          <p className="text-2xl font-bold text-purple-700">{summary.average_utilization}%</p>
-        </div>
+        {isViewingSingleVehicle ? (
+          <>
+            <div className="bg-white rounded-lg p-4 border shadow-sm col-span-2">
+              <p className="text-xs text-gray-500">Vehicle</p>
+              <p className="text-lg font-bold text-gray-900">{selected_vehicle?.name}</p>
+              <p className="text-sm text-gray-500">{selected_vehicle?.registration}</p>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <p className="text-xs text-blue-600">Status Today</p>
+              <p className="text-2xl font-bold text-blue-700">
+                {summary.average_utilization > 0 ? 'Active' : 'Idle'}
+              </p>
+            </div>
+            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+              <p className="text-xs text-purple-600">Hours Booked</p>
+              <p className="text-2xl font-bold text-purple-700">
+                {timeline.filter(t => t.in_use > 0).length}
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="bg-white rounded-lg p-4 border shadow-sm">
+              <p className="text-xs text-gray-500">Total Fleet</p>
+              <p className="text-2xl font-bold text-gray-900">{total_vehicles}</p>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <p className="text-xs text-blue-600">Available</p>
+              <p className="text-2xl font-bold text-blue-700">{available_fleet}</p>
+            </div>
+            <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+              <p className="text-xs text-orange-600">Peak Hour</p>
+              <p className="text-2xl font-bold text-orange-700">{summary.peak_hour || 'N/A'}</p>
+            </div>
+            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+              <p className="text-xs text-purple-600">Avg Utilization</p>
+              <p className="text-2xl font-bold text-purple-700">{summary.average_utilization}%</p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Timeline Chart */}

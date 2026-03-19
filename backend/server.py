@@ -4747,6 +4747,9 @@ async def startup():
     # Seed database with super admin
     await seed_super_admin()
     
+    # Seed Malcolm's super admin account
+    await seed_malcolm_admin()
+    
     # Ensure indexes exist
     try:
         await db.vehicles.create_index([("tenant_id", 1), ("id", 1)])
@@ -4757,6 +4760,63 @@ async def startup():
         await db.users.create_index("id", unique=True)
     except Exception as e:
         logger.warning(f"Index creation warning: {e}")
+
+
+async def seed_malcolm_admin():
+    """Ensure Malcolm's super admin account exists on startup."""
+    MALCOLM_EMAIL = "malcolm@quickwing.com"
+    MALCOLM_PASSWORD = "Malcolm123"
+    MALCOLM_NAME = "Malcolm"
+    
+    try:
+        existing = await db.users.find_one({"email": MALCOLM_EMAIL})
+        
+        if existing:
+            user_id = existing["id"]
+            logger.info(f"Malcolm admin exists: {MALCOLM_EMAIL}")
+            
+            # Ensure password is correct and role is set
+            password_hash = get_password_hash(MALCOLM_PASSWORD)
+            await db.users.update_one(
+                {"email": MALCOLM_EMAIL},
+                {"$set": {"password_hash": password_hash, "is_active": True, "role": "super_admin"}}
+            )
+        else:
+            # Create Malcolm's account
+            user_id = str(uuid.uuid4())
+            password_hash = get_password_hash(MALCOLM_PASSWORD)
+            malcolm_user = {
+                "id": user_id,
+                "email": MALCOLM_EMAIL,
+                "name": MALCOLM_NAME,
+                "password_hash": password_hash,
+                "role": "super_admin",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.users.insert_one(malcolm_user)
+            logger.info(f"Created Malcolm admin: {MALCOLM_EMAIL}")
+        
+        # Ensure membership exists
+        existing_membership = await db.memberships.find_one({
+            "user_id": user_id,
+            "role": "super_admin"
+        })
+        
+        if not existing_membership:
+            membership = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "tenant_id": None,
+                "role": "super_admin",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.memberships.insert_one(membership)
+            logger.info("Created super_admin membership for Malcolm")
+            
+    except Exception as e:
+        logger.error(f"Error seeding Malcolm admin: {e}")
 
 
 async def seed_super_admin():

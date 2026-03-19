@@ -6,7 +6,7 @@ import {
 
 import ContentDashboard from './ContentDashboard';
 import AssetManager from './AssetManager';
-import NewPost from './NewPost';
+import NewPostWorkflow from './NewPostWorkflow';
 import ReviewQueue from './ReviewQueue';
 import PostedContent from './PostedContent';
 import ContentIdeas from './ContentIdeas';
@@ -48,7 +48,7 @@ const ContentWorker = ({ onBack }) => {
         );
       case 'new-post':
         return (
-          <NewPost 
+          <NewPostWorkflow 
             onNavigate={handleNavigate} 
             initialAsset={selectedAsset || navData?.asset}
           />

@@ -5483,6 +5483,758 @@ async def delete_content_idea(idea_id: str, context: TenantContext = Depends(req
     return {"message": "Idea deleted"}
 
 
+# ==================== CONTENT WORKER - EXTENDED WORKFLOW ====================
+
+import pytesseract
+import cv2
+import re
+import base64
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
+
+# Privacy detection patterns
+PRIVACY_PATTERNS = {
+    'email': r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',
+    'phone': r'(?:\+\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{2,4}[-.\s]?\d{2,4}',
+    'registration': r'[A-Z]{1,3}[-\s]?\d{1,4}[-\s]?[A-Z]{1,3}',
+    'time_booking': r'\d{1,2}:\d{2}(?:\s*-\s*\d{1,2}:\d{2})?(?:\s*(?:AM|PM|am|pm))?',
+    'date': r'\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}',
+    'name_pattern': r'(?:Mr\.|Mrs\.|Ms\.|Dr\.)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?',
+}
+
+# Sensitive keywords that may indicate private info
+SENSITIVE_KEYWORDS = [
+    'booking', 'booked', 'reserved', 'customer', 'client', 'patient',
+    'name:', 'email:', 'phone:', 'mobile:', 'contact:', 'address:',
+    'registration', 'reg no', 'license', 'vehicle:', 'car:',
+    'pickup', 'drop-off', 'collection', 'delivery',
+    'appointment', 'scheduled', 'confirmed'
+]
+
+
+def detect_privacy_issues(image_path: str) -> list:
+    """Detect potentially sensitive information in an image using OCR"""
+    try:
+        img = Image.open(image_path)
+        
+        # Run OCR
+        ocr_data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
+        
+        detected_items = []
+        img_width, img_height = img.size
+        
+        # Process OCR results
+        n_boxes = len(ocr_data['text'])
+        for i in range(n_boxes):
+            text = ocr_data['text'][i].strip()
+            if not text or len(text) < 2:
+                continue
+            
+            conf = int(ocr_data['conf'][i]) if ocr_data['conf'][i] != '-1' else 0
+            if conf < 30:  # Skip low confidence
+                continue
+            
+            x = ocr_data['left'][i]
+            y = ocr_data['top'][i]
+            w = ocr_data['width'][i]
+            h = ocr_data['height'][i]
+            
+            # Convert to percentages for responsive positioning
+            x_pct = (x / img_width) * 100
+            y_pct = (y / img_height) * 100
+            w_pct = (w / img_width) * 100
+            h_pct = (h / img_height) * 100
+            
+            detected_type = None
+            
+            # Check against patterns
+            for pattern_name, pattern in PRIVACY_PATTERNS.items():
+                if re.search(pattern, text, re.IGNORECASE):
+                    detected_type = pattern_name
+                    break
+            
+            # Check for sensitive keywords
+            if not detected_type:
+                text_lower = text.lower()
+                for keyword in SENSITIVE_KEYWORDS:
+                    if keyword in text_lower:
+                        detected_type = 'sensitive_keyword'
+                        break
+            
+            # Check if looks like a name (capitalized words)
+            if not detected_type and re.match(r'^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+$', text):
+                detected_type = 'potential_name'
+            
+            if detected_type:
+                detected_items.append({
+                    'id': str(uuid.uuid4()),
+                    'type': detected_type,
+                    'text': text,
+                    'x': x_pct,
+                    'y': y_pct,
+                    'width': w_pct,
+                    'height': h_pct,
+                    'confidence': conf
+                })
+        
+        return detected_items
+    except Exception as e:
+        logger.error(f"Privacy detection error: {e}")
+        return []
+
+
+def extract_video_frames(video_path: str, num_frames: int = 3) -> list:
+    """Extract key frames from a video"""
+    try:
+        cap = cv2.VideoCapture(video_path)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        
+        if total_frames == 0:
+            return []
+        
+        # Calculate frame positions (evenly distributed)
+        frame_positions = []
+        if total_frames <= num_frames:
+            frame_positions = list(range(total_frames))
+        else:
+            step = total_frames // (num_frames + 1)
+            frame_positions = [step * (i + 1) for i in range(num_frames)]
+        
+        frames = []
+        content_uploads = ROOT_DIR / "uploads" / "content" / "frames"
+        content_uploads.mkdir(parents=True, exist_ok=True)
+        
+        base_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
+        
+        for idx, pos in enumerate(frame_positions):
+            cap.set(cv2.CAP_PROP_POS_FRAMES, pos)
+            ret, frame = cap.read()
+            if ret:
+                frame_id = f"frame_{uuid.uuid4().hex[:8]}"
+                filename = f"{frame_id}.jpg"
+                filepath = content_uploads / filename
+                cv2.imwrite(str(filepath), frame)
+                
+                frames.append({
+                    'id': frame_id,
+                    'frame_number': idx + 1,
+                    'position': pos,
+                    'url': f"{base_url}/api/content-worker/files/frames/{filename}",
+                    'filename': filename
+                })
+        
+        cap.release()
+        return frames
+    except Exception as e:
+        logger.error(f"Frame extraction error: {e}")
+        return []
+
+
+def create_blurred_image(image_path: str, blur_zones: list) -> Image.Image:
+    """Apply blur to specified zones in an image"""
+    img = Image.open(image_path).convert('RGB')
+    img_width, img_height = img.size
+    
+    for zone in blur_zones:
+        # Convert percentages to pixels
+        x = int((zone['x'] / 100) * img_width)
+        y = int((zone['y'] / 100) * img_height)
+        w = int((zone['width'] / 100) * img_width)
+        h = int((zone['height'] / 100) * img_height)
+        
+        # Ensure valid bounds
+        x = max(0, x)
+        y = max(0, y)
+        w = min(w, img_width - x)
+        h = min(h, img_height - y)
+        
+        if w > 0 and h > 0:
+            # Extract region and apply blur
+            region = img.crop((x, y, x + w, y + h))
+            blurred = region.filter(ImageFilter.GaussianBlur(radius=15))
+            img.paste(blurred, (x, y))
+    
+    return img
+
+
+def create_branded_preview(image_path: str, blur_zones: list, size: tuple, add_branding: bool = True) -> Image.Image:
+    """Create a branded preview with blur applied"""
+    # Load and process image
+    img = Image.open(image_path).convert('RGB')
+    
+    # Apply blur zones
+    img_width, img_height = img.size
+    for zone in blur_zones:
+        x = int((zone['x'] / 100) * img_width)
+        y = int((zone['y'] / 100) * img_height)
+        w = int((zone['width'] / 100) * img_width)
+        h = int((zone['height'] / 100) * img_height)
+        
+        x = max(0, x)
+        y = max(0, y)
+        w = min(w, img_width - x)
+        h = min(h, img_height - y)
+        
+        if w > 0 and h > 0:
+            region = img.crop((x, y, x + w, y + h))
+            blurred = region.filter(ImageFilter.GaussianBlur(radius=15))
+            img.paste(blurred, (x, y))
+    
+    # Resize to target size while maintaining aspect ratio
+    target_width, target_height = size
+    img_ratio = img_width / img_height
+    target_ratio = target_width / target_height
+    
+    if img_ratio > target_ratio:
+        # Image is wider - fit to width
+        new_width = target_width
+        new_height = int(target_width / img_ratio)
+    else:
+        # Image is taller - fit to height
+        new_height = target_height
+        new_width = int(target_height * img_ratio)
+    
+    img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+    
+    # Create canvas with Quick Wing brand color
+    canvas = Image.new('RGB', (target_width, target_height), (248, 250, 252))  # Light gray-blue
+    
+    # Center the image
+    x_offset = (target_width - new_width) // 2
+    y_offset = (target_height - new_height) // 2
+    canvas.paste(img, (x_offset, y_offset))
+    
+    if add_branding:
+        draw = ImageDraw.Draw(canvas)
+        
+        # Add subtle branding bar at bottom
+        bar_height = 60
+        bar_y = target_height - bar_height
+        draw.rectangle([(0, bar_y), (target_width, target_height)], fill=(30, 58, 95))  # Quick Wing navy
+        
+        # Add brand text
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 18)
+        except:
+            font = ImageFont.load_default()
+        
+        draw.text((20, bar_y + 20), "Quick Wing Fleet Management", fill=(255, 255, 255), font=font)
+    
+    return canvas
+
+
+def generate_captions(post_type: str, content_focus: str = None) -> list:
+    """Generate 3 caption options based on post type and content focus"""
+    
+    # Caption templates based on content focus
+    caption_templates = {
+        'booking_simplicity': [
+            {
+                'hook': "Booking a fleet vehicle shouldn't take 10 minutes.",
+                'body': "Quick Wing lets your team book in seconds. One calendar. Zero confusion.",
+                'cta': "See how simple fleet booking can be.",
+                'hashtags': "#FleetManagement #BookingSoftware #OperationalEfficiency #QuickWing"
+            },
+            {
+                'hook': "Your team needs a car. They need it now.",
+                'body': "Quick Wing shows availability instantly. No calls. No spreadsheets. Just book.",
+                'cta': "Simplify your fleet bookings today.",
+                'hashtags': "#FleetBooking #BusinessEfficiency #FleetSoftware #QuickWing"
+            },
+            {
+                'hook': "Still using a whiteboard for fleet bookings?",
+                'body': "There's a better way. Real-time availability. Instant confirmation. Complete history.",
+                'cta': "Upgrade your booking process.",
+                'hashtags': "#FleetManagement #DigitalTransformation #BusinessTools #QuickWing"
+            }
+        ],
+        'calendar_visibility': [
+            {
+                'hook': "Know exactly where every vehicle is. Every hour.",
+                'body': "Quick Wing's calendar view gives you complete fleet visibility at a glance.",
+                'cta': "Take control of your fleet schedule.",
+                'hashtags': "#FleetVisibility #VehicleManagement #BusinessCalendar #QuickWing"
+            },
+            {
+                'hook': "Fleet chaos ends with one calendar.",
+                'body': "See all bookings. All vehicles. All in one place. That's Quick Wing.",
+                'cta': "Discover organized fleet management.",
+                'hashtags': "#FleetOrganization #BusinessSoftware #CalendarManagement #QuickWing"
+            },
+            {
+                'hook': "Your fleet schedule, finally visible.",
+                'body': "Daily, weekly, monthly views. Filter by vehicle or location. Always know what's available.",
+                'cta': "See your fleet clearly.",
+                'hashtags': "#FleetScheduling #BusinessClarity #OperationsManagement #QuickWing"
+            }
+        ],
+        'compliance_tracking': [
+            {
+                'hook': "NCT expiring? Tax due? You'll know first.",
+                'body': "Quick Wing tracks every compliance deadline. Automatic alerts. Zero surprises.",
+                'cta': "Stay compliant without the stress.",
+                'hashtags': "#FleetCompliance #VehicleMaintenance #BusinessCompliance #QuickWing"
+            },
+            {
+                'hook': "Missing a compliance deadline costs more than software.",
+                'body': "Track tax, NCT, services, and insurance in one place. Get alerts before it's urgent.",
+                'cta': "Never miss another deadline.",
+                'hashtags': "#ComplianceTracking #FleetSafety #RiskManagement #QuickWing"
+            },
+            {
+                'hook': "Compliance shouldn't keep you up at night.",
+                'body': "Automatic tracking. Timely reminders. Complete documentation. That's peace of mind.",
+                'cta': "Manage compliance effortlessly.",
+                'hashtags': "#FleetCompliance #BusinessAutomation #SafetyFirst #QuickWing"
+            }
+        ],
+        'admin_efficiency': [
+            {
+                'hook': "Your admin team has better things to do.",
+                'body': "Quick Wing automates the repetitive tasks. Your team handles what matters.",
+                'cta': "Free up your admin time.",
+                'hashtags': "#AdminEfficiency #WorkflowAutomation #BusinessProductivity #QuickWing"
+            },
+            {
+                'hook': "How much time does your admin spend on fleet queries?",
+                'body': "Self-service bookings. Instant availability. Automatic confirmations. Problem solved.",
+                'cta': "Reduce admin overhead today.",
+                'hashtags': "#TimeManagement #BusinessEfficiency #FleetAdmin #QuickWing"
+            },
+            {
+                'hook': "Less admin. More productivity.",
+                'body': "When staff can book their own vehicles, your admin team can focus on growth.",
+                'cta': "Streamline your operations.",
+                'hashtags': "#OperationalEfficiency #AdminTools #BusinessGrowth #QuickWing"
+            }
+        ],
+        'time_saving': [
+            {
+                'hook': "Stop wasting time on fleet coordination.",
+                'body': "Quick Wing handles bookings, availability, and confirmations automatically.",
+                'cta': "Reclaim hours every week.",
+                'hashtags': "#TimeSaving #BusinessAutomation #FleetEfficiency #QuickWing"
+            },
+            {
+                'hook': "30 minutes saved per booking adds up fast.",
+                'body': "Instant availability checks. One-click booking. No back-and-forth.",
+                'cta': "Start saving time now.",
+                'hashtags': "#ProductivityTools #BusinessTime #FleetManagement #QuickWing"
+            },
+            {
+                'hook': "Time is money. Stop spending it on fleet admin.",
+                'body': "Quick Wing automates the busywork so you can focus on what drives revenue.",
+                'cta': "Invest your time wisely.",
+                'hashtags': "#BusinessProductivity #Automation #FleetSoftware #QuickWing"
+            }
+        ],
+        'reducing_chaos': [
+            {
+                'hook': "Fleet management shouldn't feel like chaos.",
+                'body': "One system. Clear visibility. Complete control. That's Quick Wing.",
+                'cta': "Bring order to your fleet.",
+                'hashtags': "#FleetControl #BusinessOrganization #OperationalClarity #QuickWing"
+            },
+            {
+                'hook': "Double bookings. Missing vehicles. Endless calls.",
+                'body': "Quick Wing eliminates the confusion with real-time tracking and clear schedules.",
+                'cta': "End the fleet chaos.",
+                'hashtags': "#FleetOrganization #BusinessSolutions #DoubleBooking #QuickWing"
+            },
+            {
+                'hook': "Your fleet deserves better than spreadsheets.",
+                'body': "Purpose-built software. Real-time updates. No more guesswork.",
+                'cta': "Upgrade from chaos to clarity.",
+                'hashtags': "#FleetManagement #NoMoreSpreadsheets #BusinessTools #QuickWing"
+            }
+        ],
+        'operational_clarity': [
+            {
+                'hook': "See everything. Know everything. Control everything.",
+                'body': "Quick Wing gives you complete operational visibility across your entire fleet.",
+                'cta': "Gain operational clarity today.",
+                'hashtags': "#OperationalVisibility #FleetControl #BusinessInsights #QuickWing"
+            },
+            {
+                'hook': "Decisions are easier when you can see clearly.",
+                'body': "Real-time fleet status. Usage reports. Booking analytics. All in one dashboard.",
+                'cta': "Make informed decisions.",
+                'hashtags': "#DataDrivenDecisions #FleetAnalytics #BusinessClarity #QuickWing"
+            },
+            {
+                'hook': "Clarity isn't a luxury. It's a necessity.",
+                'body': "Know which vehicles are available, booked, or need attention. Always.",
+                'cta': "Get the clarity you need.",
+                'hashtags': "#OperationalExcellence #FleetVisibility #BusinessManagement #QuickWing"
+            }
+        ]
+    }
+    
+    # Default to operational_clarity if focus not specified or not found
+    focus_key = content_focus or 'operational_clarity'
+    if focus_key not in caption_templates:
+        focus_key = 'operational_clarity'
+    
+    return caption_templates[focus_key]
+
+
+@api_router.post("/content-worker/extract-frames")
+async def extract_frames_from_video(
+    asset_id: str,
+    num_frames: int = 3,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Extract key frames from a video asset"""
+    asset = await db.content_assets.find_one({"id": asset_id}, {"_id": 0})
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    
+    if asset.get("file_type") != "video":
+        raise HTTPException(status_code=400, detail="Asset is not a video")
+    
+    # Get the video file path
+    file_url = asset.get("original_file_url", "")
+    filename = file_url.split("/")[-1]
+    video_path = ROOT_DIR / "uploads" / "content" / filename
+    
+    if not video_path.exists():
+        raise HTTPException(status_code=404, detail="Video file not found")
+    
+    frames = extract_video_frames(str(video_path), min(num_frames, 5))
+    
+    if not frames:
+        raise HTTPException(status_code=500, detail="Failed to extract frames")
+    
+    return {"frames": frames, "total": len(frames)}
+
+
+@api_router.get("/content-worker/files/frames/{filename}")
+async def get_frame_file(filename: str):
+    """Serve extracted frame files"""
+    filepath = ROOT_DIR / "uploads" / "content" / "frames" / filename
+    if not filepath.exists():
+        raise HTTPException(status_code=404, detail="Frame not found")
+    return FileResponse(filepath)
+
+
+@api_router.post("/content-worker/detect-privacy")
+async def detect_privacy_in_image(
+    asset_id: str = None,
+    frame_filename: str = None,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Detect potentially sensitive information in an image or frame"""
+    
+    if frame_filename:
+        image_path = ROOT_DIR / "uploads" / "content" / "frames" / frame_filename
+    elif asset_id:
+        asset = await db.content_assets.find_one({"id": asset_id}, {"_id": 0})
+        if not asset:
+            raise HTTPException(status_code=404, detail="Asset not found")
+        
+        file_url = asset.get("original_file_url", "")
+        filename = file_url.split("/")[-1]
+        image_path = ROOT_DIR / "uploads" / "content" / filename
+    else:
+        raise HTTPException(status_code=400, detail="Provide asset_id or frame_filename")
+    
+    if not image_path.exists():
+        raise HTTPException(status_code=404, detail="Image file not found")
+    
+    detected = detect_privacy_issues(str(image_path))
+    
+    return {
+        "detected_items": detected,
+        "total": len(detected),
+        "message": f"Found {len(detected)} potential privacy issues"
+    }
+
+
+@api_router.post("/content-worker/generate-preview")
+async def generate_post_preview(
+    asset_id: str,
+    blur_zones: list = [],
+    preview_size: str = "square",
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Generate a branded preview with blur applied"""
+    asset = await db.content_assets.find_one({"id": asset_id}, {"_id": 0})
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    
+    file_url = asset.get("original_file_url", "")
+    filename = file_url.split("/")[-1]
+    image_path = ROOT_DIR / "uploads" / "content" / filename
+    
+    if not image_path.exists():
+        raise HTTPException(status_code=404, detail="Image file not found")
+    
+    # Determine size
+    sizes = {
+        "square": (1080, 1080),
+        "portrait": (1080, 1350)
+    }
+    size = sizes.get(preview_size, (1080, 1080))
+    
+    # Generate preview
+    preview = create_branded_preview(str(image_path), blur_zones, size)
+    
+    # Save preview
+    preview_dir = ROOT_DIR / "uploads" / "content" / "previews"
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    
+    preview_filename = f"preview_{asset_id}_{preview_size}_{uuid.uuid4().hex[:8]}.jpg"
+    preview_path = preview_dir / preview_filename
+    preview.save(str(preview_path), "JPEG", quality=90)
+    
+    base_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
+    preview_url = f"{base_url}/api/content-worker/files/previews/{preview_filename}"
+    
+    return {
+        "preview_url": preview_url,
+        "size": preview_size,
+        "dimensions": size
+    }
+
+
+@api_router.get("/content-worker/files/previews/{filename}")
+async def get_preview_file(filename: str):
+    """Serve preview files"""
+    filepath = ROOT_DIR / "uploads" / "content" / "previews" / filename
+    if not filepath.exists():
+        raise HTTPException(status_code=404, detail="Preview not found")
+    return FileResponse(filepath)
+
+
+@api_router.post("/content-worker/generate-captions")
+async def generate_caption_options(
+    post_type: str = "product_demo",
+    content_focus: str = "operational_clarity",
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Generate 3 caption options for a post"""
+    captions = generate_captions(post_type, content_focus)
+    return {"captions": captions, "content_focus": content_focus}
+
+
+class DraftWithWorkflowCreate(BaseModel):
+    """Create a draft with full workflow data"""
+    asset_id: str
+    post_title: str
+    post_type: str
+    format_type: str
+    content_focus: Optional[str] = "operational_clarity"
+    blur_zones: Optional[list] = []
+    generated_captions: Optional[list] = []
+    selected_caption_index: Optional[int] = None
+    preview_url_square: Optional[str] = None
+    preview_url_portrait: Optional[str] = None
+    privacy_reviewed: bool = False
+    hook: Optional[str] = None
+    cta: Optional[str] = None
+    hashtags: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@api_router.post("/content-worker/drafts/create-with-workflow")
+async def create_draft_with_workflow(
+    draft_data: DraftWithWorkflowCreate,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Create a draft with all workflow data (privacy zones, captions, previews)"""
+    
+    # Verify asset exists
+    asset = await db.content_assets.find_one({"id": draft_data.asset_id})
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    
+    draft_id = str(uuid.uuid4())
+    
+    # Build selected caption from generated options
+    selected_caption = None
+    if draft_data.generated_captions and draft_data.selected_caption_index is not None:
+        if 0 <= draft_data.selected_caption_index < len(draft_data.generated_captions):
+            cap = draft_data.generated_captions[draft_data.selected_caption_index]
+            selected_caption = f"{cap.get('hook', '')}\n\n{cap.get('body', '')}\n\n{cap.get('cta', '')}\n\n{cap.get('hashtags', '')}"
+    
+    draft_doc = {
+        "id": draft_id,
+        "asset_id": draft_data.asset_id,
+        "post_title": draft_data.post_title,
+        "post_type": draft_data.post_type,
+        "format_type": draft_data.format_type,
+        "content_focus": draft_data.content_focus,
+        "generated_captions": draft_data.generated_captions,
+        "selected_caption_index": draft_data.selected_caption_index,
+        "caption_option_1": draft_data.generated_captions[0] if len(draft_data.generated_captions) > 0 else None,
+        "caption_option_2": draft_data.generated_captions[1] if len(draft_data.generated_captions) > 1 else None,
+        "caption_option_3": draft_data.generated_captions[2] if len(draft_data.generated_captions) > 2 else None,
+        "selected_caption": selected_caption,
+        "hook": draft_data.hook or (draft_data.generated_captions[0].get('hook') if draft_data.generated_captions else None),
+        "cta": draft_data.cta or (draft_data.generated_captions[0].get('cta') if draft_data.generated_captions else None),
+        "hashtags": draft_data.hashtags or (draft_data.generated_captions[0].get('hashtags') if draft_data.generated_captions else None),
+        "preview_url_square": draft_data.preview_url_square,
+        "preview_url_portrait": draft_data.preview_url_portrait,
+        "privacy_reviewed": draft_data.privacy_reviewed,
+        "status": "draft",
+        "approved_by": None,
+        "notes": draft_data.notes,
+        "created_by": context.user_email,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.content_drafts.insert_one(draft_doc)
+    
+    # Save blur zones as privacy flags
+    for zone in draft_data.blur_zones:
+        flag_doc = {
+            "id": str(uuid.uuid4()),
+            "asset_id": draft_data.asset_id,
+            "draft_id": draft_id,
+            "flag_type": zone.get('type', 'manual'),
+            "detected_text": zone.get('text'),
+            "x_position": zone.get('x', 0),
+            "y_position": zone.get('y', 0),
+            "width": zone.get('width', 10),
+            "height": zone.get('height', 10),
+            "blur_applied": True,
+            "manually_adjusted": zone.get('manually_adjusted', False),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.privacy_flags.insert_one(flag_doc)
+    
+    # Update asset with processed preview URL
+    if draft_data.preview_url_square:
+        await db.content_assets.update_one(
+            {"id": draft_data.asset_id},
+            {"$set": {"processed_file_url": draft_data.preview_url_square}}
+        )
+    
+    return {
+        "message": "Draft created with workflow data",
+        "draft": {k: v for k, v in draft_doc.items() if k != "_id"}
+    }
+
+
+@api_router.put("/content-worker/drafts/{draft_id}/review-action")
+async def draft_review_action(
+    draft_id: str,
+    action: str,  # approve, reject, send_back
+    notes: Optional[str] = None,
+    selected_caption_index: Optional[int] = None,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Perform review action on a draft"""
+    draft = await db.content_drafts.find_one({"id": draft_id})
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    update_data = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    
+    if action == "approve":
+        update_data["status"] = "approved"
+        update_data["approved_by"] = context.user_email
+    elif action == "reject":
+        update_data["status"] = "rejected"
+    elif action == "send_back":
+        update_data["status"] = "draft"
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action")
+    
+    if notes:
+        update_data["review_notes"] = notes
+    
+    if selected_caption_index is not None:
+        update_data["selected_caption_index"] = selected_caption_index
+        # Update selected caption text
+        captions = draft.get("generated_captions", [])
+        if 0 <= selected_caption_index < len(captions):
+            cap = captions[selected_caption_index]
+            update_data["selected_caption"] = f"{cap.get('hook', '')}\n\n{cap.get('body', '')}\n\n{cap.get('cta', '')}\n\n{cap.get('hashtags', '')}"
+    
+    await db.content_drafts.update_one({"id": draft_id}, {"$set": update_data})
+    
+    return {"message": f"Draft {action} successful", "status": update_data.get("status")}
+
+
+@api_router.put("/content-worker/drafts/{draft_id}/update-caption")
+async def update_draft_caption(
+    draft_id: str,
+    caption_index: int,
+    hook: Optional[str] = None,
+    body: Optional[str] = None,
+    cta: Optional[str] = None,
+    hashtags: Optional[str] = None,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Update a specific caption option in a draft"""
+    draft = await db.content_drafts.find_one({"id": draft_id})
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    captions = draft.get("generated_captions", [])
+    if caption_index < 0 or caption_index >= len(captions):
+        raise HTTPException(status_code=400, detail="Invalid caption index")
+    
+    if hook is not None:
+        captions[caption_index]['hook'] = hook
+    if body is not None:
+        captions[caption_index]['body'] = body
+    if cta is not None:
+        captions[caption_index]['cta'] = cta
+    if hashtags is not None:
+        captions[caption_index]['hashtags'] = hashtags
+    
+    await db.content_drafts.update_one(
+        {"id": draft_id},
+        {"$set": {
+            "generated_captions": captions,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Caption updated", "caption": captions[caption_index]}
+
+
+@api_router.get("/content-worker/drafts/{draft_id}/full")
+async def get_draft_with_full_details(
+    draft_id: str,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Get a draft with all associated data (asset, privacy flags, etc.)"""
+    draft = await db.content_drafts.find_one({"id": draft_id}, {"_id": 0})
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    # Get associated asset
+    asset = await db.content_assets.find_one({"id": draft.get("asset_id")}, {"_id": 0})
+    draft["asset"] = asset
+    
+    # Get privacy flags for this draft
+    flags = await db.privacy_flags.find(
+        {"$or": [{"draft_id": draft_id}, {"asset_id": draft.get("asset_id")}]},
+        {"_id": 0}
+    ).to_list(100)
+    draft["privacy_flags"] = flags
+    
+    # Convert flags to blur zones format for frontend
+    draft["blur_zones"] = [
+        {
+            "id": f["id"],
+            "type": f.get("flag_type", "manual"),
+            "text": f.get("detected_text"),
+            "x": f.get("x_position", 0),
+            "y": f.get("y_position", 0),
+            "width": f.get("width", 10),
+            "height": f.get("height", 10),
+            "manually_adjusted": f.get("manually_adjusted", False)
+        }
+        for f in flags
+    ]
+    
+    return draft
+
+
 # Include router - MUST be after all routes are defined
 app.include_router(api_router)
 

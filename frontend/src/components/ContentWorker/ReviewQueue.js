@@ -4,8 +4,9 @@ import { toast } from 'sonner';
 import { 
   Clock, CheckCircle, XCircle, Eye, MessageSquare, Edit2,
   Image, Video, RefreshCw, Filter, ChevronDown, Send,
-  AlertTriangle, User, Calendar
+  AlertTriangle, User, Calendar, Shield, ArrowLeft, Copy
 } from 'lucide-react';
+import CaptionEditor from './CaptionEditor';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -23,9 +24,14 @@ const ReviewQueue = ({ onNavigate }) => {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedDraft, setSelectedDraft] = useState(null);
+  const [fullDraftData, setFullDraftData] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [rejectNotes, setRejectNotes] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [reviewNotes, setReviewNotes] = useState('');
+  const [selectedCaptionIndex, setSelectedCaptionIndex] = useState(0);
+  const [viewMode, setViewMode] = useState('processed'); // 'original' or 'processed'
+  const [loadingDraft, setLoadingDraft] = useState(false);
 
   useEffect(() => {
     fetchDrafts();
@@ -42,6 +48,48 @@ const ReviewQueue = ({ onNavigate }) => {
       toast.error('Failed to load drafts');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFullDraft = async (draftId) => {
+    setLoadingDraft(true);
+    try {
+      const response = await axios.get(`${API}/content-worker/drafts/${draftId}/full`);
+      setFullDraftData(response.data);
+      setSelectedCaptionIndex(response.data.selected_caption_index || 0);
+      setReviewNotes(response.data.review_notes || '');
+    } catch (err) {
+      toast.error('Failed to load draft details');
+    } finally {
+      setLoadingDraft(false);
+    }
+  };
+
+  const handleReviewAction = async (action) => {
+    if (!selectedDraft) return;
+    
+    try {
+      await axios.put(`${API}/content-worker/drafts/${selectedDraft.id}/review-action`, null, {
+        params: {
+          action: action,
+          notes: reviewNotes,
+          selected_caption_index: selectedCaptionIndex
+        }
+      });
+      
+      const messages = {
+        approve: 'Draft approved',
+        reject: 'Draft rejected',
+        send_back: 'Draft sent back to creator'
+      };
+      
+      toast.success(messages[action]);
+      setShowPreview(false);
+      setShowRejectModal(false);
+      setRejectNotes('');
+      fetchDrafts();
+    } catch (err) {
+      toast.error(`Failed to ${action} draft`);
     }
   };
 
@@ -96,9 +144,10 @@ const ReviewQueue = ({ onNavigate }) => {
 
   const openPreview = async (draft) => {
     try {
-      const response = await axios.get(`${API}/content-worker/drafts/${draft.id}`);
-      setSelectedDraft(response.data);
+      setSelectedDraft(draft);
       setShowPreview(true);
+      // Fetch full draft data including blur zones and captions
+      await fetchFullDraft(draft.id);
     } catch (err) {
       toast.error('Failed to load draft details');
     }
@@ -275,14 +324,37 @@ const ReviewQueue = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Preview Modal */}
+      {/* Enhanced Preview Modal */}
       {showPreview && selectedDraft && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-6xl w-full max-h-[95vh] overflow-y-auto">
             <div className="sticky top-0 bg-white flex items-center justify-between p-4 border-b z-10">
-              <h3 className="font-semibold text-gray-900">{selectedDraft.post_title}</h3>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => { setShowPreview(false); setSelectedDraft(null); setFullDraftData(null); }}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <div>
+                  <h3 className="font-semibold text-gray-900">{selectedDraft.post_title}</h3>
+                  <div className="flex items-center space-x-2 mt-1">
+                    {(() => {
+                      const statusConfig = STATUS_CONFIG[selectedDraft.status] || STATUS_CONFIG.draft;
+                      const StatusIcon = statusConfig.icon;
+                      return (
+                        <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
+                          <StatusIcon size={12} />
+                          <span>{statusConfig.label}</span>
+                        </span>
+                      );
+                    })()}
+                    <span className="text-xs text-gray-500">{selectedDraft.format_type} • {selectedDraft.post_type}</span>
+                  </div>
+                </div>
+              </div>
               <button
-                onClick={() => { setShowPreview(false); setSelectedDraft(null); }}
+                onClick={() => { setShowPreview(false); setSelectedDraft(null); setFullDraftData(null); }}
                 className="p-2 hover:bg-gray-100 rounded-full"
                 data-testid="close-preview-modal"
               >
@@ -290,97 +362,144 @@ const ReviewQueue = ({ onNavigate }) => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
-              {/* Asset Preview */}
-              <div>
-                <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                  {selectedDraft.asset?.file_type === 'video' ? (
-                    <video
-                      src={selectedDraft.asset?.original_file_url}
-                      controls
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <img
-                      src={selectedDraft.asset?.original_file_url}
-                      alt={selectedDraft.post_title}
-                      className="w-full h-full object-contain"
-                    />
-                  )}
+            {loadingDraft ? (
+              <div className="flex items-center justify-center p-12">
+                <RefreshCw className="animate-spin text-pink-500" size={32} />
+              </div>
+            ) : (
+              <div className="p-6 space-y-6">
+                {/* Image Previews - Original vs Processed */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700">Preview</label>
+                    <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+                      <button
+                        onClick={() => setViewMode('original')}
+                        className={`px-3 py-1.5 text-sm rounded-md transition-all ${
+                          viewMode === 'original' ? 'bg-white shadow text-gray-900' : 'text-gray-600'
+                        }`}
+                      >
+                        Original
+                      </button>
+                      <button
+                        onClick={() => setViewMode('processed')}
+                        className={`px-3 py-1.5 text-sm rounded-md transition-all ${
+                          viewMode === 'processed' ? 'bg-white shadow text-gray-900' : 'text-gray-600'
+                        }`}
+                      >
+                        Processed (Blurred)
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <span className="text-xs text-gray-500">Square (1080x1080)</span>
+                      <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden border">
+                        <img
+                          src={viewMode === 'processed' && fullDraftData?.preview_url_square 
+                            ? fullDraftData.preview_url_square 
+                            : selectedDraft.asset?.original_file_url}
+                          alt="Square Preview"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <span className="text-xs text-gray-500">Portrait (1080x1350)</span>
+                      <div className="aspect-[4/5] bg-gray-100 rounded-xl overflow-hidden border">
+                        <img
+                          src={viewMode === 'processed' && fullDraftData?.preview_url_portrait 
+                            ? fullDraftData.preview_url_portrait 
+                            : selectedDraft.asset?.original_file_url}
+                          alt="Portrait Preview"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                {selectedDraft.privacy_flags?.length > 0 && (
-                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-center space-x-2 text-yellow-700">
-                      <AlertTriangle size={16} />
-                      <span className="text-sm font-medium">{selectedDraft.privacy_flags.length} privacy flag(s) detected</span>
+
+                {/* Privacy / Blur Zones */}
+                {fullDraftData?.blur_zones?.length > 0 && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                    <div className="flex items-center space-x-2 text-yellow-700 mb-3">
+                      <Shield size={18} />
+                      <span className="font-medium">Privacy Zones ({fullDraftData.blur_zones.length})</span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {fullDraftData.blur_zones.map((zone, idx) => (
+                        <div key={zone.id || idx} className="bg-white p-2 rounded-lg border border-yellow-200 text-xs">
+                          <span className="font-medium text-gray-700">{zone.type?.replace('_', ' ')}</span>
+                          {zone.text && <p className="text-gray-500 truncate mt-1">"{zone.text}"</p>}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center space-x-2 mt-3">
+                      <CheckCircle size={14} className={fullDraftData.privacy_reviewed ? 'text-green-600' : 'text-gray-400'} />
+                      <span className={`text-sm ${fullDraftData.privacy_reviewed ? 'text-green-600' : 'text-gray-500'}`}>
+                        {fullDraftData.privacy_reviewed ? 'Privacy reviewed' : 'Privacy review pending'}
+                      </span>
                     </div>
                   </div>
                 )}
-              </div>
 
-              {/* Content Details */}
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  {(() => {
-                    const statusConfig = STATUS_CONFIG[selectedDraft.status] || STATUS_CONFIG.draft;
-                    const StatusIcon = statusConfig.icon;
-                    return (
-                      <span className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color}`}>
-                        <StatusIcon size={14} />
-                        <span>{statusConfig.label}</span>
-                      </span>
-                    );
-                  })()}
-                  <span className="text-sm text-gray-500">{selectedDraft.format_type}</span>
-                </div>
-
-                {selectedDraft.hook && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Hook</label>
-                    <p className="text-gray-900 font-medium">{selectedDraft.hook}</p>
+                {/* Caption Options */}
+                {fullDraftData?.generated_captions?.length > 0 && (
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-gray-700">Caption Options</label>
+                    <CaptionEditor
+                      captions={fullDraftData.generated_captions}
+                      selectedIndex={selectedCaptionIndex}
+                      onSelectCaption={setSelectedCaptionIndex}
+                      readOnly={selectedDraft.status !== 'review'}
+                    />
                   </div>
                 )}
 
-                {selectedDraft.selected_caption && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Selected Caption</label>
-                    <p className="text-gray-700 whitespace-pre-wrap">{selectedDraft.selected_caption}</p>
+                {/* Reviewer Notes */}
+                {selectedDraft.status === 'review' && (
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-gray-700">Internal Review Notes</label>
+                    <textarea
+                      value={reviewNotes}
+                      onChange={(e) => setReviewNotes(e.target.value)}
+                      placeholder="Add notes for the team (optional)"
+                      rows={3}
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 resize-none"
+                      data-testid="review-notes-input"
+                    />
                   </div>
                 )}
 
-                {selectedDraft.cta && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Call to Action</label>
-                    <p className="text-gray-700">{selectedDraft.cta}</p>
-                  </div>
-                )}
-
-                {selectedDraft.hashtags && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Hashtags</label>
-                    <p className="text-pink-600">{selectedDraft.hashtags}</p>
-                  </div>
-                )}
-
-                {selectedDraft.notes && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Internal Notes</label>
-                    <p className="text-gray-600 italic">{selectedDraft.notes}</p>
-                  </div>
-                )}
-
-                <div className="pt-4 border-t">
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <p>Created by: {selectedDraft.created_by}</p>
-                    <p>Created: {new Date(selectedDraft.created_at).toLocaleString()}</p>
-                    {selectedDraft.approved_by && <p className="text-green-600">Approved by: {selectedDraft.approved_by}</p>}
+                {/* Draft Info */}
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500">Created by</span>
+                      <p className="font-medium text-gray-900">{selectedDraft.created_by}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Created</span>
+                      <p className="font-medium text-gray-900">{new Date(selectedDraft.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Content Focus</span>
+                      <p className="font-medium text-gray-900">{fullDraftData?.content_focus?.replace('_', ' ') || 'N/A'}</p>
+                    </div>
+                    {selectedDraft.approved_by && (
+                      <div>
+                        <span className="text-gray-500">Approved by</span>
+                        <p className="font-medium text-green-600">{selectedDraft.approved_by}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Actions */}
-            <div className="sticky bottom-0 bg-gray-50 p-4 border-t flex items-center justify-between">
+            <div className="sticky bottom-0 bg-white p-4 border-t flex items-center justify-between">
               <button
                 onClick={() => handleDelete(selectedDraft.id)}
                 className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -400,13 +519,19 @@ const ReviewQueue = ({ onNavigate }) => {
                 {selectedDraft.status === 'review' && (
                   <>
                     <button
+                      onClick={() => handleReviewAction('send_back')}
+                      className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                    >
+                      Send Back to Draft
+                    </button>
+                    <button
                       onClick={() => setShowRejectModal(true)}
                       className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                     >
                       Reject
                     </button>
                     <button
-                      onClick={() => handleApprove(selectedDraft.id)}
+                      onClick={() => handleReviewAction('approve')}
                       className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                     >
                       Approve

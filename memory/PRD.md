@@ -612,3 +612,77 @@ The platform now uses a 3-tier subscription model:
 - `content_ideas` - Content inspiration and ideas
 
 **Test Report:** `/app/test_reports/iteration_18.json` - 27/27 backend + 10/10 frontend tests passed (100%)
+
+### March 19, 2026 - Extended Content Worker with Privacy Workflow ✅
+**Added privacy-protected content creation workflow:**
+
+**New Workflow Features:**
+1. **Step-by-Step Workflow UI** - Guided 6-step process:
+   - Upload → Select Frame → Privacy → Preview → Caption → Save
+   - Progress indicator with completed/active/pending states
+   - Previous/Next navigation
+
+2. **Video Frame Extraction**:
+   - Extract 1-3 key frames from uploaded videos
+   - Visual frame selector with thumbnails
+   - Selection indicator with checkmark
+
+3. **Privacy Detection & Blur Tool**:
+   - OCR-based detection using Tesseract
+   - Pattern matching for: emails, phone numbers, names, registration numbers, booking details, times/dates
+   - Keyword detection for sensitive terms
+   - Draggable, resizable blur boxes
+   - Add/remove manual blur zones
+   - Toggle between original and blurred preview
+   - Mark as "Privacy Reviewed" action
+   - Color-coded zone types (red=email, orange=phone, etc.)
+
+4. **Branded Preview Generation**:
+   - Square (1080x1080) and Portrait (1080x1350) formats
+   - Quick Wing branding bar at bottom
+   - Blur zones applied to final preview
+   - Light gray-blue background for non-image areas
+
+5. **Caption Generator**:
+   - 7 content focus options: Booking Simplicity, Calendar Visibility, Compliance Tracking, Admin Efficiency, Time Saving, Reducing Chaos, Operational Clarity
+   - 3 professional caption options per focus
+   - Each includes: Hook, Body copy, CTA, Hashtags
+   - Professional, product-focused tone
+   - No cheesy hype or generic AI buzzwords
+
+6. **Enhanced Review Queue**:
+   - Original vs Processed preview toggle
+   - Privacy zones summary display
+   - Caption options viewer with selection
+   - Review notes field
+   - Actions: Approve, Reject, Send Back to Draft
+   - Caption editing capability
+   - Full draft details view
+
+**New API Endpoints:**
+- `POST /api/content-worker/extract-frames` - Extract video frames
+- `GET /api/content-worker/files/frames/{filename}` - Serve frame files
+- `POST /api/content-worker/detect-privacy` - OCR privacy detection
+- `POST /api/content-worker/generate-preview` - Create branded previews
+- `GET /api/content-worker/files/previews/{filename}` - Serve preview files
+- `POST /api/content-worker/generate-captions` - Generate 3 caption options
+- `POST /api/content-worker/drafts/create-with-workflow` - Create draft with full workflow data
+- `PUT /api/content-worker/drafts/{draft_id}/review-action` - Approve/reject/send back
+- `PUT /api/content-worker/drafts/{draft_id}/update-caption` - Edit caption option
+- `GET /api/content-worker/drafts/{draft_id}/full` - Get draft with blur zones and captions
+
+**New Frontend Components:**
+- `/app/frontend/src/components/ContentWorker/NewPostWorkflow.js` - Full workflow UI
+- `/app/frontend/src/components/ContentWorker/PrivacyEditor.js` - Blur zone editor
+- `/app/frontend/src/components/ContentWorker/FrameSelector.js` - Video frame picker
+- `/app/frontend/src/components/ContentWorker/CaptionEditor.js` - Caption viewer/editor
+
+**Database Updates:**
+- `content_drafts`: Added fields: `generated_captions`, `selected_caption_index`, `content_focus`, `preview_url_square`, `preview_url_portrait`, `privacy_reviewed`, `review_notes`
+- `content_assets`: Added `processed_file_url` for blurred previews
+- `privacy_flags`: Stores detected and manual blur zones with coordinates
+
+**Dependencies Added:**
+- pytesseract==0.3.13 (OCR)
+- opencv-python-headless==4.13.0.92 (Frame extraction)
+- tesseract-ocr (System package)

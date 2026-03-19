@@ -833,3 +833,28 @@ The platform now uses a 3-tier subscription model:
 - No real Instagram API integration yet
 
 **Test Report:** `/app/test_reports/iteration_19.json` - 31/31 backend + 18/18 frontend tests passed (100%)
+
+### March 19, 2026 - Training Guide Added ✅
+**Added in-app training guide accessible via Help tab:**
+
+**Features:**
+- New "Help" tab in Content Worker navigation (BookOpen icon)
+- Interactive accordion-style guide with 8 expandable sections
+- Quick action buttons to navigate directly to features
+
+**Guide Sections:**
+1. **Getting Started** - Overview, key features, navigation grid
+2. **Creating a New Post (6-Step Workflow)** - Detailed steps with icons
+3. **Review & Approval Process** - Status flow diagram, action explanations
+4. **Scheduling & Publishing** - Calendar tabs, publishing options
+5. **Understanding Analytics** - Metrics explanation, sync instructions
+6. **Using the Content Ideas Engine** - Goals, performance insights
+7. **Instagram Connection Setup** - Step-by-step connection guide
+8. **Best Practices & Tips** - Content creation, publishing, workflow tips
+
+**New Component:**
+- `/app/frontend/src/components/ContentWorker/TrainingGuide.js`
+
+**Also Created (file system):**
+- `/app/docs/CONTENT_WORKER_TRAINING_GUIDE.md` - Full markdown guide
+- `/app/docs/CONTENT_WORKER_QUICK_START.md` - Quick reference guide

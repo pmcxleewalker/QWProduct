@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, Image, PenSquare, Clock, Send, 
-  Lightbulb, Settings, ChevronLeft, BarChart3
+  Lightbulb, Settings, ChevronLeft, BarChart3, BookOpen
 } from 'lucide-react';
 
 import ContentDashboard from './ContentDashboard';
@@ -12,6 +12,7 @@ import PostedContent from './PostedContent';
 import ContentIdeasEngine from './ContentIdeasEngine';
 import ContentSettings from './ContentSettings';
 import ContentAnalytics from './ContentAnalytics';
+import TrainingGuide from './TrainingGuide';
 
 const NAVIGATION_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -21,7 +22,8 @@ const NAVIGATION_ITEMS = [
   { id: 'posted', label: 'Posted', icon: Send },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'ideas', label: 'Ideas', icon: Lightbulb },
-  { id: 'settings', label: 'Settings', icon: Settings }
+  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'help', label: 'Help', icon: BookOpen }
 ];
 
 const ContentWorker = ({ onBack }) => {
@@ -66,6 +68,8 @@ const ContentWorker = ({ onBack }) => {
         return <ContentIdeasEngine onNavigate={handleNavigate} />;
       case 'settings':
         return <ContentSettings onNavigate={handleNavigate} />;
+      case 'help':
+        return <TrainingGuide onNavigate={handleNavigate} />;
       default:
         return <ContentDashboard onNavigate={handleNavigate} />;
     }

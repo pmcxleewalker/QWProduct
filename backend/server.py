@@ -5410,6 +5410,536 @@ async def update_instagram_settings(
     return {"message": "Instagram settings updated"}
 
 
+# ==================== INSTAGRAM PUBLISHING & ANALYTICS ====================
+
+class InstagramConnectionData(BaseModel):
+    """Instagram connection data"""
+    access_token: str
+    account_id: str
+    account_name: str
+    token_expires_at: Optional[str] = None
+
+
+@api_router.post("/content-worker/instagram/connect")
+async def connect_instagram(
+    connection_data: InstagramConnectionData,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Connect Instagram account (simulated - in production would validate with Meta API)"""
+    
+    settings = await db.instagram_settings.find_one({})
+    
+    update_data = {
+        "account_name": connection_data.account_name,
+        "account_id": connection_data.account_id,
+        "access_token": connection_data.access_token,  # In production, encrypt this
+        "token_expires_at": connection_data.token_expires_at,
+        "connection_status": "connected",
+        "token_status": "valid",
+        "connected_at": datetime.now(timezone.utc).isoformat(),
+        "last_sync_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if settings:
+        await db.instagram_settings.update_one({"id": settings["id"]}, {"$set": update_data})
+    else:
+        update_data["id"] = str(uuid.uuid4())
+        update_data["created_at"] = datetime.now(timezone.utc).isoformat()
+        await db.instagram_settings.insert_one(update_data)
+    
+    return {"message": "Instagram connected", "account_name": connection_data.account_name}
+
+
+@api_router.post("/content-worker/instagram/disconnect")
+async def disconnect_instagram(context: TenantContext = Depends(require_super_admin)):
+    """Disconnect Instagram account"""
+    
+    await db.instagram_settings.update_one(
+        {},
+        {"$set": {
+            "access_token": None,
+            "account_id": None,
+            "connection_status": "not_connected",
+            "token_status": "none",
+            "connected_at": None,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Instagram disconnected"}
+
+
+@api_router.post("/content-worker/instagram/refresh-token")
+async def refresh_instagram_token(context: TenantContext = Depends(require_super_admin)):
+    """Refresh Instagram token (placeholder - would call Meta API in production)"""
+    
+    settings = await db.instagram_settings.find_one({})
+    if not settings or settings.get("connection_status") != "connected":
+        raise HTTPException(status_code=400, detail="Instagram not connected")
+    
+    # In production, this would call Meta's token refresh endpoint
+    new_expiry = (datetime.now(timezone.utc) + timedelta(days=60)).isoformat()
+    
+    await db.instagram_settings.update_one(
+        {},
+        {"$set": {
+            "token_status": "valid",
+            "token_expires_at": new_expiry,
+            "last_sync_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Token refreshed", "expires_at": new_expiry}
+
+
+@api_router.post("/content-worker/drafts/{draft_id}/schedule")
+async def schedule_draft(
+    draft_id: str,
+    scheduled_at: str,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Schedule an approved draft for publishing"""
+    
+    draft = await db.content_drafts.find_one({"id": draft_id})
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    if draft.get("status") not in ["approved"]:
+        raise HTTPException(status_code=400, detail="Only approved drafts can be scheduled")
+    
+    # Validate scheduled time is in the future
+    try:
+        scheduled_datetime = datetime.fromisoformat(scheduled_at.replace('Z', '+00:00'))
+        if scheduled_datetime <= datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="Scheduled time must be in the future")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid datetime format")
+    
+    await db.content_drafts.update_one(
+        {"id": draft_id},
+        {"$set": {
+            "status": "scheduled",
+            "scheduled_at": scheduled_at,
+            "scheduled_by": context.user_email,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Draft scheduled", "scheduled_at": scheduled_at}
+
+
+@api_router.post("/content-worker/drafts/{draft_id}/unschedule")
+async def unschedule_draft(
+    draft_id: str,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Unschedule a scheduled draft (revert to approved)"""
+    
+    draft = await db.content_drafts.find_one({"id": draft_id})
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    if draft.get("status") != "scheduled":
+        raise HTTPException(status_code=400, detail="Only scheduled drafts can be unscheduled")
+    
+    await db.content_drafts.update_one(
+        {"id": draft_id},
+        {"$set": {
+            "status": "approved",
+            "scheduled_at": None,
+            "scheduled_by": None,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "Draft unscheduled, reverted to approved"}
+
+
+@api_router.post("/content-worker/drafts/{draft_id}/publish")
+async def publish_draft(
+    draft_id: str,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Publish a draft to Instagram (simulated - would call Meta API in production)"""
+    
+    draft = await db.content_drafts.find_one({"id": draft_id})
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    if draft.get("status") not in ["approved", "scheduled"]:
+        raise HTTPException(status_code=400, detail="Only approved or scheduled drafts can be published")
+    
+    # Check Instagram connection
+    settings = await db.instagram_settings.find_one({})
+    if not settings or settings.get("connection_status") != "connected":
+        raise HTTPException(status_code=400, detail="Instagram not connected. Please connect your account first.")
+    
+    # Set status to publishing
+    await db.content_drafts.update_one(
+        {"id": draft_id},
+        {"$set": {"status": "publishing", "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    try:
+        # Simulate Instagram API call
+        # In production, this would:
+        # 1. Upload media to Instagram
+        # 2. Create the post with caption
+        # 3. Get the post ID and URL
+        
+        # Simulated success response
+        instagram_post_id = f"ig_{uuid.uuid4().hex[:16]}"
+        post_url = f"https://www.instagram.com/p/{uuid.uuid4().hex[:11]}/"
+        
+        await db.content_drafts.update_one(
+            {"id": draft_id},
+            {"$set": {
+                "status": "posted",
+                "instagram_post_id": instagram_post_id,
+                "instagram_post_url": post_url,
+                "published_at": datetime.now(timezone.utc).isoformat(),
+                "published_by": context.user_email,
+                "publish_error": None,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        # Initialize metrics record
+        metrics_doc = {
+            "id": str(uuid.uuid4()),
+            "draft_id": draft_id,
+            "instagram_post_id": instagram_post_id,
+            "likes": 0,
+            "comments": 0,
+            "reach": 0,
+            "saves": 0,
+            "shares": 0,
+            "impressions": 0,
+            "pulled_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.instagram_metrics.insert_one(metrics_doc)
+        
+        return {
+            "message": "Post published successfully",
+            "instagram_post_id": instagram_post_id,
+            "post_url": post_url
+        }
+        
+    except Exception as e:
+        # Handle publish failure
+        await db.content_drafts.update_one(
+            {"id": draft_id},
+            {"$set": {
+                "status": "failed",
+                "publish_error": str(e),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        raise HTTPException(status_code=500, detail=f"Failed to publish: {str(e)}")
+
+
+@api_router.post("/content-worker/drafts/{draft_id}/retry-publish")
+async def retry_publish_draft(
+    draft_id: str,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Retry publishing a failed draft"""
+    
+    draft = await db.content_drafts.find_one({"id": draft_id})
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    if draft.get("status") != "failed":
+        raise HTTPException(status_code=400, detail="Only failed drafts can be retried")
+    
+    # Reset to approved and try again
+    await db.content_drafts.update_one(
+        {"id": draft_id},
+        {"$set": {
+            "status": "approved",
+            "publish_error": None,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Now publish
+    return await publish_draft(draft_id, context)
+
+
+@api_router.get("/content-worker/analytics/overview")
+async def get_analytics_overview(
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Get analytics overview for published content"""
+    
+    # Get total published posts
+    total_posts = await db.content_drafts.count_documents({"status": "posted"})
+    
+    # Get aggregate metrics
+    pipeline = [
+        {"$group": {
+            "_id": None,
+            "total_likes": {"$sum": "$likes"},
+            "total_comments": {"$sum": "$comments"},
+            "total_reach": {"$sum": "$reach"},
+            "total_saves": {"$sum": "$saves"},
+            "total_shares": {"$sum": "$shares"},
+            "total_impressions": {"$sum": "$impressions"}
+        }}
+    ]
+    
+    metrics_agg = await db.instagram_metrics.aggregate(pipeline).to_list(1)
+    
+    if metrics_agg:
+        totals = metrics_agg[0]
+    else:
+        totals = {
+            "total_likes": 0,
+            "total_comments": 0,
+            "total_reach": 0,
+            "total_saves": 0,
+            "total_shares": 0,
+            "total_impressions": 0
+        }
+    
+    # Calculate engagement rate
+    total_engagement = totals.get("total_likes", 0) + totals.get("total_comments", 0) + totals.get("total_saves", 0) + totals.get("total_shares", 0)
+    total_reach = totals.get("total_reach", 0)
+    engagement_rate = (total_engagement / total_reach * 100) if total_reach > 0 else 0
+    
+    return {
+        "total_posts": total_posts,
+        "total_likes": totals.get("total_likes", 0),
+        "total_comments": totals.get("total_comments", 0),
+        "total_reach": totals.get("total_reach", 0),
+        "total_saves": totals.get("total_saves", 0),
+        "total_shares": totals.get("total_shares", 0),
+        "total_impressions": totals.get("total_impressions", 0),
+        "engagement_rate": round(engagement_rate, 2),
+        "avg_likes_per_post": round(totals.get("total_likes", 0) / total_posts, 1) if total_posts > 0 else 0,
+        "avg_reach_per_post": round(totals.get("total_reach", 0) / total_posts, 1) if total_posts > 0 else 0
+    }
+
+
+@api_router.get("/content-worker/analytics/posts")
+async def get_post_analytics(
+    limit: int = 20,
+    sort_by: str = "published_at",
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Get analytics for individual posts"""
+    
+    # Get posted drafts
+    drafts = await db.content_drafts.find(
+        {"status": "posted"},
+        {"_id": 0}
+    ).sort(sort_by, -1).limit(limit).to_list(limit)
+    
+    # Enrich with metrics
+    for draft in drafts:
+        metrics = await db.instagram_metrics.find_one(
+            {"draft_id": draft.get("id")},
+            {"_id": 0}
+        )
+        draft["metrics"] = metrics or {}
+        
+        # Get asset thumbnail
+        if draft.get("asset_id"):
+            asset = await db.content_assets.find_one(
+                {"id": draft["asset_id"]},
+                {"_id": 0, "thumbnail_url": 1, "original_file_url": 1}
+            )
+            draft["thumbnail"] = asset.get("thumbnail_url") or asset.get("original_file_url") if asset else None
+    
+    return {"posts": drafts, "total": len(drafts)}
+
+
+@api_router.get("/content-worker/analytics/top-posts")
+async def get_top_posts(
+    metric: str = "likes",
+    limit: int = 5,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Get top performing posts by metric"""
+    
+    valid_metrics = ["likes", "comments", "reach", "saves", "shares", "impressions"]
+    if metric not in valid_metrics:
+        metric = "likes"
+    
+    # Get top metrics
+    metrics = await db.instagram_metrics.find(
+        {},
+        {"_id": 0}
+    ).sort(metric, -1).limit(limit).to_list(limit)
+    
+    # Enrich with draft data
+    result = []
+    for m in metrics:
+        draft = await db.content_drafts.find_one(
+            {"id": m.get("draft_id")},
+            {"_id": 0, "post_title": 1, "post_type": 1, "format_type": 1, "asset_id": 1, "published_at": 1, "instagram_post_url": 1}
+        )
+        if draft:
+            # Get thumbnail
+            if draft.get("asset_id"):
+                asset = await db.content_assets.find_one(
+                    {"id": draft["asset_id"]},
+                    {"_id": 0, "thumbnail_url": 1, "original_file_url": 1}
+                )
+                draft["thumbnail"] = asset.get("thumbnail_url") or asset.get("original_file_url") if asset else None
+            
+            result.append({
+                **draft,
+                "metrics": m
+            })
+    
+    return {"posts": result, "sorted_by": metric}
+
+
+@api_router.get("/content-worker/analytics/by-category")
+async def get_analytics_by_category(
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Get analytics aggregated by content category"""
+    
+    # Get all posted drafts with their metrics
+    drafts = await db.content_drafts.find(
+        {"status": "posted"},
+        {"_id": 0, "id": 1, "post_type": 1}
+    ).to_list(100)
+    
+    category_stats = {}
+    
+    for draft in drafts:
+        cat = draft.get("post_type", "unknown")
+        if cat not in category_stats:
+            category_stats[cat] = {"posts": 0, "likes": 0, "comments": 0, "reach": 0, "saves": 0}
+        
+        category_stats[cat]["posts"] += 1
+        
+        metrics = await db.instagram_metrics.find_one({"draft_id": draft.get("id")}, {"_id": 0})
+        if metrics:
+            category_stats[cat]["likes"] += metrics.get("likes", 0)
+            category_stats[cat]["comments"] += metrics.get("comments", 0)
+            category_stats[cat]["reach"] += metrics.get("reach", 0)
+            category_stats[cat]["saves"] += metrics.get("saves", 0)
+    
+    # Calculate averages
+    result = []
+    for cat, stats in category_stats.items():
+        if stats["posts"] > 0:
+            result.append({
+                "category": cat,
+                "posts": stats["posts"],
+                "total_likes": stats["likes"],
+                "total_reach": stats["reach"],
+                "avg_likes": round(stats["likes"] / stats["posts"], 1),
+                "avg_reach": round(stats["reach"] / stats["posts"], 1),
+                "engagement_rate": round((stats["likes"] + stats["comments"] + stats["saves"]) / stats["reach"] * 100, 2) if stats["reach"] > 0 else 0
+            })
+    
+    result.sort(key=lambda x: x.get("avg_likes", 0), reverse=True)
+    
+    return {"categories": result}
+
+
+@api_router.get("/content-worker/analytics/by-format")
+async def get_analytics_by_format(
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Get analytics aggregated by content format"""
+    
+    drafts = await db.content_drafts.find(
+        {"status": "posted"},
+        {"_id": 0, "id": 1, "format_type": 1}
+    ).to_list(100)
+    
+    format_stats = {}
+    
+    for draft in drafts:
+        fmt = draft.get("format_type", "unknown")
+        if fmt not in format_stats:
+            format_stats[fmt] = {"posts": 0, "likes": 0, "comments": 0, "reach": 0, "saves": 0}
+        
+        format_stats[fmt]["posts"] += 1
+        
+        metrics = await db.instagram_metrics.find_one({"draft_id": draft.get("id")}, {"_id": 0})
+        if metrics:
+            format_stats[fmt]["likes"] += metrics.get("likes", 0)
+            format_stats[fmt]["comments"] += metrics.get("comments", 0)
+            format_stats[fmt]["reach"] += metrics.get("reach", 0)
+            format_stats[fmt]["saves"] += metrics.get("saves", 0)
+    
+    result = []
+    for fmt, stats in format_stats.items():
+        if stats["posts"] > 0:
+            result.append({
+                "format": fmt,
+                "posts": stats["posts"],
+                "total_likes": stats["likes"],
+                "total_reach": stats["reach"],
+                "avg_likes": round(stats["likes"] / stats["posts"], 1),
+                "avg_reach": round(stats["reach"] / stats["posts"], 1),
+                "engagement_rate": round((stats["likes"] + stats["comments"] + stats["saves"]) / stats["reach"] * 100, 2) if stats["reach"] > 0 else 0
+            })
+    
+    result.sort(key=lambda x: x.get("avg_likes", 0), reverse=True)
+    
+    return {"formats": result}
+
+
+@api_router.post("/content-worker/analytics/sync")
+async def sync_instagram_metrics(
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Sync metrics from Instagram (simulated - would call Meta API in production)"""
+    
+    settings = await db.instagram_settings.find_one({})
+    if not settings or settings.get("connection_status") != "connected":
+        raise HTTPException(status_code=400, detail="Instagram not connected")
+    
+    # Get all posted drafts
+    drafts = await db.content_drafts.find(
+        {"status": "posted", "instagram_post_id": {"$exists": True}},
+        {"_id": 0, "id": 1, "instagram_post_id": 1}
+    ).to_list(100)
+    
+    synced_count = 0
+    
+    for draft in drafts:
+        # Simulate fetching metrics from Instagram API
+        # In production, this would call the Instagram Insights API
+        import random
+        
+        simulated_metrics = {
+            "likes": random.randint(50, 500),
+            "comments": random.randint(5, 50),
+            "reach": random.randint(500, 5000),
+            "saves": random.randint(10, 100),
+            "shares": random.randint(5, 50),
+            "impressions": random.randint(600, 6000),
+            "pulled_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.instagram_metrics.update_one(
+            {"draft_id": draft["id"]},
+            {"$set": simulated_metrics},
+            upsert=True
+        )
+        synced_count += 1
+    
+    # Update last sync timestamp
+    await db.instagram_settings.update_one(
+        {},
+        {"$set": {"last_sync_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"message": f"Synced metrics for {synced_count} posts", "synced_count": synced_count}
+
+
 # Content Ideas
 @api_router.get("/content-worker/ideas")
 async def get_content_ideas(

@@ -511,3 +511,104 @@ The platform now uses a 3-tier subscription model:
 
 4. **All Cars Calendar** - Already correctly inside Fleet tab as a sub-tab
 
+### March 19, 2026 - Quick Wing Content Worker Module ✅
+**Built complete social media content management module for Instagram:**
+
+**Features:**
+1. **Content Dashboard** - Overview with stat cards showing:
+   - Total Drafts, In Review, Approved, Posted, Rejected counts
+   - Total Assets, Content Ideas, Scheduled counts
+   - Recent Assets and Content Ideas sections
+   - Workflow visualization showing Upload → Draft → Review → Approve → Post
+
+2. **Asset Manager** - Media file upload and management:
+   - Upload images (PNG, JPG, WEBP, GIF) and videos (MP4, MOV, WEBM)
+   - File size limit: 100MB
+   - Search and filter by type (All/Images/Videos)
+   - Preview modal with full-size view
+   - Create Post action directly from asset
+
+3. **New Post Form** - Create Instagram content:
+   - Media Asset selection from library or upload new
+   - Post Type selection (Product Demo, Pain Point, Before/After, Educational, Trust Proof, Feature Spotlight)
+   - Format Type (Reel, Carousel, Single Image, Story)
+   - Hook (attention-grabbing first line)
+   - 3 Caption Options with selection
+   - Call to Action input
+   - Hashtags field
+   - Internal Notes (not published)
+   - Schedule Post date/time picker
+   - Save Draft / Submit for Review actions
+
+4. **Review Queue** - Approval workflow:
+   - Status filtering (All Status, Drafts, In Review, Approved, Rejected, Scheduled)
+   - Draft preview modal with full details
+   - Approve/Reject actions with notes
+   - Submit for Review action for drafts
+   - Delete draft functionality
+
+5. **Posted Content** - Content calendar:
+   - Three view modes: Posted, Scheduled, Ready to Post
+   - Copy Caption to clipboard
+   - Mark as Posted action
+   - Schedule post with datetime picker
+   - Connect Instagram banner (placeholder for future API)
+
+6. **Content Ideas** - Inspiration management:
+   - CRUD operations for content ideas
+   - Category filtering (Product Demo, Pain Point, Educational, Trust Proof, Feature Spotlight, Trending Topic)
+   - Quick Inspiration suggestions
+   - Create Post from idea action
+   - Hook, Target Audience, CTA fields
+
+7. **Content Settings** - Configuration:
+   - Instagram account name input (Coming Soon placeholder for API)
+   - Post Templates CRUD with format, brand style, logo position
+   - Workflow settings (Require Approval, Privacy Check toggles)
+   - Brand Defaults inherited from franchise settings
+
+**New API Endpoints:**
+- `GET /api/content-worker/stats` - Dashboard statistics
+- `GET/POST /api/content-worker/assets` - Asset management
+- `POST /api/content-worker/assets/upload` - File upload
+- `GET /api/content-worker/files/{filename}` - Serve content files
+- `DELETE /api/content-worker/assets/{asset_id}` - Delete asset
+- `GET/POST /api/content-worker/drafts` - Draft management
+- `GET /api/content-worker/drafts/{draft_id}` - Get specific draft
+- `PUT /api/content-worker/drafts/{draft_id}` - Update draft
+- `POST /api/content-worker/drafts/{draft_id}/submit-review` - Submit for review
+- `POST /api/content-worker/drafts/{draft_id}/approve` - Approve draft
+- `POST /api/content-worker/drafts/{draft_id}/reject` - Reject draft
+- `DELETE /api/content-worker/drafts/{draft_id}` - Delete draft
+- `GET/POST /api/content-worker/privacy-flags` - Privacy flag management
+- `PUT/DELETE /api/content-worker/privacy-flags/{flag_id}` - Update/delete flags
+- `GET/POST /api/content-worker/templates` - Template management
+- `PUT/DELETE /api/content-worker/templates/{template_id}` - Update/delete templates
+- `GET/PUT /api/content-worker/instagram-settings` - Instagram settings
+- `GET/POST /api/content-worker/ideas` - Content ideas management
+- `PUT/DELETE /api/content-worker/ideas/{idea_id}` - Update/delete ideas
+
+**New Components:**
+- `/app/frontend/src/components/ContentWorker/index.js` - Main module entry
+- `/app/frontend/src/components/ContentWorker/ContentDashboard.js`
+- `/app/frontend/src/components/ContentWorker/AssetManager.js`
+- `/app/frontend/src/components/ContentWorker/NewPost.js`
+- `/app/frontend/src/components/ContentWorker/ReviewQueue.js`
+- `/app/frontend/src/components/ContentWorker/PostedContent.js`
+- `/app/frontend/src/components/ContentWorker/ContentIdeas.js`
+- `/app/frontend/src/components/ContentWorker/ContentSettings.js`
+
+**Access Control:**
+- All Content Worker endpoints require `Super Admin` role
+- Module accessible via "Content" tab with Instagram icon in Franchise Command Centre
+- Role badge shows "Social Media Manager" in module header
+
+**Database Collections:**
+- `content_assets` - Uploaded media files
+- `content_drafts` - Social media post drafts with status workflow
+- `privacy_flags` - Areas in assets to be blurred (for future privacy feature)
+- `post_templates` - Pre-defined content styles
+- `instagram_settings` - Instagram API connection settings (placeholder)
+- `content_ideas` - Content inspiration and ideas
+
+**Test Report:** `/app/test_reports/iteration_18.json` - 27/27 backend + 10/10 frontend tests passed (100%)

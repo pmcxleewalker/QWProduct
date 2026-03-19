@@ -283,7 +283,8 @@ export const AuthProvider = ({ children }) => {
   // Role checks
   const isSuperAdmin = () => user?.role === 'super_admin';
   const isMasterAdmin = () => user?.role === 'master_admin';
-  const isPlatformAdmin = () => user?.role === 'super_admin' || user?.role === 'master_admin';
+  const isContentManager = () => user?.role === 'content_manager';
+  const isPlatformAdmin = () => user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager';
   const isTenantAdmin = () => activeTenant?.role === 'tenant_admin' || isPlatformAdmin();
   const isStaff = () => activeTenant?.role === 'staff';
   const isImpersonating = () => activeTenant?.is_impersonating === true;

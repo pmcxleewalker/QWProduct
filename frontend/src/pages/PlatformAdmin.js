@@ -32,6 +32,13 @@ const PlatformAdmin = () => {
   const { user, isPlatformAdmin, isSuperAdmin, impersonateTenant, isImpersonating, stopImpersonation, activeTenant, logout } = useAuth();
   
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Set default tab based on user role after user data is available
+  useEffect(() => {
+    if (user?.role === 'content_manager') {
+      setActiveTab('content-worker');
+    }
+  }, [user]);
   const [tenantsSubTab, setTenantsSubTab] = useState('franchises'); // 'franchises' or 'admins'
   const [auditLogTab, setAuditLogTab] = useState('all'); // 'all', 'command-centre', or tenant_id
   const [tenants, setTenants] = useState([]);
@@ -115,10 +122,14 @@ const PlatformAdmin = () => {
   });
 
   useEffect(() => {
-    if (isPlatformAdmin()) {
+    // Content managers don't need platform-wide data
+    if (isPlatformAdmin() && user?.role !== 'content_manager') {
       fetchData();
+    } else if (user?.role === 'content_manager') {
+      // Content manager doesn't need to load platform data
+      setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (activeTab === 'reports') {
@@ -583,7 +594,8 @@ const PlatformAdmin = () => {
               <div className="flex items-center space-x-2 pl-3 border-l border-slate-600">
                 <span className="text-xs text-slate-300">{user?.email}</span>
                 <span className="px-2 py-1 bg-emerald-600 rounded-full text-xs font-medium">
-                  {isSuperAdmin() ? 'Super Admin' : 'Master Admin'}
+                  {user?.role === 'super_admin' ? 'Super Admin' : 
+                   user?.role === 'content_manager' ? 'Content Manager' : 'Master Admin'}
                 </span>
               </div>
               <button
@@ -605,14 +617,16 @@ const PlatformAdmin = () => {
           {/* Main Tabs */}
           <div className="flex space-x-1 py-2 overflow-x-auto">
             {[
-              { id: 'overview', label: 'Dashboard', sublabel: 'Platform Overview', icon: Activity },
-              { id: 'tenants', label: 'Franchises', sublabel: 'Manage Tenants', icon: Building2 },
-              { id: 'users', label: 'Team', sublabel: 'User Management', icon: Users },
-              { id: 'content-worker', label: 'Content', sublabel: 'Social Media', icon: Instagram },
-              { id: 'plans', label: 'Subscriptions', sublabel: 'Plans & Features', icon: Layers },
-              { id: 'reports', label: 'Finance', sublabel: 'Reports & Billing', icon: Receipt },
-              { id: 'audit', label: 'Activity', sublabel: 'Audit Log', icon: FileText }
-            ].map(tab => (
+              { id: 'overview', label: 'Dashboard', sublabel: 'Platform Overview', icon: Activity, roles: ['super_admin', 'master_admin'] },
+              { id: 'tenants', label: 'Franchises', sublabel: 'Manage Tenants', icon: Building2, roles: ['super_admin', 'master_admin'] },
+              { id: 'users', label: 'Team', sublabel: 'User Management', icon: Users, roles: ['super_admin', 'master_admin'] },
+              { id: 'content-worker', label: 'Content', sublabel: 'Social Media', icon: Instagram, roles: ['super_admin', 'master_admin', 'content_manager'] },
+              { id: 'plans', label: 'Subscriptions', sublabel: 'Plans & Features', icon: Layers, roles: ['super_admin', 'master_admin', 'content_manager'] },
+              { id: 'reports', label: 'Finance', sublabel: 'Reports & Billing', icon: Receipt, roles: ['super_admin', 'master_admin'] },
+              { id: 'audit', label: 'Activity', sublabel: 'Audit Log', icon: FileText, roles: ['super_admin', 'master_admin'] }
+            ]
+            .filter(tab => !tab.roles || tab.roles.includes(user?.role))
+            .map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -2915,7 +2929,7 @@ const PlatformAdmin = () => {
 
         {/* Content Worker Tab */}
         {activeTab === 'content-worker' && (
-          <ContentWorker onBack={() => setActiveTab('overview')} />
+          <ContentWorker onBack={user?.role === 'content_manager' ? null : () => setActiveTab('overview')} />
         )}
 
         {/* Audit Log Tab */}

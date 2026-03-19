@@ -70,7 +70,7 @@ const TenantProtectedRoute = ({ children, adminOnly = false }) => {
   const { isAuthenticated, user, hasTenantContext, needsTenantSelection, activeTenant, loading } = useAuth();
 
   // Direct role checks to avoid function call timing issues
-  const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin';
+  const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager';
   const isTenantAdminUser = activeTenant?.role === 'admin' || activeTenant?.role === 'master_admin' || isPlatformAdminUser;
 
   if (loading) {
@@ -125,7 +125,7 @@ const PlatformProtectedRoute = ({ children }) => {
   }
 
   // Check if user is platform admin using direct role check
-  const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin';
+  const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager';
   
   if (!isPlatformAdminUser) {
     return <Navigate to="/" replace />;
@@ -156,7 +156,7 @@ const TenantRoutes = () => {
       }
 
       // Super Admins and Master Admins have access to ALL franchises
-      const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin';
+      const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager';
 
       // Try to find and select the tenant from user's memberships
       if (user?.memberships) {
@@ -201,7 +201,7 @@ const TenantRoutes = () => {
   }
 
   // Super Admins and Master Admins have access to ALL franchises
-  const isPlatformAdmin = user?.role === 'super_admin' || user?.role === 'master_admin';
+  const isPlatformAdmin = user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager';
   
   // Check if user has access - platform admins have universal access
   const hasAccess = isPlatformAdmin ||

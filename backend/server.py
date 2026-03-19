@@ -161,10 +161,10 @@ async def login(credentials: UserLogin, request: Request):
                     default_tenant_id = tenant["id"]
                     user_role = UserRole(membership["role"])
     
-    # Check for super/master admin from USER record (not memberships)
-    # Super admin role is stored directly on the user document
+    # Check for super/master admin or content manager from USER record (not memberships)
+    # These special roles are stored directly on the user document
     user_db_role = user.get("role")
-    if user_db_role in [UserRole.SUPER_ADMIN.value, UserRole.MASTER_ADMIN.value]:
+    if user_db_role in [UserRole.SUPER_ADMIN.value, UserRole.MASTER_ADMIN.value, UserRole.CONTENT_MANAGER.value]:
         user_role = UserRole(user_db_role)
     
     # Build token payload

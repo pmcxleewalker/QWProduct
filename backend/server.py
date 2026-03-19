@@ -5483,6 +5483,509 @@ async def delete_content_idea(idea_id: str, context: TenantContext = Depends(req
     return {"message": "Idea deleted"}
 
 
+# ==================== CONTENT IDEAS ENGINE ====================
+
+# Content idea bank - curated ideas specific to Quick Wing value propositions
+CONTENT_IDEAS_BANK = [
+    # Product Demo Category
+    {
+        "category": "product_demo",
+        "title": "60-Second Fleet Booking Demo",
+        "hook": "Watch how fast your team can book a vehicle",
+        "caption_starter": "No more calls. No more waiting. Quick Wing lets your team book a fleet vehicle in under 60 seconds.",
+        "cta": "See the full booking flow in action",
+        "target_audience": "Operations managers looking to streamline fleet access",
+        "reason": "Booking speed is a top decision factor for fleet software buyers",
+        "recommended_format": "reel",
+        "goals": ["reach", "product_awareness"],
+        "confidence": 92
+    },
+    {
+        "category": "product_demo",
+        "title": "Calendar View Walkthrough",
+        "hook": "Your entire fleet schedule in one view",
+        "caption_starter": "Daily, weekly, monthly - see exactly who has what vehicle and when. No more double bookings.",
+        "cta": "Discover organized fleet visibility",
+        "target_audience": "Fleet coordinators managing multiple vehicles",
+        "reason": "Calendar visibility is consistently requested in demos",
+        "recommended_format": "carousel",
+        "goals": ["product_awareness", "education"],
+        "confidence": 88
+    },
+    {
+        "category": "product_demo",
+        "title": "Mobile Booking in Action",
+        "hook": "Book a vehicle from anywhere",
+        "caption_starter": "Field teams need vehicles fast. Quick Wing works on any device - book, check availability, get confirmation.",
+        "cta": "Try mobile fleet booking",
+        "target_audience": "Field service teams and mobile workers",
+        "reason": "Mobile-first workflows are increasingly important",
+        "recommended_format": "reel",
+        "goals": ["reach", "engagement"],
+        "confidence": 85
+    },
+    
+    # Pain Point Category
+    {
+        "category": "pain_point",
+        "title": "The Spreadsheet Nightmare",
+        "hook": "Still tracking your fleet in Excel?",
+        "caption_starter": "Outdated data. Version conflicts. No real-time availability. There's a better way to manage your vehicles.",
+        "cta": "Upgrade from spreadsheets today",
+        "target_audience": "Businesses currently using manual fleet tracking",
+        "reason": "Spreadsheet pain is a common entry point for new customers",
+        "recommended_format": "carousel",
+        "goals": ["leads", "product_awareness"],
+        "confidence": 94
+    },
+    {
+        "category": "pain_point",
+        "title": "The Double Booking Problem",
+        "hook": "Two people. One vehicle. Zero fun.",
+        "caption_starter": "Double bookings cost time, money, and patience. Quick Wing shows real-time availability so this never happens.",
+        "cta": "Eliminate double bookings forever",
+        "target_audience": "Fleet managers dealing with booking conflicts",
+        "reason": "Double booking is the #1 pain point mentioned in sales calls",
+        "recommended_format": "reel",
+        "goals": ["engagement", "leads"],
+        "confidence": 96
+    },
+    {
+        "category": "pain_point",
+        "title": "The Admin Time Drain",
+        "hook": "How many hours does your admin spend on fleet queries?",
+        "caption_starter": "Checking availability. Confirming bookings. Chasing updates. Your admin team deserves automation.",
+        "cta": "Free up your admin time",
+        "target_audience": "Office managers and administrative staff",
+        "reason": "Admin efficiency resonates with decision makers",
+        "recommended_format": "single_image",
+        "goals": ["leads", "engagement"],
+        "confidence": 89
+    },
+    {
+        "category": "pain_point",
+        "title": "Where's the Vehicle?",
+        "hook": "Do you actually know where your fleet is right now?",
+        "caption_starter": "Missing vehicles. Unclear schedules. Frustrated teams. Get complete visibility with one dashboard.",
+        "cta": "Know where every vehicle is",
+        "target_audience": "Operations directors needing fleet oversight",
+        "reason": "Visibility concerns drive urgency in purchase decisions",
+        "recommended_format": "reel",
+        "goals": ["reach", "leads"],
+        "confidence": 87
+    },
+    
+    # Before/After Category
+    {
+        "category": "before_after",
+        "title": "Whiteboard vs Quick Wing",
+        "hook": "Fleet management: then vs now",
+        "caption_starter": "Before: Scribbled notes, erased bookings, constant confusion. After: Digital calendar, instant updates, total clarity.",
+        "cta": "Make the switch today",
+        "target_audience": "Small businesses using physical booking systems",
+        "reason": "Visual before/after content performs well on Instagram",
+        "recommended_format": "carousel",
+        "goals": ["engagement", "product_awareness"],
+        "confidence": 91
+    },
+    {
+        "category": "before_after",
+        "title": "Morning Chaos vs Morning Clarity",
+        "hook": "8:30 AM at most businesses vs 8:30 AM with Quick Wing",
+        "caption_starter": "Before: Frantic calls about vehicle availability. After: Everyone checks the app and just goes.",
+        "cta": "Start your mornings right",
+        "target_audience": "Teams with early morning fleet coordination",
+        "reason": "Relatable daily scenarios drive engagement",
+        "recommended_format": "reel",
+        "goals": ["reach", "engagement"],
+        "confidence": 86
+    },
+    {
+        "category": "before_after",
+        "title": "Compliance Stress vs Compliance Control",
+        "hook": "How we used to track NCT dates vs how we track them now",
+        "caption_starter": "Before: Sticky notes and calendar reminders. After: Automatic alerts 30 days before every deadline.",
+        "cta": "Never miss a compliance deadline",
+        "target_audience": "Fleet managers responsible for vehicle compliance",
+        "reason": "Compliance is a high-stakes topic that gets attention",
+        "recommended_format": "carousel",
+        "goals": ["education", "leads"],
+        "confidence": 90
+    },
+    
+    # Educational Category
+    {
+        "category": "educational",
+        "title": "5 Signs You've Outgrown Spreadsheets",
+        "hook": "Is your fleet tracking system holding you back?",
+        "caption_starter": "1. You've had double bookings. 2. Updates take hours. 3. Nobody trusts the data. 4. New staff can't figure it out. 5. You're losing time daily.",
+        "cta": "It's time to upgrade",
+        "target_audience": "Growing businesses with expanding fleets",
+        "reason": "Educational listicles perform well and establish authority",
+        "recommended_format": "carousel",
+        "goals": ["education", "leads"],
+        "confidence": 93
+    },
+    {
+        "category": "educational",
+        "title": "Fleet Booking Best Practices",
+        "hook": "3 rules every fleet manager should follow",
+        "caption_starter": "1. Book in advance when possible. 2. Always confirm return times. 3. Use a system that shows real-time availability.",
+        "cta": "Implement these today",
+        "target_audience": "New fleet managers and coordinators",
+        "reason": "Best practice content builds trust with potential customers",
+        "recommended_format": "carousel",
+        "goals": ["education", "engagement"],
+        "confidence": 84
+    },
+    {
+        "category": "educational",
+        "title": "What to Look for in Fleet Software",
+        "hook": "Choosing fleet management software? Check these boxes first.",
+        "caption_starter": "Real-time availability. Easy booking interface. Compliance tracking. Usage reports. Mobile access. These aren't nice-to-haves.",
+        "cta": "See how Quick Wing stacks up",
+        "target_audience": "Businesses evaluating fleet software options",
+        "reason": "Buyer's guide content captures decision-stage prospects",
+        "recommended_format": "carousel",
+        "goals": ["leads", "education"],
+        "confidence": 88
+    },
+    {
+        "category": "educational",
+        "title": "The True Cost of Manual Fleet Tracking",
+        "hook": "Free spreadsheets aren't actually free",
+        "caption_starter": "Admin hours. Booking errors. Compliance fines. Frustrated staff. The hidden costs add up faster than you think.",
+        "cta": "Calculate your real cost",
+        "target_audience": "Finance managers and business owners",
+        "reason": "Cost-focused content resonates with budget holders",
+        "recommended_format": "single_image",
+        "goals": ["leads", "education"],
+        "confidence": 85
+    },
+    
+    # Trust/Proof Category
+    {
+        "category": "trust_proof",
+        "title": "Customer Success Story",
+        "hook": "How [Customer] cut fleet admin time by 70%",
+        "caption_starter": "Before Quick Wing, their team spent hours on vehicle coordination. Now? It takes minutes. Here's what changed.",
+        "cta": "Read the full story",
+        "target_audience": "Skeptical prospects wanting proof",
+        "reason": "Customer stories are the most trusted content type",
+        "recommended_format": "carousel",
+        "goals": ["leads", "engagement"],
+        "confidence": 95
+    },
+    {
+        "category": "trust_proof",
+        "title": "Real Results: Booking Time Reduction",
+        "hook": "From 10 minutes to 30 seconds",
+        "caption_starter": "That's how much faster our customers book vehicles after switching to Quick Wing. Real data. Real impact.",
+        "cta": "Get these results for your team",
+        "target_audience": "Data-driven decision makers",
+        "reason": "Specific metrics build credibility",
+        "recommended_format": "single_image",
+        "goals": ["leads", "product_awareness"],
+        "confidence": 91
+    },
+    {
+        "category": "trust_proof",
+        "title": "Why Teams Choose Quick Wing",
+        "hook": "What our customers say about switching",
+        "caption_starter": "Easy to use. Finally organized. No more chaos. These are the words we hear most from teams who made the switch.",
+        "cta": "Join them today",
+        "target_audience": "Prospects in evaluation phase",
+        "reason": "Social proof reduces purchase anxiety",
+        "recommended_format": "carousel",
+        "goals": ["engagement", "leads"],
+        "confidence": 87
+    },
+    
+    # Feature Spotlight Category
+    {
+        "category": "feature_spotlight",
+        "title": "Compliance Alerts Deep Dive",
+        "hook": "Never miss an NCT, tax, or service date again",
+        "caption_starter": "Quick Wing tracks every compliance deadline and alerts you 30 days before. No spreadsheets. No sticky notes. Just automatic reminders.",
+        "cta": "Set up compliance tracking",
+        "target_audience": "Fleet managers worried about compliance",
+        "reason": "Compliance is a key differentiator and pain point",
+        "recommended_format": "reel",
+        "goals": ["product_awareness", "leads"],
+        "confidence": 92
+    },
+    {
+        "category": "feature_spotlight",
+        "title": "The Booking Calendar Explained",
+        "hook": "See your entire fleet at a glance",
+        "caption_starter": "Day view. Week view. Month view. Filter by vehicle. Filter by location. Quick Wing's calendar shows exactly what you need.",
+        "cta": "Explore the calendar",
+        "target_audience": "Visual thinkers who need clear interfaces",
+        "reason": "The calendar is our most-used and most-praised feature",
+        "recommended_format": "carousel",
+        "goals": ["product_awareness", "education"],
+        "confidence": 89
+    },
+    {
+        "category": "feature_spotlight",
+        "title": "Usage Reports That Actually Help",
+        "hook": "Which vehicles are overused? Underused? Now you'll know.",
+        "caption_starter": "Quick Wing's reports show booking patterns, utilization rates, and usage trends. Make decisions based on data, not guesses.",
+        "cta": "See your fleet data clearly",
+        "target_audience": "Managers who need to optimize fleet utilization",
+        "reason": "Reporting is a key upgrade driver",
+        "recommended_format": "carousel",
+        "goals": ["product_awareness", "leads"],
+        "confidence": 86
+    },
+    {
+        "category": "feature_spotlight",
+        "title": "Staff Permissions Done Right",
+        "hook": "Control who can book what",
+        "caption_starter": "Admins see everything. Staff see what they need. Quick Wing's permission system keeps things organized and secure.",
+        "cta": "Set up your team access",
+        "target_audience": "Organizations with multiple user roles",
+        "reason": "Permissions matter for larger organizations",
+        "recommended_format": "single_image",
+        "goals": ["product_awareness", "education"],
+        "confidence": 82
+    }
+]
+
+# Performance placeholders (structure for future real data)
+CATEGORY_PERFORMANCE = {
+    "product_demo": {"score": 85, "engagement_rate": 4.2, "posts_this_month": 3},
+    "pain_point": {"score": 92, "engagement_rate": 5.1, "posts_this_month": 4},
+    "before_after": {"score": 88, "engagement_rate": 4.8, "posts_this_month": 2},
+    "educational": {"score": 78, "engagement_rate": 3.5, "posts_this_month": 3},
+    "trust_proof": {"score": 95, "engagement_rate": 5.8, "posts_this_month": 1},
+    "feature_spotlight": {"score": 80, "engagement_rate": 3.9, "posts_this_month": 2}
+}
+
+FORMAT_PERFORMANCE = {
+    "reel": {"score": 94, "avg_reach": 2500, "engagement_rate": 5.2},
+    "carousel": {"score": 86, "avg_reach": 1800, "engagement_rate": 4.5},
+    "single_image": {"score": 72, "avg_reach": 1200, "engagement_rate": 3.2},
+    "story": {"score": 68, "avg_reach": 800, "engagement_rate": 2.8}
+}
+
+
+def generate_weekly_suggestions(goal: str = None, limit: int = 7) -> list:
+    """Generate balanced weekly content suggestions"""
+    import random
+    
+    # Filter by goal if specified
+    if goal:
+        ideas = [i for i in CONTENT_IDEAS_BANK if goal in i.get("goals", [])]
+    else:
+        ideas = CONTENT_IDEAS_BANK.copy()
+    
+    # Ensure category balance - aim for at least one from each category
+    categories = ["product_demo", "pain_point", "before_after", "educational", "trust_proof", "feature_spotlight"]
+    selected = []
+    
+    # First, pick one from each category (if available)
+    for cat in categories:
+        cat_ideas = [i for i in ideas if i["category"] == cat]
+        if cat_ideas and len(selected) < limit:
+            # Sort by confidence and pick top one
+            cat_ideas.sort(key=lambda x: x.get("confidence", 50), reverse=True)
+            selected.append(cat_ideas[0])
+    
+    # Fill remaining slots with highest confidence ideas not already selected
+    remaining = [i for i in ideas if i not in selected]
+    remaining.sort(key=lambda x: x.get("confidence", 50), reverse=True)
+    
+    while len(selected) < limit and remaining:
+        selected.append(remaining.pop(0))
+    
+    # Shuffle to avoid predictable order
+    random.shuffle(selected)
+    
+    # Add unique IDs and status
+    for i, idea in enumerate(selected):
+        idea = idea.copy()
+        idea["id"] = f"suggestion_{uuid.uuid4().hex[:8]}"
+        idea["status"] = "suggested"
+        idea["week_position"] = i + 1
+        selected[i] = idea
+    
+    return selected[:limit]
+
+
+@api_router.get("/content-worker/ideas/suggestions")
+async def get_weekly_suggestions(
+    goal: Optional[str] = None,
+    limit: int = 7,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Get AI-suggested content ideas for the week"""
+    suggestions = generate_weekly_suggestions(goal, limit)
+    
+    return {
+        "suggestions": suggestions,
+        "total": len(suggestions),
+        "goal_filter": goal,
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@api_router.get("/content-worker/ideas/performance")
+async def get_content_performance(
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Get category and format performance metrics (placeholder for future analytics)"""
+    
+    # Calculate posts per category from actual drafts
+    category_counts = {}
+    format_counts = {}
+    
+    async for draft in db.content_drafts.find({"status": {"$in": ["approved", "posted"]}}, {"_id": 0, "post_type": 1, "format_type": 1}):
+        cat = draft.get("post_type", "unknown")
+        fmt = draft.get("format_type", "unknown")
+        category_counts[cat] = category_counts.get(cat, 0) + 1
+        format_counts[fmt] = format_counts.get(fmt, 0) + 1
+    
+    # Merge with placeholder performance data
+    categories = []
+    for cat, data in CATEGORY_PERFORMANCE.items():
+        categories.append({
+            "id": cat,
+            "name": cat.replace("_", " ").title(),
+            "score": data["score"],
+            "engagement_rate": data["engagement_rate"],
+            "posts_count": category_counts.get(cat, data["posts_this_month"]),
+            "trend": "up" if data["score"] > 80 else "stable"
+        })
+    
+    formats = []
+    for fmt, data in FORMAT_PERFORMANCE.items():
+        formats.append({
+            "id": fmt,
+            "name": fmt.replace("_", " ").title(),
+            "score": data["score"],
+            "avg_reach": data["avg_reach"],
+            "engagement_rate": data["engagement_rate"],
+            "posts_count": format_counts.get(fmt, 0),
+            "trend": "up" if data["score"] > 85 else "stable"
+        })
+    
+    # Sort by score
+    categories.sort(key=lambda x: x["score"], reverse=True)
+    formats.sort(key=lambda x: x["score"], reverse=True)
+    
+    return {
+        "categories": categories,
+        "formats": formats,
+        "note": "Performance data is currently based on industry benchmarks. Real analytics will be integrated when Instagram API is connected."
+    }
+
+
+class CreateIdeaFromSuggestion(BaseModel):
+    """Create a content idea from a suggestion"""
+    title: str
+    category: str
+    recommended_format: str
+    hook: Optional[str] = None
+    caption_starter: Optional[str] = None
+    cta: Optional[str] = None
+    target_audience: Optional[str] = None
+    reason_for_recommendation: Optional[str] = None
+    confidence_score: Optional[int] = None
+    goal: Optional[str] = None
+
+
+@api_router.post("/content-worker/ideas/from-suggestion")
+async def create_idea_from_suggestion(
+    idea_data: CreateIdeaFromSuggestion,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Save a suggestion as a content idea"""
+    idea_doc = {
+        "id": str(uuid.uuid4()),
+        "title": idea_data.title,
+        "category": idea_data.category,
+        "recommended_format": idea_data.recommended_format,
+        "hook": idea_data.hook,
+        "caption_starter": idea_data.caption_starter,
+        "cta": idea_data.cta,
+        "target_audience": idea_data.target_audience,
+        "reason_for_recommendation": idea_data.reason_for_recommendation,
+        "confidence_score": idea_data.confidence_score,
+        "goal": idea_data.goal,
+        "status": "saved",
+        "created_by": context.user_email,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.content_ideas.insert_one(idea_doc)
+    
+    return {
+        "message": "Idea saved",
+        "idea": {k: v for k, v in idea_doc.items() if k != "_id"}
+    }
+
+
+@api_router.post("/content-worker/ideas/{idea_id}/create-draft")
+async def create_draft_from_idea(
+    idea_id: str,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Create a content draft from an idea"""
+    
+    # Check if it's a saved idea in DB
+    idea = await db.content_ideas.find_one({"id": idea_id}, {"_id": 0})
+    
+    if not idea:
+        # Check if it's a suggestion ID (starts with suggestion_)
+        if idea_id.startswith("suggestion_"):
+            return {"error": "Please save the suggestion first before creating a draft"}
+        raise HTTPException(status_code=404, detail="Idea not found")
+    
+    # Create draft from idea
+    draft_id = str(uuid.uuid4())
+    
+    # Generate captions based on idea
+    captions = generate_captions(idea.get("category", "product_demo"), idea.get("goal", "operational_clarity"))
+    
+    draft_doc = {
+        "id": draft_id,
+        "asset_id": None,  # No asset yet
+        "post_title": idea.get("title", "Untitled Post"),
+        "post_type": idea.get("category", "product_demo"),
+        "format_type": idea.get("recommended_format", "reel"),
+        "content_focus": idea.get("goal", "operational_clarity"),
+        "hook": idea.get("hook"),
+        "cta": idea.get("cta"),
+        "caption_option_1": idea.get("caption_starter"),
+        "generated_captions": captions,
+        "selected_caption_index": 0,
+        "selected_caption": f"{idea.get('hook', '')}\n\n{idea.get('caption_starter', '')}\n\n{idea.get('cta', '')}",
+        "hashtags": "#FleetManagement #QuickWing #BusinessEfficiency",
+        "notes": f"Created from idea: {idea.get('title')}\nTarget audience: {idea.get('target_audience', 'N/A')}\nReason: {idea.get('reason_for_recommendation', 'N/A')}",
+        "from_idea_id": idea_id,
+        "status": "draft",
+        "privacy_reviewed": False,
+        "created_by": context.user_email,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.content_drafts.insert_one(draft_doc)
+    
+    # Update idea status
+    await db.content_ideas.update_one(
+        {"id": idea_id},
+        {"$set": {"status": "draft_created", "draft_id": draft_id}}
+    )
+    
+    return {
+        "message": "Draft created from idea",
+        "draft_id": draft_id,
+        "draft": {k: v for k, v in draft_doc.items() if k != "_id"}
+    }
+
+
 # ==================== CONTENT WORKER - EXTENDED WORKFLOW ====================
 
 import pytesseract

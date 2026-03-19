@@ -9,7 +9,7 @@ import AssetManager from './AssetManager';
 import NewPostWorkflow from './NewPostWorkflow';
 import ReviewQueue from './ReviewQueue';
 import PostedContent from './PostedContent';
-import ContentIdeas from './ContentIdeas';
+import ContentIdeasEngine from './ContentIdeasEngine';
 import ContentSettings from './ContentSettings';
 
 const NAVIGATION_ITEMS = [
@@ -59,7 +59,7 @@ const ContentWorker = ({ onBack }) => {
       case 'posted':
         return <PostedContent onNavigate={handleNavigate} />;
       case 'ideas':
-        return <ContentIdeas onNavigate={handleNavigate} />;
+        return <ContentIdeasEngine onNavigate={handleNavigate} />;
       case 'settings':
         return <ContentSettings onNavigate={handleNavigate} />;
       default:

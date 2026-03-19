@@ -686,3 +686,72 @@ The platform now uses a 3-tier subscription model:
 - pytesseract==0.3.13 (OCR)
 - opencv-python-headless==4.13.0.92 (Frame extraction)
 - tesseract-ocr (System package)
+
+### March 19, 2026 - Content Ideas Engine ✅
+**Built comprehensive content suggestion system:**
+
+**Features Implemented:**
+
+1. **Suggested This Week** (5-7 ideas):
+   - Balanced across 6 content categories
+   - Each idea includes: title, category, format, hook, caption starter, CTA, target audience, recommendation reason, confidence score
+   - Ranked by confidence score (70-96%)
+   - Category-balanced for variety
+
+2. **Content Goal Selector** - 5 priorities:
+   - Reach (maximize visibility)
+   - Engagement (drive interactions)
+   - Leads (generate enquiries)
+   - Education (build authority)
+   - Product Awareness (showcase features)
+   - Ideas filter based on selected goal
+
+3. **Top Performing Categories** (ranked):
+   - Trust/Proof (95 score, 5.8% engagement)
+   - Pain Point (92 score, 5.1% engagement)
+   - Before/After (88 score, 4.8% engagement)
+   - Product Demo (85 score, 4.2% engagement)
+   - Feature Spotlight (80 score, 3.9% engagement)
+   - Educational (78 score, 3.5% engagement)
+
+4. **Top Performing Formats** (ranked):
+   - Reel (94 score, ~2,500 reach)
+   - Carousel (86 score, ~1,800 reach)
+   - Single Image (72 score, ~1,200 reach)
+   - Story (68 score, ~800 reach)
+
+5. **Create Draft from Idea**:
+   - One-click draft creation
+   - Auto-fills: title, hook, caption starter, CTA, category, format
+   - Generates 3 caption options
+   - Links draft to source idea
+
+6. **Saved Ideas Library**:
+   - Save suggestions for later
+   - Filter by category and format
+   - Status tracking (saved, draft_created)
+   - Delete functionality
+
+7. **24 Pre-Built Content Ideas** covering:
+   - Easy vehicle booking
+   - Calendar management
+   - Compliance tracking
+   - Admin chaos reduction
+   - Team/manager visibility
+   - Time saving
+   - Spreadsheet replacement
+
+**New API Endpoints:**
+- `GET /api/content-worker/ideas/suggestions` - Get weekly suggestions (optional goal filter)
+- `GET /api/content-worker/ideas/performance` - Category & format performance metrics
+- `POST /api/content-worker/ideas/from-suggestion` - Save suggestion to library
+- `POST /api/content-worker/ideas/{id}/create-draft` - Create draft from idea
+
+**New Frontend Component:**
+- `/app/frontend/src/components/ContentWorker/ContentIdeasEngine.js`
+
+**Quality Rules Applied:**
+- All ideas specific to Quick Wing value propositions
+- No generic filler or irrelevant lifestyle content
+- Professional, actionable recommendations
+- Clear confidence scores and reasoning

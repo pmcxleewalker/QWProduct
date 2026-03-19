@@ -4739,10 +4739,6 @@ async def initialize_super_admin():
     }
 
 
-# Include router
-app.include_router(api_router)
-
-
 # Startup event
 @app.on_event("startup")
 async def startup():
@@ -4931,7 +4927,7 @@ class ContentIdeaCreate(BaseModel):
 
 # Content Worker - Dashboard Stats
 @api_router.get("/content-worker/stats")
-async def get_content_worker_stats(user: dict = Depends(require_super_admin)):
+async def get_content_worker_stats(context: TenantContext = Depends(require_super_admin)):
     """Get content worker dashboard statistics"""
     drafts = await db.content_drafts.count_documents({})
     in_review = await db.content_drafts.count_documents({"status": "review"})
@@ -4973,7 +4969,7 @@ async def get_content_worker_stats(user: dict = Depends(require_super_admin)):
 async def get_content_assets(
     limit: int = 50,
     skip: int = 0,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Get all content assets"""
     assets = await db.content_assets.find(
@@ -4986,7 +4982,7 @@ async def get_content_assets(
 @api_router.post("/content-worker/assets")
 async def create_content_asset(
     asset: ContentAssetCreate,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Create a new content asset"""
     asset_doc = {
@@ -4996,7 +4992,7 @@ async def create_content_asset(
         "original_file_url": asset.original_file_url,
         "processed_file_url": None,
         "thumbnail_url": asset.thumbnail_url,
-        "uploaded_by": user.get("email"),
+        "uploaded_by": context.user_email,
         "notes": asset.notes,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -5008,7 +5004,7 @@ async def create_content_asset(
 async def upload_content_asset(
     file: UploadFile = File(...),
     title: str = "",
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Upload a content asset file"""
     # Create content uploads directory
@@ -5044,7 +5040,7 @@ async def upload_content_asset(
         "original_file_url": file_url,
         "processed_file_url": None,
         "thumbnail_url": file_url if file_type == "image" else None,
-        "uploaded_by": user.get("email"),
+        "uploaded_by": context.user_email,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.content_assets.insert_one(asset_doc)
@@ -5062,7 +5058,7 @@ async def get_content_file(filename: str):
 
 
 @api_router.delete("/content-worker/assets/{asset_id}")
-async def delete_content_asset(asset_id: str, user: dict = Depends(require_super_admin)):
+async def delete_content_asset(asset_id: str, context: TenantContext = Depends(require_super_admin)):
     """Delete a content asset"""
     result = await db.content_assets.delete_one({"id": asset_id})
     if result.deleted_count == 0:
@@ -5079,7 +5075,7 @@ async def get_content_drafts(
     status: Optional[str] = None,
     limit: int = 50,
     skip: int = 0,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Get content drafts with optional status filter"""
     query = {}
@@ -5099,7 +5095,7 @@ async def get_content_drafts(
 
 
 @api_router.get("/content-worker/drafts/{draft_id}")
-async def get_content_draft(draft_id: str, user: dict = Depends(require_super_admin)):
+async def get_content_draft(draft_id: str, context: TenantContext = Depends(require_super_admin)):
     """Get a specific content draft"""
     draft = await db.content_drafts.find_one({"id": draft_id}, {"_id": 0})
     if not draft:
@@ -5118,7 +5114,7 @@ async def get_content_draft(draft_id: str, user: dict = Depends(require_super_ad
 @api_router.post("/content-worker/drafts")
 async def create_content_draft(
     draft: ContentDraftCreate,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Create a new content draft"""
     # Verify asset exists
@@ -5143,7 +5139,7 @@ async def create_content_draft(
         "scheduled_at": draft.scheduled_at,
         "approved_by": None,
         "notes": draft.notes,
-        "created_by": user.get("email"),
+        "created_by": context.user_email,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
@@ -5155,7 +5151,7 @@ async def create_content_draft(
 async def update_content_draft(
     draft_id: str,
     update: ContentDraftUpdate,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Update a content draft"""
     draft = await db.content_drafts.find_one({"id": draft_id})
@@ -5167,7 +5163,7 @@ async def update_content_draft(
     
     # Track approval
     if update.status == "approved":
-        update_data["approved_by"] = user.get("email")
+        update_data["approved_by"] = context.user_email
     
     await db.content_drafts.update_one({"id": draft_id}, {"$set": update_data})
     
@@ -5176,7 +5172,7 @@ async def update_content_draft(
 
 
 @api_router.post("/content-worker/drafts/{draft_id}/submit-review")
-async def submit_draft_for_review(draft_id: str, user: dict = Depends(require_super_admin)):
+async def submit_draft_for_review(draft_id: str, context: TenantContext = Depends(require_super_admin)):
     """Submit a draft for review"""
     result = await db.content_drafts.update_one(
         {"id": draft_id},
@@ -5188,13 +5184,13 @@ async def submit_draft_for_review(draft_id: str, user: dict = Depends(require_su
 
 
 @api_router.post("/content-worker/drafts/{draft_id}/approve")
-async def approve_draft(draft_id: str, user: dict = Depends(require_super_admin)):
+async def approve_draft(draft_id: str, context: TenantContext = Depends(require_super_admin)):
     """Approve a draft"""
     result = await db.content_drafts.update_one(
         {"id": draft_id},
         {"$set": {
             "status": "approved",
-            "approved_by": user.get("email"),
+            "approved_by": context.user_email,
             "updated_at": datetime.now(timezone.utc).isoformat()
         }}
     )
@@ -5207,7 +5203,7 @@ async def approve_draft(draft_id: str, user: dict = Depends(require_super_admin)
 async def reject_draft(
     draft_id: str,
     notes: Optional[str] = None,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Reject a draft"""
     update_data = {
@@ -5224,7 +5220,7 @@ async def reject_draft(
 
 
 @api_router.delete("/content-worker/drafts/{draft_id}")
-async def delete_content_draft(draft_id: str, user: dict = Depends(require_super_admin)):
+async def delete_content_draft(draft_id: str, context: TenantContext = Depends(require_super_admin)):
     """Delete a content draft"""
     result = await db.content_drafts.delete_one({"id": draft_id})
     if result.deleted_count == 0:
@@ -5234,7 +5230,7 @@ async def delete_content_draft(draft_id: str, user: dict = Depends(require_super
 
 # Privacy Flags
 @api_router.get("/content-worker/assets/{asset_id}/privacy-flags")
-async def get_privacy_flags(asset_id: str, user: dict = Depends(require_super_admin)):
+async def get_privacy_flags(asset_id: str, context: TenantContext = Depends(require_super_admin)):
     """Get privacy flags for an asset"""
     flags = await db.privacy_flags.find({"asset_id": asset_id}, {"_id": 0}).to_list(100)
     return {"flags": flags}
@@ -5243,7 +5239,7 @@ async def get_privacy_flags(asset_id: str, user: dict = Depends(require_super_ad
 @api_router.post("/content-worker/privacy-flags")
 async def create_privacy_flag(
     flag: PrivacyFlagCreate,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Create a privacy flag"""
     flag_doc = {
@@ -5272,10 +5268,10 @@ async def update_privacy_flag(
     width: Optional[float] = None,
     height: Optional[float] = None,
     blur_applied: Optional[bool] = None,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Update a privacy flag"""
-    update_data = {"manually_adjusted": True, "reviewed_by": user.get("email")}
+    update_data = {"manually_adjusted": True, "reviewed_by": context.user_email}
     if x_position is not None:
         update_data["x_position"] = x_position
     if y_position is not None:
@@ -5294,7 +5290,7 @@ async def update_privacy_flag(
 
 
 @api_router.delete("/content-worker/privacy-flags/{flag_id}")
-async def delete_privacy_flag(flag_id: str, user: dict = Depends(require_super_admin)):
+async def delete_privacy_flag(flag_id: str, context: TenantContext = Depends(require_super_admin)):
     """Delete a privacy flag"""
     result = await db.privacy_flags.delete_one({"id": flag_id})
     if result.deleted_count == 0:
@@ -5304,7 +5300,7 @@ async def delete_privacy_flag(flag_id: str, user: dict = Depends(require_super_a
 
 # Post Templates
 @api_router.get("/content-worker/templates")
-async def get_post_templates(user: dict = Depends(require_super_admin)):
+async def get_post_templates(context: TenantContext = Depends(require_super_admin)):
     """Get all post templates"""
     templates = await db.post_templates.find({}, {"_id": 0}).to_list(100)
     return {"templates": templates}
@@ -5313,7 +5309,7 @@ async def get_post_templates(user: dict = Depends(require_super_admin)):
 @api_router.post("/content-worker/templates")
 async def create_post_template(
     template: PostTemplateCreate,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Create a post template"""
     template_doc = {
@@ -5323,7 +5319,7 @@ async def create_post_template(
         "brand_style": template.brand_style,
         "logo_position": template.logo_position,
         "active": template.active,
-        "created_by": user.get("email"),
+        "created_by": context.user_email,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.post_templates.insert_one(template_doc)
@@ -5338,7 +5334,7 @@ async def update_post_template(
     brand_style: Optional[str] = None,
     logo_position: Optional[str] = None,
     active: Optional[bool] = None,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Update a post template"""
     update_data = {}
@@ -5363,7 +5359,7 @@ async def update_post_template(
 
 
 @api_router.delete("/content-worker/templates/{template_id}")
-async def delete_post_template(template_id: str, user: dict = Depends(require_super_admin)):
+async def delete_post_template(template_id: str, context: TenantContext = Depends(require_super_admin)):
     """Delete a post template"""
     result = await db.post_templates.delete_one({"id": template_id})
     if result.deleted_count == 0:
@@ -5373,7 +5369,7 @@ async def delete_post_template(template_id: str, user: dict = Depends(require_su
 
 # Instagram Settings (placeholder)
 @api_router.get("/content-worker/instagram-settings")
-async def get_instagram_settings(user: dict = Depends(require_super_admin)):
+async def get_instagram_settings(context: TenantContext = Depends(require_super_admin)):
     """Get Instagram settings"""
     settings = await db.instagram_settings.find_one({}, {"_id": 0})
     if not settings:
@@ -5392,7 +5388,7 @@ async def get_instagram_settings(user: dict = Depends(require_super_admin)):
 @api_router.put("/content-worker/instagram-settings")
 async def update_instagram_settings(
     account_name: Optional[str] = None,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Update Instagram settings (placeholder)"""
     settings = await db.instagram_settings.find_one({})
@@ -5420,7 +5416,7 @@ async def get_content_ideas(
     status: Optional[str] = None,
     category: Optional[str] = None,
     limit: int = 50,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Get content ideas"""
     query = {}
@@ -5436,7 +5432,7 @@ async def get_content_ideas(
 @api_router.post("/content-worker/ideas")
 async def create_content_idea(
     idea: ContentIdeaCreate,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Create a content idea"""
     idea_doc = {
@@ -5451,7 +5447,7 @@ async def create_content_idea(
         "reason_for_recommendation": idea.reason_for_recommendation,
         "confidence_score": idea.confidence_score,
         "status": "new",
-        "created_by": user.get("email"),
+        "created_by": context.user_email,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.content_ideas.insert_one(idea_doc)
@@ -5462,7 +5458,7 @@ async def create_content_idea(
 async def update_content_idea(
     idea_id: str,
     status: Optional[str] = None,
-    user: dict = Depends(require_super_admin)
+    context: TenantContext = Depends(require_super_admin)
 ):
     """Update a content idea status"""
     update_data = {}
@@ -5479,12 +5475,16 @@ async def update_content_idea(
 
 
 @api_router.delete("/content-worker/ideas/{idea_id}")
-async def delete_content_idea(idea_id: str, user: dict = Depends(require_super_admin)):
+async def delete_content_idea(idea_id: str, context: TenantContext = Depends(require_super_admin)):
     """Delete a content idea"""
     result = await db.content_ideas.delete_one({"id": idea_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Idea not found")
     return {"message": "Idea deleted"}
+
+
+# Include router - MUST be after all routes are defined
+app.include_router(api_router)
 
 
 @app.on_event("shutdown")

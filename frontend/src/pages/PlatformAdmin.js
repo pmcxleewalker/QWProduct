@@ -9,8 +9,9 @@ import {
   Activity, DollarSign, Clock, CheckCircle, XCircle, Check,
   FileText, Settings, RefreshCw, LogOut, Trash2, Key,
   Receipt, Download, Send, Edit2, UserPlus, UserMinus,
-  Globe, Copy, Layers, Star, Zap, ArrowRight
+  Globe, Copy, Layers, Star, Zap, ArrowRight, Instagram
 } from 'lucide-react';
+import ContentWorker from '../components/ContentWorker';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -607,6 +608,7 @@ const PlatformAdmin = () => {
               { id: 'overview', label: 'Dashboard', sublabel: 'Platform Overview', icon: Activity },
               { id: 'tenants', label: 'Franchises', sublabel: 'Manage Tenants', icon: Building2 },
               { id: 'users', label: 'Team', sublabel: 'User Management', icon: Users },
+              { id: 'content-worker', label: 'Content', sublabel: 'Social Media', icon: Instagram },
               { id: 'plans', label: 'Subscriptions', sublabel: 'Plans & Features', icon: Layers },
               { id: 'reports', label: 'Finance', sublabel: 'Reports & Billing', icon: Receipt },
               { id: 'audit', label: 'Activity', sublabel: 'Audit Log', icon: FileText }
@@ -2909,6 +2911,11 @@ const PlatformAdmin = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Content Worker Tab */}
+        {activeTab === 'content-worker' && (
+          <ContentWorker onBack={() => setActiveTab('overview')} />
         )}
 
         {/* Audit Log Tab */}

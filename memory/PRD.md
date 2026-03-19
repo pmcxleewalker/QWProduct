@@ -858,3 +858,20 @@ The platform now uses a 3-tier subscription model:
 **Also Created (file system):**
 - `/app/docs/CONTENT_WORKER_TRAINING_GUIDE.md` - Full markdown guide
 - `/app/docs/CONTENT_WORKER_QUICK_START.md` - Quick reference guide
+
+### March 19, 2026 - Mobile Responsiveness ✅
+**Made Content Worker fully mobile-friendly for social media managers:**
+
+**Mobile Features:**
+1. **Full-Screen Mode**: On mobile, the parent Franchise Command Centre header and navigation are hidden, giving Content Worker full screen space
+2. **Sticky Header**: Compact header with back button, title, and hamburger menu
+3. **Dropdown Navigation**: Current tab indicator with full navigation dropdown
+4. **Bottom Navigation Bar**: Quick access to Home, Create, Review, Posted, Stats
+5. **Responsive Dashboard**: 2-column stat grid, smaller fonts, compact spacing
+6. **Responsive Workflow**: Horizontal scroll for workflow steps
+7. **Touch-Friendly**: Larger tap targets, appropriate spacing
+
+**Files Updated:**
+- `/app/frontend/src/components/ContentWorker/index.js` - Mobile navigation, bottom nav bar, dropdown menu
+- `/app/frontend/src/components/ContentWorker/ContentDashboard.js` - Responsive grid and spacing
+- `/app/frontend/src/pages/PlatformAdmin.js` - Hide header/nav on mobile when Content Worker active

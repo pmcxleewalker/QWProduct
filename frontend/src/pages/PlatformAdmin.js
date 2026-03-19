@@ -555,8 +555,8 @@ const PlatformAdmin = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
+      {/* Header - Hide on mobile when Content Worker is active */}
+      <div className={`bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white ${activeTab === 'content-worker' ? 'hidden md:block' : ''}`}>
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -599,11 +599,11 @@ const PlatformAdmin = () => {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b sticky top-0 z-10">
+      {/* Navigation Tabs - Hide on mobile when Content Worker is active */}
+      <div className={`bg-white border-b sticky top-0 z-10 ${activeTab === 'content-worker' ? 'hidden md:block' : ''}`}>
         <div className="max-w-7xl mx-auto px-4">
           {/* Main Tabs */}
-          <div className="flex space-x-1 py-2">
+          <div className="flex space-x-1 py-2 overflow-x-auto">
             {[
               { id: 'overview', label: 'Dashboard', sublabel: 'Platform Overview', icon: Activity },
               { id: 'tenants', label: 'Franchises', sublabel: 'Manage Tenants', icon: Building2 },
@@ -637,7 +637,7 @@ const PlatformAdmin = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className={`max-w-7xl mx-auto ${activeTab === 'content-worker' ? 'px-0 py-0 md:px-4 md:py-6' : 'px-4 py-6'}`}>
         {/* Messages */}
         {error && (
           <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center text-red-700">

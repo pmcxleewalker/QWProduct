@@ -4852,6 +4852,641 @@ async def seed_super_admin():
         logger.error(f"Error seeding super admin: {e}")
 
 
+# ==================== QUICK WING CONTENT WORKER ====================
+
+class ContentAssetCreate(BaseModel):
+    """Create a new content asset"""
+    title: str
+    file_type: str  # image, video
+    original_file_url: str
+    thumbnail_url: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class ContentDraftCreate(BaseModel):
+    """Create a content draft"""
+    asset_id: str
+    post_title: str
+    post_type: str  # product_demo, pain_point, before_after, educational, trust_proof, feature_spotlight
+    format_type: str  # reel, carousel, single_image, story
+    caption_option_1: Optional[str] = None
+    caption_option_2: Optional[str] = None
+    caption_option_3: Optional[str] = None
+    selected_caption: Optional[str] = None
+    hook: Optional[str] = None
+    cta: Optional[str] = None
+    hashtags: Optional[str] = None
+    notes: Optional[str] = None
+    scheduled_at: Optional[str] = None
+
+
+class ContentDraftUpdate(BaseModel):
+    """Update a content draft"""
+    post_title: Optional[str] = None
+    caption_option_1: Optional[str] = None
+    caption_option_2: Optional[str] = None
+    caption_option_3: Optional[str] = None
+    selected_caption: Optional[str] = None
+    hook: Optional[str] = None
+    cta: Optional[str] = None
+    hashtags: Optional[str] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    scheduled_at: Optional[str] = None
+
+
+class PrivacyFlagCreate(BaseModel):
+    """Create a privacy flag for an asset"""
+    asset_id: str
+    flag_type: str  # face, name, email, phone, address, license_plate, other
+    detected_text: Optional[str] = None
+    x_position: float
+    y_position: float
+    width: float
+    height: float
+    blur_applied: bool = False
+
+
+class PostTemplateCreate(BaseModel):
+    """Create a post template"""
+    template_name: str
+    format_type: str
+    brand_style: Optional[str] = None
+    logo_position: Optional[str] = None
+    active: bool = True
+
+
+class ContentIdeaCreate(BaseModel):
+    """Create a content idea"""
+    title: str
+    category: str
+    recommended_format: Optional[str] = None
+    hook: Optional[str] = None
+    caption_starter: Optional[str] = None
+    cta: Optional[str] = None
+    target_audience: Optional[str] = None
+    reason_for_recommendation: Optional[str] = None
+    confidence_score: Optional[float] = None
+
+
+# Content Worker - Dashboard Stats
+@api_router.get("/content-worker/stats")
+async def get_content_worker_stats(user: dict = Depends(require_super_admin)):
+    """Get content worker dashboard statistics"""
+    drafts = await db.content_drafts.count_documents({})
+    in_review = await db.content_drafts.count_documents({"status": "review"})
+    approved = await db.content_drafts.count_documents({"status": "approved"})
+    scheduled = await db.content_drafts.count_documents({"status": "scheduled"})
+    posted = await db.content_drafts.count_documents({"status": "posted"})
+    rejected = await db.content_drafts.count_documents({"status": "rejected"})
+    assets = await db.content_assets.count_documents({})
+    ideas = await db.content_ideas.count_documents({})
+    
+    # Recent uploads
+    recent_assets = await db.content_assets.find(
+        {}, {"_id": 0}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    # Recent ideas
+    recent_ideas = await db.content_ideas.find(
+        {}, {"_id": 0}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    return {
+        "stats": {
+            "total_drafts": drafts,
+            "in_review": in_review,
+            "approved": approved,
+            "scheduled": scheduled,
+            "posted": posted,
+            "rejected": rejected,
+            "total_assets": assets,
+            "total_ideas": ideas
+        },
+        "recent_assets": recent_assets,
+        "recent_ideas": recent_ideas
+    }
+
+
+# Content Assets
+@api_router.get("/content-worker/assets")
+async def get_content_assets(
+    limit: int = 50,
+    skip: int = 0,
+    user: dict = Depends(require_super_admin)
+):
+    """Get all content assets"""
+    assets = await db.content_assets.find(
+        {}, {"_id": 0}
+    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.content_assets.count_documents({})
+    return {"assets": assets, "total": total}
+
+
+@api_router.post("/content-worker/assets")
+async def create_content_asset(
+    asset: ContentAssetCreate,
+    user: dict = Depends(require_super_admin)
+):
+    """Create a new content asset"""
+    asset_doc = {
+        "id": str(uuid.uuid4()),
+        "title": asset.title,
+        "file_type": asset.file_type,
+        "original_file_url": asset.original_file_url,
+        "processed_file_url": None,
+        "thumbnail_url": asset.thumbnail_url,
+        "uploaded_by": user.get("email"),
+        "notes": asset.notes,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.content_assets.insert_one(asset_doc)
+    return {"message": "Asset created", "asset": {k: v for k, v in asset_doc.items() if k != "_id"}}
+
+
+@api_router.post("/content-worker/assets/upload")
+async def upload_content_asset(
+    file: UploadFile = File(...),
+    title: str = "",
+    user: dict = Depends(require_super_admin)
+):
+    """Upload a content asset file"""
+    # Create content uploads directory
+    content_uploads = ROOT_DIR / "uploads" / "content"
+    content_uploads.mkdir(parents=True, exist_ok=True)
+    
+    # Validate file type
+    allowed_types = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif", "video/mp4", "video/quicktime", "video/webm"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid file type. Allowed: PNG, JPG, WEBP, GIF, MP4, MOV, WEBM")
+    
+    # Read and save file
+    contents = await file.read()
+    if len(contents) > 100 * 1024 * 1024:  # 100MB limit
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 100MB")
+    
+    ext = file.filename.split('.')[-1] if '.' in file.filename else 'png'
+    filename = f"content_{uuid.uuid4().hex[:8]}.{ext}"
+    filepath = content_uploads / filename
+    
+    with open(filepath, "wb") as f:
+        f.write(contents)
+    
+    base_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
+    file_url = f"{base_url}/api/content-worker/files/{filename}"
+    
+    file_type = "video" if file.content_type.startswith("video") else "image"
+    
+    asset_doc = {
+        "id": str(uuid.uuid4()),
+        "title": title or file.filename,
+        "file_type": file_type,
+        "original_file_url": file_url,
+        "processed_file_url": None,
+        "thumbnail_url": file_url if file_type == "image" else None,
+        "uploaded_by": user.get("email"),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.content_assets.insert_one(asset_doc)
+    
+    return {"message": "Asset uploaded", "asset": {k: v for k, v in asset_doc.items() if k != "_id"}}
+
+
+@api_router.get("/content-worker/files/{filename}")
+async def get_content_file(filename: str):
+    """Serve content files"""
+    filepath = ROOT_DIR / "uploads" / "content" / filename
+    if not filepath.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(filepath)
+
+
+@api_router.delete("/content-worker/assets/{asset_id}")
+async def delete_content_asset(asset_id: str, user: dict = Depends(require_super_admin)):
+    """Delete a content asset"""
+    result = await db.content_assets.delete_one({"id": asset_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    # Also delete related drafts and privacy flags
+    await db.content_drafts.delete_many({"asset_id": asset_id})
+    await db.privacy_flags.delete_many({"asset_id": asset_id})
+    return {"message": "Asset deleted"}
+
+
+# Content Drafts
+@api_router.get("/content-worker/drafts")
+async def get_content_drafts(
+    status: Optional[str] = None,
+    limit: int = 50,
+    skip: int = 0,
+    user: dict = Depends(require_super_admin)
+):
+    """Get content drafts with optional status filter"""
+    query = {}
+    if status:
+        query["status"] = status
+    drafts = await db.content_drafts.find(
+        query, {"_id": 0}
+    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.content_drafts.count_documents(query)
+    
+    # Enrich with asset data
+    for draft in drafts:
+        asset = await db.content_assets.find_one({"id": draft.get("asset_id")}, {"_id": 0})
+        draft["asset"] = asset
+    
+    return {"drafts": drafts, "total": total}
+
+
+@api_router.get("/content-worker/drafts/{draft_id}")
+async def get_content_draft(draft_id: str, user: dict = Depends(require_super_admin)):
+    """Get a specific content draft"""
+    draft = await db.content_drafts.find_one({"id": draft_id}, {"_id": 0})
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    asset = await db.content_assets.find_one({"id": draft.get("asset_id")}, {"_id": 0})
+    draft["asset"] = asset
+    
+    # Get privacy flags for the asset
+    flags = await db.privacy_flags.find({"asset_id": draft.get("asset_id")}, {"_id": 0}).to_list(100)
+    draft["privacy_flags"] = flags
+    
+    return draft
+
+
+@api_router.post("/content-worker/drafts")
+async def create_content_draft(
+    draft: ContentDraftCreate,
+    user: dict = Depends(require_super_admin)
+):
+    """Create a new content draft"""
+    # Verify asset exists
+    asset = await db.content_assets.find_one({"id": draft.asset_id})
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    
+    draft_doc = {
+        "id": str(uuid.uuid4()),
+        "asset_id": draft.asset_id,
+        "post_title": draft.post_title,
+        "post_type": draft.post_type,
+        "format_type": draft.format_type,
+        "caption_option_1": draft.caption_option_1,
+        "caption_option_2": draft.caption_option_2,
+        "caption_option_3": draft.caption_option_3,
+        "selected_caption": draft.selected_caption,
+        "hook": draft.hook,
+        "cta": draft.cta,
+        "hashtags": draft.hashtags,
+        "status": "draft",
+        "scheduled_at": draft.scheduled_at,
+        "approved_by": None,
+        "notes": draft.notes,
+        "created_by": user.get("email"),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.content_drafts.insert_one(draft_doc)
+    return {"message": "Draft created", "draft": {k: v for k, v in draft_doc.items() if k != "_id"}}
+
+
+@api_router.put("/content-worker/drafts/{draft_id}")
+async def update_content_draft(
+    draft_id: str,
+    update: ContentDraftUpdate,
+    user: dict = Depends(require_super_admin)
+):
+    """Update a content draft"""
+    draft = await db.content_drafts.find_one({"id": draft_id})
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    update_data = {k: v for k, v in update.dict().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Track approval
+    if update.status == "approved":
+        update_data["approved_by"] = user.get("email")
+    
+    await db.content_drafts.update_one({"id": draft_id}, {"$set": update_data})
+    
+    updated = await db.content_drafts.find_one({"id": draft_id}, {"_id": 0})
+    return {"message": "Draft updated", "draft": updated}
+
+
+@api_router.post("/content-worker/drafts/{draft_id}/submit-review")
+async def submit_draft_for_review(draft_id: str, user: dict = Depends(require_super_admin)):
+    """Submit a draft for review"""
+    result = await db.content_drafts.update_one(
+        {"id": draft_id},
+        {"$set": {"status": "review", "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    return {"message": "Draft submitted for review"}
+
+
+@api_router.post("/content-worker/drafts/{draft_id}/approve")
+async def approve_draft(draft_id: str, user: dict = Depends(require_super_admin)):
+    """Approve a draft"""
+    result = await db.content_drafts.update_one(
+        {"id": draft_id},
+        {"$set": {
+            "status": "approved",
+            "approved_by": user.get("email"),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    return {"message": "Draft approved"}
+
+
+@api_router.post("/content-worker/drafts/{draft_id}/reject")
+async def reject_draft(
+    draft_id: str,
+    notes: Optional[str] = None,
+    user: dict = Depends(require_super_admin)
+):
+    """Reject a draft"""
+    update_data = {
+        "status": "rejected",
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    if notes:
+        update_data["notes"] = notes
+    
+    result = await db.content_drafts.update_one({"id": draft_id}, {"$set": update_data})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    return {"message": "Draft rejected"}
+
+
+@api_router.delete("/content-worker/drafts/{draft_id}")
+async def delete_content_draft(draft_id: str, user: dict = Depends(require_super_admin)):
+    """Delete a content draft"""
+    result = await db.content_drafts.delete_one({"id": draft_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    return {"message": "Draft deleted"}
+
+
+# Privacy Flags
+@api_router.get("/content-worker/assets/{asset_id}/privacy-flags")
+async def get_privacy_flags(asset_id: str, user: dict = Depends(require_super_admin)):
+    """Get privacy flags for an asset"""
+    flags = await db.privacy_flags.find({"asset_id": asset_id}, {"_id": 0}).to_list(100)
+    return {"flags": flags}
+
+
+@api_router.post("/content-worker/privacy-flags")
+async def create_privacy_flag(
+    flag: PrivacyFlagCreate,
+    user: dict = Depends(require_super_admin)
+):
+    """Create a privacy flag"""
+    flag_doc = {
+        "id": str(uuid.uuid4()),
+        "asset_id": flag.asset_id,
+        "flag_type": flag.flag_type,
+        "detected_text": flag.detected_text,
+        "x_position": flag.x_position,
+        "y_position": flag.y_position,
+        "width": flag.width,
+        "height": flag.height,
+        "blur_applied": flag.blur_applied,
+        "manually_adjusted": False,
+        "reviewed_by": None,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.privacy_flags.insert_one(flag_doc)
+    return {"message": "Privacy flag created", "flag": {k: v for k, v in flag_doc.items() if k != "_id"}}
+
+
+@api_router.put("/content-worker/privacy-flags/{flag_id}")
+async def update_privacy_flag(
+    flag_id: str,
+    x_position: Optional[float] = None,
+    y_position: Optional[float] = None,
+    width: Optional[float] = None,
+    height: Optional[float] = None,
+    blur_applied: Optional[bool] = None,
+    user: dict = Depends(require_super_admin)
+):
+    """Update a privacy flag"""
+    update_data = {"manually_adjusted": True, "reviewed_by": user.get("email")}
+    if x_position is not None:
+        update_data["x_position"] = x_position
+    if y_position is not None:
+        update_data["y_position"] = y_position
+    if width is not None:
+        update_data["width"] = width
+    if height is not None:
+        update_data["height"] = height
+    if blur_applied is not None:
+        update_data["blur_applied"] = blur_applied
+    
+    result = await db.privacy_flags.update_one({"id": flag_id}, {"$set": update_data})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Flag not found")
+    return {"message": "Privacy flag updated"}
+
+
+@api_router.delete("/content-worker/privacy-flags/{flag_id}")
+async def delete_privacy_flag(flag_id: str, user: dict = Depends(require_super_admin)):
+    """Delete a privacy flag"""
+    result = await db.privacy_flags.delete_one({"id": flag_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Flag not found")
+    return {"message": "Privacy flag deleted"}
+
+
+# Post Templates
+@api_router.get("/content-worker/templates")
+async def get_post_templates(user: dict = Depends(require_super_admin)):
+    """Get all post templates"""
+    templates = await db.post_templates.find({}, {"_id": 0}).to_list(100)
+    return {"templates": templates}
+
+
+@api_router.post("/content-worker/templates")
+async def create_post_template(
+    template: PostTemplateCreate,
+    user: dict = Depends(require_super_admin)
+):
+    """Create a post template"""
+    template_doc = {
+        "id": str(uuid.uuid4()),
+        "template_name": template.template_name,
+        "format_type": template.format_type,
+        "brand_style": template.brand_style,
+        "logo_position": template.logo_position,
+        "active": template.active,
+        "created_by": user.get("email"),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.post_templates.insert_one(template_doc)
+    return {"message": "Template created", "template": {k: v for k, v in template_doc.items() if k != "_id"}}
+
+
+@api_router.put("/content-worker/templates/{template_id}")
+async def update_post_template(
+    template_id: str,
+    template_name: Optional[str] = None,
+    format_type: Optional[str] = None,
+    brand_style: Optional[str] = None,
+    logo_position: Optional[str] = None,
+    active: Optional[bool] = None,
+    user: dict = Depends(require_super_admin)
+):
+    """Update a post template"""
+    update_data = {}
+    if template_name is not None:
+        update_data["template_name"] = template_name
+    if format_type is not None:
+        update_data["format_type"] = format_type
+    if brand_style is not None:
+        update_data["brand_style"] = brand_style
+    if logo_position is not None:
+        update_data["logo_position"] = logo_position
+    if active is not None:
+        update_data["active"] = active
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No updates provided")
+    
+    result = await db.post_templates.update_one({"id": template_id}, {"$set": update_data})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return {"message": "Template updated"}
+
+
+@api_router.delete("/content-worker/templates/{template_id}")
+async def delete_post_template(template_id: str, user: dict = Depends(require_super_admin)):
+    """Delete a post template"""
+    result = await db.post_templates.delete_one({"id": template_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return {"message": "Template deleted"}
+
+
+# Instagram Settings (placeholder)
+@api_router.get("/content-worker/instagram-settings")
+async def get_instagram_settings(user: dict = Depends(require_super_admin)):
+    """Get Instagram settings"""
+    settings = await db.instagram_settings.find_one({}, {"_id": 0})
+    if not settings:
+        settings = {
+            "id": str(uuid.uuid4()),
+            "account_name": None,
+            "connection_status": "not_connected",
+            "token_status": "none",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.instagram_settings.insert_one(settings)
+    return settings
+
+
+@api_router.put("/content-worker/instagram-settings")
+async def update_instagram_settings(
+    account_name: Optional[str] = None,
+    user: dict = Depends(require_super_admin)
+):
+    """Update Instagram settings (placeholder)"""
+    settings = await db.instagram_settings.find_one({})
+    if not settings:
+        settings = {
+            "id": str(uuid.uuid4()),
+            "account_name": account_name,
+            "connection_status": "not_connected",
+            "token_status": "none",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.instagram_settings.insert_one(settings)
+    else:
+        await db.instagram_settings.update_one(
+            {"id": settings["id"]},
+            {"$set": {"account_name": account_name, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    return {"message": "Instagram settings updated"}
+
+
+# Content Ideas
+@api_router.get("/content-worker/ideas")
+async def get_content_ideas(
+    status: Optional[str] = None,
+    category: Optional[str] = None,
+    limit: int = 50,
+    user: dict = Depends(require_super_admin)
+):
+    """Get content ideas"""
+    query = {}
+    if status:
+        query["status"] = status
+    if category:
+        query["category"] = category
+    ideas = await db.content_ideas.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    total = await db.content_ideas.count_documents(query)
+    return {"ideas": ideas, "total": total}
+
+
+@api_router.post("/content-worker/ideas")
+async def create_content_idea(
+    idea: ContentIdeaCreate,
+    user: dict = Depends(require_super_admin)
+):
+    """Create a content idea"""
+    idea_doc = {
+        "id": str(uuid.uuid4()),
+        "title": idea.title,
+        "category": idea.category,
+        "recommended_format": idea.recommended_format,
+        "hook": idea.hook,
+        "caption_starter": idea.caption_starter,
+        "cta": idea.cta,
+        "target_audience": idea.target_audience,
+        "reason_for_recommendation": idea.reason_for_recommendation,
+        "confidence_score": idea.confidence_score,
+        "status": "new",
+        "created_by": user.get("email"),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.content_ideas.insert_one(idea_doc)
+    return {"message": "Idea created", "idea": {k: v for k, v in idea_doc.items() if k != "_id"}}
+
+
+@api_router.put("/content-worker/ideas/{idea_id}")
+async def update_content_idea(
+    idea_id: str,
+    status: Optional[str] = None,
+    user: dict = Depends(require_super_admin)
+):
+    """Update a content idea status"""
+    update_data = {}
+    if status:
+        update_data["status"] = status
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No updates provided")
+    
+    result = await db.content_ideas.update_one({"id": idea_id}, {"$set": update_data})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Idea not found")
+    return {"message": "Idea updated"}
+
+
+@api_router.delete("/content-worker/ideas/{idea_id}")
+async def delete_content_idea(idea_id: str, user: dict = Depends(require_super_admin)):
+    """Delete a content idea"""
+    result = await db.content_ideas.delete_one({"id": idea_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Idea not found")
+    return {"message": "Idea deleted"}
+
+
 @app.on_event("shutdown")
 async def shutdown():
     client.close()

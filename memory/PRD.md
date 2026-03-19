@@ -755,3 +755,81 @@ The platform now uses a 3-tier subscription model:
 - No generic filler or irrelevant lifestyle content
 - Professional, actionable recommendations
 - Clear confidence scores and reasoning
+
+
+### March 19, 2026 - Instagram Publishing & Analytics ✅
+**Completed Instagram publishing and basic analytics capabilities:**
+
+**Features Implemented:**
+
+1. **Analytics Tab (NEW)** - Added to Content Worker navigation:
+   - 5 Metric Cards: Total Likes, Total Comments, Total Reach, Total Saves, Engagement Rate
+   - Average per post shown for likes and reach
+   - Top Posts section with sorting by likes/comments/reach/saves
+   - Recent Posts section with publish dates
+   - Performance by Category breakdown
+   - Performance by Format breakdown
+   - "Sync Metrics" button to pull mock data from Instagram
+
+2. **Instagram Connection UI** (Settings tab enhanced):
+   - Beautiful gradient header with Instagram icon
+   - Connection status (Connected/Not Connected)
+   - Account name display (@quickwing_official)
+   - Token Status (Valid/Expiring/Expired) with days remaining
+   - Last Sync timestamp
+   - Account Details section
+   - Connect/Disconnect buttons
+   - Token Refresh capability
+   - Instructions for connecting Instagram API
+
+3. **Enhanced Review Queue** with publishing actions:
+   - Status filter expanded: All, Drafts, In Review, Approved, Scheduled, Publishing, Posted, Failed, Rejected
+   - For Approved drafts: Schedule button + Publish Now button
+   - For Scheduled drafts: Unschedule button + Publish Now button
+   - For Failed drafts: Retry Publish button
+   - Publishing status spinner during publish operations
+   - Schedule Modal with datetime picker
+
+4. **Enhanced Posted Content Calendar**:
+   - 4 Status Tabs: Posted, Scheduled, Ready to Post, Failed
+   - Instagram Connected/Disconnected status in header
+   - For Posted: View on Instagram + View Analytics buttons
+   - For Scheduled: Unschedule + Publish Now buttons
+   - For Ready to Post: Schedule picker + Publish to Instagram button
+   - For Failed: Error message display + Retry Publish button
+   - Cards show: thumbnail, status badge, format, publish date, Instagram URL
+
+**New Backend API Endpoints:**
+- `POST /api/content-worker/drafts/{draft_id}/schedule` - Schedule approved draft
+- `POST /api/content-worker/drafts/{draft_id}/unschedule` - Revert scheduled to approved
+- `POST /api/content-worker/drafts/{draft_id}/publish` - Publish to Instagram (MOCKED)
+- `POST /api/content-worker/drafts/{draft_id}/retry-publish` - Retry failed publish
+- `GET /api/content-worker/analytics/overview` - Get aggregate metrics
+- `GET /api/content-worker/analytics/posts` - Get posts with metrics
+- `GET /api/content-worker/analytics/top-posts` - Get top performing posts
+- `GET /api/content-worker/analytics/by-category` - Category performance
+- `GET /api/content-worker/analytics/by-format` - Format performance
+- `POST /api/content-worker/analytics/sync` - Sync metrics from Instagram (MOCKED)
+- `POST /api/content-worker/instagram/connect` - Connect Instagram account
+- `POST /api/content-worker/instagram/disconnect` - Disconnect account
+- `POST /api/content-worker/instagram/refresh-token` - Refresh access token
+
+**New Frontend Components:**
+- `/app/frontend/src/components/ContentWorker/ContentAnalytics.js` - Full analytics dashboard
+
+**Updated Components:**
+- `index.js` - Added Analytics tab to navigation
+- `ReviewQueue.js` - Added Schedule/Unschedule/Publish/Retry buttons
+- `PostedContent.js` - Complete rewrite with 4-tab calendar and publishing workflow
+- `ContentSettings.js` - Instagram connection UI
+
+**Database Collections:**
+- `instagram_metrics` - Post performance metrics (likes, comments, reach, saves, shares, impressions)
+- `instagram_settings` - Connection status, access token, account details, token expiry
+
+**IMPORTANT:** All Instagram API calls are MOCKED:
+- Publishing generates fake Instagram post IDs and URLs
+- Sync Metrics generates random but realistic performance numbers
+- No real Instagram API integration yet
+
+**Test Report:** `/app/test_reports/iteration_19.json` - 31/31 backend + 18/18 frontend tests passed (100%)

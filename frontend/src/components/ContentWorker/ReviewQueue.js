@@ -4,7 +4,8 @@ import { toast } from 'sonner';
 import { 
   Clock, CheckCircle, XCircle, Eye, MessageSquare, Edit2,
   Image, Video, RefreshCw, Filter, ChevronDown, Send,
-  AlertTriangle, User, Calendar, Shield, ArrowLeft, Copy
+  AlertTriangle, User, Calendar, Shield, ArrowLeft, Copy,
+  Play, RotateCcw, X, Instagram
 } from 'lucide-react';
 import CaptionEditor from './CaptionEditor';
 
@@ -16,7 +17,9 @@ const STATUS_CONFIG = {
   approved: { label: 'Approved', color: 'bg-green-100 text-green-700', icon: CheckCircle },
   rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700', icon: XCircle },
   scheduled: { label: 'Scheduled', color: 'bg-blue-100 text-blue-700', icon: Calendar },
-  posted: { label: 'Posted', color: 'bg-purple-100 text-purple-700', icon: Send }
+  publishing: { label: 'Publishing', color: 'bg-purple-100 text-purple-700', icon: RefreshCw },
+  posted: { label: 'Posted', color: 'bg-purple-100 text-purple-700', icon: Send },
+  failed: { label: 'Failed', color: 'bg-red-100 text-red-700', icon: AlertTriangle }
 };
 
 const ReviewQueue = ({ onNavigate }) => {
@@ -32,6 +35,9 @@ const ReviewQueue = ({ onNavigate }) => {
   const [selectedCaptionIndex, setSelectedCaptionIndex] = useState(0);
   const [viewMode, setViewMode] = useState('processed'); // 'original' or 'processed'
   const [loadingDraft, setLoadingDraft] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduleDateTime, setScheduleDateTime] = useState('');
+  const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     fetchDrafts();
@@ -153,6 +159,66 @@ const ReviewQueue = ({ onNavigate }) => {
     }
   };
 
+  const handleSchedule = async () => {
+    if (!selectedDraft || !scheduleDateTime) {
+      toast.error('Please select a date and time');
+      return;
+    }
+    try {
+      await axios.post(`${API}/content-worker/drafts/${selectedDraft.id}/schedule?scheduled_at=${scheduleDateTime}`);
+      toast.success('Post scheduled successfully');
+      setShowScheduleModal(false);
+      setScheduleDateTime('');
+      setShowPreview(false);
+      fetchDrafts();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to schedule post');
+    }
+  };
+
+  const handleUnschedule = async (draftId) => {
+    try {
+      await axios.post(`${API}/content-worker/drafts/${draftId}/unschedule`);
+      toast.success('Post unscheduled');
+      fetchDrafts();
+      setShowPreview(false);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to unschedule post');
+    }
+  };
+
+  const handlePublishNow = async (draftId) => {
+    if (!window.confirm('Publish this post to Instagram now?')) return;
+    setPublishing(true);
+    try {
+      const response = await axios.post(`${API}/content-worker/drafts/${draftId}/publish`);
+      toast.success('Post published successfully!');
+      if (response.data.post_url) {
+        toast.info(`View on Instagram: ${response.data.post_url}`);
+      }
+      fetchDrafts();
+      setShowPreview(false);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to publish post');
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleRetryPublish = async (draftId) => {
+    setPublishing(true);
+    try {
+      const response = await axios.post(`${API}/content-worker/drafts/${draftId}/retry-publish`);
+      toast.success('Post published successfully!');
+      fetchDrafts();
+      setShowPreview(false);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to retry publishing');
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64" data-testid="review-queue-loading">
@@ -182,8 +248,11 @@ const ReviewQueue = ({ onNavigate }) => {
               <option value="draft">Drafts</option>
               <option value="review">In Review</option>
               <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
               <option value="scheduled">Scheduled</option>
+              <option value="publishing">Publishing</option>
+              <option value="posted">Posted</option>
+              <option value="failed">Failed</option>
+              <option value="rejected">Rejected</option>
             </select>
           </div>
           <button
@@ -281,6 +350,65 @@ const ReviewQueue = ({ onNavigate }) => {
                                 Reject
                               </button>
                             </>
+                          )}
+                          {draft.status === 'approved' && (
+                            <>
+                              <button
+                                onClick={() => { setSelectedDraft(draft); setShowScheduleModal(true); }}
+                                className="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg transition-colors flex items-center space-x-1"
+                                data-testid={`schedule-draft-${draft.id}`}
+                              >
+                                <Calendar size={14} />
+                                <span>Schedule</span>
+                              </button>
+                              <button
+                                onClick={() => handlePublishNow(draft.id)}
+                                disabled={publishing}
+                                className="px-3 py-1.5 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 rounded-lg transition-colors flex items-center space-x-1 disabled:opacity-50"
+                                data-testid={`publish-draft-${draft.id}`}
+                              >
+                                <Instagram size={14} />
+                                <span>Publish Now</span>
+                              </button>
+                            </>
+                          )}
+                          {draft.status === 'scheduled' && (
+                            <>
+                              <button
+                                onClick={() => handleUnschedule(draft.id)}
+                                className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors flex items-center space-x-1"
+                                data-testid={`unschedule-draft-${draft.id}`}
+                              >
+                                <X size={14} />
+                                <span>Unschedule</span>
+                              </button>
+                              <button
+                                onClick={() => handlePublishNow(draft.id)}
+                                disabled={publishing}
+                                className="px-3 py-1.5 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 rounded-lg transition-colors flex items-center space-x-1 disabled:opacity-50"
+                                data-testid={`publish-now-${draft.id}`}
+                              >
+                                <Play size={14} />
+                                <span>Publish Now</span>
+                              </button>
+                            </>
+                          )}
+                          {draft.status === 'failed' && (
+                            <button
+                              onClick={() => handleRetryPublish(draft.id)}
+                              disabled={publishing}
+                              className="px-3 py-1.5 text-sm bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-lg transition-colors flex items-center space-x-1 disabled:opacity-50"
+                              data-testid={`retry-publish-${draft.id}`}
+                            >
+                              <RotateCcw size={14} />
+                              <span>Retry Publish</span>
+                            </button>
+                          )}
+                          {draft.status === 'publishing' && (
+                            <span className="px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded-lg flex items-center space-x-1">
+                              <RefreshCw size={14} className="animate-spin" />
+                              <span>Publishing...</span>
+                            </span>
                           )}
                         </div>
                       </div>
@@ -538,6 +666,54 @@ const ReviewQueue = ({ onNavigate }) => {
                     </button>
                   </>
                 )}
+                {selectedDraft.status === 'approved' && (
+                  <>
+                    <button
+                      onClick={() => setShowScheduleModal(true)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center space-x-2"
+                    >
+                      <Calendar size={18} />
+                      <span>Schedule</span>
+                    </button>
+                    <button
+                      onClick={() => handlePublishNow(selectedDraft.id)}
+                      disabled={publishing}
+                      className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                    >
+                      {publishing ? <RefreshCw size={18} className="animate-spin" /> : <Instagram size={18} />}
+                      <span>{publishing ? 'Publishing...' : 'Publish Now'}</span>
+                    </button>
+                  </>
+                )}
+                {selectedDraft.status === 'scheduled' && (
+                  <>
+                    <button
+                      onClick={() => handleUnschedule(selectedDraft.id)}
+                      className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center space-x-2"
+                    >
+                      <X size={18} />
+                      <span>Unschedule</span>
+                    </button>
+                    <button
+                      onClick={() => handlePublishNow(selectedDraft.id)}
+                      disabled={publishing}
+                      className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                    >
+                      {publishing ? <RefreshCw size={18} className="animate-spin" /> : <Play size={18} />}
+                      <span>{publishing ? 'Publishing...' : 'Publish Now'}</span>
+                    </button>
+                  </>
+                )}
+                {selectedDraft.status === 'failed' && (
+                  <button
+                    onClick={() => handleRetryPublish(selectedDraft.id)}
+                    disabled={publishing}
+                    className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                  >
+                    {publishing ? <RefreshCw size={18} className="animate-spin" /> : <RotateCcw size={18} />}
+                    <span>{publishing ? 'Publishing...' : 'Retry Publish'}</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -570,6 +746,67 @@ const ReviewQueue = ({ onNavigate }) => {
                 data-testid="confirm-reject-btn"
               >
                 Reject Draft
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Modal */}
+      {showScheduleModal && selectedDraft && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Calendar className="text-blue-600" size={20} />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Schedule Post</h3>
+                <p className="text-sm text-gray-500">Choose when to publish to Instagram</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Post Title</label>
+                <p className="text-gray-900 font-medium">{selectedDraft.post_title}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Schedule Date & Time *</label>
+                <input
+                  type="datetime-local"
+                  value={scheduleDateTime}
+                  onChange={(e) => setScheduleDateTime(e.target.value)}
+                  min={new Date().toISOString().slice(0, 16)}
+                  className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  data-testid="schedule-datetime-input"
+                />
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> The post will be automatically published at the scheduled time.
+                  Make sure your Instagram account is connected in Settings.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => { setShowScheduleModal(false); setScheduleDateTime(''); }}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSchedule}
+                disabled={!scheduleDateTime}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                data-testid="confirm-schedule-btn"
+              >
+                <Calendar size={18} />
+                <span>Schedule Post</span>
               </button>
             </div>
           </div>

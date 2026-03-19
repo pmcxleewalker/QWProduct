@@ -1,163 +1,137 @@
-<analysis>**original_problem_statement**: The user wants to build a full-scale multi-tenant SaaS platform named Quick Wing for fleet management. The project has evolved to include a comprehensive 3-tier subscription system. The most recent request is to build a new Quick Wing Content Worker module inside the existing Franchise Command Centre. This module is intended to help the Quick Wing team create, manage, and review social media content (screenshots, recordings) for Instagram, with privacy controls and an approval workflow for a Social Media Manager role.
+<analysis>**original_problem_statement**: The user wants to build a full-scale multi-tenant SaaS platform named Quick Wing for fleet management. The project has evolved to include a comprehensive 3-tier subscription system. The core focus has been on building a Quick Wing Content Worker module inside the Franchise Command Centre for social media management. The user's latest requests have been to progressively add a content creation workflow, a content ideas engine, and now, Instagram publishing and basic analytics capabilities to this module.
 
 **PRODUCT REQUIREMENTS**:
--   **Architecture**: A true multi-tenant application with a single deployment serving multiple franchises.
--   **Subscription Plans**: A functional and visually distinct 3-tier system (Standard, Essential, Professional) that gates features and enforces resource limits, with clear value progression at each tier.
--   **Tenant Management**: A Franchise Command Centre for the  to manage tenants.
--   **Content Worker Module**: A new section within the Command Centre for Super Admins and Social Media Managers to manage a content pipeline for Instagram, including asset uploads, captioning, privacy blurring, and an approval workflow.
--   **Core Features**: Key functionalities include vehicle/user management, booking calendars, compliance tracking, and a robust, tier-gated reporting system.
--   **Access Control**: Strict role-based access for , , and .
+-   **Content Creation Workflow**: Allow users to upload media, extract video frames, scan for and blur private information, generate branded previews, and get AI-generated caption options before saving a post as a draft.
+-   **Content Ideas Engine**: Provide a page with AI-powered content suggestions, allowing the social media manager to filter by goal and see placeholder performance data to help decide what to post next.
+-   **Instagram Publishing**: Enable scheduling and manual publishing of approved content drafts directly to Instagram from within the app. This should include status tracking (scheduled, publishing, posted, failed).
+-   **Basic Analytics**: After publishing, display basic performance metrics for posts (likes, comments, reach, etc.) in a new Analytics section. The initial implementation should use placeholder/mock data.
+-   **Access Control**: Ensure all content management, publishing, and settings are restricted to  and  roles.
+-   **Architecture**: All new features must be integrated into the existing Content Worker module, reusing the established database models and API structure.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a functional multi-tenant SaaS platform with a FastAPI backend and React frontend. It features a robust Franchise Command Centre and a complete 3-tier subscription system with backend enforcement and a heavily customized, tier-aware frontend. The subscription plans and pricing page have been extensively updated based on user feedback. Several bugs and feature gaps in the Professional tier have been addressed, including adding customizable cost analytics, fixing broken buttons, and implementing a logo upload feature. A dedicated page for logging vehicle mileage via QR code scan has been created and linked. The agent has just begun work on the new Quick Wing Content Worker module by adding the initial database models and API endpoints to the backend.
+The application is a full-stack React and FastAPI platform. A Quick Wing Content Worker module exists within the Super Admin's Franchise Command Centre. This module is substantially built out and includes:
+-   A dashboard with real-time stats.
+-   A complete 6-step content creation workflow: Upload -> Select Frame -> Privacy (with OCR) -> Preview -> Caption (with AI suggestions) -> Save.
+-   An enhanced review queue for approving/rejecting drafts.
+-   A Content Ideas Engine that generates weekly post suggestions based on strategic goals and shows placeholder performance data.
+-   The backend in  has been updated with placeholder API endpoints and database models for the next phase: Instagram publishing and analytics.
 
 **Last working item**:
--   **Last item agent was working**: Implementing the new Quick Wing Content Worker module. The agent added a large block of code to  to define the Pydantic models and create a new API router for the module. This includes the schemas for , , , , , and .
+-   **Last item agent was working**: Adding Instagram publishing and basic analytics capabilities to the Content Worker module. The agent added several new placeholder API endpoints and Pydantic models to  to support this. It then created a new  frontend component and overwrote  with an updated version for the Instagram connection UI.
 -   **Status**: IN PROGRESS
 -   **Agent Testing Done**: N
--   **Which testing method agent to use?**: both. The backend will require  testing for the new endpoints. The frontend will require the screenshot tool. Once the full module is built, the  should be used for comprehensive E2E testing of the new workflow.
+-   **Which testing method agent to use?**: both. The backend requires  testing for the new (currently mocked) endpoints. The frontend requires the  to verify the new UI components. Once the feature is integrated, the  should be used.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
 -   **Issue 1: QR Codes Are Not Working (P1)**
-    -   **Description**: The user reports that even after generating new cars, the QR codes are not working. This is a recurring issue. The last fix involved changing the QR code from a simple identifier to a full URL pointing to the mileage log page.
-    -   **Attempted fixes**: The agent updated  to generate a full URL using  and added a  to the  file. The backend QR endpoint was also updated.
-    -   **Next debug checklist**:
-        1.  First, ask the user to confirm if they are testing on the dev environment () or the production one (), as the agent only has access to dev.
-        2.  Inspect the  component again. Verify that the  is being passed correctly and that the URL being generated is correct for the dev environment.
-        3.  Generate a new car in the dev environment and manually inspect the QR code it produces. Use a QR code decoder tool on the generated image to see the exact URL it contains.
-        4.  Verify the routing in  for the path  is correctly configured to handle the URL from the QR code.
-    -   **Why fix this issue**: This is a core feature for the Professional tier and a source of user frustration.
-    -   **Status**: IN PROGRESS
-    -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: both
-
--   **Issue 2: All Cars Calendar is still disorganized (P2)**
-    -   **Description**: The user reported that the All cars calendar is still outside of the cars calendar tab. The agent previously investigated and believed the structure was correct (as a sub-tab within Fleet), but the user's report indicates a disconnect.
-    -   **Next debug checklist**:
-        1.  Re-examine the navigation structure in .
-        2.  Look for any legacy code that might be rendering a separate, top-level All Cars Calendar tab or button that the agent missed.
-        3.  Take a screenshot of the Fleet tab to show the current sub-tab structure and ask the user for clarification on how they expect it to be organized.
-    -   **Why fix this issue**: To resolve a persistent UI/UX complaint from the user.
+    -   **Description**: A high-priority, recurring bug from the previous session where users report QR codes for vehicles are not functional. This has not been addressed in the current session.
     -   **Status**: NOT STARTED
-    -   **Should Test frontend/backend/both after fix?**: frontend
+-   **Issue 2: All Cars Calendar is disorganized (P2)**
+    -   **Description**: A user interface complaint from the previous session that the calendar's location in the UI is confusing. This has not been addressed.
+    -   **Status**: NOT STARTED
 
 **In progress Task List**:
--   **Task 1: Build Quick Wing Content Worker module (P0)**
-    -   **Where to resume**: The backend models and API router have been added to . The next steps are to:
-        1.  Create the new frontend pages/components under a new directory, e.g., .
-        2.  The pages to create are: , , , , , and .
-        3.  Integrate this new module into  by adding a new navigation link (Content Worker) and rendering the components when the link is active.
-        4.  Implement role-based access to ensure only  and  can see and use the module.
-    -   **What will be achieved with this?**: A complete, functional module within the Command Centre for managing social media content creation and approval.
+-   **Task 1: Implement Instagram Publishing and Analytics UI (P0)**
+    -   **Where to resume**: The backend API endpoints and foundational frontend components (, ) exist but are not integrated.
+        1.  Integrate  into the  main component by adding a new Analytics tab and rendering the component.
+        2.  Update  and  to include UI elements for scheduling posts, publishing them, and viewing their status.
+        3.  Wire up the new  to handle the (mocked) Instagram connection flow.
+        4.  Build out the  UI to display the (mocked) data from the new analytics endpoints.
+    -   **What will be achieved with this?**: A complete user interface for scheduling, publishing, and viewing basic analytics for Instagram posts, connected to placeholder backend logic.
     -   **Status**: IN PROGRESS
     -   **Should Test frontend/backend/both after fix?**: both
-    -   **Blocked on something**: No.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **(P1) Refactor **: URGENT. Now over 4800 lines.
-    -   **(P1) Refactor **: URGENT. Over 3800 lines.
-    -   **(P1) Refactor **: URGENT. Now over 3300 lines.
+    -   **(P1) Refactor **: URGENT. The file has grown to over 6,700 lines and is extremely difficult to maintain. It should be broken down into a modular structure with separate files for routes, models, and services.
+    -   **(P1) Refactor **: URGENT. This file is over 3,300 lines.
 -   **Future Tasks**:
-    -   **(P2) Stripe Integration**: Automate subscription management and payments.
-    -   **(P3) Instagram API Integration**: Connect the Content Worker to post directly to Instagram.
-    -   **(P4) Email Invoices & Notifications**: Generate and email PDF invoices and other notifications.
+    -   **(P2) Stripe Integration**: Automate subscription payments.
+    -   **(P3) Full Instagram API Integration**: Replace the mocked publishing and analytics logic with a real integration.
+    -   **(P4) Email Invoices & Notifications**.
 
 **Completed work in this session**
--   **Professional Tier Overhaul**: Addressed all user-reported issues by implementing a working Manage Booking modal, a functional logo upload component, and customizable Cost Analytics reports. Removed the misleading API Access feature.
--   **QR Code Mileage Logging**: Created a new page () that allows users to log vehicle mileage after scanning a QR code and signing in. The QR code generation was updated to point to this new page.
--   **Team Management UI Rework**: Refactored the Team tab in the tenant dashboard to have separate, clearly labeled sections for Administrators and Staff Members, with appropriate password management controls for each.
--   **Tiered Reporting Enhancement**: Implemented a new Enhanced Analytics section exclusively for the Essential and Professional tiers, providing a clear value upgrade from the Standard plan's reports.
--   **Pricing Page Rework**: Executed a complete overhaul of the subscription plans page in the Command Centre, including:
-    -   Updating prices, limits, and feature lists for all three tiers.
-    -   Improving the visual design to make limits more prominent and feature progression clearer.
-    -   Changing the Standard tier's color scheme to light blue for better visual distinction.
-    -   Removing confusing crossed-out features and adding a clarification note for customisation credits.
+-   **Content Worker Module (Foundation)**: Built and integrated the core module with a dashboard, asset manager, and navigation. Fixed critical backend bugs related to route registration and auth dependency types. Passed all automated tests.
+-   **Privacy-Aware Content Workflow**: Extended the module with a 6-step workflow for creating posts. This included adding OCR for privacy scanning, video frame extraction, an interactive blur tool (), and an AI caption generator ().
+-   **Content Ideas Engine**: Built a new section to provide AI-generated content ideas. The UI includes a goal selector, weekly suggestions, and placeholder performance insights to guide the user's content strategy.
+
+**Earlier issues found/mentioned but not fixed**
+-   **Lint Errors**: The python linter identified 7 pre-existing, non-critical errors in  that were not fixed.
+
+**Known issue recurrence from previous fork**
+-   **Issue recurrence in previous fork**: QR Codes not working.
+-   **Recurrence count**: 2+
+-   **Status**: NOT STARTED
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Tiered Subscription Gating**: Using a centralized  in  to control features, limits, and pricing.
--   **Dynamic Frontend Theming**: Using CSS variables and conditional rendering in React to reflect a franchise's subscription tier.
--   **Monolithic Codebases**: The primary technical debt is the massive size of , , and , making them difficult to maintain.
+-   **OCR & Image Processing**: Use of , , and  for privacy scanning and video frame extraction.
+-   **Rule-Based Recommendation**: The Content Ideas Engine uses predefined rules and placeholder scores, avoiding a complex ML implementation.
+-   **Monolithic Backend**:  is a significant source of technical debt, containing logic for tenancy, auth, fleet management, and the entire content worker module.
 
 **key DB schema**
--   **tenants**: Contains , , , and new settings fields like  (, ) and  ().
--   **New (Content Worker)**: The following collections are defined in  but not yet used:
-    -   : Stores uploaded media files.
-    -   : The main table for social media posts, tracking status, captions, etc.
-    -   : Defines areas in assets to be blurred.
-    -   : For pre-defined content styles.
-    -   : Placeholder for future API connection.
-    -   : Placeholder for a future content recommendation engine.
+-   **content_drafts**: Extended with , , , .
+-   **instagram_post_metrics**: New collection defined for storing post-performance data (, , , etc.).
 
 **All files of reference**
--    (Current focus for new module)
--    (Where the new module will be integrated)
--    (Reference for many recent UI fixes)
--    (Relevant for the recurring QR code bug)
--    (Source of truth for subscription plans)
+-   
+-    (entire directory)
+-   
+-   
 
 **Areas that need refactoring**:
--    (URGENT - Growing larger and more unmanageable)
--    (URGENT)
--    (Recently modified heavily, should be broken into smaller components)
+-   **/app/backend/server.py**: **CRITICAL**. This monolithic file is unmaintainable and must be broken into a modular structure (e.g., , , ).
+-   **/app/frontend/src/pages/PlatformAdmin.js**: Over 3,300 lines and needs to be decomposed into smaller components.
 
 **key api endpoints**
--   : Get/update tenant-specific settings for branding and cost analytics.
--   : Uploads a logo for custom branding.
--   : Logs the current mileage for a vehicle.
--   : New API router for the content module (endpoints defined but not yet tested).
+-   **New (Publishing)**: , 
+-   **New (Analytics)**: , 
+-   **New (Workflow)**: , , 
+-   **New (Ideas)**: , 
 
 **Critical Info for New Agent**
--   **The top priority (P0) is to build the Quick Wing Content Worker module.** The backend foundation is laid; you need to build the frontend components and integrate them into the Command Centre.
--   **There is a recurring, high-priority (P1) bug with QR codes.** The user insists they are not working even after the last fix. You must investigate this thoroughly, starting by confirming which environment the user is testing in. Do not assume the previous fix was correct.
--   **Refactoring is critically needed**, especially for . Once the Content Worker module is delivered, proposing a refactoring phase for the monolithic files should be the next major step.
+-   Your primary task (P0) is to complete the **Instagram Publishing and Analytics** feature. This involves finishing the frontend integration and connecting it to the mocked backend endpoints.
+-   Do **not** implement a real Instagram API connection. The user has explicitly requested to keep the logic mocked for now.
+-   After completing the current feature, the **most important next step** is to propose and execute a refactoring of . The file's size is a major liability for future development.
+-   Be aware of the pending high-priority **QR code bug (P1)**. It has been carried over from a previous session and needs to be addressed.
 
 **documents and test reports created in this job**
 -   
--   
--   
+-    (Continuously updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-10.  (BLOCKED - Agent could not find a test 2 franchise and asked for clarification).
-9.   (COMPLETED - Agent performed a full overhaul of the pricing page UI and plan logic).
-8.   (COMPLETED).
-7.   (COMPLETED).
-6.   (COMPLETED).
-5.   (COMPLETED - Agent added an Enhanced Analytics section for the Essential tier).
-4.   (This was the agent's summary before the user reported the QR codes were still broken).
-3.   (PENDING - This is the P1 recurring bug).
-2.   (PENDING - User listed four issues; the agent fixed them, but the QR code issue persists).
-1.   (COMPLETED).
+-   User requested to add Instagram publishing and basic analytics to the Content Worker module. (IN PROGRESS)
+-   User requested to build the Content Ideas Engine. (COMPLETED)
+-   User requested to add the privacy-aware content creation workflow. (COMPLETED)
+-   User approved the plan to continue building the Content Worker module. (COMPLETED)
 
 **Project Health Check:**
--   **Broken**: The QR code functionality is reported as non-operational by the user, making it a critical broken feature.
--   **Mocked**: None.
+-   **Broken**: QR code functionality is still reported as broken by the user.
+-   **Mocked**: The Content Ideas Engine's performance data is mocked. The new Instagram publishing and analytics functionality is being built with mocked backend logic.
 
 **3rd Party Integrations**
--   **reportlab**: Used for backend PDF generation.
--   **lucide-react**: Used for frontend icons.
--   **sonner**: Used for toast notifications.
--   **qrcode**: Used for QR code generation.
--   **python-multipart**: Added for file upload support.
+-   **pytesseract, opencv-python-headless**: For OCR and image processing.
+-   **reportlab**: For backend PDF generation.
+-   **lucide-react**: For frontend icons.
+-   **sonner**: For toast notifications.
+-   **qrcode**: For QR code generation.
+-   **python-multipart**: For file uploads.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES, for the initial Professional Tier overhaul. Not used for the most recent fixes.
+-   **Testing agent used after significant changes**: YES, for the initial Content Worker module build.
 -   **Troubleshoot agent used after agent stuck in loop**: NO
--   **Test files created**: []
--   **Known regressions**: The QR code functionality is either a regression or was never fully fixed, as per the user's latest feedback.
+-   **Test files created**: [] (No new test files in this session)
+-   **Known regressions**: The QR code functionality remains a persistent issue.
 
 **Credentials to test flow:**
 -   **Super Admin**:  / 
--   **Standard Demo**:  / 
--   **Essential Demo**:  / 
--   **Professional Demo**:  / 
 
 **What agent forgot to execute**
--   The agent did not start the frontend implementation for the Quick Wing Content Worker module.
--   The agent did not fully resolve the recurring QR code issue to the user's satisfaction. The user's last message on the topic indicates it's still broken for them.</analysis>
+-   Did not address the high-priority (P1) recurring QR Codes Not Working bug.
+-   Did not address the (P2) All Cars Calendar UI organization issue.
+-   Did not fix the pre-existing linting errors in .</analysis>

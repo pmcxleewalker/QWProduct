@@ -33,7 +33,7 @@ The Quick Wing Fleet Management App now includes a secure authentication system 
 ### For Administrators
 
 #### 1. **Login**
-Visit: `https://brand-center-5.preview.emergentagent.com/login`
+Visit: `https://social-media-hub-77.preview.emergentagent.com/login`
 - Enter your email and password
 - Click "Sign In"
 
@@ -56,7 +56,7 @@ Visit: `https://brand-center-5.preview.emergentagent.com/login`
 
 #### 1. **Receive Invitation**
 - Admin will send you an invite link
-- Link format: `https://brand-center-5.preview.emergentagent.com/register?token=...`
+- Link format: `https://social-media-hub-77.preview.emergentagent.com/register?token=...`
 
 #### 2. **Register**
 1. Click the invite link
@@ -66,7 +66,7 @@ Visit: `https://brand-center-5.preview.emergentagent.com/login`
 5. Click "Create Account"
 
 #### 3. **Login**
-- Visit: `https://brand-center-5.preview.emergentagent.com/login`
+- Visit: `https://social-media-hub-77.preview.emergentagent.com/login`
 - Use your email and password
 - You'll be redirected to the dashboard
 

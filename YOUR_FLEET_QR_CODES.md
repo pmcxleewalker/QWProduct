@@ -11,10 +11,10 @@ All vehicles have been successfully imported with QR codes generated!
 **Status:** Free  
 
 **QR Code Download:**  
-https://brand-center-5.preview.emergentagent.com/api/cars/3e9f9c9a-b2e4-4edc-be1a-e7171aa5d9d7/qr
+https://social-media-hub-77.preview.emergentagent.com/api/cars/3e9f9c9a-b2e4-4edc-be1a-e7171aa5d9d7/qr
 
 **Status Update Link:**  
-https://brand-center-5.preview.emergentagent.com/status-update?car=quickwing
+https://social-media-hub-77.preview.emergentagent.com/status-update?car=quickwing
 
 ---
 
@@ -23,10 +23,10 @@ https://brand-center-5.preview.emergentagent.com/status-update?car=quickwing
 **Status:** Free  
 
 **QR Code Download:**  
-https://brand-center-5.preview.emergentagent.com/api/cars/[CAR_ID_2]/qr
+https://social-media-hub-77.preview.emergentagent.com/api/cars/[CAR_ID_2]/qr
 
 **Status Update Link:**  
-https://brand-center-5.preview.emergentagent.com/status-update?car=[CAR_ID_2]
+https://social-media-hub-77.preview.emergentagent.com/status-update?car=[CAR_ID_2]
 
 ---
 
@@ -156,7 +156,7 @@ https://brand-center-5.preview.emergentagent.com/status-update?car=[CAR_ID_2]
 ## 📱 How to Download All QR Codes
 
 ### Option 1: From Admin Panel (Easiest)
-1. Login: https://brand-center-5.preview.emergentagent.com/login
+1. Login: https://social-media-hub-77.preview.emergentagent.com/login
 2. Go to **Admin Panel** → **Manage Cars**
 3. Click the **QR** button next to each vehicle
 4. QR code downloads as PNG file
@@ -207,10 +207,10 @@ https://brand-center-5.preview.emergentagent.com/status-update?car=[CAR_ID_2]
 
 ## 🔗 Quick Access Links
 
-- **App Login:** https://brand-center-5.preview.emergentagent.com/login
-- **Dashboard:** https://brand-center-5.preview.emergentagent.com/
-- **Live Sheet:** https://brand-center-5.preview.emergentagent.com/live-sheet
-- **Admin Panel:** https://brand-center-5.preview.emergentagent.com/admin
+- **App Login:** https://social-media-hub-77.preview.emergentagent.com/login
+- **Dashboard:** https://social-media-hub-77.preview.emergentagent.com/
+- **Live Sheet:** https://social-media-hub-77.preview.emergentagent.com/live-sheet
+- **Admin Panel:** https://social-media-hub-77.preview.emergentagent.com/admin
 
 **Login Credentials:**
 - Email: `admin@quickwing.com`

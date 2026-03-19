@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, Image, PenSquare, Clock, Send, 
-  Lightbulb, Settings, ChevronLeft
+  Lightbulb, Settings, ChevronLeft, BarChart3
 } from 'lucide-react';
 
 import ContentDashboard from './ContentDashboard';
@@ -11,6 +11,7 @@ import ReviewQueue from './ReviewQueue';
 import PostedContent from './PostedContent';
 import ContentIdeasEngine from './ContentIdeasEngine';
 import ContentSettings from './ContentSettings';
+import ContentAnalytics from './ContentAnalytics';
 
 const NAVIGATION_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -18,6 +19,7 @@ const NAVIGATION_ITEMS = [
   { id: 'new-post', label: 'New Post', icon: PenSquare },
   { id: 'review', label: 'Review Queue', icon: Clock },
   { id: 'posted', label: 'Posted', icon: Send },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'ideas', label: 'Ideas', icon: Lightbulb },
   { id: 'settings', label: 'Settings', icon: Settings }
 ];
@@ -58,6 +60,8 @@ const ContentWorker = ({ onBack }) => {
         return <ReviewQueue onNavigate={handleNavigate} />;
       case 'posted':
         return <PostedContent onNavigate={handleNavigate} />;
+      case 'analytics':
+        return <ContentAnalytics onNavigate={handleNavigate} />;
       case 'ideas':
         return <ContentIdeasEngine onNavigate={handleNavigate} />;
       case 'settings':

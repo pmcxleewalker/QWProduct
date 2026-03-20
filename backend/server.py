@@ -4564,8 +4564,11 @@ async def get_vehicle_qr(
         raise HTTPException(status_code=404, detail="Vehicle not found")
     
     # Generate QR with tenant context - links to mileage log page
-    base_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+    # Use FRONTEND_URL from environment, default to production URL
+    base_url = os.environ.get('FRONTEND_URL', 'https://quick-wing.com')
     qr_url = f"{base_url}/{context.tenant_slug}/vehicle/{vehicle_id}/mileage"
+    
+    logger.info(f"Generating QR code for vehicle {vehicle_id} with URL: {qr_url}")
     
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
     qr.add_data(qr_url)

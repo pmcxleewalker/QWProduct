@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useSearchParams, useParams } fr
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Toaster } from 'sonner';
 import ProtectedRoute from './components/ProtectedRoute';
+import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import TenantLogin from './pages/TenantLogin';
 import Register from './pages/Register';
@@ -52,12 +53,12 @@ const LoginRedirect = () => {
     if (user.role === 'super_admin') {
       return <Navigate to="/platform" replace />;
     }
-    // Master admin without tenant context goes to platform
-    if (user.role === 'master_admin' && !hasTenantContext) {
+    // Master admin or content manager without tenant context goes to platform
+    if ((user.role === 'master_admin' || user.role === 'content_manager') && !hasTenantContext) {
       return <Navigate to="/platform" replace />;
     }
     if (hasTenantContext) {
-      return <Navigate to="/" replace />;
+      return <Navigate to="/dashboard" replace />;
     }
     return <Navigate to="/select-tenant" replace />;
   }
@@ -284,6 +285,9 @@ const AppContent = () => {
       )}
 
       <Routes>
+        {/* Landing Page - Public home page */}
+        <Route path="/" element={<LandingPage />} />
+        
         {/* Public routes */}
         <Route path="/login" element={<LoginRedirect />} />
         <Route path="/register" element={<Register />} />
@@ -322,7 +326,7 @@ const AppContent = () => {
         
         {/* Legacy tenant-scoped routes (for backward compatibility) */}
         <Route
-          path="/*"
+          path="/dashboard/*"
           element={
             <TenantProtectedRoute>
               <Navigation />

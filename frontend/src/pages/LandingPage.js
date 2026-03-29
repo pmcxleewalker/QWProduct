@@ -1,10 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Car, Calendar, Users, Shield, BarChart3, Clock, 
   CheckCircle, Mail, Instagram, Star,
-  ArrowRight, Menu, X, Play
+  ArrowRight, Menu, X, Play, ChevronLeft, ChevronRight
 } from 'lucide-react';
+
+const ScreenshotCarousel = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  const screenshots = [
+    { src: '/app-screenshot-timeline.jpeg', alt: 'Daily Timeline', label: 'Daily Timeline' },
+    { src: '/app-screenshot-bookings.png', alt: 'Car Bookings', label: 'Car Bookings' },
+    { src: '/app-screenshot-reports.jpeg', alt: 'Fleet Reports', label: 'Fleet Reports' }
+  ];
+
+  const nextSlide = () => {
+    setCurrentIndex((prev) => (prev + 1) % screenshots.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentIndex((prev) => (prev - 1 + screenshots.length) % screenshots.length);
+  };
+
+  // Auto-advance every 4 seconds
+  useEffect(() => {
+    const timer = setInterval(nextSlide, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="relative">
+      {/* Main Image */}
+      <div className="bg-grey-100 rounded-xl p-4 overflow-hidden">
+        <img 
+          src={screenshots[currentIndex].src}
+          alt={screenshots[currentIndex].alt}
+          className="w-full rounded-lg shadow-lg"
+        />
+        <p className="text-centre text-sm text-grey-600 mt-3 font-medium">
+          {screenshots[currentIndex].label}
+        </p>
+      </div>
+
+      {/* Navigation Arrows */}
+      <button 
+        onClick={prevSlide}
+        className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition-all"
+      >
+        <ChevronLeft size={20} className="text-grey-700" />
+      </button>
+      <button 
+        onClick={nextSlide}
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition-all"
+      >
+        <ChevronRight size={20} className="text-grey-700" />
+      </button>
+
+      {/* Dots */}
+      <div className="flex justify-centre space-x-2 mt-4">
+        {screenshots.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentIndex(index)}
+            className={`w-2.5 h-2.5 rounded-full transition-all ${
+              index === currentIndex ? 'bg-blue-600 w-6' : 'bg-grey-300 hover:bg-grey-400'
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -175,44 +242,11 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* App Screenshots - 2x2 Grid */}
+      {/* App Screenshots - Carousel */}
       <section className="py-12">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-centre text-grey-900 mb-6">See it in Action</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="bg-grey-100 rounded-xl p-3">
-              <img 
-                src="/app-screenshot-timeline.jpeg" 
-                alt="Quick Wing Timeline View" 
-                className="w-full h-48 object-cover object-top rounded-lg shadow-lg"
-              />
-              <p className="text-centre text-sm text-grey-600 mt-2">Daily Timeline</p>
-            </div>
-            <div className="bg-grey-100 rounded-xl p-3">
-              <img 
-                src="/app-screenshot-bookings.png" 
-                alt="Quick Wing Car Bookings" 
-                className="w-full h-48 object-cover object-top rounded-lg shadow-lg"
-              />
-              <p className="text-centre text-sm text-grey-600 mt-2">Car Bookings</p>
-            </div>
-            <div className="bg-grey-100 rounded-xl p-3">
-              <img 
-                src="/app-screenshot-reports.jpeg" 
-                alt="Quick Wing Fleet Reports" 
-                className="w-full h-48 object-cover object-top rounded-lg shadow-lg"
-              />
-              <p className="text-centre text-sm text-grey-600 mt-2">Fleet Reports</p>
-            </div>
-            <div className="bg-grey-100 rounded-xl p-3">
-              <img 
-                src="/app-screenshot-fleet.jpeg" 
-                alt="Quick Wing Fleet Overview" 
-                className="w-full h-48 object-cover object-top rounded-lg shadow-lg"
-              />
-              <p className="text-centre text-sm text-grey-600 mt-2">Fleet Overview</p>
-            </div>
-          </div>
+          <ScreenshotCarousel />
         </div>
       </section>
 

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Car, Calendar, Users, Shield, BarChart3, Clock, 
-  CheckCircle, Mail, Instagram, ChevronRight, Star,
-  Zap, Building2, ArrowRight, Menu, X
+  CheckCircle, Mail, Instagram, Star,
+  ArrowRight, Menu, X, Play
 } from 'lucide-react';
 
 const LandingPage = () => {
@@ -16,7 +16,7 @@ const LandingPage = () => {
       price: "179",
       period: "month",
       tagline: "Best for small teams",
-      description: "A practical fleet system for smaller franchises",
+      description: "A practical fleet system for smaller organisations",
       features: [
         "Up to 15 vehicles",
         "Up to 25 users",
@@ -24,8 +24,7 @@ const LandingPage = () => {
         "Fleet compliance tracking",
         "Staff calendars",
         "Basic reports",
-        "Email support",
-        "Standard onboarding"
+        "Email support"
       ],
       highlighted: false
     },
@@ -34,7 +33,7 @@ const LandingPage = () => {
       price: "279",
       period: "month",
       tagline: "Best value",
-      description: "The best fit for growing franchises that need more control",
+      description: "For growing organisations needing more control",
       features: [
         "Up to 25 vehicles",
         "Up to 35 users",
@@ -43,8 +42,7 @@ const LandingPage = () => {
         "Booking visibility controls",
         "Admin booking control",
         "Compliance oversight",
-        "Cost analytics",
-        "Faster support response"
+        "Cost analytics"
       ],
       highlighted: true,
       badge: "Most Popular"
@@ -54,7 +52,7 @@ const LandingPage = () => {
       price: "449",
       period: "month",
       tagline: "Best for multi-site operations",
-      description: "For larger franchises that need scale and visibility",
+      description: "For larger organisations requiring scale",
       features: [
         "Up to 50 vehicles",
         "Up to 50 users",
@@ -63,70 +61,42 @@ const LandingPage = () => {
         "Priority support",
         "Multi-site oversight",
         "Advanced permissions",
-        "Custom data exports",
-        "4 customizations/month"
+        "Custom data exports"
       ],
       highlighted: false
     }
   ];
 
   const features = [
-    {
-      icon: Car,
-      title: "Fleet Management",
-      description: "Track all your vehicles in one place. Know who's driving what, when, and where."
-    },
-    {
-      icon: Calendar,
-      title: "Smart Booking",
-      description: "Easy booking system that prevents double-bookings and keeps everyone informed."
-    },
-    {
-      icon: Shield,
-      title: "Compliance Tracking",
-      description: "Never miss a tax disc, NCT, or insurance renewal. Automated reminders keep you legal."
-    },
-    {
-      icon: Users,
-      title: "Staff Management",
-      description: "Assign vehicles to staff, track usage, and manage permissions effortlessly."
-    },
-    {
-      icon: BarChart3,
-      title: "Reports & Analytics",
-      description: "Get insights into fleet usage, costs, and efficiency with detailed reports."
-    },
-    {
-      icon: Clock,
-      title: "Real-Time Updates",
-      description: "Instant notifications for bookings, returns, and compliance deadlines."
-    }
+    { icon: Car, title: "Fleet Management", description: "Track all vehicles in one place" },
+    { icon: Calendar, title: "Smart Booking", description: "Prevent double-bookings" },
+    { icon: Shield, title: "Compliance Tracking", description: "Never miss a renewal" },
+    { icon: Users, title: "Staff Management", description: "Assign and track usage" },
+    { icon: BarChart3, title: "Reports", description: "Insights and analytics" },
+    { icon: Clock, title: "Real-Time Updates", description: "Instant notifications" }
   ];
 
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm z-50 border-b border-gray-100">
+      <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm z-50 border-b border-grey-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20">
-            <div className="flex items-center space-x-3">
-              <img 
-                src="/quick-wing-logo.png" 
-                alt="Quick Wing" 
-                className="h-10 sm:h-14 w-auto"
-              />
-            </div>
+          <div className="flex items-center justify-between h-14">
+            <img 
+              src="/quick-wing-logo.png" 
+              alt="Quick Wing" 
+              className="h-8 w-auto"
+            />
             
             {/* Desktop Nav */}
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
-              <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
-              <a href="#contact" className="text-gray-600 hover:text-gray-900 font-medium">Contact</a>
+            <div className="hidden md:flex items-center space-x-6">
+              <a href="#pricing" className="text-grey-600 hover:text-grey-900 text-sm font-medium">Pricing</a>
+              <a href="#contact" className="text-grey-600 hover:text-grey-900 text-sm font-medium">Contact</a>
               <a 
-                href="mailto:Lee.quickwing@gmail.com"
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                href="mailto:Lee.quickwing@gmail.com?subject=Try Quick Wing"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colours"
               >
-                Get Started
+                Try it yourself!
               </a>
             </div>
 
@@ -135,7 +105,7 @@ const LandingPage = () => {
               className="md:hidden p-2"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
@@ -143,214 +113,150 @@ const LandingPage = () => {
         {/* Mobile menu */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t">
-            <div className="px-4 py-4 space-y-3">
-              <a href="#features" className="block py-2 text-gray-600 font-medium" onClick={() => setMobileMenuOpen(false)}>Features</a>
-              <a href="#pricing" className="block py-2 text-gray-600 font-medium" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
-              <a href="#contact" className="block py-2 text-gray-600 font-medium" onClick={() => setMobileMenuOpen(false)}>Contact</a>
+            <div className="px-4 py-3 space-y-2">
+              <a href="#pricing" className="block py-2 text-grey-600 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
+              <a href="#contact" className="block py-2 text-grey-600 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>Contact</a>
               <a 
-                href="mailto:Lee.quickwing@gmail.com"
-                className="block w-full text-center px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium"
+                href="mailto:Lee.quickwing@gmail.com?subject=Try Quick Wing"
+                className="block w-full text-centre px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium"
               >
-                Get Started
+                Try it yourself!
               </a>
             </div>
           </div>
         )}
       </nav>
 
-      {/* Hero Section */}
-      <section className="pt-24 sm:pt-32 pb-16 sm:pb-24 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="text-center lg:text-left">
-              <div className="inline-flex items-center px-4 py-2 bg-blue-500/20 rounded-full text-blue-300 text-sm font-medium mb-6">
-                <Zap size={16} className="mr-2" />
-                Fleet Management Made Simple
-              </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-                Take Control of Your
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400"> Fleet</span>
-              </h1>
-              <p className="text-lg sm:text-xl text-gray-300 mb-8 max-w-xl mx-auto lg:mx-0">
-                The complete fleet management system designed for healthcare franchises. 
-                Book vehicles, track compliance, and manage your team — all in one place.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <a 
-                  href="mailto:Lee.quickwing@gmail.com?subject=Quick Wing Demo Request"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/25"
-                >
-                  Request a Demo
-                  <ArrowRight className="ml-2" size={20} />
-                </a>
-                <a 
-                  href="#pricing"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all border border-white/20"
-                >
-                  View Pricing
-                </a>
-              </div>
-            </div>
-            <div className="relative">
-              <div className="relative z-10">
-                <img 
-                  src="/quick-wing-logo-3d.png" 
-                  alt="Quick Wing Logo" 
-                  className="w-full max-w-md mx-auto drop-shadow-2xl"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 blur-3xl" />
-            </div>
+      {/* Hero Section - Simplified */}
+      <section className="pt-20 pb-12 sm:pt-24 sm:pb-16 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4">
+            Take Control of Your
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400"> Fleet</span>
+          </h1>
+          <p className="text-lg text-grey-300 mb-8 max-w-2xl mx-auto">
+            The complete fleet management system. Book vehicles, track compliance, and manage your team — all in one place.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <a 
+              href="mailto:Lee.quickwing@gmail.com?subject=Quick Wing Demo Request"
+              className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all"
+            >
+              <Play className="mr-2" size={18} />
+              Try it yourself!
+            </a>
+            <a 
+              href="#pricing"
+              className="inline-flex items-center justify-center px-6 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all border border-white/20"
+            >
+              View Pricing
+            </a>
           </div>
         </div>
       </section>
 
-      {/* Problem/Solution Section */}
-      <section className="py-16 sm:py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              The Problem We Solve
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Managing a fleet shouldn't be chaotic. Quick Wing brings order to your operations.
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <img 
-              src="/problem-solution.png" 
-              alt="Without Quick Wing vs With Quick Wing" 
-              className="w-full max-w-4xl rounded-2xl shadow-xl"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-16 sm:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Everything You Need to Manage Your Fleet
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Powerful features designed specifically for healthcare and care franchises.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {/* Features - Compact Grid */}
+      <section className="py-12 bg-grey-50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {features.map((feature, index) => (
               <div 
                 key={index}
-                className="p-6 bg-white rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all group"
+                className="p-4 bg-white rounded-xl border border-grey-200 text-centre hover:shadow-md transition-all"
               >
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-600 transition-colors">
-                  <feature.icon className="text-blue-600 group-hover:text-white transition-colors" size={24} />
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <feature.icon className="text-blue-600" size={20} />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
+                <h3 className="text-sm font-semibold text-grey-900">{feature.title}</h3>
+                <p className="text-xs text-grey-500 mt-1">{feature.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* App Screenshots Section */}
-      <section className="py-16 sm:py-24 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              See Quick Wing in Action
-            </h2>
-            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-              A clean, intuitive interface that your team will actually want to use.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
+      {/* App Screenshots - Compact */}
+      <section className="py-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-centre text-grey-900 mb-6">See it in Action</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="bg-grey-100 rounded-xl p-3">
               <img 
                 src="/app-screenshot-timeline.jpeg" 
                 alt="Quick Wing Timeline View" 
-                className="w-full rounded-xl shadow-2xl"
+                className="w-full rounded-lg shadow-lg"
               />
-              <p className="text-center mt-4 text-gray-300">Timeline View - See all bookings at a glance</p>
             </div>
-            <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
+            <div className="bg-grey-100 rounded-xl p-3">
               <img 
                 src="/app-screenshot-fleet.jpeg" 
                 alt="Quick Wing Fleet Overview" 
-                className="w-full rounded-xl shadow-2xl"
+                className="w-full rounded-lg shadow-lg"
               />
-              <p className="text-center mt-4 text-gray-300">Fleet Overview - Manage all vehicles in one place</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-16 sm:py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+      <section id="pricing" className="py-12 bg-grey-50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-centre mb-10">
+            <h2 className="text-2xl sm:text-3xl font-bold text-grey-900 mb-2">
               Simple, Transparent Pricing
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Choose the plan that fits your franchise. No hidden fees, no surprises.
+            <p className="text-grey-600">
+              No hidden fees. Cancel anytime.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6">
             {plans.map((plan, index) => (
               <div 
                 key={index}
-                className={`relative rounded-2xl p-8 ${
+                className={`relative rounded-2xl p-6 ${
                   plan.highlighted 
-                    ? 'bg-blue-600 text-white shadow-2xl shadow-blue-500/25 scale-105' 
-                    : 'bg-white border border-gray-200'
+                    ? 'bg-blue-600 text-white shadow-xl scale-105' 
+                    : 'bg-white border border-grey-200'
                 }`}
               >
                 {plan.badge && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="inline-flex items-center px-4 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-sm font-semibold rounded-full shadow-lg">
-                      <Star size={14} className="mr-1" />
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="inline-flex items-center px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-semibold rounded-full">
+                      <Star size={12} className="mr-1" />
                       {plan.badge}
                     </span>
                   </div>
                 )}
                 
-                <div className="text-center mb-6">
-                  <h3 className={`text-xl font-bold mb-1 ${plan.highlighted ? 'text-white' : 'text-gray-900'}`}>
+                <div className="text-centre mb-4">
+                  <h3 className={`text-lg font-bold ${plan.highlighted ? 'text-white' : 'text-grey-900'}`}>
                     {plan.name}
                   </h3>
-                  <p className={`text-sm ${plan.highlighted ? 'text-blue-100' : 'text-gray-500'}`}>
+                  <p className={`text-xs ${plan.highlighted ? 'text-blue-100' : 'text-grey-500'}`}>
                     {plan.tagline}
                   </p>
                 </div>
                 
-                <div className="text-center mb-6">
-                  <span className={`text-5xl font-bold ${plan.highlighted ? 'text-white' : 'text-gray-900'}`}>
+                <div className="text-centre mb-4">
+                  <span className={`text-4xl font-bold ${plan.highlighted ? 'text-white' : 'text-grey-900'}`}>
                     €{plan.price}
                   </span>
-                  <span className={`${plan.highlighted ? 'text-blue-100' : 'text-gray-500'}`}>
+                  <span className={`text-sm ${plan.highlighted ? 'text-blue-100' : 'text-grey-500'}`}>
                     /{plan.period}
                   </span>
                 </div>
                 
-                <p className={`text-sm text-center mb-6 ${plan.highlighted ? 'text-blue-100' : 'text-gray-600'}`}>
-                  {plan.description}
-                </p>
-                
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-2 mb-6">
                   {plan.features.map((feature, fIndex) => (
                     <li key={fIndex} className="flex items-start">
                       <CheckCircle 
-                        size={18} 
+                        size={16} 
                         className={`mr-2 flex-shrink-0 mt-0.5 ${
                           plan.highlighted ? 'text-blue-200' : 'text-blue-600'
                         }`} 
                       />
-                      <span className={`text-sm ${plan.highlighted ? 'text-white' : 'text-gray-600'}`}>
+                      <span className={`text-sm ${plan.highlighted ? 'text-white' : 'text-grey-600'}`}>
                         {feature}
                       </span>
                     </li>
@@ -359,9 +265,9 @@ const LandingPage = () => {
                 
                 <a 
                   href={`mailto:Lee.quickwing@gmail.com?subject=Interested in Quick Wing ${plan.name}`}
-                  className={`block w-full py-3 rounded-xl font-semibold text-center transition-all ${
+                  className={`block w-full py-2.5 rounded-lg font-semibold text-centre text-sm transition-all ${
                     plan.highlighted
-                      ? 'bg-white text-blue-600 hover:bg-gray-100'
+                      ? 'bg-white text-blue-600 hover:bg-grey-100'
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
@@ -370,101 +276,80 @@ const LandingPage = () => {
               </div>
             ))}
           </div>
-          
-          <p className="text-center text-gray-500 mt-8">
-            All plans include setup, training, and ongoing support. Contact us for custom enterprise pricing.
-          </p>
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section id="contact" className="py-16 sm:py-24">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Ready to Take Control?
+      {/* Contact Section - Compact */}
+      <section id="contact" className="py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-centre">
+          <h2 className="text-2xl font-bold text-grey-900 mb-2">
+            Ready to Get Started?
           </h2>
-          <p className="text-lg text-gray-600 mb-8">
-            Get in touch to schedule a demo or ask any questions. We're here to help.
+          <p className="text-grey-600 mb-6">
+            Get in touch for a demo or to ask any questions.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a 
-              href="mailto:Lee.quickwing@gmail.com?subject=Quick Wing Inquiry"
-              className="inline-flex items-center justify-center px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg"
+              href="mailto:Lee.quickwing@gmail.com?subject=Quick Wing Enquiry"
+              className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all"
             >
-              <Mail className="mr-2" size={20} />
+              <Mail className="mr-2" size={18} />
               Lee.quickwing@gmail.com
             </a>
             <a 
               href="https://www.instagram.com/quick.wing2025?igsh=MXNvcnF2ZWJhMnQ1Zw%3D%3D&utm_source=qr"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all shadow-lg"
+              className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all"
             >
-              <Instagram className="mr-2" size={20} />
-              Follow on Instagram
+              <Instagram className="mr-2" size={18} />
+              @quick.wing2025
             </a>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="md:col-span-2">
+      {/* Footer - Minimal */}
+      <footer className="bg-slate-900 text-white py-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-centre gap-4">
+            <div className="text-centre md:text-left">
               <img 
                 src="/quick-wing-logo.png" 
                 alt="Quick Wing" 
-                className="h-12 w-auto mb-4 brightness-0 invert"
+                className="h-8 w-auto mx-auto md:mx-0 mb-2 brightness-0 invert"
               />
-              <p className="text-gray-400 max-w-md">
-                Quick Wing is the complete fleet management solution for healthcare and care franchises across Ireland.
+              <p className="text-grey-400 text-sm">
+                Fleet management for companies requiring fleet management assistance.
               </p>
             </div>
             
-            <div>
-              <h4 className="font-semibold mb-4">Contact</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>
-                  <a href="mailto:Lee.quickwing@gmail.com" className="hover:text-white transition-colors">
-                    Lee.quickwing@gmail.com
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="https://www.instagram.com/quick.wing2025?igsh=MXNvcnF2ZWJhMnQ1Zw%3D%3D&utm_source=qr"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-white transition-colors inline-flex items-center"
-                  >
-                    <Instagram size={16} className="mr-2" />
-                    @quick.wing2025
-                  </a>
-                </li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#contact" className="hover:text-white transition-colors">Contact</a></li>
-              </ul>
+            <div className="flex items-centre space-x-4 text-sm text-grey-400">
+              <a href="mailto:Lee.quickwing@gmail.com" className="hover:text-white transition-colours">
+                Contact
+              </a>
+              <a 
+                href="https://www.instagram.com/quick.wing2025"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white transition-colours"
+              >
+                Instagram
+              </a>
+              <button 
+                onClick={() => navigate('/login')}
+                className="hover:text-white transition-colours"
+              >
+                Franchise Login
+              </button>
             </div>
           </div>
           
-          <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center">
-            <p className="text-gray-500 text-sm">
+          <div className="border-t border-grey-800 mt-6 pt-6 text-centre">
+            <p className="text-grey-500 text-xs">
               © {new Date().getFullYear()} Quick Wing. All rights reserved.
             </p>
-            <button 
-              onClick={() => navigate('/login')}
-              className="text-gray-600 text-sm hover:text-gray-400 transition-colors mt-4 sm:mt-0"
-            >
-              Franchise Login
-            </button>
           </div>
         </div>
       </footer>

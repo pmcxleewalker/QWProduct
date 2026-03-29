@@ -31,13 +31,16 @@ const ScreenshotCarousel = () => {
 
   return (
     <div className="relative">
-      {/* Main Image */}
+      {/* Fixed height container for consistent layout */}
       <div className="bg-grey-100 rounded-xl p-4 overflow-hidden">
-        <img 
-          src={screenshots[currentIndex].src}
-          alt={screenshots[currentIndex].alt}
-          className="w-full rounded-lg shadow-lg"
-        />
+        <div className="relative w-full h-80 sm:h-96 overflow-hidden rounded-lg shadow-lg bg-white">
+          <img 
+            src={screenshots[currentIndex].src}
+            alt={screenshots[currentIndex].alt}
+            className="w-full h-full object-cover object-bottom"
+            style={{ objectPosition: 'center 85%' }}
+          />
+        </div>
         <p className="text-centre text-sm text-grey-600 mt-3 font-medium">
           {screenshots[currentIndex].label}
         </p>

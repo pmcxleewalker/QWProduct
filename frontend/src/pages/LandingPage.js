@@ -10,9 +10,9 @@ const ScreenshotCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   
   const screenshots = [
-    { src: '/app-screenshot-timeline.jpeg', alt: 'Daily Timeline', label: 'Daily Timeline' },
-    { src: '/app-screenshot-bookings.png', alt: 'Car Bookings', label: 'Car Bookings' },
-    { src: '/app-screenshot-reports.jpeg', alt: 'Fleet Reports', label: 'Fleet Reports' }
+    { src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/n105nizt_IMG_5913.jpeg', alt: 'Fleet Reports', label: 'Fleet Reports' },
+    { src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/88y0o78p_IMG_5914.jpeg', alt: 'Car Bookings', label: 'Car Bookings' },
+    { src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/iku1do9b_IMG_5909.jpeg', alt: 'Daily Availability Timeline', label: 'Daily Availability Timeline' }
   ];
 
   const nextSlide = () => {
@@ -32,16 +32,17 @@ const ScreenshotCarousel = () => {
   return (
     <div className="relative">
       {/* Fixed height container for consistent layout */}
-      <div className="bg-grey-100 rounded-xl p-4 overflow-hidden">
-        <div className="relative w-full h-80 sm:h-96 overflow-hidden rounded-lg shadow-lg bg-white">
-          <img 
-            src={screenshots[currentIndex].src}
-            alt={screenshots[currentIndex].alt}
-            className="w-full h-full object-cover object-bottom"
-            style={{ objectPosition: 'center 85%' }}
-          />
+      <div className="bg-gray-100 rounded-xl p-4 overflow-hidden">
+        <div className="relative w-full" style={{ height: '500px' }}>
+          <div className="overflow-hidden rounded-lg shadow-lg bg-white h-full">
+            <img 
+              src={screenshots[currentIndex].src}
+              alt={screenshots[currentIndex].alt}
+              className="w-full h-full object-contain bg-white"
+            />
+          </div>
         </div>
-        <p className="text-centre text-sm text-grey-600 mt-3 font-medium">
+        <p className="text-center text-sm text-gray-600 mt-3 font-medium">
           {screenshots[currentIndex].label}
         </p>
       </div>
@@ -51,23 +52,23 @@ const ScreenshotCarousel = () => {
         onClick={prevSlide}
         className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition-all"
       >
-        <ChevronLeft size={20} className="text-grey-700" />
+        <ChevronLeft size={20} className="text-gray-700" />
       </button>
       <button 
         onClick={nextSlide}
         className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg flex items-center justify-center transition-all"
       >
-        <ChevronRight size={20} className="text-grey-700" />
+        <ChevronRight size={20} className="text-gray-700" />
       </button>
 
       {/* Dots */}
-      <div className="flex justify-centre space-x-2 mt-4">
+      <div className="flex justify-center space-x-2 mt-4">
         {screenshots.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentIndex(index)}
             className={`w-2.5 h-2.5 rounded-full transition-all ${
-              index === currentIndex ? 'bg-blue-600 w-6' : 'bg-grey-300 hover:bg-grey-400'
+              index === currentIndex ? 'bg-blue-600 w-6' : 'bg-gray-300 hover:bg-gray-400'
             }`}
           />
         ))}

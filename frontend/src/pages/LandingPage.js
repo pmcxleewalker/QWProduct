@@ -175,34 +175,40 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* App Screenshots - 2 on top, 1 below */}
+      {/* App Screenshots - 2x2 Grid */}
       <section className="py-12">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-centre text-grey-900 mb-6">See it in Action</h2>
-          <div className="grid md:grid-cols-2 gap-4 mb-4">
+          <div className="grid md:grid-cols-2 gap-4">
             <div className="bg-grey-100 rounded-xl p-3">
               <img 
                 src="/app-screenshot-timeline.jpeg" 
                 alt="Quick Wing Timeline View" 
-                className="w-full rounded-lg shadow-lg"
+                className="w-full h-48 object-cover object-top rounded-lg shadow-lg"
               />
               <p className="text-centre text-sm text-grey-600 mt-2">Daily Timeline</p>
             </div>
             <div className="bg-grey-100 rounded-xl p-3">
               <img 
+                src="/app-screenshot-bookings.png" 
+                alt="Quick Wing Car Bookings" 
+                className="w-full h-48 object-cover object-top rounded-lg shadow-lg"
+              />
+              <p className="text-centre text-sm text-grey-600 mt-2">Car Bookings</p>
+            </div>
+            <div className="bg-grey-100 rounded-xl p-3">
+              <img 
                 src="/app-screenshot-reports.jpeg" 
                 alt="Quick Wing Fleet Reports" 
-                className="w-full rounded-lg shadow-lg"
+                className="w-full h-48 object-cover object-top rounded-lg shadow-lg"
               />
               <p className="text-centre text-sm text-grey-600 mt-2">Fleet Reports</p>
             </div>
-          </div>
-          <div className="max-w-md mx-auto">
             <div className="bg-grey-100 rounded-xl p-3">
               <img 
                 src="/app-screenshot-fleet.jpeg" 
                 alt="Quick Wing Fleet Overview" 
-                className="w-full rounded-lg shadow-lg"
+                className="w-full h-48 object-cover object-top rounded-lg shadow-lg"
               />
               <p className="text-centre text-sm text-grey-600 mt-2">Fleet Overview</p>
             </div>

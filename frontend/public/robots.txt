@@ -1,0 +1,14 @@
+# Quick Wing Fleet Management - Robots.txt
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://quick-wing.com/sitemap.xml
+
+# Disallow internal app routes from crawling
+Disallow: /dashboard
+Disallow: /platform
+Disallow: /select-tenant
+Disallow: /admin
+Disallow: /setup
+Disallow: /api/

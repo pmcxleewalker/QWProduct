@@ -81,6 +81,11 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Set document title and meta for SPA
+  useEffect(() => {
+    document.title = 'Quick Wing | Fleet Management Software for Irish Businesses';
+  }, []);
+
   const plans = [
     {
       name: "Standard",
@@ -140,24 +145,29 @@ const LandingPage = () => {
 
   const features = [
     { icon: Car, title: "Fleet Management", description: "Track all vehicles in one place" },
-    { icon: Calendar, title: "Smart Booking", description: "Prevent double-bookings" },
-    { icon: Shield, title: "Compliance Tracking", description: "Never miss a renewal" },
-    { icon: Users, title: "Staff Management", description: "Assign and track usage" },
-    { icon: BarChart3, title: "Reports", description: "Insights and analytics" },
-    { icon: Clock, title: "Real-Time Updates", description: "Instant notifications" }
+    { icon: Calendar, title: "Smart Booking", description: "Prevent double-bookings automatically" },
+    { icon: Shield, title: "Compliance Tracking", description: "Never miss a tax, NCT or insurance renewal" },
+    { icon: Users, title: "Staff Management", description: "Assign vehicles and track usage" },
+    { icon: BarChart3, title: "Reports & Analytics", description: "Insights to optimise your fleet" },
+    { icon: Clock, title: "Real-Time Updates", description: "Instant notifications and live data" }
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white" role="main">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm z-50 border-b border-grey-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14">
-            <img 
-              src="/quick-wing-logo.png" 
-              alt="Quick Wing" 
-              className="h-8 w-auto"
-            />
+      <header>
+        <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm z-50 border-b border-grey-100" aria-label="Main navigation">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-14">
+              <a href="/" aria-label="Quick Wing Home">
+                <img 
+                  src="/quick-wing-logo.png" 
+                  alt="Quick Wing Fleet Management Software Logo"
+                  className="h-8 w-auto"
+                  width="120"
+                  height="32"
+                />
+              </a>
             
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center space-x-6">
@@ -197,24 +207,26 @@ const LandingPage = () => {
           </div>
         )}
       </nav>
+      </header>
 
-      {/* Hero Section - Simplified */}
-      <section className="pt-20 pb-12 sm:pt-24 sm:pb-16 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
+      {/* Hero Section */}
+      <section className="pt-20 pb-12 sm:pt-24 sm:pb-16 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white" aria-labelledby="hero-heading">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4">
-            Take Control of Your
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400"> Fleet</span>
+          <h1 id="hero-heading" className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4">
+            Fleet Management Software
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400"> for Ireland</span>
           </h1>
           <p className="text-lg text-grey-300 mb-8 max-w-2xl mx-auto">
-            The complete fleet management system. Book vehicles, track compliance, and manage your team — all in one place.
+            The complete fleet management system trusted by Irish businesses. Book vehicles, track compliance, manage your team, and generate reports — all in one place.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a 
               href="mailto:Lee.quickwing@gmail.com?subject=Quick Wing Demo Request"
               className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all"
+              aria-label="Request a free demo of Quick Wing"
             >
-              <Play className="mr-2" size={18} />
-              Try it yourself!
+              <Play className="mr-2" size={18} aria-hidden="true" />
+              Request Free Demo
             </a>
             <a 
               href="#pricing"
@@ -226,9 +238,10 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Features - Compact Grid */}
-      <section className="py-12 bg-grey-50">
+      {/* Features Section */}
+      <section className="py-12 bg-grey-50" id="features" aria-labelledby="features-heading">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 id="features-heading" className="sr-only">Key Features</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {features.map((feature, index) => (
               <div 
@@ -247,22 +260,22 @@ const LandingPage = () => {
       </section>
 
       {/* App Screenshots - Carousel */}
-      <section className="py-12">
+      <section className="py-12" id="demo" aria-labelledby="demo-heading">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-centre text-grey-900 mb-6">See it in Action</h2>
+          <h2 id="demo-heading" className="text-2xl font-bold text-center text-grey-900 mb-6">See Quick Wing in Action</h2>
           <ScreenshotCarousel />
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-12 bg-grey-50">
+      <section id="pricing" className="py-12 bg-grey-50" aria-labelledby="pricing-heading">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-centre mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-grey-900 mb-2">
+          <div className="text-center mb-10">
+            <h2 id="pricing-heading" className="text-2xl sm:text-3xl font-bold text-grey-900 mb-2">
               Simple, Transparent Pricing
             </h2>
             <p className="text-grey-600">
-              No hidden fees. Cancel anytime.
+              No hidden fees. Cancel anytime. All plans include full support.
             </p>
           </div>
           
@@ -335,81 +348,107 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Contact Section - Compact */}
-      <section id="contact" className="py-12">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-centre">
-          <h2 className="text-2xl font-bold text-grey-900 mb-2">
+      {/* Contact Section */}
+      <section id="contact" className="py-12" aria-labelledby="contact-heading">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 id="contact-heading" className="text-2xl font-bold text-grey-900 mb-2">
             Ready to Get Started?
           </h2>
           <p className="text-grey-600 mb-6">
-            Get in touch for a demo or to ask any questions.
+            Get in touch for a free demo or to ask any questions about fleet management.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a 
               href="mailto:Lee.quickwing@gmail.com?subject=Quick Wing Enquiry"
               className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all"
+              aria-label="Email us at Lee.quickwing@gmail.com"
             >
-              <Mail className="mr-2" size={18} />
+              <Mail className="mr-2" size={18} aria-hidden="true" />
               Lee.quickwing@gmail.com
             </a>
             <a 
-              href="https://www.instagram.com/quick.wing2025?igsh=MXNvcnF2ZWJhMnQ1Zw%3D%3D&utm_source=qr"
+              href="https://www.instagram.com/quick.wing2025"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all"
+              aria-label="Follow us on Instagram @quick.wing2025"
             >
-              <Instagram className="mr-2" size={18} />
+              <Instagram className="mr-2" size={18} aria-hidden="true" />
               @quick.wing2025
             </a>
           </div>
         </div>
       </section>
 
-      {/* Footer - Minimal */}
-      <footer className="bg-slate-900 text-white py-8">
+      {/* Who Uses Quick Wing - Social Proof Section */}
+      <section className="py-12 bg-grey-50" aria-labelledby="industries-heading">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 id="industries-heading" className="text-xl font-bold text-grey-900 mb-6">
+            Trusted by Businesses Across Ireland
+          </h2>
+          <div className="flex flex-wrap justify-center gap-8 text-grey-500 text-sm">
+            <span>Care Providers</span>
+            <span>Transport Companies</span>
+            <span>Delivery Services</span>
+            <span>Construction Firms</span>
+            <span>Healthcare Organisations</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-slate-900 text-white py-8" role="contentinfo">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-centre gap-4">
-            <div className="text-centre md:text-left">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="text-center md:text-left">
               <img 
                 src="/quick-wing-logo.png" 
-                alt="Quick Wing" 
+                alt="Quick Wing Fleet Management"
                 className="h-8 w-auto mx-auto md:mx-0 mb-2 brightness-0 invert"
+                width="120"
+                height="32"
               />
               <p className="text-grey-400 text-sm">
-                Fleet management for companies requiring fleet management assistance.
+                Fleet management software for Irish businesses.
               </p>
             </div>
             
-            <div className="flex items-centre space-x-4 text-sm text-grey-400">
-              <a href="mailto:Lee.quickwing@gmail.com" className="hover:text-white transition-colours">
+            <nav className="flex items-center space-x-4 text-sm text-grey-400" aria-label="Footer navigation">
+              <a href="#features" className="hover:text-white transition-colors">
+                Features
+              </a>
+              <a href="#pricing" className="hover:text-white transition-colors">
+                Pricing
+              </a>
+              <a href="mailto:Lee.quickwing@gmail.com" className="hover:text-white transition-colors">
                 Contact
               </a>
               <a 
                 href="https://www.instagram.com/quick.wing2025"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-white transition-colours"
+                className="hover:text-white transition-colors"
               >
                 Instagram
               </a>
               <button 
                 onClick={() => navigate('/login')}
-                className="hover:text-white transition-colours"
+                className="hover:text-white transition-colors"
               >
                 Franchise Login
               </button>
-            </div>
+            </nav>
           </div>
           
-          <div className="border-t border-grey-800 mt-6 pt-6 text-centre">
+          <div className="border-t border-grey-800 mt-6 pt-6 text-center">
             <p className="text-grey-500 text-xs">
-              © {new Date().getFullYear()} Quick Wing. All rights reserved.
+              © {new Date().getFullYear()} Quick Wing Fleet Management. All rights reserved. | Fleet Management Software Ireland
             </p>
           </div>
         </div>
       </footer>
-    </div>
+    </main>
   );
 };
 

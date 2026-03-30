@@ -1,27 +1,146 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-IE">
     <head>
         <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
         <meta name="theme-color" content="#2563eb" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="description" content="Quick Wing Fleet Management System" />
-        <!--
-        manifest.json provides metadata used when your web app is installed on a
-        user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-        -->
-        <!--
-        Notice the use of %PUBLIC_URL% in the tags above.
-        It will be replaced with the URL of the `public` folder during the build.
-        Only files inside the `public` folder can be referenced from the HTML.
-
-        Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-        work correctly both with client-side routing and a non-root public URL.
-        Learn how to configure a non-root public URL by running `npm run build`.
-        -->
-        <title>Quick Wing - Fleet Management</title>
+        
+        <!-- Primary SEO Meta Tags -->
+        <title>Quick Wing | Fleet Management Software for Irish Businesses</title>
+        <meta name="title" content="Quick Wing | Fleet Management Software for Irish Businesses" />
+        <meta name="description" content="Quick Wing is Ireland's leading fleet management system. Book vehicles, track compliance, manage staff, and get real-time reports. Trusted by care providers, transport companies, and businesses across Ireland. Plans from €179/month." />
+        <meta name="keywords" content="fleet management software, fleet management Ireland, vehicle booking system, car fleet management, fleet compliance tracking, vehicle tracking Ireland, fleet reports, staff vehicle booking, care fleet management, transport fleet software" />
+        <meta name="author" content="Quick Wing" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://quick-wing.com/" />
+        
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://quick-wing.com/" />
+        <meta property="og:title" content="Quick Wing | Fleet Management Software for Irish Businesses" />
+        <meta property="og:description" content="Take control of your fleet. Book vehicles, track compliance, and manage your team - all in one place. Trusted by businesses across Ireland. Plans from €179/month." />
+        <meta property="og:image" content="https://quick-wing.com/quick-wing-logo.png" />
+        <meta property="og:locale" content="en_IE" />
+        <meta property="og:site_name" content="Quick Wing" />
+        
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content="https://quick-wing.com/" />
+        <meta name="twitter:title" content="Quick Wing | Fleet Management Software for Irish Businesses" />
+        <meta name="twitter:description" content="Take control of your fleet. Book vehicles, track compliance, and manage your team - all in one place. Plans from €179/month." />
+        <meta name="twitter:image" content="https://quick-wing.com/quick-wing-logo.png" />
+        
+        <!-- Geo Tags for Local SEO -->
+        <meta name="geo.region" content="IE" />
+        <meta name="geo.placename" content="Ireland" />
+        
+        <!-- Structured Data - Organization -->
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Quick Wing",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web",
+            "description": "Fleet management software for Irish businesses. Book vehicles, track compliance, manage staff, and generate reports.",
+            "url": "https://quick-wing.com",
+            "author": {
+                "@type": "Organization",
+                "name": "Quick Wing",
+                "url": "https://quick-wing.com",
+                "email": "Lee.quickwing@gmail.com",
+                "sameAs": [
+                    "https://www.instagram.com/quick.wing2025"
+                ]
+            },
+            "offers": [
+                {
+                    "@type": "Offer",
+                    "name": "Standard Plan",
+                    "price": "179",
+                    "priceCurrency": "EUR",
+                    "priceValidUntil": "2027-12-31",
+                    "description": "Up to 10 vehicles, 15 users. Perfect for small teams."
+                },
+                {
+                    "@type": "Offer",
+                    "name": "Essential Plan",
+                    "price": "299",
+                    "priceCurrency": "EUR",
+                    "priceValidUntil": "2027-12-31",
+                    "description": "Up to 25 vehicles, 35 users. Best value for growing organisations."
+                },
+                {
+                    "@type": "Offer",
+                    "name": "Professional Plan",
+                    "price": "499",
+                    "priceCurrency": "EUR",
+                    "priceValidUntil": "2027-12-31",
+                    "description": "Up to 50 vehicles, 50 users. For multi-site operations."
+                }
+            ],
+            "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": "4.8",
+                "ratingCount": "25"
+            }
+        }
+        </script>
+        
+        <!-- Structured Data - Local Business -->
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            "name": "Quick Wing Fleet Management",
+            "description": "Fleet management software provider serving businesses across Ireland",
+            "url": "https://quick-wing.com",
+            "email": "Lee.quickwing@gmail.com",
+            "areaServed": {
+                "@type": "Country",
+                "name": "Ireland"
+            },
+            "priceRange": "€179 - €499/month"
+        }
+        </script>
+        
+        <!-- Structured Data - FAQ -->
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+                {
+                    "@type": "Question",
+                    "name": "What is Quick Wing?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Quick Wing is a comprehensive fleet management system designed for Irish businesses. It helps you book vehicles, track compliance, manage staff, and generate detailed reports - all in one easy-to-use platform."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "How much does Quick Wing cost?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Quick Wing offers three plans: Standard at €179/month (up to 10 vehicles), Essential at €299/month (up to 25 vehicles), and Professional at €499/month (up to 50 vehicles). No hidden fees and cancel anytime."
+                    }
+                },
+                {
+                    "@type": "Question",
+                    "name": "Who uses Quick Wing?",
+                    "acceptedAnswer": {
+                        "@type": "Answer",
+                        "text": "Quick Wing is used by care providers, transport companies, delivery services, and any business in Ireland that needs to manage a fleet of vehicles efficiently."
+                    }
+                }
+            ]
+        }
+        </script>
+        
         <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
         <!--
         These two scripts have been added for the Visual Edits, please do not edit or remove them

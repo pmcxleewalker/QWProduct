@@ -103,7 +103,7 @@ const TenantProtectedRoute = ({ children, adminOnly = false }) => {
 
   // Admin only check
   if (adminOnly && !isTenantAdminUser) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
@@ -129,7 +129,7 @@ const PlatformProtectedRoute = ({ children }) => {
   const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager';
   
   if (!isPlatformAdminUser) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;

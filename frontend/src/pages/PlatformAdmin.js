@@ -458,10 +458,10 @@ const PlatformAdmin = () => {
     if (!window.confirm('You are about to impersonate this tenant. All actions will be logged.')) return;
     
     try {
-      await impersonateTenant(tenantId);
+      const tenant = await impersonateTenant(tenantId);
       setSuccess('Now impersonating tenant');
-      // Redirect to dashboard
-      window.location.href = '/';
+      // Redirect to tenant's dashboard using their slug
+      window.location.href = `/${tenant.slug}`;
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to impersonate tenant'));
     }

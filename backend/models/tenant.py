@@ -17,8 +17,9 @@ class TenantStatus(str, Enum):
 
 class TenantPlan(str, Enum):
     STANDARD = "standard"       # Quick Wing Standard - €179/month
-    ESSENTIAL = "essential"     # Quick Wing Essential - €279/month (Most Popular)
-    PROFESSIONAL = "professional"  # Quick Wing Professional - €399/month
+    ESSENTIAL = "essential"     # Quick Wing Essential - €299/month (Most Popular)
+    PROFESSIONAL = "professional"  # Quick Wing Professional - €499/month
+    ENTERPRISE = "enterprise"   # Quick Wing Enterprise - Coming Soon
 
 
 # Plan configuration with features and limits
@@ -27,8 +28,8 @@ PLAN_CONFIG = {
         "name": "Quick Wing Standard",
         "price": 179,
         "currency": "EUR",
-        "max_vehicles": 15,
-        "max_users": 25,
+        "max_vehicles": 10,
+        "max_users": 15,
         "customizations_per_month": 1,
         "sub_label": "Best for small teams",
         "features": {
@@ -57,7 +58,7 @@ PLAN_CONFIG = {
     },
     TenantPlan.ESSENTIAL: {
         "name": "Quick Wing Essential",
-        "price": 279,
+        "price": 299,
         "currency": "EUR",
         "max_vehicles": 25,
         "max_users": 35,
@@ -90,7 +91,7 @@ PLAN_CONFIG = {
     },
     TenantPlan.PROFESSIONAL: {
         "name": "Quick Wing Professional",
-        "price": 449,
+        "price": 499,
         "currency": "EUR",
         "max_vehicles": 50,
         "max_users": 50,
@@ -118,6 +119,43 @@ PLAN_CONFIG = {
         },
         "description": "For larger franchises that need more scale and visibility",
         "tagline": "Designed for larger teams that need flexibility, oversight and structure at scale"
+    },
+    TenantPlan.ENTERPRISE: {
+        "name": "Quick Wing Enterprise",
+        "price": None,  # Contact for pricing
+        "currency": "EUR",
+        "max_vehicles": 999,  # Effectively unlimited
+        "max_users": 999,  # Effectively unlimited
+        "customizations_per_month": 99,
+        "sub_label": "For large-scale operations",
+        "coming_soon": True,
+        "features": {
+            "vehicle_booking": True,
+            "fleet_compliance": True,
+            "basic_reports": True,
+            "staff_calendars": True,
+            "admin_all_cars_calendar": True,
+            "email_support": True,
+            "standard_onboarding": True,
+            "enhanced_reports": True,
+            "booking_visibility_enhanced": True,
+            "booking_admin_control": True,
+            "compliance_oversight_broad": True,
+            "cost_analytics": True,
+            "faster_support": True,
+            "detailed_reports": True,
+            "priority_support": True,
+            "multi_site_oversight": True,
+            "advanced_permissions": True,
+            "custom_exports": True,
+            "dedicated_account_manager": True,
+            "custom_integrations": True,
+            "sla_guarantees": True,
+            "on_site_training": True,
+            "bespoke_development": True,
+        },
+        "description": "Custom solutions for enterprise needs",
+        "tagline": "Tailored solutions for organisations requiring unlimited scale and dedicated support"
     }
 }
 

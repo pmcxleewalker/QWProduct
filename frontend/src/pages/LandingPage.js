@@ -89,8 +89,8 @@ const LandingPage = () => {
       tagline: "Best for small teams",
       description: "A practical fleet system for smaller organisations",
       features: [
-        "Up to 15 vehicles",
-        "Up to 25 users",
+        "Up to 10 vehicles",
+        "Up to 15 users",
         "Vehicle booking system",
         "Fleet compliance tracking",
         "Staff calendars",
@@ -101,7 +101,7 @@ const LandingPage = () => {
     },
     {
       name: "Essential",
-      price: "279",
+      price: "299",
       period: "month",
       tagline: "Best value",
       description: "For growing organisations needing more control",
@@ -120,7 +120,7 @@ const LandingPage = () => {
     },
     {
       name: "Professional",
-      price: "449",
+      price: "499",
       period: "month",
       tagline: "Best for multi-site operations",
       description: "For larger organisations requiring scale",
@@ -135,6 +135,25 @@ const LandingPage = () => {
         "Custom data exports"
       ],
       highlighted: false
+    },
+    {
+      name: "Enterprise",
+      price: null,
+      period: "month",
+      tagline: "For large-scale operations",
+      description: "Custom solutions for enterprise needs",
+      features: [
+        "Unlimited vehicles",
+        "Unlimited users",
+        "Everything in Professional, plus:",
+        "Dedicated account manager",
+        "Custom integrations",
+        "SLA guarantees",
+        "On-site training",
+        "Bespoke feature development"
+      ],
+      highlighted: false,
+      comingSoon: true
     }
   ];
 
@@ -266,13 +285,15 @@ const LandingPage = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-4 gap-6">
             {plans.map((plan, index) => (
               <div 
                 key={index}
                 className={`relative rounded-2xl p-6 ${
                   plan.highlighted 
                     ? 'bg-blue-600 text-white shadow-xl scale-105' 
+                    : plan.comingSoon
+                    ? 'bg-gray-50 border-2 border-dashed border-gray-300'
                     : 'bg-white border border-grey-200'
                 }`}
               >
@@ -284,23 +305,38 @@ const LandingPage = () => {
                     </span>
                   </div>
                 )}
+                {plan.comingSoon && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="inline-flex items-center px-3 py-1 bg-gray-500 text-white text-xs font-semibold rounded-full">
+                      Coming Soon
+                    </span>
+                  </div>
+                )}
                 
                 <div className="text-centre mb-4">
-                  <h3 className={`text-lg font-bold ${plan.highlighted ? 'text-white' : 'text-grey-900'}`}>
+                  <h3 className={`text-lg font-bold ${plan.highlighted ? 'text-white' : plan.comingSoon ? 'text-gray-500' : 'text-grey-900'}`}>
                     {plan.name}
                   </h3>
-                  <p className={`text-xs ${plan.highlighted ? 'text-blue-100' : 'text-grey-500'}`}>
+                  <p className={`text-xs ${plan.highlighted ? 'text-blue-100' : plan.comingSoon ? 'text-gray-400' : 'text-grey-500'}`}>
                     {plan.tagline}
                   </p>
                 </div>
                 
                 <div className="text-centre mb-4">
-                  <span className={`text-4xl font-bold ${plan.highlighted ? 'text-white' : 'text-grey-900'}`}>
-                    €{plan.price}
-                  </span>
-                  <span className={`text-sm ${plan.highlighted ? 'text-blue-100' : 'text-grey-500'}`}>
-                    /{plan.period}
-                  </span>
+                  {plan.price ? (
+                    <>
+                      <span className={`text-4xl font-bold ${plan.highlighted ? 'text-white' : 'text-grey-900'}`}>
+                        €{plan.price}
+                      </span>
+                      <span className={`text-sm ${plan.highlighted ? 'text-blue-100' : 'text-grey-500'}`}>
+                        /{plan.period}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-2xl font-bold text-gray-400">
+                      Contact Us
+                    </span>
+                  )}
                 </div>
                 
                 <ul className="space-y-2 mb-6">
@@ -309,26 +345,35 @@ const LandingPage = () => {
                       <CheckCircle 
                         size={16} 
                         className={`mr-2 flex-shrink-0 mt-0.5 ${
-                          plan.highlighted ? 'text-blue-200' : 'text-blue-600'
+                          plan.highlighted ? 'text-blue-200' : plan.comingSoon ? 'text-gray-300' : 'text-blue-600'
                         }`} 
                       />
-                      <span className={`text-sm ${plan.highlighted ? 'text-white' : 'text-grey-600'}`}>
+                      <span className={`text-sm ${plan.highlighted ? 'text-white' : plan.comingSoon ? 'text-gray-400' : 'text-grey-600'}`}>
                         {feature}
                       </span>
                     </li>
                   ))}
                 </ul>
                 
-                <a 
-                  href={`mailto:Lee.quickwing@gmail.com?subject=Interested in Quick Wing ${plan.name}`}
-                  className={`block w-full py-2.5 rounded-lg font-semibold text-centre text-sm transition-all ${
-                    plan.highlighted
-                      ? 'bg-white text-blue-600 hover:bg-grey-100'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  Get Started
-                </a>
+                {plan.comingSoon ? (
+                  <button 
+                    disabled
+                    className="block w-full py-2.5 rounded-lg font-semibold text-centre text-sm bg-gray-200 text-gray-400 cursor-not-allowed"
+                  >
+                    Coming Soon
+                  </button>
+                ) : (
+                  <a 
+                    href={`mailto:Lee.quickwing@gmail.com?subject=Interested in Quick Wing ${plan.name}`}
+                    className={`block w-full py-2.5 rounded-lg font-semibold text-centre text-sm transition-all ${
+                      plan.highlighted
+                        ? 'bg-white text-blue-600 hover:bg-grey-100'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    Get Started
+                  </a>
+                )}
               </div>
             ))}
           </div>

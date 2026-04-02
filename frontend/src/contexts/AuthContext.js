@@ -284,7 +284,8 @@ export const AuthProvider = ({ children }) => {
   const isSuperAdmin = () => user?.role === 'super_admin';
   const isMasterAdmin = () => user?.role === 'master_admin';
   const isContentManager = () => user?.role === 'content_manager';
-  const isPlatformAdmin = () => user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager';
+  const isBot = () => user?.role === 'bot';
+  const isPlatformAdmin = () => user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager' || user?.role === 'bot';
   const isTenantAdmin = () => activeTenant?.role === 'tenant_admin' || isPlatformAdmin();
   const isStaff = () => activeTenant?.role === 'staff';
   const isImpersonating = () => activeTenant?.is_impersonating === true;

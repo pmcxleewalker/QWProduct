@@ -126,6 +126,7 @@ class UserRole(str, Enum):
     SUPER_ADMIN = "super_admin"      # Platform owner - full access to all tenants
     MASTER_ADMIN = "master_admin"    # Franchise owner - pays for service, manages their tenant
     CONTENT_MANAGER = "content_manager"  # Content manager - access to Content and Subscriptions only
+    BOT = "bot"                      # Bot/API access - Franchises tab only (for Open Claw)
     ADMIN = "admin"                  # Admin within tenant (created by master admin)
     STAFF = "staff"                  # Regular staff within a tenant
 

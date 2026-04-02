@@ -161,10 +161,10 @@ async def login(credentials: UserLogin, request: Request):
                     default_tenant_id = tenant["id"]
                     user_role = UserRole(membership["role"])
     
-    # Check for super/master admin or content manager from USER record (not memberships)
+    # Check for super/master admin or content manager or bot from USER record (not memberships)
     # These special roles are stored directly on the user document
     user_db_role = user.get("role")
-    if user_db_role in [UserRole.SUPER_ADMIN.value, UserRole.MASTER_ADMIN.value, UserRole.CONTENT_MANAGER.value]:
+    if user_db_role in [UserRole.SUPER_ADMIN.value, UserRole.MASTER_ADMIN.value, UserRole.CONTENT_MANAGER.value, UserRole.BOT.value]:
         user_role = UserRole(user_db_role)
     
     # Build token payload
@@ -4753,6 +4753,9 @@ async def startup():
     # Seed Malcolm's super admin account
     await seed_malcolm_admin()
     
+    # Seed Open Claw bot account
+    await seed_bot_account()
+    
     # Ensure indexes exist
     try:
         await db.vehicles.create_index([("tenant_id", 1), ("id", 1)])
@@ -4763,6 +4766,63 @@ async def startup():
         await db.users.create_index("id", unique=True)
     except Exception as e:
         logger.warning(f"Index creation warning: {e}")
+
+
+async def seed_bot_account():
+    """Ensure Open Claw bot account exists on startup."""
+    BOT_EMAIL = "bot@quickwing.com"
+    BOT_PASSWORD = "bot123"
+    BOT_NAME = "Open Claw Bot"
+    
+    try:
+        existing = await db.users.find_one({"email": BOT_EMAIL})
+        
+        if existing:
+            user_id = existing["id"]
+            logger.info(f"Bot account exists: {BOT_EMAIL}")
+            
+            # Ensure password is correct and role is set
+            password_hash = get_password_hash(BOT_PASSWORD)
+            await db.users.update_one(
+                {"email": BOT_EMAIL},
+                {"$set": {"password_hash": password_hash, "is_active": True, "role": "bot"}}
+            )
+        else:
+            # Create bot account
+            user_id = str(uuid.uuid4())
+            password_hash = get_password_hash(BOT_PASSWORD)
+            bot_user = {
+                "id": user_id,
+                "email": BOT_EMAIL,
+                "name": BOT_NAME,
+                "password_hash": password_hash,
+                "role": "bot",
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.users.insert_one(bot_user)
+            logger.info(f"Created bot account: {BOT_EMAIL}")
+        
+        # Ensure membership exists for bot role
+        existing_membership = await db.memberships.find_one({
+            "user_id": user_id,
+            "role": "bot"
+        })
+        
+        if not existing_membership:
+            membership = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "tenant_id": None,
+                "role": "bot",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.memberships.insert_one(membership)
+            logger.info("Created bot membership for Open Claw")
+            
+    except Exception as e:
+        logger.error(f"Error seeding bot account: {e}")
 
 
 async def seed_malcolm_admin():

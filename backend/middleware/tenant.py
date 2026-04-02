@@ -179,9 +179,9 @@ async def require_platform_admin(
     context: TenantContext = Depends(get_tenant_context)
 ) -> TenantContext:
     """
-    Require super admin or master admin role.
+    Require super admin, master admin, content manager, or bot role.
     """
-    if context.role not in [UserRole.SUPER_ADMIN, UserRole.MASTER_ADMIN]:
+    if context.role not in [UserRole.SUPER_ADMIN, UserRole.MASTER_ADMIN, UserRole.CONTENT_MANAGER, UserRole.BOT]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Platform admin access required"

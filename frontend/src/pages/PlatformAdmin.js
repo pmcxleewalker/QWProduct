@@ -37,6 +37,8 @@ const PlatformAdmin = () => {
   useEffect(() => {
     if (user?.role === 'content_manager') {
       setActiveTab('content-worker');
+    } else if (user?.role === 'bot') {
+      setActiveTab('tenants');
     }
   }, [user]);
   const [tenantsSubTab, setTenantsSubTab] = useState('franchises'); // 'franchises' or 'admins'
@@ -140,27 +142,38 @@ const PlatformAdmin = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [tenantsRes, statsRes, logsRes, usersRes, plansRes] = await Promise.all([
-        axios.get(`${API}/platform/tenants`),
-        axios.get(`${API}/platform/stats`),
-        axios.get(`${API}/platform/audit-log?limit=50`),
-        axios.get(`${API}/platform/users`),
-        axios.get(`${API}/platform/plans`)
-      ]);
       
-      setTenants(tenantsRes.data.tenants || []);
-      setStats(statsRes.data);
-      setAuditLogs(logsRes.data.events || []);
-      setAllUsers(usersRes.data.users || []);
-      setPlanConfigs(plansRes.data.plans || []);
-      
-      // Extract master admins (super_admin + master_admin roles)
-      const users = usersRes.data.users || [];
-      const admins = users.filter(u => 
-        u.role === 'super_admin' || 
-        u.memberships?.some(m => m.role === 'master_admin')
-      );
-      setMasterAdmins(admins);
+      // For bot role, only fetch tenants and plans (what they need)
+      if (user?.role === 'bot') {
+        const [tenantsRes, plansRes] = await Promise.all([
+          axios.get(`${API}/platform/tenants`),
+          axios.get(`${API}/platform/plans`)
+        ]);
+        setTenants(tenantsRes.data.tenants || []);
+        setPlanConfigs(plansRes.data.plans || []);
+      } else {
+        const [tenantsRes, statsRes, logsRes, usersRes, plansRes] = await Promise.all([
+          axios.get(`${API}/platform/tenants`),
+          axios.get(`${API}/platform/stats`),
+          axios.get(`${API}/platform/audit-log?limit=50`),
+          axios.get(`${API}/platform/users`),
+          axios.get(`${API}/platform/plans`)
+        ]);
+        
+        setTenants(tenantsRes.data.tenants || []);
+        setStats(statsRes.data);
+        setAuditLogs(logsRes.data.events || []);
+        setAllUsers(usersRes.data.users || []);
+        setPlanConfigs(plansRes.data.plans || []);
+        
+        // Extract master admins (super_admin + master_admin roles)
+        const users = usersRes.data.users || [];
+        const admins = users.filter(u => 
+          u.role === 'super_admin' || 
+          u.memberships?.some(m => m.role === 'master_admin')
+        );
+        setMasterAdmins(admins);
+      }
     } catch (err) {
       setError('Failed to load platform data');
       console.error(err);
@@ -595,7 +608,8 @@ const PlatformAdmin = () => {
                 <span className="text-xs text-slate-300">{user?.email}</span>
                 <span className="px-2 py-1 bg-emerald-600 rounded-full text-xs font-medium">
                   {user?.role === 'super_admin' ? 'Super Admin' : 
-                   user?.role === 'content_manager' ? 'Content Manager' : 'Master Admin'}
+                   user?.role === 'content_manager' ? 'Content Manager' :
+                   user?.role === 'bot' ? 'Bot' : 'Master Admin'}
                 </span>
               </div>
               <button
@@ -618,7 +632,7 @@ const PlatformAdmin = () => {
           <div className="flex space-x-1 py-2 overflow-x-auto">
             {[
               { id: 'overview', label: 'Dashboard', sublabel: 'Platform Overview', icon: Activity, roles: ['super_admin', 'master_admin'] },
-              { id: 'tenants', label: 'Franchises', sublabel: 'Manage Tenants', icon: Building2, roles: ['super_admin', 'master_admin'] },
+              { id: 'tenants', label: 'Franchises', sublabel: 'Manage Tenants', icon: Building2, roles: ['super_admin', 'master_admin', 'bot'] },
               { id: 'users', label: 'Team', sublabel: 'User Management', icon: Users, roles: ['super_admin', 'master_admin'] },
               { id: 'content-worker', label: 'Content', sublabel: 'Social Media', icon: Instagram, roles: ['super_admin', 'master_admin', 'content_manager'] },
               { id: 'plans', label: 'Subscriptions', sublabel: 'Plans & Features', icon: Layers, roles: ['super_admin', 'master_admin', 'content_manager'] },

@@ -203,7 +203,7 @@ const DailyTimelineChart = () => {
                   className="flex items-center space-x-3 group"
                   data-testid={`timeline-slot-${slot.hour}`}
                 >
-                  <span className={`w-14 text-sm font-medium ${isBooked ? 'text-purple-600' : 'text-gray-600'}`}>
+                  <span className={`w-14 text-sm font-medium ${isBooked ? 'text-red-600' : 'text-gray-600'}`}>
                     {slot.hour}
                   </span>
                   
@@ -211,7 +211,7 @@ const DailyTimelineChart = () => {
                     <div 
                       className={`h-full rounded-full transition-all duration-300 ${
                         isBooked 
-                          ? 'bg-gradient-to-r from-purple-400 to-purple-600 w-full' 
+                          ? 'bg-gradient-to-r from-red-400 to-red-600 w-full' 
                           : 'bg-gradient-to-r from-green-300 to-green-400 w-full'
                       }`}
                     />
@@ -227,7 +227,7 @@ const DailyTimelineChart = () => {
                   <div className="w-20 text-right">
                     <span className={`text-xs px-2 py-1 rounded-full ${
                       isBooked 
-                        ? 'bg-purple-100 text-purple-700' 
+                        ? 'bg-red-100 text-red-700' 
                         : 'bg-green-100 text-green-700'
                     }`}>
                       {slot.status}
@@ -293,7 +293,7 @@ const DailyTimelineChart = () => {
                 <span className="text-gray-600">Available</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded bg-gradient-to-r from-purple-400 to-purple-600"></div>
+                <div className="w-4 h-4 rounded bg-gradient-to-r from-red-400 to-red-600"></div>
                 <span className="text-gray-600">Booked</span>
               </div>
             </>

@@ -1148,11 +1148,11 @@ const TenantDashboard = () => {
                     <span className="text-gray-600">Free</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded bg-purple-200 border border-purple-400"></div>
+                    <div className="w-4 h-4 rounded bg-red-200 border border-red-400"></div>
                     <span className="text-gray-600">Booked</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded bg-orange-200 border border-orange-400"></div>
+                    <div className="w-4 h-4 rounded bg-purple-200 border border-purple-400"></div>
                     <span className="text-gray-600">Recurring</span>
                   </div>
                 </div>

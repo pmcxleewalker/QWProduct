@@ -47,8 +47,8 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
   const getSlotStatus = (date, timeSlot) => {
     const booking = isSlotBooked(date, timeSlot);
     if (!booking) return { status: 'free', color: 'bg-green-100 hover:bg-green-200 text-green-800 border-green-300' };
-    if (booking.is_recurring) return { status: 'recurring', color: 'bg-orange-100 text-orange-800 border-orange-300', booking };
-    return { status: 'booked', color: 'bg-purple-100 text-purple-800 border-purple-300', booking };
+    if (booking.is_recurring) return { status: 'recurring', color: 'bg-purple-100 text-purple-800 border-purple-300', booking };
+    return { status: 'booked', color: 'bg-red-100 text-red-800 border-red-300', booking };
   };
 
   // Navigate dates
@@ -168,11 +168,11 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
           <span className="text-gray-600">Free</span>
         </div>
         <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 rounded bg-purple-200 border border-purple-400"></div>
+          <div className="w-3 h-3 rounded bg-red-200 border border-red-400"></div>
           <span className="text-gray-600">Booked</span>
         </div>
         <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 rounded bg-orange-200 border border-orange-400"></div>
+          <div className="w-3 h-3 rounded bg-purple-200 border border-purple-400"></div>
           <span className="text-gray-600">Recurring</span>
         </div>
       </div>

@@ -242,9 +242,9 @@ const FleetReportsSection = ({ onRefresh }) => {
                 <p className="text-xl font-bold text-orange-700">{daily_availability.partially_free}</p>
                 <p className="text-xs text-orange-600">Partially Free</p>
               </div>
-              <div className="text-center p-2 bg-purple-50 rounded-lg">
-                <p className="text-xl font-bold text-purple-700">{daily_availability.fully_booked}</p>
-                <p className="text-xs text-purple-600">Fully Booked</p>
+              <div className="text-center p-2 bg-red-50 rounded-lg">
+                <p className="text-xl font-bold text-red-700">{daily_availability.fully_booked}</p>
+                <p className="text-xs text-red-600">Fully Booked</p>
               </div>
             </div>
 
@@ -281,12 +281,12 @@ const FleetReportsSection = ({ onRefresh }) => {
                     />
                   )}
                   
-                  {/* Booked segment (purple) */}
+                  {/* Booked segment (red) */}
                   {bookedPercent > 0 && (
                     <circle 
                       cx="50" cy="50" r="40" 
                       fill="none" 
-                      stroke="#9333ea" 
+                      stroke="#ef4444" 
                       strokeWidth="12"
                       strokeDasharray={`${bookedPercent * 2.51} 251`}
                       strokeDashoffset={`${-(freePercent + partialPercent) * 2.51}`}
@@ -316,7 +316,7 @@ const FleetReportsSection = ({ onRefresh }) => {
                 <span className="text-gray-600">Partial ({daily_availability.partially_free})</span>
               </div>
               <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 rounded bg-purple-500"></div>
+                <div className="w-3 h-3 rounded bg-red-500"></div>
                 <span className="text-gray-600">Booked ({daily_availability.fully_booked})</span>
               </div>
             </div>

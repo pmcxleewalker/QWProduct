@@ -20,21 +20,25 @@
 ### Booking Features
 | Feature | Addon Price | Included In |
 |---------|-------------|-------------|
-| Enhanced Booking Visibility | €19/mo | Essential, Professional |
 | Admin Booking Control | €25/mo | Essential, Professional |
 | Recurring Bookings | €25/mo | Essential, Professional |
+| Request a Lift | €15/mo | Essential, Professional |
+| Enhanced Booking Visibility | €19/mo | Professional |
 
 ### Fleet Management
 | Feature | Addon Price | Included In |
 |---------|-------------|-------------|
 | Block/Unblock Vehicles | €10/mo | Essential, Professional |
+| Show Map | €25/mo | Essential, Professional |
+| Map Booking Pins | €19/mo | Essential, Professional |
 | Status History | €19/mo | Professional |
 
 ### Reports & Analytics
 | Feature | Addon Price | Included In |
 |---------|-------------|-------------|
 | Enhanced Reports | €29/mo | Essential, Professional |
-| Cost Analytics | €39/mo | Essential, Professional |
+| Location Summary Reports | €29/mo | Essential, Professional |
+| Cost Analytics | €39/mo | Professional |
 | Detailed Reports | €49/mo | Professional |
 | Custom Exports | €25/mo | Professional |
 | Daily Timeline View | €29/mo | Professional |

@@ -51,7 +51,8 @@ from models.resources import (
     BookingCreate, BookingUpdate, Booking,
     StatusUpdate, ProviderCreate, Provider,
     MessageCreate, Message, TodoCreate, Todo,
-    LiftRequestCreate, LiftRequest
+    LiftRequestCreate, LiftRequest,
+    LocationCreate, LocationUpdate, Location
 )
 from models.invoice import (
     Invoice, InvoiceCreate, InvoiceUpdate, InvoiceStatus, InvoiceItem,
@@ -4628,6 +4629,88 @@ async def dismiss_lift_request(
     )
     
     return {"message": "Lift request dismissed"}
+
+
+# ==================== LOCATIONS (Admin-configured) ====================
+
+@api_router.get("/locations")
+async def list_locations(
+    context: TenantContext = Depends(require_tenant_context)
+):
+    """List all configured locations for the tenant"""
+    query = TenantQueryBuilder.scope(context.tenant_id)
+    locations = await db.locations.find(query, {"_id": 0}).sort("name", 1).to_list(100)
+    return {"locations": locations}
+
+
+@api_router.post("/locations")
+async def create_location(
+    location_data: LocationCreate,
+    context: TenantContext = Depends(require_admin)
+):
+    """Create a new location (Admin only)"""
+    location = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": context.tenant_id,
+        **location_data.model_dump(),
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # If this is set as default, unset other defaults
+    if location_data.is_default:
+        await db.locations.update_many(
+            {"tenant_id": context.tenant_id},
+            {"$set": {"is_default": False}}
+        )
+    
+    await db.locations.insert_one(location)
+    return {k: v for k, v in location.items() if k != "_id"}
+
+
+@api_router.put("/locations/{location_id}")
+async def update_location(
+    location_id: str,
+    location_data: LocationUpdate,
+    context: TenantContext = Depends(require_admin)
+):
+    """Update a location (Admin only)"""
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, location_id)
+    location = await db.locations.find_one(query)
+    
+    if not location:
+        raise HTTPException(status_code=404, detail="Location not found")
+    
+    update_data = {k: v for k, v in location_data.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # If setting as default, unset other defaults
+    if location_data.is_default:
+        await db.locations.update_many(
+            {"tenant_id": context.tenant_id, "id": {"$ne": location_id}},
+            {"$set": {"is_default": False}}
+        )
+    
+    await db.locations.update_one(query, {"$set": update_data})
+    
+    updated = await db.locations.find_one(query, {"_id": 0})
+    return updated
+
+
+@api_router.delete("/locations/{location_id}")
+async def delete_location(
+    location_id: str,
+    context: TenantContext = Depends(require_admin)
+):
+    """Delete a location (Admin only)"""
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, location_id)
+    result = await db.locations.delete_one(query)
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Location not found")
+    
+    return {"message": "Location deleted"}
 
 
 # ==================== QR CODE ====================

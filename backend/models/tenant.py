@@ -158,6 +158,38 @@ FEATURE_REGISTRY = {
         "sellable": True,
         "addon_price": 10
     },
+    "request_lift": {
+        "name": "Request a Lift",
+        "description": "Allow staff to request lifts from other team members",
+        "category": "bookings",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 15
+    },
+    "show_map": {
+        "name": "Show Map",
+        "description": "View fleet and bookings on interactive map",
+        "category": "fleet",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 25
+    },
+    "map_booking_pins": {
+        "name": "Map Booking Pins",
+        "description": "See all active bookings pinned on map with journey routes",
+        "category": "fleet",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 19
+    },
+    "location_summary_reports": {
+        "name": "Location Summary Reports",
+        "description": "Reports grouped by admin-configured locations",
+        "category": "reports",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 29
+    },
     
     # === PROFESSIONAL TIER FEATURES ===
     "detailed_reports": {

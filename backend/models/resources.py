@@ -52,6 +52,14 @@ class Vehicle(VehicleBase):
 
 # ==================== BOOKING MODELS ====================
 
+class JourneyStop(BaseModel):
+    """A stop along a journey route"""
+    eircode: str
+    address: Optional[str] = ""
+    stop_order: int = 0
+    notes: Optional[str] = ""
+
+
 class BookingCreate(BaseModel):
     car_id: str
     user_name: str
@@ -65,6 +73,12 @@ class BookingCreate(BaseModel):
     recurrence_type: Optional[str] = None
     recurrence_end_date: Optional[str] = None
     recurrence_count: Optional[int] = None
+    # Journey tracking fields
+    start_eircode: Optional[str] = None
+    start_address: Optional[str] = None
+    end_eircode: Optional[str] = None
+    end_address: Optional[str] = None
+    journey_stops: Optional[List[JourneyStop]] = None
 
 
 class BookingUpdate(BaseModel):
@@ -75,6 +89,12 @@ class BookingUpdate(BaseModel):
     location: Optional[str] = None
     status: Optional[str] = None
     is_double_up_call: Optional[bool] = None
+    # Journey tracking fields
+    start_eircode: Optional[str] = None
+    start_address: Optional[str] = None
+    end_eircode: Optional[str] = None
+    end_address: Optional[str] = None
+    journey_stops: Optional[List[JourneyStop]] = None
 
 
 class Booking(BaseModel):
@@ -98,6 +118,12 @@ class Booking(BaseModel):
     created_by_email: str
     created_by_user_id: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # Journey tracking fields (available in ALL tiers)
+    start_eircode: Optional[str] = None
+    start_address: Optional[str] = None
+    end_eircode: Optional[str] = None
+    end_address: Optional[str] = None
+    journey_stops: Optional[List[dict]] = None  # List of stop objects
 
 
 # ==================== STATUS UPDATE MODELS ====================
@@ -228,3 +254,36 @@ class LiftRequest(BaseModel):
     accepted_by: Optional[str] = None
     accepted_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# ==================== LOCATION MODELS (Admin-configured) ====================
+
+class LocationCreate(BaseModel):
+    """Create a new location for the tenant"""
+    name: str
+    eircode: Optional[str] = None
+    address: Optional[str] = None
+    is_default: bool = False
+
+
+class LocationUpdate(BaseModel):
+    """Update an existing location"""
+    name: Optional[str] = None
+    eircode: Optional[str] = None
+    address: Optional[str] = None
+    is_default: Optional[bool] = None
+    is_active: Optional[bool] = None
+
+
+class Location(BaseModel):
+    """A configured location for the tenant"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    tenant_id: str  # REQUIRED - tenant isolation
+    name: str
+    eircode: Optional[str] = None
+    address: Optional[str] = None
+    is_default: bool = False
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

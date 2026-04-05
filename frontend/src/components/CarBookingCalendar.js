@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, X, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, Calendar as CalendarIcon, MapPin } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -20,10 +20,16 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
     start_time: '',
     end_time: '',
     notes: '',
-    is_recurring: false
+    is_recurring: false,
+    start_eircode: '',
+    start_address: '',
+    end_eircode: '',
+    end_address: '',
+    journey_stops: []
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [newStop, setNewStop] = useState({ eircode: '', address: '' });
 
   // Get bookings for this specific vehicle
   const vehicleBookings = bookings.filter(b => b.car_id === vehicle.id);
@@ -96,6 +102,13 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
     setSubmitting(true);
     setError('');
 
+    // Validate mandatory journey fields
+    if (!bookingForm.start_eircode || !bookingForm.end_eircode) {
+      setError('Start and End Eircode are required');
+      setSubmitting(false);
+      return;
+    }
+
     try {
       await axios.post(`${API}/bookings`, {
         car_id: vehicle.id,
@@ -103,17 +116,57 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
         start_time: bookingForm.start_time,
         end_time: bookingForm.end_time,
         notes: bookingForm.notes,
-        is_recurring: bookingForm.is_recurring
+        is_recurring: bookingForm.is_recurring,
+        start_eircode: bookingForm.start_eircode,
+        start_address: bookingForm.start_address,
+        end_eircode: bookingForm.end_eircode,
+        end_address: bookingForm.end_address,
+        journey_stops: bookingForm.journey_stops
       });
 
       setShowBookingModal(false);
       setSelectedSlot(null);
+      // Reset form
+      setBookingForm({
+        user_name: '',
+        start_time: '',
+        end_time: '',
+        notes: '',
+        is_recurring: false,
+        start_eircode: '',
+        start_address: '',
+        end_eircode: '',
+        end_address: '',
+        journey_stops: []
+      });
       if (onBookingCreated) onBookingCreated();
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to create booking');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Add a stop to the journey
+  const addStop = () => {
+    if (newStop.eircode) {
+      setBookingForm({
+        ...bookingForm,
+        journey_stops: [
+          ...bookingForm.journey_stops,
+          { ...newStop, stop_order: bookingForm.journey_stops.length }
+        ]
+      });
+      setNewStop({ eircode: '', address: '' });
+    }
+  };
+
+  // Remove a stop
+  const removeStop = (index) => {
+    setBookingForm({
+      ...bookingForm,
+      journey_stops: bookingForm.journey_stops.filter((_, i) => i !== index)
+    });
   };
 
   return (
@@ -294,8 +347,104 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
                   value={bookingForm.notes}
                   onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Location, purpose, etc."
+                  placeholder="Purpose, instructions, etc."
                 />
+              </div>
+
+              {/* Journey Details - Mandatory */}
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                  <MapPin className="mr-2 text-blue-600" size={18} />
+                  Journey Details <span className="text-red-500 ml-1">*</span>
+                </h4>
+                
+                {/* Start Location */}
+                <div className="bg-green-50 p-3 rounded-lg mb-3">
+                  <label className="block text-sm font-medium text-green-800 mb-1">
+                    Start Eircode <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={bookingForm.start_eircode}
+                    onChange={(e) => setBookingForm({ ...bookingForm, start_eircode: e.target.value.toUpperCase() })}
+                    className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 mb-2"
+                    placeholder="e.g. D02 X285"
+                    required
+                  />
+                  <input
+                    type="text"
+                    value={bookingForm.start_address}
+                    onChange={(e) => setBookingForm({ ...bookingForm, start_address: e.target.value })}
+                    className="w-full px-3 py-2 border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
+                    placeholder="Address (optional)"
+                  />
+                </div>
+
+                {/* Stops */}
+                {bookingForm.journey_stops.length > 0 && (
+                  <div className="space-y-2 mb-3">
+                    {bookingForm.journey_stops.map((stop, index) => (
+                      <div key={index} className="flex items-center space-x-2 bg-amber-50 p-2 rounded-lg">
+                        <div className="flex-1">
+                          <span className="text-xs text-amber-700 font-medium">Stop {index + 1}</span>
+                          <p className="text-sm font-medium text-amber-900">{stop.eircode}</p>
+                          {stop.address && <p className="text-xs text-amber-600">{stop.address}</p>}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeStop(index)}
+                          className="p-1 text-red-500 hover:bg-red-100 rounded"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add Stop */}
+                <div className="flex items-end space-x-2 mb-3">
+                  <div className="flex-1">
+                    <label className="block text-xs text-gray-500 mb-1">Add Stop (optional)</label>
+                    <input
+                      type="text"
+                      value={newStop.eircode}
+                      onChange={(e) => setNewStop({ ...newStop, eircode: e.target.value.toUpperCase() })}
+                      className="w-full px-3 py-2 border rounded-lg text-sm"
+                      placeholder="Stop Eircode"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addStop}
+                    disabled={!newStop.eircode}
+                    className="px-3 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 disabled:opacity-50"
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
+
+                {/* End Location */}
+                <div className="bg-red-50 p-3 rounded-lg">
+                  <label className="block text-sm font-medium text-red-800 mb-1">
+                    End Eircode <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={bookingForm.end_eircode}
+                    onChange={(e) => setBookingForm({ ...bookingForm, end_eircode: e.target.value.toUpperCase() })}
+                    className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 mb-2"
+                    placeholder="e.g. D04 Y123"
+                    required
+                  />
+                  <input
+                    type="text"
+                    value={bookingForm.end_address}
+                    onChange={(e) => setBookingForm({ ...bookingForm, end_address: e.target.value })}
+                    className="w-full px-3 py-2 border border-red-200 rounded-lg focus:ring-2 focus:ring-red-500 text-sm"
+                    placeholder="Address (optional)"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center space-x-2">

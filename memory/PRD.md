@@ -3,6 +3,25 @@
 ## Product Overview
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
+## Recent Changes (April 2026)
+
+### Public QR Code Mileage Submission - COMPLETED ✅ (April 2026)
+- **No login required** - Anyone can scan QR and submit mileage
+- Public page shows: Vehicle name, registration, organisation, last mileage
+- Optional "Your Name" field for accountability
+- Optional "Notes" field for reporting issues
+- Public API endpoints: 
+  - `GET /api/public/vehicle/{tenant_slug}/{vehicle_id}` - Get vehicle info
+  - `POST /api/public/vehicle/{tenant_slug}/{vehicle_id}/submit-mileage` - Submit mileage
+- Service due alerts displayed after submission
+
+### Live Status Updates - COMPLETED ✅ (April 2026)
+- Vehicle status now reflects **active bookings in real-time**
+- When a booking is active (current time between start/end), vehicle shows "In Use"
+- Active booking info displayed (user name, purpose, end time)
+- Blocked vehicles always show "Blocked" status
+- Status updates immediately without manual intervention
+
 ## Recent Changes (March 2026)
 
 ### Granular Feature Toggle System - COMPLETED ✅ (March 2026)

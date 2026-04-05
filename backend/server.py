@@ -3455,9 +3455,45 @@ async def list_vehicles(
     limit: int = 100,
     context: TenantContext = Depends(require_tenant_context)
 ):
-    """List vehicles in the current tenant"""
+    """List vehicles in the current tenant with real-time booking status"""
     query = TenantQueryBuilder.scope(context.tenant_id)
     vehicles = await db.vehicles.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    
+    # Get current time for booking status check
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+    
+    # Find active bookings for all vehicles in this tenant
+    active_bookings_query = {
+        "tenant_id": context.tenant_id,
+        "status": "approved",
+        "start_time": {"$lte": now_iso},
+        "end_time": {"$gte": now_iso}
+    }
+    active_bookings = await db.bookings.find(active_bookings_query, {"_id": 0}).to_list(1000)
+    
+    # Create a map of vehicle_id -> active booking
+    vehicle_bookings = {b["car_id"]: b for b in active_bookings}
+    
+    # Update vehicle status based on active bookings
+    for vehicle in vehicles:
+        vehicle_id = vehicle.get("id")
+        if vehicle_id in vehicle_bookings and not vehicle.get("is_blocked"):
+            # Vehicle has an active booking right now
+            booking = vehicle_bookings[vehicle_id]
+            vehicle["current_status"] = "In Use"
+            vehicle["active_booking"] = {
+                "user_name": booking.get("user_name"),
+                "purpose": booking.get("purpose"),
+                "end_time": booking.get("end_time")
+            }
+        elif vehicle.get("is_blocked"):
+            vehicle["current_status"] = "Blocked"
+        elif vehicle.get("current_status") == "In Use" and vehicle_id not in vehicle_bookings:
+            # No active booking, but status was "In Use" - check if it should be free
+            # Only auto-update if it was set by booking system
+            pass  # Keep manual status
+    
     return vehicles
 
 
@@ -4703,6 +4739,164 @@ async def get_vehicle_mileage_history(
         "vehicle_id": vehicle_id,
         "current_mileage": vehicle.get("current_mileage"),
         "history": logs
+    }
+
+
+# ==================== PUBLIC QR CODE ENDPOINTS (NO AUTH REQUIRED) ====================
+
+class PublicMileageSubmission(BaseModel):
+    """Request model for public mileage submission via QR code"""
+    mileage: int
+    submitted_by_name: Optional[str] = None  # Optional - person's name
+    notes: Optional[str] = None
+
+
+@api_router.get("/public/vehicle/{tenant_slug}/{vehicle_id}")
+async def get_public_vehicle_info(tenant_slug: str, vehicle_id: str):
+    """
+    PUBLIC ENDPOINT - No authentication required.
+    Get vehicle information for QR code mileage submission page.
+    """
+    # Find tenant by slug
+    tenant = await db.tenants.find_one({"slug": tenant_slug}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Organisation not found")
+    
+    # Find vehicle
+    vehicle = await db.vehicles.find_one(
+        {"tenant_id": tenant["id"], "id": vehicle_id},
+        {"_id": 0}
+    )
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    # Return limited public info
+    return {
+        "vehicle": {
+            "id": vehicle["id"],
+            "name": vehicle.get("name", "Unknown Vehicle"),
+            "registration": vehicle.get("registration", ""),
+            "current_mileage": vehicle.get("current_mileage"),
+            "last_mileage_update": vehicle.get("last_mileage_update"),
+            "current_status": vehicle.get("current_status", "Unknown")
+        },
+        "tenant": {
+            "name": tenant.get("name", "Unknown Organisation"),
+            "slug": tenant_slug
+        }
+    }
+
+
+@api_router.post("/public/vehicle/{tenant_slug}/{vehicle_id}/submit-mileage")
+async def submit_public_mileage(
+    tenant_slug: str,
+    vehicle_id: str,
+    submission: PublicMileageSubmission,
+    request: Request = None
+):
+    """
+    PUBLIC ENDPOINT - No authentication required.
+    Submit mileage reading via QR code scan.
+    """
+    # Find tenant by slug
+    tenant = await db.tenants.find_one({"slug": tenant_slug}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Organisation not found")
+    
+    tenant_id = tenant["id"]
+    
+    # Find vehicle
+    vehicle = await db.vehicles.find_one(
+        {"tenant_id": tenant_id, "id": vehicle_id},
+        {"_id": 0}
+    )
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    # Validate mileage (should be >= current)
+    current_mileage = vehicle.get("current_mileage", 0) or 0
+    if submission.mileage < current_mileage:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Mileage cannot be less than current reading ({current_mileage} km)"
+        )
+    
+    # Create mileage log entry
+    submitted_by = submission.submitted_by_name or "QR Scan (Anonymous)"
+    mileage_log = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": tenant_id,
+        "vehicle_id": vehicle_id,
+        "mileage": submission.mileage,
+        "previous_mileage": current_mileage,
+        "difference": submission.mileage - current_mileage if current_mileage else None,
+        "notes": submission.notes,
+        "logged_by": submitted_by,
+        "logged_via": "qr_scan_public",
+        "logged_at": datetime.now(timezone.utc).isoformat(),
+        "ip_address": request.client.host if request and request.client else None
+    }
+    
+    # Insert mileage log
+    await db.mileage_logs.insert_one(mileage_log)
+    
+    # Update vehicle's current mileage
+    await db.vehicles.update_one(
+        {"tenant_id": tenant_id, "id": vehicle_id},
+        {"$set": {
+            "current_mileage": submission.mileage,
+            "last_mileage_update": datetime.now(timezone.utc).isoformat(),
+            "last_mileage_logged_by": submitted_by,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Check for service due alert
+    service_alert = None
+    service_due = vehicle.get("service_due_mileage")
+    
+    if service_due and submission.mileage:
+        remaining_km = service_due - submission.mileage
+        if remaining_km <= 0:
+            service_alert = {
+                "type": "overdue",
+                "message": f"Service overdue by {abs(remaining_km)} km"
+            }
+        elif remaining_km <= 500:
+            service_alert = {
+                "type": "urgent",
+                "message": f"Service due in {remaining_km} km"
+            }
+        elif remaining_km <= 1000:
+            service_alert = {
+                "type": "warning",
+                "message": f"Service approaching in {remaining_km} km"
+            }
+    
+    # Create status update record for audit trail
+    status_update = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": tenant_id,
+        "car_id": vehicle_id,
+        "status": vehicle.get("current_status", "Unknown"),
+        "mileage": submission.mileage,
+        "notes": f"Mileage submitted via QR scan by {submitted_by}",
+        "reported_by": submitted_by,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "source": "qr_scan_public",
+        "service_alert": service_alert
+    }
+    await db.status_updates.insert_one(status_update)
+    
+    return {
+        "success": True,
+        "message": "Mileage submitted successfully",
+        "vehicle_name": vehicle.get("name"),
+        "registration": vehicle.get("registration"),
+        "new_mileage": submission.mileage,
+        "previous_mileage": current_mileage,
+        "submitted_by": submitted_by,
+        "service_alert": service_alert
     }
 
 

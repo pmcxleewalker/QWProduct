@@ -90,7 +90,7 @@ FEATURE_REGISTRY = {
         "name": "Enhanced Booking Visibility",
         "description": "See who booked what and when across the fleet",
         "category": "bookings",
-        "default_plans": ["essential", "professional"],
+        "default_plans": ["professional"],
         "sellable": True,
         "addon_price": 19
     },
@@ -114,7 +114,7 @@ FEATURE_REGISTRY = {
         "name": "Cost Analytics",
         "description": "Track and analyze fleet costs",
         "category": "reports",
-        "default_plans": ["essential", "professional"],
+        "default_plans": ["professional"],
         "sellable": True,
         "addon_price": 39
     },

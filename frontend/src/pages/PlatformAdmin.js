@@ -80,6 +80,7 @@ const PlatformAdmin = () => {
   const [showFeatureModal, setShowFeatureModal] = useState(false);
   const [featureModalTenant, setFeatureModalTenant] = useState(null);
   const [featureEdits, setFeatureEdits] = useState({});
+  const [featureRegistry, setFeatureRegistry] = useState(null);
   
   // Create user form
   const [showCreateUserForm, setShowCreateUserForm] = useState(false);
@@ -2664,9 +2665,18 @@ const PlatformAdmin = () => {
                     <div 
                       key={tenant.id}
                       className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => {
+                      onClick={async () => {
                         setFeatureModalTenant(tenant);
                         setFeatureEdits({});
+                        // Fetch feature registry if not already loaded
+                        if (!featureRegistry) {
+                          try {
+                            const res = await axios.get(`${API}/platform/feature-registry`);
+                            setFeatureRegistry(res.data);
+                          } catch (err) {
+                            console.error('Failed to load feature registry', err);
+                          }
+                        }
                         setShowFeatureModal(true);
                       }}
                       data-testid={`plan-manage-${tenant.slug}`}
@@ -2867,50 +2877,121 @@ const PlatformAdmin = () => {
                   </div>
                 </div>
 
-                {/* Feature Overrides Section */}
+                {/* Feature Overrides Section - Enhanced with Registry */}
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
                     <CheckCircle size={18} className="mr-2 text-green-600" />
-                    Feature Overrides
+                    Feature Toggles
                   </h4>
-                  <p className="text-sm text-gray-500 mb-3">
-                    Toggle features on/off to override the plan defaults for this franchise.
+                  <p className="text-sm text-gray-500 mb-4">
+                    Enable or disable features for this franchise. Overrides are highlighted in blue.
                   </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {planConfigs[0]?.features && Object.keys(planConfigs[0].features).map((featureKey) => {
-                      const planDefault = planConfigs.find(p => p.id === featureModalTenant.plan)?.features?.[featureKey] ?? false;
-                      const currentOverride = featureModalTenant.feature_overrides?.[featureKey];
-                      const effectiveValue = featureEdits.features?.[featureKey] ?? currentOverride ?? planDefault;
-                      const isOverridden = currentOverride !== undefined || featureEdits.features?.[featureKey] !== undefined;
-                      
-                      return (
-                        <div 
-                          key={featureKey}
-                          className={`flex items-center justify-between p-3 rounded-lg border ${
-                            isOverridden ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
-                          }`}
-                        >
-                          <span className="text-sm text-gray-700">
-                            {featureKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                          </span>
-                          <button
-                            onClick={() => {
-                              const newFeatures = {...(featureEdits.features || {})};
-                              newFeatures[featureKey] = !effectiveValue;
-                              setFeatureEdits({...featureEdits, features: newFeatures});
-                            }}
-                            className={`w-12 h-6 rounded-full transition-colors ${
-                              effectiveValue ? 'bg-green-500' : 'bg-gray-300'
+                  
+                  {featureRegistry ? (
+                    <div className="space-y-4">
+                      {Object.entries(featureRegistry.categories).map(([categoryKey, category]) => (
+                        category.features.length > 0 && (
+                          <div key={categoryKey} className="border rounded-lg overflow-hidden">
+                            <div className="bg-gray-100 px-4 py-2 font-medium text-gray-700 text-sm">
+                              {category.name}
+                            </div>
+                            <div className="divide-y">
+                              {category.features.map((feature) => {
+                                const planDefault = feature.default_plans.includes(featureModalTenant.plan);
+                                const currentOverride = featureModalTenant.feature_overrides?.[feature.key];
+                                const editOverride = featureEdits.features?.[feature.key];
+                                const effectiveValue = editOverride !== undefined 
+                                  ? editOverride 
+                                  : currentOverride !== undefined 
+                                    ? currentOverride 
+                                    : planDefault;
+                                const isOverridden = currentOverride !== undefined || editOverride !== undefined;
+                                
+                                return (
+                                  <div 
+                                    key={feature.key}
+                                    className={`flex items-center justify-between p-3 ${
+                                      isOverridden ? 'bg-blue-50' : 'bg-white'
+                                    }`}
+                                  >
+                                    <div className="flex-1 pr-4">
+                                      <div className="flex items-center space-x-2">
+                                        <span className="font-medium text-gray-900 text-sm">
+                                          {feature.name}
+                                        </span>
+                                        {feature.sellable && feature.addon_price > 0 && (
+                                          <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">
+                                            +€{feature.addon_price}/mo addon
+                                          </span>
+                                        )}
+                                        {!planDefault && (
+                                          <span className="text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
+                                            Not in plan
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-gray-500 mt-0.5">{feature.description}</p>
+                                    </div>
+                                    <button
+                                      onClick={() => {
+                                        const newFeatures = {...(featureEdits.features || {})};
+                                        newFeatures[feature.key] = !effectiveValue;
+                                        setFeatureEdits({...featureEdits, features: newFeatures});
+                                      }}
+                                      className={`w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
+                                        effectiveValue ? 'bg-green-500' : 'bg-gray-300'
+                                      }`}
+                                    >
+                                      <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
+                                        effectiveValue ? 'translate-x-6' : 'translate-x-0.5'
+                                      }`} />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  ) : (
+                    // Fallback to original display if registry not loaded
+                    <div className="grid grid-cols-2 gap-2">
+                      {planConfigs[0]?.features && Object.keys(planConfigs[0].features).map((featureKey) => {
+                        const planDefault = planConfigs.find(p => p.id === featureModalTenant.plan)?.features?.[featureKey] ?? false;
+                        const currentOverride = featureModalTenant.feature_overrides?.[featureKey];
+                        const effectiveValue = featureEdits.features?.[featureKey] ?? currentOverride ?? planDefault;
+                        const isOverridden = currentOverride !== undefined || featureEdits.features?.[featureKey] !== undefined;
+                        
+                        return (
+                          <div 
+                            key={featureKey}
+                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                              isOverridden ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
                             }`}
                           >
-                            <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
-                              effectiveValue ? 'translate-x-6' : 'translate-x-0.5'
-                            }`} />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                            <span className="text-sm text-gray-700">
+                              {featureKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                            <button
+                              onClick={() => {
+                                const newFeatures = {...(featureEdits.features || {})};
+                                newFeatures[featureKey] = !effectiveValue;
+                                setFeatureEdits({...featureEdits, features: newFeatures});
+                              }}
+                              className={`w-12 h-6 rounded-full transition-colors ${
+                                effectiveValue ? 'bg-green-500' : 'bg-gray-300'
+                              }`}
+                            >
+                              <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
+                                effectiveValue ? 'translate-x-6' : 'translate-x-0.5'
+                              }`} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 

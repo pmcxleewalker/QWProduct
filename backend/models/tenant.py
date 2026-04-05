@@ -2,7 +2,7 @@
 Tenant and Multi-Tenancy Models
 """
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Dict
 from datetime import datetime, timezone
 from enum import Enum
 import uuid
@@ -21,6 +21,256 @@ class TenantPlan(str, Enum):
     PROFESSIONAL = "professional"  # Quick Wing Professional - €499/month
 
 
+# ============================================
+# MASTER FEATURE REGISTRY
+# All toggleable features with metadata
+# ============================================
+FEATURE_REGISTRY = {
+    # === CORE FEATURES (Available in all plans) ===
+    "vehicle_booking": {
+        "name": "Vehicle Booking",
+        "description": "Basic vehicle booking system with calendar view",
+        "category": "core",
+        "default_plans": ["standard", "essential", "professional"],
+        "sellable": False  # Always included
+    },
+    "fleet_compliance": {
+        "name": "Fleet Compliance",
+        "description": "Track tax, NCT, insurance due dates",
+        "category": "core",
+        "default_plans": ["standard", "essential", "professional"],
+        "sellable": False
+    },
+    "basic_reports": {
+        "name": "Basic Reports",
+        "description": "Fleet usage statistics and basic analytics",
+        "category": "reports",
+        "default_plans": ["standard", "essential", "professional"],
+        "sellable": False
+    },
+    "staff_calendars": {
+        "name": "Staff Calendars",
+        "description": "Personal booking calendars for staff members",
+        "category": "core",
+        "default_plans": ["standard", "essential", "professional"],
+        "sellable": False
+    },
+    "admin_all_cars_calendar": {
+        "name": "Admin All Cars Calendar",
+        "description": "Admin view of all vehicle bookings",
+        "category": "core",
+        "default_plans": ["standard", "essential", "professional"],
+        "sellable": False
+    },
+    "email_support": {
+        "name": "Email Support",
+        "description": "Standard email support",
+        "category": "support",
+        "default_plans": ["standard", "essential", "professional"],
+        "sellable": False
+    },
+    "standard_onboarding": {
+        "name": "Standard Onboarding",
+        "description": "Basic setup assistance",
+        "category": "support",
+        "default_plans": ["standard", "essential", "professional"],
+        "sellable": False
+    },
+    
+    # === ESSENTIAL TIER FEATURES ===
+    "enhanced_reports": {
+        "name": "Enhanced Reports",
+        "description": "Advanced analytics with charts and trends",
+        "category": "reports",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 29
+    },
+    "booking_visibility_enhanced": {
+        "name": "Enhanced Booking Visibility",
+        "description": "See who booked what and when across the fleet",
+        "category": "bookings",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 19
+    },
+    "booking_admin_control": {
+        "name": "Admin Booking Control",
+        "description": "Approve/reject bookings, manage conflicts",
+        "category": "bookings",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 25
+    },
+    "compliance_oversight_broad": {
+        "name": "Compliance Oversight",
+        "description": "Fleet-wide compliance dashboard and alerts",
+        "category": "compliance",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 35
+    },
+    "cost_analytics": {
+        "name": "Cost Analytics",
+        "description": "Track and analyze fleet costs",
+        "category": "reports",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 39
+    },
+    "faster_support": {
+        "name": "Faster Support",
+        "description": "24-hour response time guarantee",
+        "category": "support",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 15
+    },
+    "recurring_bookings": {
+        "name": "Recurring Bookings",
+        "description": "Set up daily, weekly, or monthly recurring bookings",
+        "category": "bookings",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 25
+    },
+    "live_status_updates": {
+        "name": "Live Status Updates",
+        "description": "Real-time fleet status with auto-refresh",
+        "category": "core",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 19
+    },
+    "qr_codes": {
+        "name": "QR Codes",
+        "description": "Generate QR codes for vehicles linking to booking page",
+        "category": "core",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 15
+    },
+    "block_vehicles": {
+        "name": "Block/Unblock Vehicles",
+        "description": "Temporarily block vehicles with reason tracking",
+        "category": "fleet",
+        "default_plans": ["essential", "professional"],
+        "sellable": True,
+        "addon_price": 10
+    },
+    
+    # === PROFESSIONAL TIER FEATURES ===
+    "detailed_reports": {
+        "name": "Detailed Reports",
+        "description": "Full reporting suite with custom date ranges",
+        "category": "reports",
+        "default_plans": ["professional"],
+        "sellable": True,
+        "addon_price": 49
+    },
+    "priority_support": {
+        "name": "Priority Support",
+        "description": "4-hour response time, dedicated support line",
+        "category": "support",
+        "default_plans": ["professional"],
+        "sellable": True,
+        "addon_price": 45
+    },
+    "multi_site_oversight": {
+        "name": "Multi-Site Oversight",
+        "description": "Manage multiple locations from one dashboard",
+        "category": "admin",
+        "default_plans": ["professional"],
+        "sellable": True,
+        "addon_price": 59
+    },
+    "advanced_permissions": {
+        "name": "Advanced Permissions",
+        "description": "Granular role-based access control",
+        "category": "admin",
+        "default_plans": ["professional"],
+        "sellable": True,
+        "addon_price": 35
+    },
+    "custom_exports": {
+        "name": "Custom Exports",
+        "description": "Export data to CSV, PDF with custom templates",
+        "category": "reports",
+        "default_plans": ["professional"],
+        "sellable": True,
+        "addon_price": 25
+    },
+    "user_management": {
+        "name": "User Management",
+        "description": "Full CRUD for team members with role assignment",
+        "category": "admin",
+        "default_plans": ["professional"],
+        "sellable": True,
+        "addon_price": 29
+    },
+    "status_history": {
+        "name": "Status History",
+        "description": "Track vehicle status changes over time",
+        "category": "fleet",
+        "default_plans": ["professional"],
+        "sellable": True,
+        "addon_price": 19
+    },
+    "announcements": {
+        "name": "Announcements",
+        "description": "Send announcements to all team members",
+        "category": "communication",
+        "default_plans": ["professional"],
+        "sellable": True,
+        "addon_price": 15
+    },
+    "daily_timeline": {
+        "name": "Daily Timeline View",
+        "description": "Hourly fleet utilization chart",
+        "category": "reports",
+        "default_plans": ["professional"],
+        "sellable": True,
+        "addon_price": 29
+    },
+    "mileage_tracking": {
+        "name": "Mileage Tracking",
+        "description": "Track current mileage and service due alerts",
+        "category": "compliance",
+        "default_plans": ["professional"],
+        "sellable": True,
+        "addon_price": 25
+    },
+    "api_access": {
+        "name": "API Access",
+        "description": "REST API access for integrations",
+        "category": "integrations",
+        "default_plans": ["professional"],
+        "sellable": True,
+        "addon_price": 99
+    }
+}
+
+# Get feature categories for UI grouping
+FEATURE_CATEGORIES = {
+    "core": "Core Features",
+    "bookings": "Booking Features",
+    "fleet": "Fleet Management",
+    "reports": "Reports & Analytics",
+    "compliance": "Compliance & Tracking",
+    "admin": "Administration",
+    "support": "Support",
+    "communication": "Communication",
+    "integrations": "Integrations"
+}
+
+def get_plan_default_features(plan: str) -> Dict[str, bool]:
+    """Get the default features for a plan"""
+    features = {}
+    for feature_key, feature_config in FEATURE_REGISTRY.items():
+        features[feature_key] = plan in feature_config.get("default_plans", [])
+    return features
+
+
 # Plan configuration with features and limits
 PLAN_CONFIG = {
     TenantPlan.STANDARD: {
@@ -31,27 +281,7 @@ PLAN_CONFIG = {
         "max_users": 15,
         "customizations_per_month": 1,
         "sub_label": "Best for small teams",
-        "features": {
-            "vehicle_booking": True,
-            "fleet_compliance": True,
-            "basic_reports": True,
-            "staff_calendars": True,
-            "admin_all_cars_calendar": True,
-            "email_support": True,
-            "standard_onboarding": True,
-            # Not included in Standard
-            "enhanced_reports": False,
-            "detailed_reports": False,
-            "booking_visibility_enhanced": False,
-            "booking_admin_control": False,
-            "compliance_oversight_broad": False,
-            "cost_analytics": False,
-            "faster_support": False,
-            "priority_support": False,
-            "multi_site_oversight": False,
-            "advanced_permissions": False,
-            "custom_exports": False,
-        },
+        "features": get_plan_default_features("standard"),
         "description": "A practical fleet system for smaller franchises",
         "tagline": "Simple structure for smaller teams that need control without complexity"
     },
@@ -64,27 +294,7 @@ PLAN_CONFIG = {
         "customizations_per_month": 2,
         "is_popular": True,
         "sub_label": "Best value",
-        "features": {
-            "vehicle_booking": True,
-            "fleet_compliance": True,
-            "basic_reports": True,
-            "staff_calendars": True,
-            "admin_all_cars_calendar": True,
-            "email_support": True,
-            "standard_onboarding": True,
-            "enhanced_reports": True,
-            "booking_visibility_enhanced": True,
-            "booking_admin_control": True,
-            "compliance_oversight_broad": True,
-            "cost_analytics": True,
-            "faster_support": True,
-            # Not included in Essential
-            "detailed_reports": False,
-            "priority_support": False,
-            "multi_site_oversight": False,
-            "advanced_permissions": False,
-            "custom_exports": False,
-        },
+        "features": get_plan_default_features("essential"),
         "description": "The best fit for growing franchises that need more control",
         "tagline": "Built to be the sweet spot for value, scale and day-to-day control"
     },
@@ -96,26 +306,7 @@ PLAN_CONFIG = {
         "max_users": 50,
         "customizations_per_month": 4,
         "sub_label": "Best for multi-site operations",
-        "features": {
-            "vehicle_booking": True,
-            "fleet_compliance": True,
-            "basic_reports": True,
-            "staff_calendars": True,
-            "admin_all_cars_calendar": True,
-            "email_support": True,
-            "standard_onboarding": True,
-            "enhanced_reports": True,
-            "booking_visibility_enhanced": True,
-            "booking_admin_control": True,
-            "compliance_oversight_broad": True,
-            "cost_analytics": True,
-            "faster_support": True,
-            "detailed_reports": True,
-            "priority_support": True,
-            "multi_site_oversight": True,
-            "advanced_permissions": True,
-            "custom_exports": True,
-        },
+        "features": get_plan_default_features("professional"),
         "description": "For larger franchises that need more scale and visibility",
         "tagline": "Designed for larger teams that need flexibility, oversight and structure at scale"
     }

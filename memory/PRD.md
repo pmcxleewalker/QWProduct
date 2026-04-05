@@ -5,8 +5,23 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 
 ## Recent Changes (March 2026)
 
+### Granular Feature Toggle System - COMPLETED ✅ (March 2026)
+- **28 toggleable features** organized into 9 categories
+- Feature Registry API: `GET /api/platform/feature-registry`
+- Per-tenant feature overrides stored in `feature_overrides` field
+- Addon pricing displayed for each sellable feature
+- "Not in plan" indicators for features outside base tier
+- Full documentation at `/app/docs/FEATURE_TIERS_REFERENCE.md`
+
+### Updated Pricing (March 2026)
+| Plan | Price | Vehicles | Users |
+|------|-------|----------|-------|
+| Standard | €179/mo | 10 | 15 |
+| Essential | €299/mo | 25 | 35 |
+| Professional | €499/mo | 50 | 50 |
+
 ### 3-Tier Subscription Plan System - COMPLETED ✅
-- Implemented Standard (€179), Essential (€279), and Professional (€399) plans
+- Implemented Standard (€179), Essential (€299), and Professional (€499) plans
 - Backend enforcement: API returns 403 when vehicle/user limits are reached
 - Frontend: Usage indicators show X/Y vehicles and X/Y users
 - Frontend: Add buttons disabled with toast notifications when at limit

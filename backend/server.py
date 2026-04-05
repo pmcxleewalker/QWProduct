@@ -43,7 +43,8 @@ from models.tenant import (
     UserCreate, UserLogin, User, UserResponse, UserWithMemberships,
     MembershipCreate, Membership,
     TenantContext, TenantSelector,
-    AuditAction, Token
+    AuditAction, Token,
+    FEATURE_REGISTRY, FEATURE_CATEGORIES, get_plan_default_features
 )
 from models.resources import (
     VehicleCreate, VehicleUpdate, Vehicle,
@@ -392,6 +393,50 @@ async def get_plan_configurations():
             "is_popular": config.get("is_popular", False)
         })
     return {"plans": plans}
+
+
+@api_router.get("/platform/feature-registry")
+async def get_feature_registry(
+    context: TenantContext = Depends(require_platform_admin)
+):
+    """
+    Get the complete feature registry with all available features.
+    Used for the admin UI to show feature checkboxes.
+    """
+    # Group features by category
+    features_by_category = {}
+    for category_key, category_name in FEATURE_CATEGORIES.items():
+        features_by_category[category_key] = {
+            "name": category_name,
+            "features": []
+        }
+    
+    for feature_key, feature_config in FEATURE_REGISTRY.items():
+        category = feature_config.get("category", "core")
+        if category in features_by_category:
+            features_by_category[category]["features"].append({
+                "key": feature_key,
+                "name": feature_config["name"],
+                "description": feature_config["description"],
+                "default_plans": feature_config.get("default_plans", []),
+                "sellable": feature_config.get("sellable", False),
+                "addon_price": feature_config.get("addon_price", 0)
+            })
+    
+    return {
+        "categories": features_by_category,
+        "all_features": {
+            key: {
+                "name": val["name"],
+                "description": val["description"],
+                "category": val["category"],
+                "default_plans": val.get("default_plans", []),
+                "sellable": val.get("sellable", False),
+                "addon_price": val.get("addon_price", 0)
+            }
+            for key, val in FEATURE_REGISTRY.items()
+        }
+    }
 
 
 @api_router.get("/platform/tenants/{tenant_id}/features")

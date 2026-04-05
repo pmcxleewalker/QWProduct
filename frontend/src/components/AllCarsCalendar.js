@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Plus, X, Calendar as CalendarIcon, Car } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, Calendar as CalendarIcon, Car, Filter, BarChart3 } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -8,7 +8,43 @@ const AllCarsCalendar = ({ vehicles, bookings, onBookingCreated }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
   const [showDayModal, setShowDayModal] = useState(false);
+  const [selectedVehicleFilter, setSelectedVehicleFilter] = useState('all');
   
+  // Filter bookings by selected vehicle
+  const filteredBookings = useMemo(() => {
+    if (selectedVehicleFilter === 'all') return bookings;
+    return bookings.filter(b => b.car_id === selectedVehicleFilter);
+  }, [bookings, selectedVehicleFilter]);
+
+  // Calculate month statistics
+  const monthStats = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const monthStart = new Date(year, month, 1);
+    const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
+    
+    const monthBookings = filteredBookings.filter(booking => {
+      const bookingStart = new Date(booking.start_time);
+      return bookingStart >= monthStart && bookingStart <= monthEnd;
+    });
+    
+    const recurringCount = monthBookings.filter(b => b.is_recurring).length;
+    const pendingCount = monthBookings.filter(b => b.status === 'pending').length;
+    const confirmedCount = monthBookings.length - pendingCount;
+    
+    // Get unique vehicles used this month
+    const vehiclesUsed = new Set(monthBookings.map(b => b.car_id)).size;
+    
+    return {
+      total: monthBookings.length,
+      confirmed: confirmedCount,
+      pending: pendingCount,
+      recurring: recurringCount,
+      vehiclesUsed
+    };
+  }, [currentDate, filteredBookings]);
+  
+  // Get calendar days for the current month
   // Get calendar days for the current month
   const calendarDays = useMemo(() => {
     const year = currentDate.getFullYear();
@@ -40,14 +76,14 @@ const AllCarsCalendar = ({ vehicles, bookings, onBookingCreated }) => {
     return days;
   }, [currentDate]);
 
-  // Get bookings for a specific day
+  // Get bookings for a specific day (using filtered bookings)
   const getBookingsForDay = (date) => {
     const dayStart = new Date(date);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(date);
     dayEnd.setHours(23, 59, 59, 999);
     
-    return bookings.filter(booking => {
+    return filteredBookings.filter(booking => {
       const bookingStart = new Date(booking.start_time);
       return bookingStart >= dayStart && bookingStart <= dayEnd;
     });
@@ -106,23 +142,43 @@ const AllCarsCalendar = ({ vehicles, bookings, onBookingCreated }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border overflow-hidden" data-testid="all-cars-calendar">
-      {/* Header */}
-      <div className="bg-blue-600 text-white px-4 py-3">
-        <div className="flex items-center justify-between">
+      {/* Header with Stats */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-4">
+        <div className="flex items-center justify-between mb-3">
           <h2 className="font-bold text-lg flex items-center space-x-2">
             <CalendarIcon size={20} />
             <span>All Cars Calendar</span>
           </h2>
           <button
             onClick={goToToday}
-            className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded text-sm"
+            className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium"
           >
             Go to Today
           </button>
         </div>
+        
+        {/* Month Statistics */}
+        <div className="grid grid-cols-4 gap-2 text-xs">
+          <div className="bg-white/10 rounded-lg p-2 text-center">
+            <p className="text-white/70">This Month</p>
+            <p className="text-xl font-bold">{monthStats.total}</p>
+          </div>
+          <div className="bg-red-500/30 rounded-lg p-2 text-center">
+            <p className="text-white/70">Confirmed</p>
+            <p className="text-xl font-bold">{monthStats.confirmed}</p>
+          </div>
+          <div className="bg-amber-500/30 rounded-lg p-2 text-center">
+            <p className="text-white/70">Pending</p>
+            <p className="text-xl font-bold">{monthStats.pending}</p>
+          </div>
+          <div className="bg-purple-500/30 rounded-lg p-2 text-center">
+            <p className="text-white/70">Recurring</p>
+            <p className="text-xl font-bold">{monthStats.recurring}</p>
+          </div>
+        </div>
       </div>
 
-      {/* Month Navigation */}
+      {/* Month Navigation & Filter */}
       <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
         <button
           onClick={() => changeMonth(-1)}
@@ -140,19 +196,42 @@ const AllCarsCalendar = ({ vehicles, bookings, onBookingCreated }) => {
           <ChevronRight size={20} />
         </button>
       </div>
+      
+      {/* Vehicle Filter */}
+      <div className="px-4 py-2 bg-gray-50 border-b flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Filter size={16} className="text-gray-500" />
+          <select
+            value={selectedVehicleFilter}
+            onChange={(e) => setSelectedVehicleFilter(e.target.value)}
+            className="text-sm border-gray-300 rounded-lg py-1 px-2 focus:ring-blue-500 focus:border-blue-500"
+            data-testid="vehicle-filter"
+          >
+            <option value="all">All Vehicles ({vehicles.length})</option>
+            {vehicles.map(vehicle => (
+              <option key={vehicle.id} value={vehicle.id}>
+                {vehicle.name} ({vehicle.registration})
+              </option>
+            ))}
+          </select>
+        </div>
+        <span className="text-xs text-gray-500">
+          {monthStats.vehiclesUsed} vehicle{monthStats.vehiclesUsed !== 1 ? 's' : ''} used this month
+        </span>
+      </div>
 
-      {/* Legend */}
+      {/* Legend - Standardized Colors: Green=Free, Red=Booked, Purple=Recurring */}
       <div className="flex items-center justify-center space-x-6 px-4 py-2 bg-gray-50 border-b text-xs">
         <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 rounded bg-purple-500"></div>
-          <span className="text-gray-600">One-time</span>
+          <div className="w-3 h-3 rounded bg-red-500"></div>
+          <span className="text-gray-600">Booked</span>
         </div>
         <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 rounded bg-orange-500"></div>
+          <div className="w-3 h-3 rounded bg-purple-500"></div>
           <span className="text-gray-600">Recurring</span>
         </div>
         <div className="flex items-center space-x-1">
-          <div className="w-3 h-3 rounded bg-gray-400"></div>
+          <div className="w-3 h-3 rounded bg-amber-400"></div>
           <span className="text-gray-600">Pending</span>
         </div>
       </div>
@@ -197,17 +276,17 @@ const AllCarsCalendar = ({ vehicles, bookings, onBookingCreated }) => {
                 )}
               </div>
               
-              {/* Booking Pills */}
+              {/* Booking Pills - Standardized: Red=Booked, Purple=Recurring, Amber=Pending */}
               <div className="space-y-1">
                 {displayBookings.map((booking, idx) => (
                   <div
                     key={booking.id || idx}
                     className={`text-[10px] px-1.5 py-0.5 rounded truncate ${
                       booking.is_recurring 
-                        ? 'bg-orange-100 text-orange-800' 
+                        ? 'bg-purple-100 text-purple-800' 
                         : booking.status === 'pending'
-                        ? 'bg-gray-100 text-gray-700'
-                        : 'bg-purple-100 text-purple-800'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-red-100 text-red-800'
                     }`}
                     title={`${formatTime(booking.start_time)} - ${getVehicleName(booking.car_id)}`}
                   >
@@ -270,13 +349,18 @@ const AllCarsCalendar = ({ vehicles, bookings, onBookingCreated }) => {
                         key={booking.id || idx}
                         className={`p-3 rounded-lg border ${
                           booking.is_recurring 
-                            ? 'bg-orange-50 border-orange-200' 
-                            : 'bg-purple-50 border-purple-200'
+                            ? 'bg-purple-50 border-purple-200' 
+                            : booking.status === 'pending'
+                            ? 'bg-amber-50 border-amber-200'
+                            : 'bg-red-50 border-red-200'
                         }`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-center space-x-2">
-                            <Car size={16} className={booking.is_recurring ? 'text-orange-600' : 'text-purple-600'} />
+                            <Car size={16} className={
+                              booking.is_recurring ? 'text-purple-600' : 
+                              booking.status === 'pending' ? 'text-amber-600' : 'text-red-600'
+                            } />
                             <div>
                               <p className="font-semibold text-gray-900 text-sm">
                                 {getVehicleName(booking.car_id)}
@@ -288,10 +372,12 @@ const AllCarsCalendar = ({ vehicles, bookings, onBookingCreated }) => {
                           </div>
                           <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                             booking.is_recurring 
-                              ? 'bg-orange-200 text-orange-800' 
-                              : 'bg-purple-200 text-purple-800'
+                              ? 'bg-purple-200 text-purple-800' 
+                              : booking.status === 'pending'
+                              ? 'bg-amber-200 text-amber-800'
+                              : 'bg-red-200 text-red-800'
                           }`}>
-                            {booking.is_recurring ? 'Recurring' : 'One-time'}
+                            {booking.is_recurring ? 'Recurring' : booking.status === 'pending' ? 'Pending' : 'Booked'}
                           </span>
                         </div>
                         <div className="mt-2 text-xs text-gray-600">

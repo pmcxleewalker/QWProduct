@@ -328,7 +328,6 @@ When creating a new tenant:
 - [ ] Automated invoice reminders for overdue payments
 
 ### Future (P2-P3)
-- [ ] Subscription billing automation
 - [ ] Dashboard analytics and charts
 
 ## Files Structure

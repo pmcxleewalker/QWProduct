@@ -1,0 +1,117 @@
+{
+  "summary": "Comprehensive testing of All Cars Calendar and Fleet Map features completed. All 12 backend API tests passed (100%). All frontend UI tests passed. The All Cars Calendar displays with standardized colors (Red=Booked, Purple=Recurring, Amber=Pending), month statistics, and vehicle filter. Fleet Map is correctly tier-gated - only available for Essential and Professional tiers, not Standard tier.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Recent Bookings on Overview",
+        "issues": ["Shows 'Invalid Date' for booking dates - minor display issue"]
+      }
+    ]
+  },
+
+  "passed_tests": [
+    "=== BACKEND API TESTS (12/12 passed) ===",
+    "TestAuthentication::test_super_admin_login - PASSED",
+    "TestAuthentication::test_impersonate_essential_tenant - PASSED",
+    "TestPlanFeatures::test_standard_tier_no_map_feature - PASSED (Standard tier correctly does NOT have show_map/map_booking_pins)",
+    "TestPlanFeatures::test_essential_tier_has_map_feature - PASSED (Essential tier has show_map=true, map_booking_pins=true)",
+    "TestPlanFeatures::test_professional_tier_has_map_feature - PASSED (Professional tier has show_map=true, map_booking_pins=true)",
+    "TestBookingJourneyFields::test_create_booking_with_journey_fields - PASSED (start_eircode, end_eircode, start_address, end_address, journey_stops all saved)",
+    "TestBookingJourneyFields::test_get_booking_with_journey_fields - PASSED",
+    "TestBookingJourneyFields::test_update_booking_journey_fields - PASSED",
+    "TestVehiclesAndBookings::test_get_vehicles - PASSED",
+    "TestVehiclesAndBookings::test_get_bookings - PASSED",
+    "TestVehiclesAndBookings::test_create_recurring_booking - PASSED (is_recurring=true for Purple color)",
+    "TestCleanup::test_cleanup_test_bookings - PASSED",
+    "",
+    "=== FRONTEND UI TESTS (All passed) ===",
+    "1. Super Admin login - PASSED",
+    "2. Impersonate Essential Care Fleet tenant - PASSED",
+    "3. Essential Care Fleet dashboard loads with 'Essential' badge - PASSED",
+    "4. Fleet tab navigation works - PASSED",
+    "5. Fleet sub-tabs present: Live Status, Car Calendars, All Cars Calendar, Journey Map, Manage Vehicles - PASSED",
+    "6. Journey Map sub-tab renders Leaflet map with Dublin area - PASSED",
+    "7. All Cars Calendar displays with standardized colors - PASSED",
+    "8. All Cars Calendar shows month statistics (This Month, Confirmed, Pending, Recurring) - PASSED",
+    "9. All Cars Calendar has vehicle filter dropdown - PASSED",
+    "10. All Cars Calendar color legend shows: Red=Booked, Purple=Recurring, Amber=Pending - PASSED",
+    "11. Standard Fleet Co (Standard tier) does NOT have Journey Map sub-tab - PASSED (tier-gating works)"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_calendar_fleetmap.py",
+    "/app/test_reports/pytest/pytest_calendar_fleetmap.xml"
+  ],
+
+  "action_items": [
+    "Minor: Fix 'Invalid Date' display in Recent Bookings section on Overview tab"
+  ],
+
+  "critical_code_review_comments": [
+    "All Cars Calendar correctly implements standardized color scheme: Red=Booked, Purple=Recurring, Amber=Pending",
+    "Month statistics (This Month, Confirmed, Pending, Recurring) display correctly in header",
+    "Vehicle filter dropdown works and shows vehicle count",
+    "Fleet Map uses react-leaflet and renders correctly with OpenStreetMap tiles",
+    "Eircode geocoding is MOCKED - uses hardcoded Dublin area coordinate mapping (not a real geocoding API)",
+    "Tier-gating for Fleet Map works correctly - show_map and map_booking_pins features only enabled for Essential and Professional tiers",
+    "Booking journey fields (start_eircode, end_eircode, start_address, end_address, journey_stops) are properly saved and retrieved"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_calendar_fleetmap.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (12/12 tests passed)",
+    "frontend": "100% (all UI features verified)"
+  },
+
+  "test_credentials": {
+    "super_admin": {
+      "email": "malcolm@quickwing.com",
+      "password": "Malcolm123"
+    }
+  },
+
+  "seed_data_creation": "Test bookings with TEST_ prefix created and cleaned up automatically during testing",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": true,
+
+  "context_for_next_testing_agent": "All Cars Calendar and Fleet Map features fully tested. Fleet Map is tier-gated (Essential and Professional only). Eircode geocoding is MOCKED with hardcoded Dublin area coordinates. Key features verified: standardized calendar colors, month statistics, vehicle filter, Leaflet map rendering, booking journey fields (start_eircode, end_eircode, journey_stops).",
+
+  "feature_verification_summary": {
+    "All Cars Calendar": {
+      "standardized_colors": "Red=Booked, Purple=Recurring, Amber=Pending - VERIFIED",
+      "month_statistics": "This Month, Confirmed, Pending, Recurring counts displayed in header - VERIFIED",
+      "vehicle_filter": "Dropdown shows 'All Vehicles (N)' with individual vehicle options - VERIFIED",
+      "color_legend": "Shows Booked (red), Recurring (purple), Pending (amber) indicators - VERIFIED",
+      "calendar_grid": "7-day week grid with date cells, today highlighted - VERIFIED"
+    },
+    "Fleet Map": {
+      "tier_gating": "Only available for Essential and Professional tiers - VERIFIED",
+      "standard_tier": "Journey Map sub-tab NOT present - VERIFIED",
+      "essential_tier": "Journey Map sub-tab present and functional - VERIFIED",
+      "map_rendering": "Leaflet map renders with OpenStreetMap tiles centered on Dublin - VERIFIED",
+      "journey_data": "Shows '0 bookings with journey data' when no bookings have eircodes - VERIFIED"
+    },
+    "Booking Journey Fields": {
+      "create": "start_eircode, end_eircode, start_address, end_address, journey_stops all saved correctly - VERIFIED",
+      "retrieve": "Journey fields returned in booking list API - VERIFIED",
+      "update": "Journey fields can be updated via PUT /api/bookings/{id} - VERIFIED"
+    }
+  },
+
+  "mocked_apis": {
+    "Eircode Geocoding": "MOCKED - FleetMap.js uses hardcoded coordinate mapping for Dublin area eircodes (D01-D24, Cork T12/T23/T45, Galway H91). Not a real geocoding API."
+  }
+}

@@ -2879,8 +2879,8 @@ const PlatformAdmin = () => {
                               params: { new_plan: plan.id }
                             });
                             toast.success(`Plan changed to ${plan.name}`);
-                            fetchTenants();
                             setShowFeatureModal(false);
+                            fetchData();
                           } catch (err) {
                             toast.error(getErrorMessage(err, 'Failed to change plan'));
                           }
@@ -2922,7 +2922,7 @@ const PlatformAdmin = () => {
                               params: { description: 'Manual deduction' }
                             });
                             toast.success('Customization credit used');
-                            fetchTenants();
+                            fetchData();
                           } catch (err) {
                             toast.error(getErrorMessage(err, 'No credits remaining'));
                           }
@@ -2936,7 +2936,7 @@ const PlatformAdmin = () => {
                           try {
                             await axios.post(`${API}/platform/tenants/${featureModalTenant.id}/reset-customizations`);
                             toast.success('Credits reset to monthly limit');
-                            fetchTenants();
+                            fetchData();
                           } catch (err) {
                             toast.error(getErrorMessage(err, 'Failed to reset credits'));
                           }
@@ -3109,8 +3109,8 @@ const PlatformAdmin = () => {
                     try {
                       await axios.put(`${API}/platform/tenants/${featureModalTenant.id}/features`, featureEdits);
                       toast.success('Features and limits updated');
-                      fetchTenants();
                       setShowFeatureModal(false);
+                      fetchData();
                     } catch (err) {
                       toast.error(getErrorMessage(err, 'Failed to update features'));
                     }

@@ -9,7 +9,68 @@
 
 ---
 
-## Feature Matrix
+## Feature Add-on Pricing
+
+### Core Features (Sellable)
+| Feature | Addon Price | Included In |
+|---------|-------------|-------------|
+| Live Status Updates | €19/mo | Essential, Professional |
+| QR Codes | €15/mo | Essential, Professional |
+
+### Booking Features
+| Feature | Addon Price | Included In |
+|---------|-------------|-------------|
+| Enhanced Booking Visibility | €19/mo | Essential, Professional |
+| Admin Booking Control | €25/mo | Essential, Professional |
+| Recurring Bookings | €25/mo | Essential, Professional |
+
+### Fleet Management
+| Feature | Addon Price | Included In |
+|---------|-------------|-------------|
+| Block/Unblock Vehicles | €10/mo | Essential, Professional |
+| Status History | €19/mo | Professional |
+
+### Reports & Analytics
+| Feature | Addon Price | Included In |
+|---------|-------------|-------------|
+| Enhanced Reports | €29/mo | Essential, Professional |
+| Cost Analytics | €39/mo | Essential, Professional |
+| Detailed Reports | €49/mo | Professional |
+| Custom Exports | €25/mo | Professional |
+| Daily Timeline View | €29/mo | Professional |
+
+### Compliance & Tracking
+| Feature | Addon Price | Included In |
+|---------|-------------|-------------|
+| Compliance Oversight | €35/mo | Essential, Professional |
+| Mileage Tracking | €25/mo | Professional |
+
+### Administration
+| Feature | Addon Price | Included In |
+|---------|-------------|-------------|
+| Multi-Site Oversight | €59/mo | Professional |
+| Advanced Permissions | €35/mo | Professional |
+| User Management | €29/mo | Professional |
+
+### Support
+| Feature | Addon Price | Included In |
+|---------|-------------|-------------|
+| Faster Support (24hr) | €15/mo | Essential, Professional |
+| Priority Support (4hr) | €45/mo | Professional |
+
+### Communication
+| Feature | Addon Price | Included In |
+|---------|-------------|-------------|
+| Announcements | €15/mo | Professional |
+
+### Integrations
+| Feature | Addon Price | Included In |
+|---------|-------------|-------------|
+| API Access | €99/mo | Professional |
+
+---
+
+## Feature Matrix by Plan
 
 ### Core Features (All Plans)
 | Feature | Standard | Essential | Professional | Addon Price |

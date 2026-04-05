@@ -9,7 +9,8 @@ import {
   Activity, DollarSign, Clock, CheckCircle, XCircle, Check,
   FileText, Settings, RefreshCw, LogOut, Trash2, Key,
   Receipt, Download, Send, Edit2, UserPlus, UserMinus,
-  Globe, Copy, Layers, Star, Zap, ArrowRight, Instagram
+  Globe, Copy, Layers, Star, Zap, ArrowRight, Instagram,
+  BarChart3, Headphones as HeadphonesIcon, MessageSquare
 } from 'lucide-react';
 import ContentWorker from '../components/ContentWorker';
 
@@ -2641,6 +2642,107 @@ const PlatformAdmin = () => {
               <p className="text-sm text-gray-600">
                 <span className="font-semibold text-gray-700">Minor customisation credits</span> cover small changes such as layout tweaks, field additions, or report adjustments. They do not include major new feature development.
               </p>
+            </div>
+
+            {/* Feature Addon Pricing Section */}
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
+                <h3 className="text-xl font-bold flex items-center">
+                  <Layers size={24} className="mr-3" />
+                  Individual Feature Add-ons
+                </h3>
+                <p className="text-blue-100 mt-2 text-sm">
+                  Upgrade any plan with individual features. Prices shown are monthly add-on costs.
+                </p>
+              </div>
+              
+              <div className="p-6">
+                {featureRegistry ? (
+                  <div className="space-y-6">
+                    {Object.entries(featureRegistry.categories).map(([categoryKey, category]) => {
+                      const sellableFeatures = category.features.filter(f => f.sellable && f.addon_price > 0);
+                      if (sellableFeatures.length === 0) return null;
+                      
+                      return (
+                        <div key={categoryKey}>
+                          <h4 className="font-bold text-gray-900 mb-3 flex items-center">
+                            {categoryKey === 'bookings' && <Calendar size={18} className="mr-2 text-blue-500" />}
+                            {categoryKey === 'reports' && <BarChart3 size={18} className="mr-2 text-green-500" />}
+                            {categoryKey === 'fleet' && <Car size={18} className="mr-2 text-amber-500" />}
+                            {categoryKey === 'compliance' && <Shield size={18} className="mr-2 text-red-500" />}
+                            {categoryKey === 'admin' && <Settings size={18} className="mr-2 text-purple-500" />}
+                            {categoryKey === 'support' && <HeadphonesIcon size={18} className="mr-2 text-cyan-500" />}
+                            {categoryKey === 'communication' && <MessageSquare size={18} className="mr-2 text-pink-500" />}
+                            {categoryKey === 'integrations' && <Zap size={18} className="mr-2 text-orange-500" />}
+                            {category.name}
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {sellableFeatures.map(feature => (
+                              <div 
+                                key={feature.key}
+                                className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gray-50"
+                              >
+                                <div className="flex justify-between items-start mb-2">
+                                  <h5 className="font-semibold text-gray-900 text-sm">{feature.name}</h5>
+                                  <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap">
+                                    +€{feature.addon_price}/mo
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-600 mb-3">{feature.description}</p>
+                                <div className="flex items-center space-x-1 text-xs">
+                                  <span className="text-gray-500">Included in:</span>
+                                  {feature.default_plans.map(plan => (
+                                    <span 
+                                      key={plan}
+                                      className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                                        plan === 'professional' ? 'bg-purple-100 text-purple-700' :
+                                        plan === 'essential' ? 'bg-sky-100 text-sky-700' :
+                                        'bg-blue-100 text-blue-700'
+                                      }`}
+                                    >
+                                      {plan.charAt(0).toUpperCase() + plan.slice(1)}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await axios.get(`${API}/platform/feature-registry`);
+                          setFeatureRegistry(res.data);
+                        } catch (err) {
+                          console.error('Failed to load feature registry', err);
+                        }
+                      }}
+                      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 inline-flex items-center"
+                    >
+                      <Layers size={18} className="mr-2" />
+                      Load Feature Pricing
+                    </button>
+                  </div>
+                )}
+                
+                {/* Pricing Summary */}
+                <div className="mt-6 pt-6 border-t">
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <h5 className="font-semibold text-blue-900 mb-2">How Add-on Pricing Works</h5>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• Add-on prices are <strong>monthly</strong> and added to the base plan cost</li>
+                      <li>• Features included in a plan don't incur additional charges</li>
+                      <li>• Add-ons can be enabled/disabled per franchise in the management section below</li>
+                      <li>• Upgrading to a higher plan often provides better value than multiple add-ons</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Tenant Plan Management Section */}

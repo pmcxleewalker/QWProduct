@@ -492,7 +492,9 @@ const TenantDashboard = () => {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('en-IE', { 
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('en-IE', { 
       day: 'numeric', month: 'short', year: 'numeric' 
     });
   };

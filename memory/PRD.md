@@ -5,6 +5,22 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 
 ## Recent Changes (April 2026)
 
+### Fleet Map & Journey Tracking - COMPLETED ✅ (April 2026)
+- **Journey Map Tab**: New sub-tab under Fleet for Essential and Professional tiers
+- **Mandatory Journey Fields**: Bookings now require start_eircode and end_eircode
+- **Optional Stops**: Support for journey stops along the route
+- **Interactive Map**: Uses react-leaflet with OpenStreetMap tiles
+- **Color-Coded Routes**: Each vehicle's journeys shown in distinct colors
+- **Eircode Geocoding**: MOCKED - Uses hardcoded Dublin area coordinate mapping (D01-D24, Cork T12/T23/T45, Galway H91)
+- **Tier-Gated**: Only available for Essential and Professional tiers via show_map/map_booking_pins features
+
+### All Cars Calendar Enhancement - COMPLETED ✅ (April 2026)
+- **Standardized Color Scheme**: Red=Booked, Purple=Recurring, Amber=Pending (matches app-wide standard)
+- **Month Statistics Header**: Shows total bookings, confirmed, pending, recurring counts
+- **Vehicle Filter Dropdown**: Filter calendar by specific vehicle
+- **Improved Modal**: Booking details use correct colors for booking types
+- **Better Organization**: Clearer visual hierarchy with gradient header
+
 ### Public QR Code Mileage Submission - COMPLETED ✅ (April 2026)
 - **No login required** - Anyone can scan QR and submit mileage
 - Public page shows: Vehicle name, registration, organisation, last mileage
@@ -908,3 +924,36 @@ The platform now uses a 3-tier subscription model:
 - `/app/frontend/src/components/ContentWorker/index.js` - Mobile navigation, bottom nav bar, dropdown menu
 - `/app/frontend/src/components/ContentWorker/ContentDashboard.js` - Responsive grid and spacing
 - `/app/frontend/src/pages/PlatformAdmin.js` - Hide header/nav on mobile when Content Worker active
+
+
+### April 5, 2026 - All Cars Calendar Enhancement & Fleet Map Integration ✅
+
+**All Cars Calendar Fixes:**
+1. **Standardized Color Scheme**: Red=Booked, Purple=Recurring, Amber=Pending (matches app-wide standard)
+2. **Month Statistics Header**: Blue gradient header showing:
+   - Total bookings this month
+   - Confirmed bookings count
+   - Pending bookings count
+   - Recurring bookings count
+3. **Vehicle Filter Dropdown**: Filter calendar view by specific vehicle
+4. **Improved Modal Colors**: Booking detail modals use correct colors per booking type
+5. **Better Organization**: Clearer visual hierarchy, summary stats at top
+
+**Fleet Map Integration (Essential & Professional Tiers Only):**
+1. **New "Journey Map" Sub-Tab**: Added under Fleet tab for Essential and Professional tiers
+2. **React-Leaflet Map**: Interactive map using OpenStreetMap tiles
+3. **Journey Visualization**: Color-coded routes per vehicle
+4. **Eircode Geocoding (MOCKED)**: Uses hardcoded Dublin area coordinate mapping (D01-D24, Cork, Galway)
+5. **Feature-Gated**: Only shows for tenants with `show_map` or `map_booking_pins` features enabled
+
+**Files Updated:**
+- `/app/frontend/src/components/AllCarsCalendar.js` - Colors, stats, filter
+- `/app/frontend/src/components/FleetMap.js` - Map component (already existed)
+- `/app/frontend/src/pages/TenantDashboard.js` - Added FleetMap import and rendering
+- `/app/memory/PRD.md` - Removed Stripe and Instagram integration from roadmap
+
+**Test Report:** `/app/test_reports/iteration_20.json` - All tests passed
+
+**Roadmap Changes:**
+- REMOVED: Stripe Integration (P1) from roadmap
+- REMOVED: Full Instagram API Integration (P2) from roadmap

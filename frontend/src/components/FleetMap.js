@@ -175,18 +175,23 @@ const FleetMap = ({ bookings, vehicles, selectedVehicleId = null }) => {
         </p>
       </div>
       
-      {/* Legend */}
+      {/* Legend - scrollable with max height */}
       {activeBookings.length > 0 && (
-        <div className="px-4 py-2 bg-gray-50 border-b flex flex-wrap gap-3">
-          {activeBookings.map((booking, index) => (
-            <div key={booking.id} className="flex items-center space-x-2 text-xs">
-              <div 
-                className="w-4 h-4 rounded-full" 
-                style={{ backgroundColor: booking.color }}
-              />
-              <span className="text-gray-700">{booking.vehicleName}</span>
-            </div>
-          ))}
+        <div className="px-4 py-2 bg-gray-50 border-b max-h-24 overflow-y-auto">
+          <div className="flex flex-wrap gap-2">
+            {activeBookings.slice(0, 20).map((booking, index) => (
+              <div key={booking.id} className="flex items-center space-x-1 text-xs">
+                <div 
+                  className="w-3 h-3 rounded-full flex-shrink-0" 
+                  style={{ backgroundColor: booking.color }}
+                />
+                <span className="text-gray-700 truncate max-w-[100px]">{booking.vehicleName}</span>
+              </div>
+            ))}
+            {activeBookings.length > 20 && (
+              <span className="text-xs text-gray-500">+{activeBookings.length - 20} more</span>
+            )}
+          </div>
         </div>
       )}
 

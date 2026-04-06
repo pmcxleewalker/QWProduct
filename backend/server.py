@@ -169,6 +169,25 @@ async def login(credentials: UserLogin, request: Request):
     if user_db_role in [UserRole.SUPER_ADMIN.value, UserRole.MASTER_ADMIN.value, UserRole.CONTENT_MANAGER.value, UserRole.BOT.value]:
         user_role = UserRole(user_db_role)
     
+    # For users with tenant_id on their user document (master_admin, admin, etc.), 
+    # add their tenant to the list if not already there
+    user_tenant_id = user.get("tenant_id")
+    if user_tenant_id and not any(t["tenant_id"] == user_tenant_id for t in tenant_list):
+        user_tenant = await db.tenants.find_one({"id": user_tenant_id}, {"_id": 0})
+        if user_tenant and user_tenant.get("status") != TenantStatus.SUSPENDED.value:
+            tenant_info = {
+                "tenant_id": user_tenant["id"],
+                "tenant_name": user_tenant["name"],
+                "tenant_slug": user_tenant["slug"],
+                "role": user_db_role or UserRole.MASTER_ADMIN.value,
+                "status": user_tenant.get("status", "active")
+            }
+            tenant_list.insert(0, tenant_info)  # Add at beginning
+            if not default_tenant_id:
+                default_tenant_id = user_tenant["id"]
+                if user_db_role:
+                    user_role = UserRole(user_db_role)
+    
     # Build token payload
     token_data = {
         "sub": user["id"],

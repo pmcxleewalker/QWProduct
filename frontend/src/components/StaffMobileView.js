@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Home, Calendar, Car, Clock, MapPin, Bell, User, Phone,
-  RefreshCw, Check, X, ChevronRight, Send, CheckCircle,
-  AlertCircle, Navigation, Plus, ChevronLeft, ChevronDown
+  RefreshCw, X, ChevronRight, Send, CheckCircle,
+  AlertCircle, Navigation, Plus, ChevronLeft, Wrench
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import { liftRequestAPI } from '../api/api';
+import { liftRequestAPI, assistanceAPI } from '../api/api';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -22,6 +22,7 @@ const StaffMobileView = ({ tenantSlug }) => {
   const [bookings, setBookings] = useState([]);
   const [myBookings, setMyBookings] = useState([]);
   const [liftRequests, setLiftRequests] = useState([]);
+  const [assistanceProviders, setAssistanceProviders] = useState([]);
   
   // Booking form state
   const [showBookingForm, setShowBookingForm] = useState(false);
@@ -58,15 +59,17 @@ const StaffMobileView = ({ tenantSlug }) => {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const [vehiclesRes, bookingsRes, liftsRes] = await Promise.all([
+      const [vehiclesRes, bookingsRes, liftsRes, assistanceRes] = await Promise.all([
         axios.get(`${API}/vehicles`, { headers }),
         axios.get(`${API}/bookings`, { headers }),
-        axios.get(`${API}/lift-requests/active`, { headers }).catch(() => ({ data: [] }))
+        axios.get(`${API}/lift-requests/active`, { headers }).catch(() => ({ data: [] })),
+        assistanceAPI.getAll().catch(() => ({ data: [] }))
       ]);
       
       setVehicles(vehiclesRes.data || []);
       setBookings(bookingsRes.data || []);
       setLiftRequests(liftsRes.data || []);
+      setAssistanceProviders(assistanceRes.data || []);
       
       // Filter bookings for current user
       const userBookings = (bookingsRes.data || []).filter(b => 
@@ -148,10 +151,11 @@ const StaffMobileView = ({ tenantSlug }) => {
 
       await axios.post(`${API}/bookings`, {
         car_id: selectedVehicle.id,
-        user_name: user?.name || 'Staff',
         start_time: startDateTime,
         end_time: endDateTime,
-        purpose: bookingForm.purpose
+        purpose: bookingForm.purpose,
+        user_name: user?.name || 'Staff',
+        status: 'pending'
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -259,22 +263,40 @@ const StaffMobileView = ({ tenantSlug }) => {
   // Available vehicles for booking
   const availableVehicles = vehicles.filter(v => getVehicleStatus(v) === 'available');
 
+  // Group assistance providers by region
+  const groupedProviders = assistanceProviders.reduce((acc, provider) => {
+    if (!acc[provider.region]) {
+      acc[provider.region] = [];
+    }
+    acc[provider.region].push(provider);
+    return acc;
+  }, {});
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="staff-mobile-container min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-24" data-testid="staff-mobile-view">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 text-white px-5 pt-14 pb-6">
+    <div className="staff-mobile-container min-h-screen bg-gray-100 pb-24" data-testid="staff-mobile-view">
+      {/* Header with Quick Wing Logo */}
+      <div className="bg-gradient-to-br from-violet-700 via-violet-800 to-purple-900 text-white px-4 pt-12 pb-6">
+        {/* Logo and Refresh Row */}
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-blue-200 text-sm">Welcome back,</p>
-            <h1 className="text-xl font-bold">{user?.name || 'Staff'}</h1>
+          <div className="flex items-center">
+            <img 
+              src="/quick-wing-logo.png" 
+              alt="Quick Wing" 
+              className="w-10 h-10 mr-3 rounded-lg object-contain bg-white/10 p-1"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+            <div>
+              <h1 className="text-lg font-bold tracking-tight">Quick Wing</h1>
+              <p className="text-xs text-violet-300">Fleet Management</p>
+            </div>
           </div>
           <button 
             onClick={() => fetchData(true)}
@@ -286,19 +308,25 @@ const StaffMobileView = ({ tenantSlug }) => {
           </button>
         </div>
 
+        {/* User Greeting */}
+        <div className="mb-4">
+          <p className="text-violet-300 text-sm">Welcome back,</p>
+          <h2 className="text-xl font-bold">{user?.name || 'Staff'}</h2>
+        </div>
+
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-3 text-center">
+          <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-3 text-center">
             <p className="text-2xl font-bold">{todaysBookings.length}</p>
-            <p className="text-xs text-blue-200">Today</p>
+            <p className="text-xs text-violet-200">Today</p>
           </div>
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-3 text-center">
+          <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-3 text-center">
             <p className="text-2xl font-bold">{availableVehicles.length}</p>
-            <p className="text-xs text-blue-200">Available</p>
+            <p className="text-xs text-violet-200">Available</p>
           </div>
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-3 text-center">
+          <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-3 text-center">
             <p className="text-2xl font-bold">{upcomingBookings.length}</p>
-            <p className="text-xs text-blue-200">Upcoming</p>
+            <p className="text-xs text-violet-200">Upcoming</p>
           </div>
         </div>
       </div>
@@ -322,18 +350,18 @@ const StaffMobileView = ({ tenantSlug }) => {
                       className="flex items-center p-3 bg-white rounded-xl shadow-sm"
                       data-testid={`today-booking-${booking.id}`}
                     >
-                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-3">
-                        <Car className="text-blue-600" size={24} />
+                      <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center mr-3">
+                        <Car className="text-violet-600" size={24} />
                       </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">
                           {getVehicleName(booking.car_id)}
                         </p>
                         <p className="text-sm text-gray-500">
                           {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
                         </p>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
                         booking.status === 'confirmed' || booking.status === 'approved'
                           ? 'bg-green-100 text-green-700' 
                           : 'bg-yellow-100 text-yellow-700'
@@ -346,12 +374,12 @@ const StaffMobileView = ({ tenantSlug }) => {
               </div>
             )}
 
-            {/* Live Fleet Status */}
+            {/* Fleet Status */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="px-4 py-3 bg-gray-50 border-b flex items-center justify-between">
                 <h2 className="font-bold text-gray-800 flex items-center">
-                  <Car className="mr-2 text-blue-600" size={20} />
-                  Live Fleet
+                  <Car className="mr-2 text-violet-600" size={20} />
+                  Fleet Status
                 </h2>
                 <span className="text-xs text-green-600 font-medium flex items-center">
                   <span className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
@@ -359,7 +387,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                 </span>
               </div>
               
-              <div className="divide-y">
+              <div className="divide-y max-h-64 overflow-y-auto">
                 {vehicles.map((vehicle) => {
                   const status = getVehicleStatus(vehicle);
                   const currentBooking = bookings.find(b => 
@@ -374,7 +402,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                       className="p-4 flex items-center"
                       data-testid={`vehicle-${vehicle.id}`}
                     >
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mr-3 ${
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mr-3 flex-shrink-0 ${
                         status === 'available' ? 'bg-green-100' :
                         status === 'in-use' ? 'bg-orange-100' : 'bg-red-100'
                       }`}>
@@ -383,16 +411,16 @@ const StaffMobileView = ({ tenantSlug }) => {
                           status === 'in-use' ? 'text-orange-600' : 'text-red-600'
                         }`} size={24} />
                       </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">{vehicle.name}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">{vehicle.name}</p>
                         <p className="text-xs text-gray-500">{vehicle.registration}</p>
                         {currentBooking && (
-                          <p className="text-xs text-orange-600 mt-1">
+                          <p className="text-xs text-orange-600 mt-1 truncate">
                             {currentBooking.user_name} until {formatTime(currentBooking.end_time)}
                           </p>
                         )}
                       </div>
-                      <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-bold flex-shrink-0 ${
                         status === 'available' ? 'bg-green-100 text-green-700' :
                         status === 'in-use' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
                       }`}>
@@ -415,7 +443,7 @@ const StaffMobileView = ({ tenantSlug }) => {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="px-4 py-3 bg-gray-50 border-b">
                 <h2 className="font-bold text-gray-800 flex items-center">
-                  <Calendar className="mr-2 text-purple-600" size={20} />
+                  <Calendar className="mr-2 text-violet-600" size={20} />
                   My Upcoming Bookings
                 </h2>
               </div>
@@ -426,24 +454,24 @@ const StaffMobileView = ({ tenantSlug }) => {
                   <p>No upcoming bookings</p>
                   <button
                     onClick={() => setActiveTab('bookings')}
-                    className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium"
+                    className="mt-3 px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-medium"
                   >
                     Book a Car
                   </button>
                 </div>
               ) : (
-                <div className="divide-y">
+                <div className="divide-y max-h-64 overflow-y-auto">
                   {upcomingBookings.slice(0, 5).map((booking) => (
                     <div 
                       key={booking.id}
                       className="p-4 flex items-center"
                       data-testid={`upcoming-booking-${booking.id}`}
                     >
-                      <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mr-3">
-                        <Calendar className="text-purple-600" size={20} />
+                      <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center mr-3 flex-shrink-0">
+                        <Calendar className="text-violet-600" size={20} />
                       </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">
                           {getVehicleName(booking.car_id)}
                         </p>
                         <p className="text-sm text-gray-500">
@@ -453,7 +481,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                           {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
                         </p>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
                         booking.status === 'confirmed' || booking.status === 'approved'
                           ? 'bg-green-100 text-green-700' 
                           : 'bg-yellow-100 text-yellow-700'
@@ -473,12 +501,12 @@ const StaffMobileView = ({ tenantSlug }) => {
           <div className="space-y-4">
             {/* Book a Car Section */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+              <div className="px-4 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white">
                 <h2 className="font-bold flex items-center">
                   <Plus className="mr-2" size={20} />
                   Book a Car
                 </h2>
-                <p className="text-sm text-blue-100">Select an available vehicle</p>
+                <p className="text-sm text-violet-200">Select an available vehicle</p>
               </div>
               
               <div className="p-4">
@@ -499,14 +527,14 @@ const StaffMobileView = ({ tenantSlug }) => {
                         className="w-full flex items-center p-4 bg-green-50 rounded-xl active:bg-green-100 transition-colors text-left"
                         data-testid={`book-vehicle-${vehicle.id}`}
                       >
-                        <div className="w-12 h-12 bg-green-200 rounded-xl flex items-center justify-center mr-3">
+                        <div className="w-12 h-12 bg-green-200 rounded-xl flex items-center justify-center mr-3 flex-shrink-0">
                           <Car className="text-green-700" size={24} />
                         </div>
-                        <div className="flex-1">
-                          <p className="font-bold text-gray-900">{vehicle.name}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-gray-900 truncate">{vehicle.name}</p>
                           <p className="text-sm text-gray-500">{vehicle.registration}</p>
                         </div>
-                        <div className="flex items-center text-green-700">
+                        <div className="flex items-center text-green-700 flex-shrink-0">
                           <span className="text-sm font-medium mr-1">Book</span>
                           <ChevronRight size={20} />
                         </div>
@@ -521,7 +549,7 @@ const StaffMobileView = ({ tenantSlug }) => {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="px-4 py-3 bg-gray-50 border-b flex items-center justify-between">
                 <h2 className="font-bold text-gray-800 flex items-center">
-                  <Calendar className="mr-2 text-indigo-600" size={20} />
+                  <Calendar className="mr-2 text-violet-600" size={20} />
                   My Calendar
                 </h2>
                 <div className="flex items-center space-x-2">
@@ -566,13 +594,13 @@ const StaffMobileView = ({ tenantSlug }) => {
                       <div
                         key={date.toISOString()}
                         className={`aspect-square flex flex-col items-center justify-center rounded-lg text-sm relative ${
-                          isToday ? 'bg-blue-600 text-white font-bold' :
-                          hasBookings ? 'bg-purple-100 text-purple-800' : 'text-gray-700'
+                          isToday ? 'bg-violet-600 text-white font-bold' :
+                          hasBookings ? 'bg-violet-100 text-violet-800' : 'text-gray-700'
                         }`}
                       >
                         {date.getDate()}
                         {hasBookings && !isToday && (
-                          <div className="absolute bottom-1 w-1.5 h-1.5 bg-purple-600 rounded-full"></div>
+                          <div className="absolute bottom-1 w-1.5 h-1.5 bg-violet-600 rounded-full"></div>
                         )}
                       </div>
                     );
@@ -582,11 +610,11 @@ const StaffMobileView = ({ tenantSlug }) => {
                 {/* Legend */}
                 <div className="flex items-center justify-center space-x-4 mt-4 pt-3 border-t">
                   <div className="flex items-center text-xs text-gray-500">
-                    <div className="w-3 h-3 bg-blue-600 rounded mr-1"></div>
+                    <div className="w-3 h-3 bg-violet-600 rounded mr-1"></div>
                     Today
                   </div>
                   <div className="flex items-center text-xs text-gray-500">
-                    <div className="w-3 h-3 bg-purple-100 rounded mr-1"></div>
+                    <div className="w-3 h-3 bg-violet-100 rounded mr-1"></div>
                     Has Booking
                   </div>
                 </div>
@@ -609,8 +637,8 @@ const StaffMobileView = ({ tenantSlug }) => {
                   {myBookings.sort((a, b) => new Date(b.start_time || b.date) - new Date(a.start_time || a.date)).map((booking) => (
                     <div key={booking.id} className="p-4">
                       <div className="flex items-center justify-between mb-1">
-                        <p className="font-semibold text-gray-900">{getVehicleName(booking.car_id)}</p>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        <p className="font-semibold text-gray-900 truncate flex-1 mr-2">{getVehicleName(booking.car_id)}</p>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
                           booking.status === 'confirmed' || booking.status === 'approved'
                             ? 'bg-green-100 text-green-700' 
                             : booking.status === 'pending'
@@ -643,19 +671,19 @@ const StaffMobileView = ({ tenantSlug }) => {
                 </div>
                 <h2 className="text-xl font-bold text-gray-900 mb-2">Request Sent!</h2>
                 <p className="text-gray-600">
-                  Your lift request has been sent to all staff members with push notifications enabled.
+                  Your lift request has been sent to all staff members.
                 </p>
               </div>
             ) : (
               <>
                 {/* Request Form */}
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                  <div className="px-4 py-4 bg-gradient-to-r from-orange-500 to-pink-500 text-white">
+                  <div className="px-4 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white">
                     <h2 className="font-bold text-lg flex items-center">
                       <Navigation className="mr-2" size={22} />
                       Request a Lift
                     </h2>
-                    <p className="text-sm text-orange-100">Ask a colleague for a ride</p>
+                    <p className="text-sm text-violet-200">Ask a colleague for a ride</p>
                   </div>
                   
                   <form onSubmit={handleSubmitLiftRequest} className="p-4 space-y-4">
@@ -669,7 +697,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                         type="text"
                         value={liftForm.name}
                         onChange={(e) => setLiftForm({ ...liftForm, name: e.target.value })}
-                        className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-0"
+                        className="w-full px-4 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
                         placeholder="Your name"
                         required
                         data-testid="lift-name-input"
@@ -686,7 +714,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                         type="tel"
                         value={liftForm.phone}
                         onChange={(e) => setLiftForm({ ...liftForm, phone: e.target.value })}
-                        className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-0"
+                        className="w-full px-4 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
                         placeholder="Your phone number"
                         required
                         data-testid="lift-phone-input"
@@ -703,7 +731,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                         type="text"
                         value={liftForm.from_location}
                         onChange={(e) => setLiftForm({ ...liftForm, from_location: e.target.value })}
-                        className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-0"
+                        className="w-full px-4 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
                         placeholder="e.g., Office, Home, etc."
                         required
                         data-testid="lift-from-input"
@@ -720,7 +748,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                         type="text"
                         value={liftForm.to_location}
                         onChange={(e) => setLiftForm({ ...liftForm, to_location: e.target.value })}
-                        className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-0"
+                        className="w-full px-4 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
                         placeholder="e.g., Client site, Station, etc."
                         required
                         data-testid="lift-to-input"
@@ -731,7 +759,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                          <Calendar size={16} className="mr-2 text-blue-600" />
+                          <Calendar size={16} className="mr-2 text-violet-600" />
                           Date *
                         </label>
                         <input
@@ -739,21 +767,21 @@ const StaffMobileView = ({ tenantSlug }) => {
                           value={liftForm.date}
                           onChange={(e) => setLiftForm({ ...liftForm, date: e.target.value })}
                           min={new Date().toISOString().split('T')[0]}
-                          className="w-full px-3 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-0"
+                          className="w-full px-3 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
                           required
                           data-testid="lift-date-input"
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                          <Clock size={16} className="mr-2 text-purple-600" />
+                          <Clock size={16} className="mr-2 text-violet-600" />
                           Time *
                         </label>
                         <input
                           type="time"
                           value={liftForm.time}
                           onChange={(e) => setLiftForm({ ...liftForm, time: e.target.value })}
-                          className="w-full px-3 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-0"
+                          className="w-full px-3 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
                           required
                           data-testid="lift-time-input"
                         />
@@ -764,7 +792,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                     <button
                       type="submit"
                       disabled={isSubmittingLift}
-                      className="w-full py-5 bg-gradient-to-r from-orange-500 to-pink-500 text-white text-lg font-bold rounded-xl disabled:opacity-50 active:scale-[0.98] transition-transform flex items-center justify-center space-x-2"
+                      className="w-full py-5 bg-gradient-to-r from-violet-600 to-purple-600 text-white text-lg font-bold rounded-xl disabled:opacity-50 active:scale-[0.98] transition-transform flex items-center justify-center space-x-2"
                       data-testid="submit-lift-btn"
                     >
                       {isSubmittingLift ? (
@@ -783,100 +811,138 @@ const StaffMobileView = ({ tenantSlug }) => {
                 </div>
 
                 {/* Info Box */}
-                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-                  <h3 className="font-bold text-blue-800 mb-2 flex items-center">
+                <div className="bg-violet-50 border border-violet-200 rounded-2xl p-4">
+                  <h3 className="font-bold text-violet-800 mb-2 flex items-center">
                     <AlertCircle size={18} className="mr-2" />
                     How it works
                   </h3>
-                  <ul className="text-sm text-blue-700 space-y-1">
+                  <ul className="text-sm text-violet-700 space-y-1">
                     <li>• Your request will notify all staff members</li>
                     <li>• Include your phone so they can contact you</li>
                     <li>• You'll be notified when someone accepts</li>
                   </ul>
                 </div>
-
-                {/* Active Lift Requests */}
-                {liftRequests.length > 0 && (
-                  <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                    <div className="px-4 py-3 bg-gray-50 border-b">
-                      <h2 className="font-bold text-gray-800 flex items-center">
-                        <Bell className="mr-2 text-orange-600" size={18} />
-                        Active Lift Requests
-                      </h2>
-                    </div>
-                    <div className="divide-y">
-                      {liftRequests.slice(0, 5).map((request) => (
-                        <div key={request.id} className="p-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <p className="font-semibold text-gray-900">{request.requester_name}</p>
-                              <p className="text-xs text-gray-500">
-                                {formatDate(request.date)} at {request.time}
-                              </p>
-                            </div>
-                            <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-                              Open
-                            </span>
-                          </div>
-                          <div className="flex items-center text-sm text-gray-600 mb-1">
-                            <MapPin size={14} className="mr-1 text-green-600" />
-                            <span className="truncate">{request.from_location}</span>
-                          </div>
-                          <div className="flex items-center text-sm text-gray-600">
-                            <MapPin size={14} className="mr-1 text-red-500" />
-                            <span className="truncate">{request.to_location}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </>
             )}
           </div>
         )}
+
+        {/* ========== ASSISTANCE TAB ========== */}
+        {activeTab === 'assistance' && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="px-4 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white">
+                <h2 className="font-bold text-lg flex items-center">
+                  <Wrench className="mr-2" size={22} />
+                  Breakdown Assistance
+                </h2>
+                <p className="text-sm text-violet-200">Emergency contacts by region</p>
+              </div>
+              
+              {assistanceProviders.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  <Wrench size={40} className="mx-auto mb-2 opacity-50" />
+                  <p>No assistance providers added yet</p>
+                  <p className="text-sm mt-1">Contact your admin for help</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {Object.entries(groupedProviders).map(([region, providers]) => (
+                    <div key={region} className="p-4">
+                      <div className="flex items-center mb-3">
+                        <MapPin className="text-violet-600 mr-2" size={18} />
+                        <h3 className="font-bold text-gray-800">{region}</h3>
+                      </div>
+                      <div className="space-y-2">
+                        {providers.map((provider) => (
+                          <div 
+                            key={provider.id}
+                            className="p-3 bg-gray-50 rounded-xl"
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="font-semibold text-gray-900">{provider.name}</p>
+                              <span className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">
+                                {provider.service_type}
+                              </span>
+                            </div>
+                            <a 
+                              href={`tel:${provider.phone}`}
+                              className="flex items-center text-violet-600 font-medium mt-2"
+                            >
+                              <Phone size={16} className="mr-2" />
+                              {provider.phone}
+                            </a>
+                            {provider.address && (
+                              <p className="text-xs text-gray-500 mt-1 flex items-center">
+                                <MapPin size={12} className="mr-1" />
+                                {provider.address}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Bottom Tab Navigation */}
+      {/* Bottom Tab Navigation - 4 tabs */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 safe-area-bottom z-50">
         <div className="flex justify-around items-center max-w-md mx-auto">
           <button
             onClick={() => setActiveTab('home')}
-            className={`flex flex-col items-center justify-center py-2 px-4 rounded-xl transition-colors ${
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-colors min-w-[60px] ${
               activeTab === 'home' 
-                ? 'bg-blue-100 text-blue-700' 
+                ? 'bg-violet-100 text-violet-700' 
                 : 'text-gray-500 active:bg-gray-100'
             }`}
             data-testid="tab-home"
           >
-            <Home size={26} strokeWidth={activeTab === 'home' ? 2.5 : 2} />
+            <Home size={24} strokeWidth={activeTab === 'home' ? 2.5 : 2} />
             <span className="text-xs font-medium mt-1">Home</span>
           </button>
           
           <button
             onClick={() => setActiveTab('bookings')}
-            className={`flex flex-col items-center justify-center py-2 px-4 rounded-xl transition-colors ${
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-colors min-w-[60px] ${
               activeTab === 'bookings' 
-                ? 'bg-purple-100 text-purple-700' 
+                ? 'bg-violet-100 text-violet-700' 
                 : 'text-gray-500 active:bg-gray-100'
             }`}
             data-testid="tab-bookings"
           >
-            <Calendar size={26} strokeWidth={activeTab === 'bookings' ? 2.5 : 2} />
+            <Calendar size={24} strokeWidth={activeTab === 'bookings' ? 2.5 : 2} />
             <span className="text-xs font-medium mt-1">Bookings</span>
           </button>
           
           <button
             onClick={() => setActiveTab('lift')}
-            className={`flex flex-col items-center justify-center py-2 px-4 rounded-xl transition-colors ${
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-colors min-w-[60px] ${
               activeTab === 'lift' 
-                ? 'bg-orange-100 text-orange-700' 
+                ? 'bg-violet-100 text-violet-700' 
                 : 'text-gray-500 active:bg-gray-100'
             }`}
             data-testid="tab-lift"
           >
-            <Navigation size={26} strokeWidth={activeTab === 'lift' ? 2.5 : 2} />
-            <span className="text-xs font-medium mt-1">Request Lift</span>
+            <Navigation size={24} strokeWidth={activeTab === 'lift' ? 2.5 : 2} />
+            <span className="text-xs font-medium mt-1">Lift</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('assistance')}
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-colors min-w-[60px] ${
+              activeTab === 'assistance' 
+                ? 'bg-violet-100 text-violet-700' 
+                : 'text-gray-500 active:bg-gray-100'
+            }`}
+            data-testid="tab-assistance"
+          >
+            <Wrench size={24} strokeWidth={activeTab === 'assistance' ? 2.5 : 2} />
+            <span className="text-xs font-medium mt-1">Help</span>
           </button>
         </div>
       </div>
@@ -901,12 +967,12 @@ const StaffMobileView = ({ tenantSlug }) => {
 
             <div className="p-5 space-y-5">
               {/* Selected Vehicle */}
-              <div className="flex items-center p-4 bg-blue-50 rounded-2xl">
-                <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center mr-4">
+              <div className="flex items-center p-4 bg-violet-50 rounded-2xl">
+                <div className="w-14 h-14 bg-violet-600 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
                   <Car className="text-white" size={28} />
                 </div>
-                <div>
-                  <p className="font-bold text-gray-900 text-lg">{selectedVehicle.name}</p>
+                <div className="min-w-0">
+                  <p className="font-bold text-gray-900 text-lg truncate">{selectedVehicle.name}</p>
                   <p className="text-gray-500">{selectedVehicle.registration}</p>
                 </div>
               </div>
@@ -919,7 +985,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                   value={bookingForm.date}
                   onChange={(e) => setBookingForm({ ...bookingForm, date: e.target.value })}
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-0"
+                  className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
                 />
               </div>
 
@@ -931,7 +997,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                     type="time"
                     value={bookingForm.startTime}
                     onChange={(e) => setBookingForm({ ...bookingForm, startTime: e.target.value })}
-                    className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-0"
+                    className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -940,7 +1006,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                     type="time"
                     value={bookingForm.endTime}
                     onChange={(e) => setBookingForm({ ...bookingForm, endTime: e.target.value })}
-                    className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-0"
+                    className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
                   />
                 </div>
               </div>
@@ -953,7 +1019,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                   value={bookingForm.purpose}
                   onChange={(e) => setBookingForm({ ...bookingForm, purpose: e.target.value })}
                   placeholder="e.g., Client meeting, Delivery"
-                  className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-0"
+                  className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
                   data-testid="booking-purpose-input"
                 />
               </div>
@@ -962,7 +1028,7 @@ const StaffMobileView = ({ tenantSlug }) => {
               <button
                 onClick={handleSubmitBooking}
                 disabled={isSubmittingBooking || !bookingForm.purpose}
-                className="w-full py-5 bg-blue-600 text-white text-lg font-bold rounded-xl disabled:opacity-50 active:bg-blue-700 transition-colors"
+                className="w-full py-5 bg-violet-600 text-white text-lg font-bold rounded-xl disabled:opacity-50 active:bg-violet-700 transition-colors"
                 data-testid="submit-booking-btn"
               >
                 {isSubmittingBooking ? 'Submitting...' : 'Request Booking'}
@@ -982,6 +1048,15 @@ const StaffMobileView = ({ tenantSlug }) => {
         }
         .safe-area-bottom {
           padding-bottom: max(8px, env(safe-area-inset-bottom));
+        }
+        .staff-mobile-container {
+          -webkit-text-size-adjust: 100%;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+        }
+        .staff-mobile-container input,
+        .staff-mobile-container button {
+          font-size: 16px; /* Prevents iOS zoom on focus */
         }
       `}</style>
     </div>

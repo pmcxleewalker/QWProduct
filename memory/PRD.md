@@ -6,9 +6,9 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 ## Recent Changes (April 2026)
 
 ### Staff Mobile View - COMPLETED ✅ (April 7, 2026)
-- **Simplified 3-Tab Interface** for staff/driver users on mobile devices
+- **Simplified 4-Tab Interface** for staff/driver users on mobile devices
 - **Home Tab**: 
-  - Live fleet status with real-time vehicle availability
+  - Fleet Status with real-time vehicle availability (renamed from "Live Sheet")
   - Today's bookings with reminder alerts
   - My upcoming bookings list
   - Quick stats (Today, Available, Upcoming)
@@ -20,8 +20,16 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
   - Form to request lift from colleagues
   - Fields: Name, Phone, From Location, To Location, Date, Time
   - Push notification to other staff members
+- **Assistance Tab (NEW)**:
+  - Breakdown assistance contacts by region
+  - Emergency contact information
+- **UI Updates**:
+  - Quick Wing logo in top left (matching admin)
+  - Purple color scheme (matching admin dashboard)
+  - No "Live Sheet" terminology
+  - No export options for staff
 - **Conditional Rendering**: Only shown for staff/driver role users when viewport < 768px
-- **Mobile-First Design**: Large touch targets, simplified navigation
+- **Mobile-First Design**: Large touch targets, proper viewport handling
 - **Test User**: teststaff@standard-fleet.com / teststaff123
 
 ### Fleet Map & Journey Tracking - COMPLETED ✅ (April 2026)

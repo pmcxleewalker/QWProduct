@@ -146,13 +146,32 @@ const TenantRoutes = () => {
   const [tenantLoading, setTenantLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // Mobile detection with proper initialization and localStorage persistence
+  const [isMobile, setIsMobile] = useState(() => {
+    // Check if user manually set a preference
+    const savedPref = localStorage.getItem('qw_mobile_view_pref');
+    if (savedPref !== null) {
+      return savedPref === 'true';
+    }
+    // Default to viewport check
+    return window.innerWidth < 768;
+  });
 
-  // Detect mobile viewport
+  // Detect mobile viewport and update
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // Don't persist automatic detection - only persist manual choice
+    };
+    
+    // Check immediately
+    checkMobile();
+    
+    // Listen for resize
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   useEffect(() => {
@@ -246,10 +265,30 @@ const TenantRoutes = () => {
   const isTenantAdmin = activeTenant?.role === 'admin' || activeTenant?.role === 'master_admin' || user?.role === 'super_admin';
   
   // Check if user is staff (not admin) - these users get the simplified mobile view
-  const isStaffUser = activeTenant?.role === 'staff' || activeTenant?.role === 'driver';
+  // Must have activeTenant loaded to determine role accurately
+  const isStaffUser = activeTenant && (activeTenant.role === 'staff' || activeTenant.role === 'driver');
+
+  // For staff users on mobile, show loading while tenant context loads
+  // This prevents the flash of regular web view
+  if (isMobile && !activeTenant && !isPlatformAdmin) {
+    // Still loading tenant context for a potentially staff user
+    // Check if the user's membership indicates staff role
+    const userMembership = user?.memberships?.find(m => m.tenant_slug === tenantSlug);
+    if (userMembership && (userMembership.role === 'staff' || userMembership.role === 'driver')) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-violet-700 to-purple-900 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white/80">Loading...</p>
+          </div>
+        </div>
+      );
+    }
+  }
 
   // Show simplified mobile view for staff/driver users on mobile devices
-  if (isMobile && isStaffUser) {
+  // Only render after we know the user's role (activeTenant is loaded)
+  if (isMobile && isStaffUser && activeTenant) {
     return (
       <>
         <StaffMobileView tenantSlug={tenantSlug} />

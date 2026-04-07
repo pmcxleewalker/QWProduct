@@ -745,3 +745,4 @@ frontend/node_modules/.cache/default-development/40.pack
 # Environment files
 *.env
 *.env.*
+frontend/node_modules/.cache/default-development/42.pack

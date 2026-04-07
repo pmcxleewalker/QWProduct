@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   Car, Calendar, Users, Shield, BarChart3, Clock, 
   CheckCircle, Mail, Instagram,
@@ -283,6 +283,9 @@ const LandingPage = () => {
               <a href="#contact" className="hover:text-white transition-colors">
                 Contact
               </a>
+              <Link to="/privacy-policy" className="hover:text-white transition-colors">
+                Privacy
+              </Link>
               <a 
                 href="https://www.instagram.com/quick.wing2025"
                 target="_blank"

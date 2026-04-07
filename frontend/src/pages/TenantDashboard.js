@@ -28,6 +28,7 @@ import DailyTimelineChart from '../components/DailyTimelineChart';
 import NotificationBell from '../components/NotificationBell';
 import FleetMap from '../components/FleetMap';
 import GDPRSettings from '../components/GDPRSettings';
+import UserProfileMenu from '../components/UserProfileMenu';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -163,6 +164,7 @@ const TenantDashboard = () => {
   
   // Settings Modal States (Professional tier)
   const [showSettings, setShowSettings] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [tenantSettings, setTenantSettings] = useState(null);
   const [settingsForm, setSettingsForm] = useState({
     mileage_rate: 0.35,

@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Calendar, Settings, User, BarChart3, FileSpreadsheet } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-const MobileBottomNav = ({ tenantSlug }) => {
+const MobileBottomNav = ({ tenantSlug, onProfileClick }) => {
   const location = useLocation();
   const { user, activeTenant, isTenantAdmin } = useAuth();
   
@@ -38,23 +38,37 @@ const MobileBottomNav = ({ tenantSlug }) => {
   if (isAdmin) {
     navItems.push({ path: getTenantPath('/admin'), icon: Settings, label: 'Admin' });
   }
+  
+  // Add Profile/Account button for all users
+  navItems.push({ path: '#profile', icon: User, label: 'Account', isProfile: true });
 
   return (
     <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-area-inset-bottom">
       <div className="flex justify-around items-center h-16">
-        {navItems.map(({ path, icon: Icon, label }) => (
-          <Link
-            key={path}
-            to={path}
-            className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${
-              isActive(path)
-                ? 'text-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Icon size={22} strokeWidth={isActive(path) ? 2.5 : 2} />
-            <span className="text-xs font-medium">{label}</span>
-          </Link>
+        {navItems.map(({ path, icon: Icon, label, isProfile }) => (
+          isProfile ? (
+            <button
+              key="profile"
+              onClick={onProfileClick}
+              className="flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors text-gray-500 hover:text-gray-700"
+            >
+              <Icon size={22} strokeWidth={2} />
+              <span className="text-xs font-medium">{label}</span>
+            </button>
+          ) : (
+            <Link
+              key={path}
+              to={path}
+              className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${
+                isActive(path)
+                  ? 'text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Icon size={22} strokeWidth={isActive(path) ? 2.5 : 2} />
+              <span className="text-xs font-medium">{label}</span>
+            </Link>
+          )
         ))}
       </div>
     </div>

@@ -26,6 +26,7 @@ import Reports from './pages/Reports';
 import RequestLift from './pages/RequestLift';
 import Navigation from './components/Navigation';
 import MobileBottomNav from './components/MobileBottomNav';
+import UserProfileMenu from './components/UserProfileMenu';
 import Footer from './components/Footer';
 import MessageAcknowledgmentModal from './components/MessageAcknowledgmentModal';
 import './App.css';
@@ -143,6 +144,7 @@ const TenantRoutes = () => {
   const { isAuthenticated, activeTenant, selectTenant, user, loading } = useAuth();
   const [tenantLoading, setTenantLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
     const setupTenantContext = async () => {
@@ -256,7 +258,8 @@ const TenantRoutes = () => {
         </Routes>
       </div>
       <Footer />
-      <MobileBottomNav tenantSlug={tenantSlug} />
+      <MobileBottomNav tenantSlug={tenantSlug} onProfileClick={() => setShowProfileMenu(true)} />
+      <UserProfileMenu isOpen={showProfileMenu} onClose={() => setShowProfileMenu(false)} />
     </>
   );
 };

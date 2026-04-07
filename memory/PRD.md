@@ -25,31 +25,20 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
   - `GET /api/tenant/settings` - includes compliance settings
   - `PUT /api/tenant/settings/compliance` - update compliance thresholds
 
-### Staff Mobile View - COMPLETED ✅ (April 7, 2026)
-- **Simplified 4-Tab Interface** for staff/driver users on mobile devices
-- **Home Tab**: 
-  - Fleet Status with real-time vehicle availability (renamed from "Live Sheet")
-  - Today's bookings with reminder alerts
-  - My upcoming bookings list
-  - Quick stats (Today, Available, Upcoming)
-- **Bookings Tab**:
-  - Book a car - select from available vehicles
-  - Personal calendar with booking indicators
-  - All my bookings list
-- **Request a Lift Tab**:
-  - Form to request lift from colleagues
-  - Fields: Name, Phone, From Location, To Location, Date, Time
-  - Push notification to other staff members
-- **Assistance Tab (NEW)**:
-  - Breakdown assistance contacts by region
-  - Emergency contact information
+### Staff Mobile View - UPDATED ✅ (April 7, 2026)
+- **Simplified 3-Tab Interface** for staff/driver users on mobile:
+  1. **Live Status** - Live fleet status, today's booking reminders
+  2. **Bookings** - Book available cars, personal calendar, my bookings list
+  3. **Request Lift** - Form to request lift from colleagues
+- **Fixed Issues**:
+  - Screen now properly fits mobile viewport (100vh/100dvh)
+  - Refresh no longer kicks back to web view (localStorage persistence)
+  - Bottom navigation is static and fixed to screen
+  - Body scroll is locked for proper app-like behavior
 - **UI Updates**:
-  - Quick Wing logo in top left (matching admin)
-  - Purple color scheme (matching admin dashboard)
-  - No "Live Sheet" terminology
-  - No export options for staff
-- **Conditional Rendering**: Only shown for staff/driver role users when viewport < 768px
-- **Mobile-First Design**: Large touch targets, proper viewport handling
+  - Quick Wing logo in header
+  - Purple color scheme matching admin
+  - No live sheet or export access for staff
 - **Test User**: teststaff@standard-fleet.com / teststaff123
 
 ### Fleet Map & Journey Tracking - COMPLETED ✅ (April 2026)

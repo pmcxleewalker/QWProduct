@@ -147,51 +147,51 @@ const TenantRoutes = () => {
   const [accessDenied, setAccessDenied] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   
-  // Mobile detection - check viewport width
+  // Mobile detection - always check viewport
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   
-  // Staff user detection - persisted in localStorage for instant load on refresh
+  // Staff user detection - check localStorage immediately for instant render
   const [isStaffMobileUser, setIsStaffMobileUser] = useState(() => {
-    const cached = localStorage.getItem('qw_staff_mobile_user');
-    return cached === 'true';
+    return localStorage.getItem('qw_staff_mobile_user') === 'true';
   });
 
-  // Detect mobile viewport
+  // Detect mobile viewport changes
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
-  // Update staff mobile user flag when we know the user's role
+  // Update staff flag when we know the user's role
   useEffect(() => {
-    if (user && activeTenant) {
+    // Check from activeTenant
+    if (activeTenant) {
       const isStaff = activeTenant.role === 'staff' || activeTenant.role === 'driver';
       setIsStaffMobileUser(isStaff);
-      // Persist for instant load on refresh
       localStorage.setItem('qw_staff_mobile_user', isStaff ? 'true' : 'false');
     }
-    // Also check from memberships as fallback
-    if (user?.memberships && tenantSlug) {
+    // Check from memberships as fallback
+    else if (user?.memberships && tenantSlug) {
       const membership = user.memberships.find(m => m.tenant_slug === tenantSlug);
       if (membership) {
         const isStaff = membership.role === 'staff' || membership.role === 'driver';
-        if (isStaff) {
-          setIsStaffMobileUser(true);
-          localStorage.setItem('qw_staff_mobile_user', 'true');
-        }
+        setIsStaffMobileUser(isStaff);
+        localStorage.setItem('qw_staff_mobile_user', isStaff ? 'true' : 'false');
       }
     }
   }, [user, activeTenant, tenantSlug]);
   
-  // Clear staff flag on logout
+  // Clear staff flag on logout only
   useEffect(() => {
-    if (!isAuthenticated) {
-      localStorage.removeItem('qw_staff_mobile_user');
-      setIsStaffMobileUser(false);
+    if (!isAuthenticated && !loading) {
+      // Don't clear immediately on loading - only when truly logged out
+      const hasToken = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!hasToken) {
+        localStorage.removeItem('qw_staff_mobile_user');
+        setIsStaffMobileUser(false);
+      }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loading]);
 
   useEffect(() => {
     const setupTenantContext = async () => {

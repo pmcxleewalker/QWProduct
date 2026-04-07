@@ -1,44 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Home, Calendar, Car, Clock, MapPin, Bell, User, Phone,
+  Car, Calendar, Clock, MapPin, User, Phone,
   RefreshCw, X, ChevronRight, Send, CheckCircle,
-  AlertCircle, Navigation, Plus, ChevronLeft, Wrench
+  AlertCircle, Navigation, Plus, ChevronLeft
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import { liftRequestAPI, assistanceAPI } from '../api/api';
+import { liftRequestAPI } from '../api/api';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const StaffMobileView = ({ tenantSlug }) => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState('status');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
-  // Ensure proper mobile viewport on mount
-  useEffect(() => {
-    // Set viewport meta for proper mobile scaling
-    let viewportMeta = document.querySelector('meta[name="viewport"]');
-    if (viewportMeta) {
-      viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
-    }
-    
-    // Add class to html for mobile app mode
-    document.documentElement.classList.add('staff-mobile-app');
-    
-    return () => {
-      document.documentElement.classList.remove('staff-mobile-app');
-    };
-  }, []);
   
   // Data states
   const [vehicles, setVehicles] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [myBookings, setMyBookings] = useState([]);
-  const [liftRequests, setLiftRequests] = useState([]);
-  const [assistanceProviders, setAssistanceProviders] = useState([]);
   
   // Booking form state
   const [showBookingForm, setShowBookingForm] = useState(false);
@@ -66,6 +48,25 @@ const StaffMobileView = ({ tenantSlug }) => {
   // Calendar state
   const [calendarMonth, setCalendarMonth] = useState(new Date());
 
+  // Lock the viewport and body for mobile app mode
+  useEffect(() => {
+    // Set viewport
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
+    }
+    
+    // Lock body
+    const originalStyle = document.body.style.cssText;
+    document.body.style.cssText = 'overflow: hidden; position: fixed; width: 100%; height: 100%; margin: 0; padding: 0;';
+    document.documentElement.style.cssText = 'overflow: hidden; height: 100%;';
+    
+    return () => {
+      document.body.style.cssText = originalStyle;
+      document.documentElement.style.cssText = '';
+    };
+  }, []);
+
   // Fetch data
   const fetchData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -75,17 +76,13 @@ const StaffMobileView = ({ tenantSlug }) => {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const [vehiclesRes, bookingsRes, liftsRes, assistanceRes] = await Promise.all([
+      const [vehiclesRes, bookingsRes] = await Promise.all([
         axios.get(`${API}/vehicles`, { headers }),
-        axios.get(`${API}/bookings`, { headers }),
-        axios.get(`${API}/lift-requests/active`, { headers }).catch(() => ({ data: [] })),
-        assistanceAPI.getAll().catch(() => ({ data: [] }))
+        axios.get(`${API}/bookings`, { headers })
       ]);
       
       setVehicles(vehiclesRes.data || []);
       setBookings(bookingsRes.data || []);
-      setLiftRequests(liftsRes.data || []);
-      setAssistanceProviders(assistanceRes.data || []);
       
       // Filter bookings for current user
       const userBookings = (bookingsRes.data || []).filter(b => 
@@ -97,7 +94,6 @@ const StaffMobileView = ({ tenantSlug }) => {
       
     } catch (err) {
       if (!silent) toast.error('Failed to load data');
-      console.error(err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -106,16 +102,12 @@ const StaffMobileView = ({ tenantSlug }) => {
 
   useEffect(() => {
     fetchData();
-    // Auto-refresh every 30 seconds
     const interval = setInterval(() => fetchData(true), 30000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Update lift form name when user loads
   useEffect(() => {
-    if (user?.name) {
-      setLiftForm(prev => ({ ...prev, name: user.name }));
-    }
+    if (user?.name) setLiftForm(prev => ({ ...prev, name: user.name }));
   }, [user]);
 
   // Get vehicle status
@@ -130,23 +122,16 @@ const StaffMobileView = ({ tenantSlug }) => {
     return currentBooking ? 'in-use' : 'available';
   };
 
-  // Format time
   const formatTime = (dateStr) => {
     if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleTimeString('en-IE', { 
-      hour: '2-digit', minute: '2-digit' 
-    });
+    return new Date(dateStr).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Format date
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('en-IE', { 
-      weekday: 'short', day: 'numeric', month: 'short' 
-    });
+    return new Date(dateStr).toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' });
   };
 
-  // Get vehicle name by ID
   const getVehicleName = (carId) => {
     const vehicle = vehicles.find(v => v.id === carId);
     return vehicle?.name || 'Vehicle';
@@ -158,33 +143,22 @@ const StaffMobileView = ({ tenantSlug }) => {
       toast.error('Please fill in all fields');
       return;
     }
-
     setIsSubmittingBooking(true);
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const startDateTime = `${bookingForm.date}T${bookingForm.startTime}:00`;
-      const endDateTime = `${bookingForm.date}T${bookingForm.endTime}:00`;
-
       await axios.post(`${API}/bookings`, {
         car_id: selectedVehicle.id,
-        start_time: startDateTime,
-        end_time: endDateTime,
+        start_time: `${bookingForm.date}T${bookingForm.startTime}:00`,
+        end_time: `${bookingForm.date}T${bookingForm.endTime}:00`,
         purpose: bookingForm.purpose,
         user_name: user?.name || 'Staff',
         status: 'pending'
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      }, { headers: { Authorization: `Bearer ${token}` } });
 
       toast.success('Booking submitted!');
       setShowBookingForm(false);
       setSelectedVehicle(null);
-      setBookingForm({
-        date: new Date().toISOString().split('T')[0],
-        startTime: '09:00',
-        endTime: '17:00',
-        purpose: ''
-      });
+      setBookingForm({ date: new Date().toISOString().split('T')[0], startTime: '09:00', endTime: '17:00', purpose: '' });
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to create booking');
@@ -196,12 +170,10 @@ const StaffMobileView = ({ tenantSlug }) => {
   // Submit lift request
   const handleSubmitLiftRequest = async (e) => {
     e.preventDefault();
-    
     if (!liftForm.from_location || !liftForm.to_location || !liftForm.time || !liftForm.phone) {
       toast.error('Please fill in all required fields');
       return;
     }
-
     setIsSubmittingLift(true);
     try {
       await liftRequestAPI.create({
@@ -212,463 +184,200 @@ const StaffMobileView = ({ tenantSlug }) => {
         notes: `Contact: ${liftForm.name} - ${liftForm.phone}`,
         seats_needed: 1
       });
-
       setLiftSuccess(true);
-      toast.success('Lift request sent to all staff!');
-      
-      // Reset after showing success
+      toast.success('Lift request sent!');
       setTimeout(() => {
         setLiftSuccess(false);
-        setLiftForm({
-          name: user?.name || '',
-          phone: '',
-          from_location: '',
-          to_location: '',
-          date: new Date().toISOString().split('T')[0],
-          time: ''
-        });
+        setLiftForm({ name: user?.name || '', phone: '', from_location: '', to_location: '', date: new Date().toISOString().split('T')[0], time: '' });
       }, 3000);
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to send request');
+      toast.error('Failed to send request');
     } finally {
       setIsSubmittingLift(false);
     }
   };
 
-  // Get today's bookings
+  // Calculations
   const today = new Date().toISOString().split('T')[0];
-  const todaysBookings = myBookings.filter(b => 
-    (b.start_time?.split('T')[0] === today) || (b.date === today)
-  );
-
-  // Get upcoming bookings (next 7 days)
+  const todaysBookings = myBookings.filter(b => (b.start_time?.split('T')[0] === today) || (b.date === today));
   const upcomingBookings = myBookings
     .filter(b => new Date(b.start_time || b.date) >= new Date())
     .sort((a, b) => new Date(a.start_time || a.date) - new Date(b.start_time || b.date))
     .slice(0, 10);
+  const availableVehicles = vehicles.filter(v => getVehicleStatus(v) === 'available');
 
-  // Get bookings for calendar display
   const getBookingsForDate = (date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return myBookings.filter(b => 
-      (b.start_time?.split('T')[0] === dateStr) || (b.date === dateStr)
-    );
+    return myBookings.filter(b => (b.start_time?.split('T')[0] === dateStr) || (b.date === dateStr));
   };
 
-  // Generate calendar days
   const generateCalendarDays = () => {
     const year = calendarMonth.getFullYear();
     const month = calendarMonth.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const days = [];
-    
-    // Add empty cells for days before first day
-    for (let i = 0; i < firstDay.getDay(); i++) {
-      days.push(null);
-    }
-    
-    // Add days of the month
-    for (let d = 1; d <= lastDay.getDate(); d++) {
-      days.push(new Date(year, month, d));
-    }
-    
+    for (let i = 0; i < firstDay.getDay(); i++) days.push(null);
+    for (let d = 1; d <= lastDay.getDate(); d++) days.push(new Date(year, month, d));
     return days;
   };
 
-  // Available vehicles for booking
-  const availableVehicles = vehicles.filter(v => getVehicleStatus(v) === 'available');
-
-  // Group assistance providers by region
-  const groupedProviders = assistanceProviders.reduce((acc, provider) => {
-    if (!acc[provider.region]) {
-      acc[provider.region] = [];
-    }
-    acc[provider.region].push(provider);
-    return acc;
-  }, {});
-
   if (loading) {
     return (
-      <div className="staff-mobile-container min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="staff-app">
+        <div className="staff-app-loading">
+          <div className="spinner"></div>
+          <p>Loading...</p>
+        </div>
+        <style>{styles}</style>
       </div>
     );
   }
 
   return (
-    <div className="staff-mobile-container min-h-screen bg-gray-100 pb-24" data-testid="staff-mobile-view">
-      {/* Header with Quick Wing Logo */}
-      <div className="bg-gradient-to-br from-violet-700 via-violet-800 to-purple-900 text-white px-4 pt-12 pb-6">
-        {/* Logo and Refresh Row */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <img 
-              src="/quick-wing-logo.png" 
-              alt="Quick Wing" 
-              className="w-10 h-10 mr-3 rounded-lg object-contain bg-white/10 p-1"
-              onError={(e) => { e.target.style.display = 'none'; }}
-            />
-            <div>
-              <h1 className="text-lg font-bold tracking-tight">Quick Wing</h1>
-              <p className="text-xs text-violet-300">Fleet Management</p>
-            </div>
+    <div className="staff-app" data-testid="staff-mobile-view">
+      {/* Fixed Header */}
+      <header className="staff-header">
+        <div className="header-content">
+          <img src="/quick-wing-logo.png" alt="Quick Wing" className="header-logo" onError={(e) => e.target.style.display = 'none'} />
+          <div className="header-text">
+            <h1>Quick Wing</h1>
+            <p>Hi, {user?.name || 'Staff'}</p>
           </div>
-          <button 
-            onClick={() => fetchData(true)}
-            disabled={refreshing}
-            className="p-3 bg-white/20 rounded-full active:bg-white/30 transition-colors"
-            data-testid="refresh-btn"
-          >
-            <RefreshCw size={20} className={refreshing ? 'animate-spin' : ''} />
+          <button onClick={() => fetchData(true)} disabled={refreshing} className="refresh-btn">
+            <RefreshCw size={20} className={refreshing ? 'spin' : ''} />
           </button>
         </div>
+      </header>
 
-        {/* User Greeting */}
-        <div className="mb-4">
-          <p className="text-violet-300 text-sm">Welcome back,</p>
-          <h2 className="text-xl font-bold">{user?.name || 'Staff'}</h2>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-3 text-center">
-            <p className="text-2xl font-bold">{todaysBookings.length}</p>
-            <p className="text-xs text-violet-200">Today</p>
-          </div>
-          <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-3 text-center">
-            <p className="text-2xl font-bold">{availableVehicles.length}</p>
-            <p className="text-xs text-violet-200">Available</p>
-          </div>
-          <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-3 text-center">
-            <p className="text-2xl font-bold">{upcomingBookings.length}</p>
-            <p className="text-xs text-violet-200">Upcoming</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="px-4 -mt-4">
-        {/* ========== HOME TAB ========== */}
-        {activeTab === 'home' && (
-          <div className="space-y-4">
-            {/* Today's Bookings Alert */}
+      {/* Scrollable Content Area */}
+      <main className="staff-content">
+        {/* TAB 1: Live Status */}
+        {activeTab === 'status' && (
+          <div className="tab-content">
+            {/* Today's Reminder */}
             {todaysBookings.length > 0 && (
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 border border-amber-200 shadow-lg">
-                <div className="flex items-center mb-3">
-                  <Bell className="text-amber-600 mr-2" size={20} />
-                  <h3 className="font-bold text-amber-800">Today's Bookings</h3>
+              <div className="alert-box">
+                <div className="alert-header">
+                  <Car size={18} />
+                  <span>You have {todaysBookings.length} booking{todaysBookings.length > 1 ? 's' : ''} today</span>
                 </div>
-                <div className="space-y-2">
-                  {todaysBookings.map((booking) => (
-                    <div 
-                      key={booking.id}
-                      className="flex items-center p-3 bg-white rounded-xl shadow-sm"
-                      data-testid={`today-booking-${booking.id}`}
-                    >
-                      <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center mr-3">
-                        <Car className="text-violet-600" size={24} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">
-                          {getVehicleName(booking.car_id)}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
-                        </p>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
-                        booking.status === 'confirmed' || booking.status === 'approved'
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {booking.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                {todaysBookings.map(b => (
+                  <div key={b.id} className="alert-item">
+                    <strong>{getVehicleName(b.car_id)}</strong>
+                    <span>{formatTime(b.start_time)} - {formatTime(b.end_time)}</span>
+                  </div>
+                ))}
               </div>
             )}
 
-            {/* Fleet Status */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b flex items-center justify-between">
-                <h2 className="font-bold text-gray-800 flex items-center">
-                  <Car className="mr-2 text-violet-600" size={20} />
-                  Fleet Status
-                </h2>
-                <span className="text-xs text-green-600 font-medium flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
-                  Live
-                </span>
+            {/* Live Fleet Status */}
+            <div className="section-card">
+              <div className="section-header">
+                <h2><Car size={18} /> Live Fleet Status</h2>
+                <span className="live-badge">LIVE</span>
               </div>
-              
-              <div className="divide-y max-h-64 overflow-y-auto">
-                {vehicles.map((vehicle) => {
+              <div className="vehicle-list">
+                {vehicles.map(vehicle => {
                   const status = getVehicleStatus(vehicle);
                   const currentBooking = bookings.find(b => 
                     b.car_id === vehicle.id && 
                     new Date(b.start_time) <= new Date() && 
                     new Date(b.end_time) >= new Date()
                   );
-                  
                   return (
-                    <div 
-                      key={vehicle.id}
-                      className="p-4 flex items-center"
-                      data-testid={`vehicle-${vehicle.id}`}
-                    >
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mr-3 flex-shrink-0 ${
-                        status === 'available' ? 'bg-green-100' :
-                        status === 'in-use' ? 'bg-orange-100' : 'bg-red-100'
-                      }`}>
-                        <Car className={`${
-                          status === 'available' ? 'text-green-600' :
-                          status === 'in-use' ? 'text-orange-600' : 'text-red-600'
-                        }`} size={24} />
+                    <div key={vehicle.id} className={`vehicle-item vehicle-${status}`}>
+                      <div className="vehicle-icon">
+                        <Car size={24} />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">{vehicle.name}</p>
-                        <p className="text-xs text-gray-500">{vehicle.registration}</p>
-                        {currentBooking && (
-                          <p className="text-xs text-orange-600 mt-1 truncate">
-                            {currentBooking.user_name} until {formatTime(currentBooking.end_time)}
-                          </p>
-                        )}
+                      <div className="vehicle-info">
+                        <p className="vehicle-name">{vehicle.name}</p>
+                        <p className="vehicle-reg">{vehicle.registration}</p>
+                        {currentBooking && <p className="vehicle-user">{currentBooking.user_name}</p>}
                       </div>
-                      <span className={`px-3 py-1.5 rounded-full text-xs font-bold flex-shrink-0 ${
-                        status === 'available' ? 'bg-green-100 text-green-700' :
-                        status === 'in-use' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
-                      }`}>
-                        {status === 'available' ? 'Free' : status === 'in-use' ? 'In Use' : 'Blocked'}
+                      <span className={`status-badge status-${status}`}>
+                        {status === 'available' ? 'FREE' : status === 'in-use' ? 'IN USE' : 'BLOCKED'}
                       </span>
                     </div>
                   );
                 })}
-                
-                {vehicles.length === 0 && (
-                  <div className="p-8 text-center text-gray-500">
-                    <Car size={40} className="mx-auto mb-2 opacity-50" />
-                    <p>No vehicles available</p>
-                  </div>
-                )}
               </div>
-            </div>
-
-            {/* My Upcoming Bookings */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b">
-                <h2 className="font-bold text-gray-800 flex items-center">
-                  <Calendar className="mr-2 text-violet-600" size={20} />
-                  My Upcoming Bookings
-                </h2>
-              </div>
-              
-              {upcomingBookings.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">
-                  <Calendar size={40} className="mx-auto mb-2 opacity-50" />
-                  <p>No upcoming bookings</p>
-                  <button
-                    onClick={() => setActiveTab('bookings')}
-                    className="mt-3 px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-medium"
-                  >
-                    Book a Car
-                  </button>
-                </div>
-              ) : (
-                <div className="divide-y max-h-64 overflow-y-auto">
-                  {upcomingBookings.slice(0, 5).map((booking) => (
-                    <div 
-                      key={booking.id}
-                      className="p-4 flex items-center"
-                      data-testid={`upcoming-booking-${booking.id}`}
-                    >
-                      <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center mr-3 flex-shrink-0">
-                        <Calendar className="text-violet-600" size={20} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">
-                          {getVehicleName(booking.car_id)}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {formatDate(booking.start_time || booking.date)}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {formatTime(booking.start_time)} - {formatTime(booking.end_time)}
-                        </p>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
-                        booking.status === 'confirmed' || booking.status === 'approved'
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {booking.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         )}
 
-        {/* ========== BOOKINGS TAB ========== */}
+        {/* TAB 2: Bookings */}
         {activeTab === 'bookings' && (
-          <div className="space-y-4">
-            {/* Book a Car Section */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="px-4 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white">
-                <h2 className="font-bold flex items-center">
-                  <Plus className="mr-2" size={20} />
-                  Book a Car
-                </h2>
-                <p className="text-sm text-violet-200">Select an available vehicle</p>
+          <div className="tab-content">
+            {/* Book a Car */}
+            <div className="section-card">
+              <div className="section-header purple">
+                <h2><Plus size={18} /> Book a Car</h2>
               </div>
-              
-              <div className="p-4">
-                {availableVehicles.length === 0 ? (
-                  <div className="text-center py-6 text-gray-500">
-                    <Car size={40} className="mx-auto mb-2 opacity-50" />
-                    <p>No vehicles available right now</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {availableVehicles.map((vehicle) => (
-                      <button
-                        key={vehicle.id}
-                        onClick={() => {
-                          setSelectedVehicle(vehicle);
-                          setShowBookingForm(true);
-                        }}
-                        className="w-full flex items-center p-4 bg-green-50 rounded-xl active:bg-green-100 transition-colors text-left"
-                        data-testid={`book-vehicle-${vehicle.id}`}
-                      >
-                        <div className="w-12 h-12 bg-green-200 rounded-xl flex items-center justify-center mr-3 flex-shrink-0">
-                          <Car className="text-green-700" size={24} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-gray-900 truncate">{vehicle.name}</p>
-                          <p className="text-sm text-gray-500">{vehicle.registration}</p>
-                        </div>
-                        <div className="flex items-center text-green-700 flex-shrink-0">
-                          <span className="text-sm font-medium mr-1">Book</span>
-                          <ChevronRight size={20} />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Personal Calendar */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b flex items-center justify-between">
-                <h2 className="font-bold text-gray-800 flex items-center">
-                  <Calendar className="mr-2 text-violet-600" size={20} />
-                  My Calendar
-                </h2>
-                <div className="flex items-center space-x-2">
-                  <button 
-                    onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1))}
-                    className="p-1 hover:bg-gray-200 rounded"
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
-                  <span className="text-sm font-medium min-w-[100px] text-center">
-                    {calendarMonth.toLocaleDateString('en-IE', { month: 'long', year: 'numeric' })}
-                  </span>
-                  <button 
-                    onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1))}
-                    className="p-1 hover:bg-gray-200 rounded"
-                  >
-                    <ChevronRight size={20} />
-                  </button>
+              {availableVehicles.length === 0 ? (
+                <div className="empty-state">
+                  <Car size={32} />
+                  <p>No cars available right now</p>
                 </div>
-              </div>
-              
-              <div className="p-4">
-                {/* Day headers */}
-                <div className="grid grid-cols-7 gap-1 mb-2">
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                    <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">
-                      {day}
-                    </div>
+              ) : (
+                <div className="book-list">
+                  {availableVehicles.map(vehicle => (
+                    <button key={vehicle.id} onClick={() => { setSelectedVehicle(vehicle); setShowBookingForm(true); }} className="book-item">
+                      <div className="book-icon"><Car size={22} /></div>
+                      <div className="book-info">
+                        <p className="book-name">{vehicle.name}</p>
+                        <p className="book-reg">{vehicle.registration}</p>
+                      </div>
+                      <ChevronRight size={20} />
+                    </button>
                   ))}
                 </div>
-                
-                {/* Calendar grid */}
-                <div className="grid grid-cols-7 gap-1">
-                  {generateCalendarDays().map((date, idx) => {
-                    if (!date) return <div key={`empty-${idx}`} className="aspect-square" />;
-                    
-                    const isToday = date.toDateString() === new Date().toDateString();
-                    const dayBookings = getBookingsForDate(date);
-                    const hasBookings = dayBookings.length > 0;
-                    
-                    return (
-                      <div
-                        key={date.toISOString()}
-                        className={`aspect-square flex flex-col items-center justify-center rounded-lg text-sm relative ${
-                          isToday ? 'bg-violet-600 text-white font-bold' :
-                          hasBookings ? 'bg-violet-100 text-violet-800' : 'text-gray-700'
-                        }`}
-                      >
-                        {date.getDate()}
-                        {hasBookings && !isToday && (
-                          <div className="absolute bottom-1 w-1.5 h-1.5 bg-violet-600 rounded-full"></div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+              )}
+            </div>
 
-                {/* Legend */}
-                <div className="flex items-center justify-center space-x-4 mt-4 pt-3 border-t">
-                  <div className="flex items-center text-xs text-gray-500">
-                    <div className="w-3 h-3 bg-violet-600 rounded mr-1"></div>
-                    Today
-                  </div>
-                  <div className="flex items-center text-xs text-gray-500">
-                    <div className="w-3 h-3 bg-violet-100 rounded mr-1"></div>
-                    Has Booking
-                  </div>
+            {/* My Calendar */}
+            <div className="section-card">
+              <div className="section-header">
+                <h2><Calendar size={18} /> My Calendar</h2>
+                <div className="calendar-nav">
+                  <button onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1))}><ChevronLeft size={18} /></button>
+                  <span>{calendarMonth.toLocaleDateString('en-IE', { month: 'short', year: 'numeric' })}</span>
+                  <button onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1))}><ChevronRight size={18} /></button>
                 </div>
+              </div>
+              <div className="calendar-grid">
+                {['S','M','T','W','T','F','S'].map((d,i) => <div key={i} className="cal-header">{d}</div>)}
+                {generateCalendarDays().map((date, idx) => {
+                  if (!date) return <div key={`e-${idx}`} className="cal-day empty"></div>;
+                  const isToday = date.toDateString() === new Date().toDateString();
+                  const hasBooking = getBookingsForDate(date).length > 0;
+                  return (
+                    <div key={date.toISOString()} className={`cal-day ${isToday ? 'today' : ''} ${hasBooking ? 'has-booking' : ''}`}>
+                      {date.getDate()}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Bookings List */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b">
-                <h2 className="font-bold text-gray-800">All My Bookings</h2>
+            {/* My Bookings */}
+            <div className="section-card">
+              <div className="section-header">
+                <h2>My Bookings ({myBookings.length})</h2>
               </div>
-              
               {myBookings.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">
-                  <Calendar size={40} className="mx-auto mb-2 opacity-50" />
+                <div className="empty-state small">
                   <p>No bookings yet</p>
                 </div>
               ) : (
-                <div className="divide-y max-h-80 overflow-y-auto">
-                  {myBookings.sort((a, b) => new Date(b.start_time || b.date) - new Date(a.start_time || a.date)).map((booking) => (
-                    <div key={booking.id} className="p-4">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-semibold text-gray-900 truncate flex-1 mr-2">{getVehicleName(booking.car_id)}</p>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
-                          booking.status === 'confirmed' || booking.status === 'approved'
-                            ? 'bg-green-100 text-green-700' 
-                            : booking.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {booking.status}
-                        </span>
+                <div className="booking-list">
+                  {myBookings.sort((a,b) => new Date(b.start_time || b.date) - new Date(a.start_time || a.date)).slice(0, 5).map(b => (
+                    <div key={b.id} className="booking-item">
+                      <div className="booking-main">
+                        <strong>{getVehicleName(b.car_id)}</strong>
+                        <span className={`booking-status ${b.status}`}>{b.status}</span>
                       </div>
-                      <p className="text-sm text-gray-600">{formatDate(booking.start_time || booking.date)}</p>
-                      <p className="text-xs text-gray-400">{formatTime(booking.start_time)} - {formatTime(booking.end_time)}</p>
-                      {booking.purpose && (
-                        <p className="text-xs text-gray-500 mt-1 truncate">{booking.purpose}</p>
-                      )}
+                      <p>{formatDate(b.start_time)} | {formatTime(b.start_time)} - {formatTime(b.end_time)}</p>
                     </div>
                   ))}
                 </div>
@@ -677,376 +386,105 @@ const StaffMobileView = ({ tenantSlug }) => {
           </div>
         )}
 
-        {/* ========== REQUEST LIFT TAB ========== */}
+        {/* TAB 3: Request Lift */}
         {activeTab === 'lift' && (
-          <div className="space-y-4">
+          <div className="tab-content">
             {liftSuccess ? (
-              <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="text-green-600" size={40} />
-                </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Request Sent!</h2>
-                <p className="text-gray-600">
-                  Your lift request has been sent to all staff members.
-                </p>
+              <div className="success-card">
+                <CheckCircle size={48} />
+                <h2>Request Sent!</h2>
+                <p>Staff members have been notified</p>
               </div>
             ) : (
-              <>
-                {/* Request Form */}
-                <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                  <div className="px-4 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white">
-                    <h2 className="font-bold text-lg flex items-center">
-                      <Navigation className="mr-2" size={22} />
-                      Request a Lift
-                    </h2>
-                    <p className="text-sm text-violet-200">Ask a colleague for a ride</p>
+              <div className="section-card">
+                <div className="section-header orange">
+                  <h2><Navigation size={18} /> Request a Lift</h2>
+                </div>
+                <form onSubmit={handleSubmitLiftRequest} className="lift-form">
+                  <div className="form-group">
+                    <label><User size={14} /> Your Name</label>
+                    <input type="text" value={liftForm.name} onChange={e => setLiftForm({...liftForm, name: e.target.value})} required />
                   </div>
-                  
-                  <form onSubmit={handleSubmitLiftRequest} className="p-4 space-y-4">
-                    {/* Name */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                        <User size={16} className="mr-2 text-gray-500" />
-                        Your Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={liftForm.name}
-                        onChange={(e) => setLiftForm({ ...liftForm, name: e.target.value })}
-                        className="w-full px-4 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
-                        placeholder="Your name"
-                        required
-                        data-testid="lift-name-input"
-                      />
+                  <div className="form-group">
+                    <label><Phone size={14} /> Phone Number</label>
+                    <input type="tel" value={liftForm.phone} onChange={e => setLiftForm({...liftForm, phone: e.target.value})} placeholder="Your number" required />
+                  </div>
+                  <div className="form-group">
+                    <label><MapPin size={14} className="green" /> Where are you?</label>
+                    <input type="text" value={liftForm.from_location} onChange={e => setLiftForm({...liftForm, from_location: e.target.value})} placeholder="Current location" required />
+                  </div>
+                  <div className="form-group">
+                    <label><MapPin size={14} className="red" /> Where to?</label>
+                    <input type="text" value={liftForm.to_location} onChange={e => setLiftForm({...liftForm, to_location: e.target.value})} placeholder="Destination" required />
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label><Calendar size={14} /> Date</label>
+                      <input type="date" value={liftForm.date} onChange={e => setLiftForm({...liftForm, date: e.target.value})} min={today} required />
                     </div>
-
-                    {/* Phone */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                        <Phone size={16} className="mr-2 text-gray-500" />
-                        Phone Number *
-                      </label>
-                      <input
-                        type="tel"
-                        value={liftForm.phone}
-                        onChange={(e) => setLiftForm({ ...liftForm, phone: e.target.value })}
-                        className="w-full px-4 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
-                        placeholder="Your phone number"
-                        required
-                        data-testid="lift-phone-input"
-                      />
+                    <div className="form-group">
+                      <label><Clock size={14} /> Time</label>
+                      <input type="time" value={liftForm.time} onChange={e => setLiftForm({...liftForm, time: e.target.value})} required />
                     </div>
-
-                    {/* From Location */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                        <MapPin size={16} className="mr-2 text-green-600" />
-                        Where are you now? *
-                      </label>
-                      <input
-                        type="text"
-                        value={liftForm.from_location}
-                        onChange={(e) => setLiftForm({ ...liftForm, from_location: e.target.value })}
-                        className="w-full px-4 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
-                        placeholder="e.g., Office, Home, etc."
-                        required
-                        data-testid="lift-from-input"
-                      />
-                    </div>
-
-                    {/* To Location */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                        <MapPin size={16} className="mr-2 text-red-500" />
-                        Where are you going? *
-                      </label>
-                      <input
-                        type="text"
-                        value={liftForm.to_location}
-                        onChange={(e) => setLiftForm({ ...liftForm, to_location: e.target.value })}
-                        className="w-full px-4 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
-                        placeholder="e.g., Client site, Station, etc."
-                        required
-                        data-testid="lift-to-input"
-                      />
-                    </div>
-
-                    {/* Date and Time */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                          <Calendar size={16} className="mr-2 text-violet-600" />
-                          Date *
-                        </label>
-                        <input
-                          type="date"
-                          value={liftForm.date}
-                          onChange={(e) => setLiftForm({ ...liftForm, date: e.target.value })}
-                          min={new Date().toISOString().split('T')[0]}
-                          className="w-full px-3 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
-                          required
-                          data-testid="lift-date-input"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                          <Clock size={16} className="mr-2 text-violet-600" />
-                          Time *
-                        </label>
-                        <input
-                          type="time"
-                          value={liftForm.time}
-                          onChange={(e) => setLiftForm({ ...liftForm, time: e.target.value })}
-                          className="w-full px-3 py-4 text-base border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
-                          required
-                          data-testid="lift-time-input"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Submit Button */}
-                    <button
-                      type="submit"
-                      disabled={isSubmittingLift}
-                      className="w-full py-5 bg-gradient-to-r from-violet-600 to-purple-600 text-white text-lg font-bold rounded-xl disabled:opacity-50 active:scale-[0.98] transition-transform flex items-center justify-center space-x-2"
-                      data-testid="submit-lift-btn"
-                    >
-                      {isSubmittingLift ? (
-                        <>
-                          <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-                          <span>Sending...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send size={22} />
-                          <span>Send Lift Request</span>
-                        </>
-                      )}
-                    </button>
-                  </form>
+                  </div>
+                  <button type="submit" className="submit-btn" disabled={isSubmittingLift}>
+                    {isSubmittingLift ? 'Sending...' : <><Send size={18} /> Send Request</>}
+                  </button>
+                </form>
+                <div className="info-box">
+                  <AlertCircle size={16} />
+                  <p>Your request will notify all available staff members</p>
                 </div>
-
-                {/* Info Box */}
-                <div className="bg-violet-50 border border-violet-200 rounded-2xl p-4">
-                  <h3 className="font-bold text-violet-800 mb-2 flex items-center">
-                    <AlertCircle size={18} className="mr-2" />
-                    How it works
-                  </h3>
-                  <ul className="text-sm text-violet-700 space-y-1">
-                    <li>• Your request will notify all staff members</li>
-                    <li>• Include your phone so they can contact you</li>
-                    <li>• You'll be notified when someone accepts</li>
-                  </ul>
-                </div>
-              </>
+              </div>
             )}
           </div>
         )}
+      </main>
 
-        {/* ========== ASSISTANCE TAB ========== */}
-        {activeTab === 'assistance' && (
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="px-4 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white">
-                <h2 className="font-bold text-lg flex items-center">
-                  <Wrench className="mr-2" size={22} />
-                  Breakdown Assistance
-                </h2>
-                <p className="text-sm text-violet-200">Emergency contacts by region</p>
-              </div>
-              
-              {assistanceProviders.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">
-                  <Wrench size={40} className="mx-auto mb-2 opacity-50" />
-                  <p>No assistance providers added yet</p>
-                  <p className="text-sm mt-1">Contact your admin for help</p>
-                </div>
-              ) : (
-                <div className="divide-y">
-                  {Object.entries(groupedProviders).map(([region, providers]) => (
-                    <div key={region} className="p-4">
-                      <div className="flex items-center mb-3">
-                        <MapPin className="text-violet-600 mr-2" size={18} />
-                        <h3 className="font-bold text-gray-800">{region}</h3>
-                      </div>
-                      <div className="space-y-2">
-                        {providers.map((provider) => (
-                          <div 
-                            key={provider.id}
-                            className="p-3 bg-gray-50 rounded-xl"
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="font-semibold text-gray-900">{provider.name}</p>
-                              <span className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">
-                                {provider.service_type}
-                              </span>
-                            </div>
-                            <a 
-                              href={`tel:${provider.phone}`}
-                              className="flex items-center text-violet-600 font-medium mt-2"
-                            >
-                              <Phone size={16} className="mr-2" />
-                              {provider.phone}
-                            </a>
-                            {provider.address && (
-                              <p className="text-xs text-gray-500 mt-1 flex items-center">
-                                <MapPin size={12} className="mr-1" />
-                                {provider.address}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Bottom Tab Navigation - 4 tabs */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 safe-area-bottom z-50">
-        <div className="flex justify-around items-center max-w-md mx-auto">
-          <button
-            onClick={() => setActiveTab('home')}
-            className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-colors min-w-[60px] ${
-              activeTab === 'home' 
-                ? 'bg-violet-100 text-violet-700' 
-                : 'text-gray-500 active:bg-gray-100'
-            }`}
-            data-testid="tab-home"
-          >
-            <Home size={24} strokeWidth={activeTab === 'home' ? 2.5 : 2} />
-            <span className="text-xs font-medium mt-1">Home</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('bookings')}
-            className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-colors min-w-[60px] ${
-              activeTab === 'bookings' 
-                ? 'bg-violet-100 text-violet-700' 
-                : 'text-gray-500 active:bg-gray-100'
-            }`}
-            data-testid="tab-bookings"
-          >
-            <Calendar size={24} strokeWidth={activeTab === 'bookings' ? 2.5 : 2} />
-            <span className="text-xs font-medium mt-1">Bookings</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('lift')}
-            className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-colors min-w-[60px] ${
-              activeTab === 'lift' 
-                ? 'bg-violet-100 text-violet-700' 
-                : 'text-gray-500 active:bg-gray-100'
-            }`}
-            data-testid="tab-lift"
-          >
-            <Navigation size={24} strokeWidth={activeTab === 'lift' ? 2.5 : 2} />
-            <span className="text-xs font-medium mt-1">Lift</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('assistance')}
-            className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-colors min-w-[60px] ${
-              activeTab === 'assistance' 
-                ? 'bg-violet-100 text-violet-700' 
-                : 'text-gray-500 active:bg-gray-100'
-            }`}
-            data-testid="tab-assistance"
-          >
-            <Wrench size={24} strokeWidth={activeTab === 'assistance' ? 2.5 : 2} />
-            <span className="text-xs font-medium mt-1">Help</span>
-          </button>
-        </div>
-      </div>
+      {/* Fixed Bottom Navigation - 3 Tabs */}
+      <nav className="staff-nav">
+        <button onClick={() => setActiveTab('status')} className={activeTab === 'status' ? 'active' : ''} data-testid="tab-status">
+          <Car size={24} />
+          <span>Live Status</span>
+        </button>
+        <button onClick={() => setActiveTab('bookings')} className={activeTab === 'bookings' ? 'active' : ''} data-testid="tab-bookings">
+          <Calendar size={24} />
+          <span>Bookings</span>
+        </button>
+        <button onClick={() => setActiveTab('lift')} className={activeTab === 'lift' ? 'active' : ''} data-testid="tab-lift">
+          <Navigation size={24} />
+          <span>Request Lift</span>
+        </button>
+      </nav>
 
       {/* Booking Modal */}
       {showBookingForm && selectedVehicle && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-end">
-          <div className="bg-white w-full rounded-t-3xl max-h-[90vh] overflow-y-auto animate-slide-up">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-white px-5 py-4 border-b flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Book Vehicle</h2>
-              <button 
-                onClick={() => {
-                  setShowBookingForm(false);
-                  setSelectedVehicle(null);
-                }}
-                className="p-2 hover:bg-gray-100 rounded-full"
-              >
-                <X size={24} />
-              </button>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>Book {selectedVehicle.name}</h3>
+              <button onClick={() => { setShowBookingForm(false); setSelectedVehicle(null); }}><X size={24} /></button>
             </div>
-
-            <div className="p-5 space-y-5">
-              {/* Selected Vehicle */}
-              <div className="flex items-center p-4 bg-violet-50 rounded-2xl">
-                <div className="w-14 h-14 bg-violet-600 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
-                  <Car className="text-white" size={28} />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-bold text-gray-900 text-lg truncate">{selectedVehicle.name}</p>
-                  <p className="text-gray-500">{selectedVehicle.registration}</p>
-                </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Date</label>
+                <input type="date" value={bookingForm.date} onChange={e => setBookingForm({...bookingForm, date: e.target.value})} min={today} />
               </div>
-
-              {/* Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                <input
-                  type="date"
-                  value={bookingForm.date}
-                  onChange={(e) => setBookingForm({ ...bookingForm, date: e.target.value })}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
-                />
-              </div>
-
-              {/* Time */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
-                  <input
-                    type="time"
-                    value={bookingForm.startTime}
-                    onChange={(e) => setBookingForm({ ...bookingForm, startTime: e.target.value })}
-                    className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
-                  />
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Start</label>
+                  <input type="time" value={bookingForm.startTime} onChange={e => setBookingForm({...bookingForm, startTime: e.target.value})} />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">End Time</label>
-                  <input
-                    type="time"
-                    value={bookingForm.endTime}
-                    onChange={(e) => setBookingForm({ ...bookingForm, endTime: e.target.value })}
-                    className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
-                  />
+                <div className="form-group">
+                  <label>End</label>
+                  <input type="time" value={bookingForm.endTime} onChange={e => setBookingForm({...bookingForm, endTime: e.target.value})} />
                 </div>
               </div>
-
-              {/* Purpose */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Purpose *</label>
-                <input
-                  type="text"
-                  value={bookingForm.purpose}
-                  onChange={(e) => setBookingForm({ ...bookingForm, purpose: e.target.value })}
-                  placeholder="e.g., Client meeting, Delivery"
-                  className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-0 focus:outline-none"
-                  data-testid="booking-purpose-input"
-                />
+              <div className="form-group">
+                <label>Purpose</label>
+                <input type="text" value={bookingForm.purpose} onChange={e => setBookingForm({...bookingForm, purpose: e.target.value})} placeholder="e.g., Client meeting" />
               </div>
-
-              {/* Submit Button */}
-              <button
-                onClick={handleSubmitBooking}
-                disabled={isSubmittingBooking || !bookingForm.purpose}
-                className="w-full py-5 bg-violet-600 text-white text-lg font-bold rounded-xl disabled:opacity-50 active:bg-violet-700 transition-colors"
-                data-testid="submit-booking-btn"
-              >
+              <button onClick={handleSubmitBooking} className="submit-btn" disabled={isSubmittingBooking || !bookingForm.purpose}>
                 {isSubmittingBooking ? 'Submitting...' : 'Request Booking'}
               </button>
             </div>
@@ -1054,46 +492,569 @@ const StaffMobileView = ({ tenantSlug }) => {
         </div>
       )}
 
-      <style>{`
-        @keyframes slide-up {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-        .animate-slide-up {
-          animation: slide-up 0.3s ease-out;
-        }
-        .safe-area-bottom {
-          padding-bottom: max(8px, env(safe-area-inset-bottom));
-        }
-        html.staff-mobile-app,
-        html.staff-mobile-app body {
-          height: 100%;
-          overflow: hidden;
-        }
-        .staff-mobile-container {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          width: 100vw;
-          height: 100vh;
-          height: 100dvh; /* Dynamic viewport height for mobile */
-          overflow-y: auto;
-          overflow-x: hidden;
-          -webkit-overflow-scrolling: touch;
-          -webkit-text-size-adjust: 100%;
-          -webkit-tap-highlight-color: transparent;
-          touch-action: manipulation;
-          background: #f3f4f6;
-        }
-        .staff-mobile-container input,
-        .staff-mobile-container button {
-          font-size: 16px !important; /* Prevents iOS zoom on focus */
-        }
-      `}</style>
+      <style>{styles}</style>
     </div>
   );
 };
+
+const styles = `
+  * { box-sizing: border-box; }
+  
+  .staff-app {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: #f5f5f5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .staff-app-loading {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #7c3aed;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin 1s linear infinite; }
+  
+  /* Header */
+  .staff-header {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    color: white;
+    padding: 48px 16px 16px;
+    padding-top: max(48px, env(safe-area-inset-top) + 12px);
+  }
+  
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .header-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.1);
+    padding: 4px;
+    object-fit: contain;
+  }
+  
+  .header-text {
+    flex: 1;
+  }
+  
+  .header-text h1 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+  }
+  
+  .header-text p {
+    font-size: 13px;
+    margin: 0;
+    opacity: 0.8;
+  }
+  
+  .refresh-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    padding: 10px;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+  }
+  
+  /* Content Area */
+  .staff-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px;
+    padding-bottom: 100px;
+  }
+  
+  .tab-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  /* Alert Box */
+  .alert-box {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid #f59e0b;
+    border-radius: 12px;
+    padding: 12px;
+  }
+  
+  .alert-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #92400e;
+    margin-bottom: 8px;
+  }
+  
+  .alert-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-top: 8px;
+    font-size: 14px;
+  }
+  
+  /* Section Card */
+  .section-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .section-header.purple {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    color: white;
+  }
+  
+  .section-header.orange {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: white;
+  }
+  
+  .section-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  .live-badge {
+    font-size: 10px;
+    font-weight: 700;
+    background: #22c55e;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 10px;
+  }
+  
+  /* Vehicle List */
+  .vehicle-list {
+    padding: 8px;
+  }
+  
+  .vehicle-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+  }
+  
+  .vehicle-item:last-child { margin-bottom: 0; }
+  
+  .vehicle-available { background: #f0fdf4; }
+  .vehicle-in-use { background: #fff7ed; }
+  .vehicle-blocked { background: #fef2f2; }
+  
+  .vehicle-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .vehicle-available .vehicle-icon { background: #dcfce7; color: #16a34a; }
+  .vehicle-in-use .vehicle-icon { background: #fed7aa; color: #ea580c; }
+  .vehicle-blocked .vehicle-icon { background: #fecaca; color: #dc2626; }
+  
+  .vehicle-info {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .vehicle-name {
+    font-weight: 600;
+    font-size: 15px;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .vehicle-reg {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 2px 0 0;
+  }
+  
+  .vehicle-user {
+    font-size: 11px;
+    color: #ea580c;
+    margin: 2px 0 0;
+  }
+  
+  .status-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+  
+  .status-available { background: #dcfce7; color: #16a34a; }
+  .status-in-use { background: #fed7aa; color: #ea580c; }
+  .status-blocked { background: #fecaca; color: #dc2626; }
+  
+  /* Book List */
+  .book-list {
+    padding: 8px;
+  }
+  
+  .book-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px;
+    background: #f0fdf4;
+    border: none;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    text-align: left;
+  }
+  
+  .book-item:active { background: #dcfce7; }
+  
+  .book-icon {
+    width: 44px;
+    height: 44px;
+    background: #dcfce7;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #16a34a;
+    flex-shrink: 0;
+  }
+  
+  .book-info { flex: 1; }
+  .book-name { font-weight: 600; font-size: 15px; margin: 0; color: #111; }
+  .book-reg { font-size: 12px; color: #6b7280; margin: 2px 0 0; }
+  
+  /* Calendar */
+  .calendar-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  
+  .calendar-nav button {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+  }
+  
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    padding: 12px;
+  }
+  
+  .cal-header {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+    padding: 4px;
+  }
+  
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+  
+  .cal-day.empty { background: transparent; }
+  .cal-day.today { background: #7c3aed; color: white; font-weight: 700; }
+  .cal-day.has-booking { background: #ede9fe; color: #7c3aed; }
+  
+  /* Booking List */
+  .booking-list {
+    padding: 12px;
+  }
+  
+  .booking-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  
+  .booking-item:last-child { border: none; }
+  
+  .booking-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  
+  .booking-status {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  
+  .booking-status.approved, .booking-status.confirmed { background: #dcfce7; color: #16a34a; }
+  .booking-status.pending { background: #fef3c7; color: #d97706; }
+  
+  .booking-item p {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+  }
+  
+  /* Lift Form */
+  .lift-form {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .form-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+  }
+  
+  .form-group label .green { color: #16a34a; }
+  .form-group label .red { color: #dc2626; }
+  
+  .form-group input {
+    padding: 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  
+  .form-group input:focus {
+    border-color: #7c3aed;
+  }
+  
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .submit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  
+  .submit-btn:disabled {
+    opacity: 0.6;
+  }
+  
+  .info-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #ede9fe;
+    padding: 12px;
+    margin: 0 16px 16px;
+    border-radius: 10px;
+    color: #6d28d9;
+  }
+  
+  .info-box p {
+    font-size: 13px;
+    margin: 0;
+  }
+  
+  /* Success Card */
+  .success-card {
+    background: white;
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    color: #16a34a;
+  }
+  
+  .success-card h2 {
+    margin: 16px 0 8px;
+    color: #111;
+  }
+  
+  .success-card p {
+    margin: 0;
+    color: #6b7280;
+  }
+  
+  /* Empty State */
+  .empty-state {
+    padding: 32px 16px;
+    text-align: center;
+    color: #9ca3af;
+  }
+  
+  .empty-state.small { padding: 16px; }
+  .empty-state p { margin: 8px 0 0; font-size: 14px; }
+  
+  /* Bottom Nav */
+  .staff-nav {
+    flex-shrink: 0;
+    display: flex;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    padding: 8px 0;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+  
+  .staff-nav button {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: 8px;
+    color: #9ca3af;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  
+  .staff-nav button.active {
+    color: #7c3aed;
+  }
+  
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: flex-end;
+    z-index: 100;
+  }
+  
+  .modal-content {
+    background: white;
+    width: 100%;
+    max-height: 90vh;
+    border-radius: 24px 24px 0 0;
+    overflow: hidden;
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .modal-header h3 {
+    font-size: 18px;
+    margin: 0;
+  }
+  
+  .modal-header button {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #6b7280;
+  }
+  
+  .modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+`;
 
 export default StaffMobileView;

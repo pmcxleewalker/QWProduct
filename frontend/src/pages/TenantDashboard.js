@@ -27,6 +27,7 @@ import AnnouncementsManager from '../components/AnnouncementsManager';
 import DailyTimelineChart from '../components/DailyTimelineChart';
 import NotificationBell from '../components/NotificationBell';
 import FleetMap from '../components/FleetMap';
+import GDPRSettings from '../components/GDPRSettings';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -630,8 +631,8 @@ const TenantDashboard = () => {
                 </button>
               )}
               
-              {/* Professional Tier Settings Button */}
-              {isAdmin && planData?.features?.cost_analytics && (
+              {/* Settings Button - Available for all admins */}
+              {isAdmin && (
                 <button
                   onClick={() => setShowSettings(true)}
                   className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
@@ -2538,8 +2539,8 @@ const TenantDashboard = () => {
         </div>
       )}
 
-      {/* Professional Settings Modal */}
-      {showSettings && planData?.features?.cost_analytics && (
+      {/* Settings Modal */}
+      {showSettings && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
             <div className="bg-gradient-to-r from-purple-600 to-fuchsia-600 px-6 py-4">
@@ -2742,6 +2743,14 @@ const TenantDashboard = () => {
                   </div>
                 </div>
               )}
+
+              {/* GDPR Data & Privacy Settings */}
+              <div className="mt-6">
+                <GDPRSettings onAccountDeleted={() => {
+                  setShowSettings(false);
+                  // Logout will be handled by the component
+                }} />
+              </div>
               
               <div className="flex justify-end space-x-3 pt-4 border-t">
                 <button

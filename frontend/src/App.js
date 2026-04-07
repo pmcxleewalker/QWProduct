@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useSearchParams, useParams } fr
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Toaster } from 'sonner';
 import ProtectedRoute from './components/ProtectedRoute';
+import CookieConsent from './components/CookieConsent';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import TenantLogin from './pages/TenantLogin';
@@ -18,6 +19,7 @@ import MileageLog from './pages/MileageLog';
 import Setup from './pages/Setup';
 import SetupWizard from './pages/SetupWizard';
 import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import TenantSelector from './pages/TenantSelector';
 import PlatformAdmin from './pages/PlatformAdmin';
 import Reports from './pages/Reports';
@@ -293,6 +295,7 @@ const AppContent = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/setup" element={<Setup />} />
         <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/status-update" element={<StatusUpdateRedirect />} />
         
         {/* Tenant Selection */}
@@ -363,6 +366,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppContent />
+        <CookieConsent />
         <Toaster position="top-right" richColors closeButton />
       </AuthProvider>
     </BrowserRouter>

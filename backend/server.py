@@ -370,6 +370,169 @@ async def change_password(
     return {"message": "Password changed successfully"}
 
 
+# ==================== GDPR DATA RIGHTS ENDPOINTS ====================
+
+@api_router.get("/users/me/data-export")
+async def export_user_data(context: TenantContext = Depends(get_tenant_context)):
+    """
+    GDPR Right to Access & Data Portability - Export all user's personal data
+    """
+    from fastapi.responses import JSONResponse
+    
+    user = await db.users.find_one({"id": context.user_id}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Collect all user data
+    export_data = {
+        "export_date": datetime.now(timezone.utc).isoformat(),
+        "data_controller": "Quick Wing Fleet Management",
+        "contact_email": "Lee.quickwing@gmail.com",
+        "user_profile": user,
+        "memberships": [],
+        "bookings": [],
+        "activity_logs": []
+    }
+    
+    # Get all memberships
+    memberships = await db.memberships.find(
+        {"user_id": context.user_id}, 
+        {"_id": 0}
+    ).to_list(1000)
+    export_data["memberships"] = memberships
+    
+    # Get all bookings made by user
+    bookings = await db.bookings.find(
+        {"user_id": context.user_id},
+        {"_id": 0}
+    ).to_list(10000)
+    export_data["bookings"] = bookings
+    
+    # Get mileage logs recorded by user
+    mileage_logs = await db.mileage_logs.find(
+        {"recorded_by": user.get("name")},
+        {"_id": 0}
+    ).to_list(10000)
+    export_data["mileage_logs"] = mileage_logs
+    
+    # Get audit logs for user
+    audit_logs = await db.audit_logs.find(
+        {"actor_user_id": context.user_id},
+        {"_id": 0}
+    ).to_list(10000)
+    export_data["activity_logs"] = audit_logs
+    
+    # Log this data export request
+    await audit_service.log(
+        actor_user_id=context.user_id,
+        actor_email=context.user_email,
+        action=AuditAction.USER_UPDATED,
+        resource_type="user",
+        resource_id=context.user_id,
+        meta={"action": "gdpr_data_export"}
+    )
+    
+    return JSONResponse(
+        content=export_data,
+        headers={
+            "Content-Disposition": f"attachment; filename=my-data-export-{datetime.now().strftime('%Y-%m-%d')}.json"
+        }
+    )
+
+
+@api_router.delete("/users/me")
+async def delete_user_account(
+    context: TenantContext = Depends(get_tenant_context),
+    request: Request = None
+):
+    """
+    GDPR Right to Erasure - Delete user account and all personal data
+    """
+    user = await db.users.find_one({"id": context.user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent deleting super admins or master admins directly
+    if user.get("role") in [UserRole.SUPER_ADMIN.value]:
+        raise HTTPException(
+            status_code=403, 
+            detail="Super admin accounts cannot be deleted this way. Please contact support."
+        )
+    
+    user_id = context.user_id
+    user_name = user.get("name", "Deleted User")
+    
+    # Anonymize bookings (keep records but remove personal info)
+    await db.bookings.update_many(
+        {"user_id": user_id},
+        {"$set": {
+            "user_id": "deleted",
+            "user_name": "Deleted User",
+            "notes": "[User account deleted per GDPR request]"
+        }}
+    )
+    
+    # Anonymize mileage logs
+    await db.mileage_logs.update_many(
+        {"recorded_by": user_name},
+        {"$set": {"recorded_by": "Deleted User"}}
+    )
+    
+    # Delete memberships
+    await db.memberships.delete_many({"user_id": user_id})
+    
+    # Log deletion before deleting audit logs
+    deletion_log = {
+        "id": str(uuid4()),
+        "action": "gdpr_account_deletion",
+        "deleted_user_id": user_id,
+        "deleted_user_email": user.get("email"),
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+        "ip_address": request.client.host if request and request.client else None
+    }
+    await db.gdpr_deletion_logs.insert_one(deletion_log)
+    
+    # Delete user's audit logs (their activity history)
+    await db.audit_logs.delete_many({"actor_user_id": user_id})
+    
+    # Finally, delete the user record
+    await db.users.delete_one({"id": user_id})
+    
+    return {"message": "Your account and personal data have been deleted"}
+
+
+class ConsentRecord(BaseModel):
+    consent_type: str  # "privacy_policy", "terms", "marketing"
+    consented: bool
+    version: str = "1.0"
+
+
+@api_router.post("/users/me/consent")
+async def record_consent(
+    consent: ConsentRecord,
+    context: TenantContext = Depends(get_tenant_context),
+    request: Request = None
+):
+    """
+    Record user consent for GDPR compliance
+    """
+    consent_doc = {
+        "id": str(uuid4()),
+        "user_id": context.user_id,
+        "user_email": context.user_email,
+        "consent_type": consent.consent_type,
+        "consented": consent.consented,
+        "version": consent.version,
+        "ip_address": request.client.host if request and request.client else None,
+        "user_agent": request.headers.get("user-agent") if request else None,
+        "recorded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.consent_records.insert_one(consent_doc)
+    
+    return {"message": "Consent recorded", "consent_id": consent_doc["id"]}
+
+
 # ==================== PUBLIC TENANT LOOKUP ====================
 
 @api_router.get("/tenants/by-slug/{slug}")

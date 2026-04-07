@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Car, Calendar, Users, Shield, BarChart3, Clock, 
-  CheckCircle, Mail, Instagram, Star,
+  CheckCircle, Mail, Instagram,
   ArrowRight, Menu, X, Play, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
@@ -86,63 +86,6 @@ const LandingPage = () => {
     document.title = 'Quick Wing | Fleet Management Software for Irish Businesses';
   }, []);
 
-  const plans = [
-    {
-      name: "Standard",
-      price: "179",
-      period: "month",
-      tagline: "Best for small teams",
-      description: "A practical fleet system for smaller organisations",
-      features: [
-        "Up to 10 vehicles",
-        "Up to 15 users",
-        "Vehicle booking system",
-        "Fleet compliance tracking",
-        "Staff calendars",
-        "Basic reports",
-        "Email support"
-      ],
-      highlighted: false
-    },
-    {
-      name: "Essential",
-      price: "299",
-      period: "month",
-      tagline: "Best value",
-      description: "For growing organisations needing more control",
-      features: [
-        "Up to 25 vehicles",
-        "Up to 35 users",
-        "Everything in Standard, plus:",
-        "Enhanced reports & analytics",
-        "Booking visibility controls",
-        "Admin booking control",
-        "Compliance oversight",
-        "Cost analytics"
-      ],
-      highlighted: true,
-      badge: "Most Popular"
-    },
-    {
-      name: "Professional",
-      price: "499",
-      period: "month",
-      tagline: "Best for multi-site operations",
-      description: "For larger organisations requiring scale",
-      features: [
-        "Up to 50 vehicles",
-        "Up to 50 users",
-        "Everything in Essential, plus:",
-        "Detailed reporting suite",
-        "Priority support",
-        "Multi-site oversight",
-        "Advanced permissions",
-        "Custom data exports"
-      ],
-      highlighted: false
-    }
-  ];
-
   const features = [
     { icon: Car, title: "Fleet Management", description: "Track all vehicles in one place" },
     { icon: Calendar, title: "Smart Booking", description: "Prevent double-bookings automatically" },
@@ -171,7 +114,7 @@ const LandingPage = () => {
             
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center space-x-6">
-              <a href="#pricing" className="text-grey-600 hover:text-grey-900 text-sm font-medium">Pricing</a>
+              <a href="#features" className="text-grey-600 hover:text-grey-900 text-sm font-medium">Features</a>
               <a href="#contact" className="text-grey-600 hover:text-grey-900 text-sm font-medium">Contact</a>
               <a 
                 href="mailto:Lee.quickwing@gmail.com?subject=Try Quick Wing"
@@ -195,7 +138,7 @@ const LandingPage = () => {
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t">
             <div className="px-4 py-3 space-y-2">
-              <a href="#pricing" className="block py-2 text-grey-600 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
+              <a href="#features" className="block py-2 text-grey-600 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>Features</a>
               <a href="#contact" className="block py-2 text-grey-600 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>Contact</a>
               <a 
                 href="mailto:Lee.quickwing@gmail.com?subject=Try Quick Wing"
@@ -229,10 +172,10 @@ const LandingPage = () => {
               Request Free Demo
             </a>
             <a 
-              href="#pricing"
+              href="#contact"
               className="inline-flex items-center justify-center px-6 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all border border-white/20"
             >
-              View Pricing
+              Contact Us
             </a>
           </div>
         </div>
@@ -264,87 +207,6 @@ const LandingPage = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 id="demo-heading" className="text-2xl font-bold text-center text-grey-900 mb-6">See Quick Wing in Action</h2>
           <ScreenshotCarousel />
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-12 bg-grey-50" aria-labelledby="pricing-heading">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <h2 id="pricing-heading" className="text-2xl sm:text-3xl font-bold text-grey-900 mb-2">
-              Simple, Transparent Pricing
-            </h2>
-            <p className="text-grey-600">
-              No hidden fees. Cancel anytime. All plans include full support.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            {plans.map((plan, index) => (
-              <div 
-                key={index}
-                className={`relative rounded-2xl p-6 ${
-                  plan.highlighted 
-                    ? 'bg-blue-600 text-white shadow-xl scale-105' 
-                    : 'bg-white border border-grey-200'
-                }`}
-              >
-                {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="inline-flex items-center px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-semibold rounded-full">
-                      <Star size={12} className="mr-1" />
-                      {plan.badge}
-                    </span>
-                  </div>
-                )}
-                
-                <div className="text-centre mb-4">
-                  <h3 className={`text-lg font-bold ${plan.highlighted ? 'text-white' : 'text-grey-900'}`}>
-                    {plan.name}
-                  </h3>
-                  <p className={`text-xs ${plan.highlighted ? 'text-blue-100' : 'text-grey-500'}`}>
-                    {plan.tagline}
-                  </p>
-                </div>
-                
-                <div className="text-centre mb-4">
-                  <span className={`text-4xl font-bold ${plan.highlighted ? 'text-white' : 'text-grey-900'}`}>
-                    €{plan.price}
-                  </span>
-                  <span className={`text-sm ${plan.highlighted ? 'text-blue-100' : 'text-grey-500'}`}>
-                    /{plan.period}
-                  </span>
-                </div>
-                
-                <ul className="space-y-2 mb-6">
-                  {plan.features.map((feature, fIndex) => (
-                    <li key={fIndex} className="flex items-start">
-                      <CheckCircle 
-                        size={16} 
-                        className={`mr-2 flex-shrink-0 mt-0.5 ${
-                          plan.highlighted ? 'text-blue-200' : 'text-blue-600'
-                        }`} 
-                      />
-                      <span className={`text-sm ${plan.highlighted ? 'text-white' : 'text-grey-600'}`}>
-                        {feature}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                
-                <a 
-                  href={`mailto:Lee.quickwing@gmail.com?subject=Interested in Quick Wing ${plan.name}`}
-                  className={`block w-full py-2.5 rounded-lg font-semibold text-centre text-sm transition-all ${
-                    plan.highlighted
-                      ? 'bg-white text-blue-600 hover:bg-grey-100'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  Get Started
-                </a>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -418,10 +280,7 @@ const LandingPage = () => {
               <a href="#features" className="hover:text-white transition-colors">
                 Features
               </a>
-              <a href="#pricing" className="hover:text-white transition-colors">
-                Pricing
-              </a>
-              <a href="mailto:Lee.quickwing@gmail.com" className="hover:text-white transition-colors">
+              <a href="#contact" className="hover:text-white transition-colors">
                 Contact
               </a>
               <a 

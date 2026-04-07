@@ -27,6 +27,7 @@ import RequestLift from './pages/RequestLift';
 import Navigation from './components/Navigation';
 import MobileBottomNav from './components/MobileBottomNav';
 import UserProfileMenu from './components/UserProfileMenu';
+import StaffMobileView from './components/StaffMobileView';
 import Footer from './components/Footer';
 import MessageAcknowledgmentModal from './components/MessageAcknowledgmentModal';
 import './App.css';
@@ -145,6 +146,14 @@ const TenantRoutes = () => {
   const [tenantLoading, setTenantLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const setupTenantContext = async () => {
@@ -235,6 +244,19 @@ const TenantRoutes = () => {
   }
 
   const isTenantAdmin = activeTenant?.role === 'admin' || activeTenant?.role === 'master_admin' || user?.role === 'super_admin';
+  
+  // Check if user is staff (not admin) - these users get the simplified mobile view
+  const isStaffUser = activeTenant?.role === 'staff' || activeTenant?.role === 'driver';
+
+  // Show simplified mobile view for staff/driver users on mobile devices
+  if (isMobile && isStaffUser) {
+    return (
+      <>
+        <StaffMobileView tenantSlug={tenantSlug} />
+        <UserProfileMenu isOpen={showProfileMenu} onClose={() => setShowProfileMenu(false)} />
+      </>
+    );
+  }
 
   return (
     <>

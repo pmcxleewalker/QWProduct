@@ -5,6 +5,26 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 
 ## Recent Changes (April 2026)
 
+### Compliance Warning System - COMPLETED ✅ (April 7, 2026)
+- **Dashboard Compliance Alerts**: New `ComplianceAlerts` component on Overview tab
+  - Shows critical/warning/upcoming issues for Tax, NCT, and Service Due
+  - Color-coded severity (red=critical, amber=warning, green=compliant)
+  - Settings gear icon to configure reminder thresholds
+- **Custom Reminder Settings**: 
+  - Tax warning: configurable days before due (default 60/2 months)
+  - NCT warning: configurable days before due (default 60/2 months)
+  - Service warning: configurable km before due (default 10km)
+  - Each alert type can be enabled/disabled individually
+  - Settings saved per-tenant
+- **Manage Vehicles Tab**: Added "Reminders" button to access compliance settings
+- **Fleet Reports**: New "Compliance Report" section showing:
+  - Tax/NCT/Service status summary
+  - List of vehicles with issues
+  - Settings note showing current thresholds
+- **API Endpoints**:
+  - `GET /api/tenant/settings` - includes compliance settings
+  - `PUT /api/tenant/settings/compliance` - update compliance thresholds
+
 ### Staff Mobile View - COMPLETED ✅ (April 7, 2026)
 - **Simplified 4-Tab Interface** for staff/driver users on mobile devices
 - **Home Tab**: 

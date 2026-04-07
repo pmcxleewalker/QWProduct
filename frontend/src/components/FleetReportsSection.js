@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Car, Calendar, Clock, Download, TrendingUp, MapPin,
-  PieChart, BarChart3, AlertCircle, CheckCircle, Lock
+  PieChart, BarChart3, AlertCircle, CheckCircle, Lock,
+  Shield, Gauge, AlertTriangle
 } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-const FleetReportsSection = ({ onRefresh }) => {
+const FleetReportsSection = ({ onRefresh, vehicles = [], complianceSettings = {} }) => {
   const [reports, setReports] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -75,6 +76,80 @@ const FleetReportsSection = ({ onRefresh }) => {
   const freePercent = (daily_availability.fully_free / total) * 100;
   const partialPercent = (daily_availability.partially_free / total) * 100;
   const bookedPercent = (daily_availability.fully_booked / total) * 100;
+
+  // Calculate compliance summary
+  const settings = {
+    tax_warning_days: complianceSettings.tax_warning_days ?? 60,
+    nct_warning_days: complianceSettings.nct_warning_days ?? 60,
+    service_warning_km: complianceSettings.service_warning_km ?? 10
+  };
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const complianceSummary = {
+    taxExpired: 0,
+    taxDueSoon: 0,
+    nctExpired: 0,
+    nctDueSoon: 0,
+    serviceOverdue: 0,
+    serviceDueSoon: 0,
+    compliant: 0,
+    issues: []
+  };
+  
+  vehicles.forEach(vehicle => {
+    let hasIssue = false;
+    
+    // Check Tax
+    if (vehicle.tax_due_date) {
+      const taxDate = new Date(vehicle.tax_due_date);
+      const daysUntil = Math.ceil((taxDate - today) / (1000 * 60 * 60 * 24));
+      if (daysUntil < 0) {
+        complianceSummary.taxExpired++;
+        complianceSummary.issues.push({ vehicle, type: 'tax', status: 'expired', days: daysUntil });
+        hasIssue = true;
+      } else if (daysUntil <= settings.tax_warning_days) {
+        complianceSummary.taxDueSoon++;
+        complianceSummary.issues.push({ vehicle, type: 'tax', status: 'due', days: daysUntil });
+        hasIssue = true;
+      }
+    }
+    
+    // Check NCT
+    if (vehicle.nct_due_date) {
+      const nctDate = new Date(vehicle.nct_due_date);
+      const daysUntil = Math.ceil((nctDate - today) / (1000 * 60 * 60 * 24));
+      if (daysUntil < 0) {
+        complianceSummary.nctExpired++;
+        complianceSummary.issues.push({ vehicle, type: 'nct', status: 'expired', days: daysUntil });
+        hasIssue = true;
+      } else if (daysUntil <= settings.nct_warning_days) {
+        complianceSummary.nctDueSoon++;
+        complianceSummary.issues.push({ vehicle, type: 'nct', status: 'due', days: daysUntil });
+        hasIssue = true;
+      }
+    }
+    
+    // Check Service
+    if (vehicle.service_due_mileage && vehicle.current_mileage) {
+      const kmRemaining = vehicle.service_due_mileage - vehicle.current_mileage;
+      if (kmRemaining < 0) {
+        complianceSummary.serviceOverdue++;
+        complianceSummary.issues.push({ vehicle, type: 'service', status: 'overdue', km: kmRemaining });
+        hasIssue = true;
+      } else if (kmRemaining <= settings.service_warning_km) {
+        complianceSummary.serviceDueSoon++;
+        complianceSummary.issues.push({ vehicle, type: 'service', status: 'due', km: kmRemaining });
+        hasIssue = true;
+      }
+    }
+    
+    if (!hasIssue) complianceSummary.compliant++;
+  });
+  
+  const totalIssues = complianceSummary.taxExpired + complianceSummary.nctExpired + complianceSummary.serviceOverdue +
+                       complianceSummary.taxDueSoon + complianceSummary.nctDueSoon + complianceSummary.serviceDueSoon;
 
   return (
     <div className="space-y-6" data-testid="fleet-reports-section">
@@ -323,6 +398,131 @@ const FleetReportsSection = ({ onRefresh }) => {
           </div>
         </div>
       </div>
+
+      {/* Compliance Summary */}
+      {vehicles.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+          <div className={`px-4 py-3 border-b ${
+            (complianceSummary.taxExpired + complianceSummary.nctExpired + complianceSummary.serviceOverdue) > 0 
+              ? 'bg-red-50' : totalIssues > 0 ? 'bg-amber-50' : 'bg-green-50'
+          }`}>
+            <h3 className="font-semibold text-gray-900 flex items-center">
+              <AlertTriangle size={18} className={`mr-2 ${
+                (complianceSummary.taxExpired + complianceSummary.nctExpired + complianceSummary.serviceOverdue) > 0 
+                  ? 'text-red-500' : totalIssues > 0 ? 'text-amber-500' : 'text-green-500'
+              }`} />
+              Compliance Report
+              {totalIssues > 0 && (
+                <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
+                  (complianceSummary.taxExpired + complianceSummary.nctExpired + complianceSummary.serviceOverdue) > 0 
+                    ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-800'
+                }`}>
+                  {totalIssues} issues
+                </span>
+              )}
+            </h3>
+          </div>
+          <div className="p-4">
+            {/* Compliance Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <div className={`p-3 rounded-lg ${complianceSummary.taxExpired > 0 ? 'bg-red-100' : complianceSummary.taxDueSoon > 0 ? 'bg-amber-100' : 'bg-green-50'}`}>
+                <div className="flex items-center space-x-2 mb-1">
+                  <Shield size={16} className={complianceSummary.taxExpired > 0 ? 'text-red-600' : complianceSummary.taxDueSoon > 0 ? 'text-amber-600' : 'text-green-600'} />
+                  <span className="text-sm font-medium text-gray-700">Tax</span>
+                </div>
+                {complianceSummary.taxExpired > 0 && (
+                  <p className="text-sm text-red-700 font-bold">{complianceSummary.taxExpired} Expired</p>
+                )}
+                {complianceSummary.taxDueSoon > 0 && (
+                  <p className="text-sm text-amber-700">{complianceSummary.taxDueSoon} Due Soon</p>
+                )}
+                {complianceSummary.taxExpired === 0 && complianceSummary.taxDueSoon === 0 && (
+                  <p className="text-sm text-green-700">All OK</p>
+                )}
+              </div>
+              
+              <div className={`p-3 rounded-lg ${complianceSummary.nctExpired > 0 ? 'bg-red-100' : complianceSummary.nctDueSoon > 0 ? 'bg-amber-100' : 'bg-green-50'}`}>
+                <div className="flex items-center space-x-2 mb-1">
+                  <Calendar size={16} className={complianceSummary.nctExpired > 0 ? 'text-red-600' : complianceSummary.nctDueSoon > 0 ? 'text-amber-600' : 'text-green-600'} />
+                  <span className="text-sm font-medium text-gray-700">NCT</span>
+                </div>
+                {complianceSummary.nctExpired > 0 && (
+                  <p className="text-sm text-red-700 font-bold">{complianceSummary.nctExpired} Expired</p>
+                )}
+                {complianceSummary.nctDueSoon > 0 && (
+                  <p className="text-sm text-amber-700">{complianceSummary.nctDueSoon} Due Soon</p>
+                )}
+                {complianceSummary.nctExpired === 0 && complianceSummary.nctDueSoon === 0 && (
+                  <p className="text-sm text-green-700">All OK</p>
+                )}
+              </div>
+              
+              <div className={`p-3 rounded-lg ${complianceSummary.serviceOverdue > 0 ? 'bg-red-100' : complianceSummary.serviceDueSoon > 0 ? 'bg-amber-100' : 'bg-green-50'}`}>
+                <div className="flex items-center space-x-2 mb-1">
+                  <Gauge size={16} className={complianceSummary.serviceOverdue > 0 ? 'text-red-600' : complianceSummary.serviceDueSoon > 0 ? 'text-amber-600' : 'text-green-600'} />
+                  <span className="text-sm font-medium text-gray-700">Service</span>
+                </div>
+                {complianceSummary.serviceOverdue > 0 && (
+                  <p className="text-sm text-red-700 font-bold">{complianceSummary.serviceOverdue} Overdue</p>
+                )}
+                {complianceSummary.serviceDueSoon > 0 && (
+                  <p className="text-sm text-amber-700">{complianceSummary.serviceDueSoon} Due Soon</p>
+                )}
+                {complianceSummary.serviceOverdue === 0 && complianceSummary.serviceDueSoon === 0 && (
+                  <p className="text-sm text-green-700">All OK</p>
+                )}
+              </div>
+              
+              <div className="p-3 rounded-lg bg-green-50">
+                <div className="flex items-center space-x-2 mb-1">
+                  <CheckCircle size={16} className="text-green-600" />
+                  <span className="text-sm font-medium text-gray-700">Compliant</span>
+                </div>
+                <p className="text-sm text-green-700 font-bold">{complianceSummary.compliant} of {vehicles.length}</p>
+              </div>
+            </div>
+            
+            {/* Issues List */}
+            {complianceSummary.issues.length > 0 && (
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Issues Requiring Attention</h4>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {complianceSummary.issues.map((issue, idx) => (
+                    <div 
+                      key={`${issue.vehicle.id}-${issue.type}-${idx}`}
+                      className={`p-2 rounded-lg text-sm flex items-center justify-between ${
+                        issue.status === 'expired' || issue.status === 'overdue' 
+                          ? 'bg-red-50 text-red-800' 
+                          : 'bg-amber-50 text-amber-800'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        {issue.type === 'tax' && <Shield size={14} />}
+                        {issue.type === 'nct' && <Calendar size={14} />}
+                        {issue.type === 'service' && <Gauge size={14} />}
+                        <span className="font-medium">{issue.vehicle.name}</span>
+                        <span className="text-xs opacity-75">({issue.vehicle.registration})</span>
+                      </div>
+                      <span className="text-xs font-medium">
+                        {issue.type.toUpperCase()}: {
+                          issue.type === 'service' 
+                            ? (issue.km < 0 ? `${Math.abs(issue.km)}km overdue` : `${issue.km}km left`)
+                            : (issue.days < 0 ? `${Math.abs(issue.days)} days overdue` : `${issue.days} days left`)
+                        }
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Settings Note */}
+            <p className="text-xs text-gray-400 mt-3 pt-3 border-t">
+              Alert settings: Tax/NCT {settings.tax_warning_days} days notice | Service {settings.service_warning_km}km notice
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* By Location Summary */}
       {location_summary && location_summary.length > 0 && (

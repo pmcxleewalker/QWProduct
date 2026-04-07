@@ -1211,6 +1211,16 @@ class TenantSettingsUpdate(BaseModel):
     distance_unit: Optional[str] = None  # km or miles
 
 
+class ComplianceSettingsUpdate(BaseModel):
+    """Update compliance reminder settings"""
+    tax_warning_days: Optional[int] = None  # Days before tax due to alert (default 60)
+    nct_warning_days: Optional[int] = None  # Days before NCT due to alert (default 60)
+    service_warning_km: Optional[int] = None  # KM before service due to alert (default 10)
+    enable_tax_alerts: Optional[bool] = None
+    enable_nct_alerts: Optional[bool] = None
+    enable_service_alerts: Optional[bool] = None
+
+
 @api_router.get("/tenant/settings")
 async def get_tenant_settings(context: TenantContext = Depends(require_tenant_context)):
     """Get tenant settings including branding and analytics configuration"""
@@ -1236,6 +1246,7 @@ async def get_tenant_settings(context: TenantContext = Depends(require_tenant_co
     
     # Return settings
     settings = tenant.get("settings", {})
+    compliance_settings = settings.get("compliance", {})
     return {
         "branding": {
             "logo_url": settings.get("logo_url"),
@@ -1249,6 +1260,14 @@ async def get_tenant_settings(context: TenantContext = Depends(require_tenant_co
             "currency": settings.get("currency", "EUR"),
             "distance_unit": settings.get("distance_unit", "km"),
             "enabled": features.get("cost_analytics", False)
+        },
+        "compliance": {
+            "tax_warning_days": compliance_settings.get("tax_warning_days", 60),
+            "nct_warning_days": compliance_settings.get("nct_warning_days", 60),
+            "service_warning_km": compliance_settings.get("service_warning_km", 10),
+            "enable_tax_alerts": compliance_settings.get("enable_tax_alerts", True),
+            "enable_nct_alerts": compliance_settings.get("enable_nct_alerts", True),
+            "enable_service_alerts": compliance_settings.get("enable_service_alerts", True)
         }
     }
 
@@ -1327,6 +1346,48 @@ async def update_tenant_settings(
                 "distance_unit": updated_settings.get("distance_unit", "km"),
                 "enabled": features.get("cost_analytics", False)
             }
+        }
+    }
+
+
+@api_router.put("/tenant/settings/compliance")
+async def update_compliance_settings(
+    settings_data: ComplianceSettingsUpdate,
+    context: TenantContext = Depends(require_admin)
+):
+    """Update compliance reminder settings"""
+    update_fields = {}
+    
+    if settings_data.tax_warning_days is not None:
+        update_fields["settings.compliance.tax_warning_days"] = settings_data.tax_warning_days
+    if settings_data.nct_warning_days is not None:
+        update_fields["settings.compliance.nct_warning_days"] = settings_data.nct_warning_days
+    if settings_data.service_warning_km is not None:
+        update_fields["settings.compliance.service_warning_km"] = settings_data.service_warning_km
+    if settings_data.enable_tax_alerts is not None:
+        update_fields["settings.compliance.enable_tax_alerts"] = settings_data.enable_tax_alerts
+    if settings_data.enable_nct_alerts is not None:
+        update_fields["settings.compliance.enable_nct_alerts"] = settings_data.enable_nct_alerts
+    if settings_data.enable_service_alerts is not None:
+        update_fields["settings.compliance.enable_service_alerts"] = settings_data.enable_service_alerts
+    
+    if update_fields:
+        update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.tenants.update_one({"id": context.tenant_id}, {"$set": update_fields})
+    
+    # Return updated compliance settings
+    updated_tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    compliance_settings = updated_tenant.get("settings", {}).get("compliance", {})
+    
+    return {
+        "message": "Compliance settings updated successfully",
+        "compliance": {
+            "tax_warning_days": compliance_settings.get("tax_warning_days", 60),
+            "nct_warning_days": compliance_settings.get("nct_warning_days", 60),
+            "service_warning_km": compliance_settings.get("service_warning_km", 10),
+            "enable_tax_alerts": compliance_settings.get("enable_tax_alerts", True),
+            "enable_nct_alerts": compliance_settings.get("enable_nct_alerts", True),
+            "enable_service_alerts": compliance_settings.get("enable_service_alerts", True)
         }
     }
 

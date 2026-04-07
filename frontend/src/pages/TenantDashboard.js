@@ -29,6 +29,7 @@ import NotificationBell from '../components/NotificationBell';
 import GDPRSettings from '../components/GDPRSettings';
 import UserProfileMenu from '../components/UserProfileMenu';
 import LocationManager from '../components/LocationManager';
+import ComplianceAlerts, { ComplianceSettingsModal } from '../components/ComplianceAlerts';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -175,6 +176,17 @@ const TenantDashboard = () => {
     logo_url: '',
     primary_color: '#7c3aed'
   });
+  
+  // Compliance Settings
+  const [showComplianceSettings, setShowComplianceSettings] = useState(false);
+  const [complianceSettings, setComplianceSettings] = useState({
+    tax_warning_days: 60,
+    nct_warning_days: 60,
+    service_warning_km: 10,
+    enable_tax_alerts: true,
+    enable_nct_alerts: true,
+    enable_service_alerts: true
+  });
 
   // Use the isAdminUser variable defined at top
   const isAdmin = isAdminUser;
@@ -300,8 +312,22 @@ const TenantDashboard = () => {
               logo_url: settingsRes.data?.branding?.logo_url || '',
               primary_color: settingsRes.data?.branding?.primary_color || '#7c3aed'
             });
+            // Load compliance settings
+            if (settingsRes.data?.compliance) {
+              setComplianceSettings(settingsRes.data.compliance);
+            }
           } catch (err) {
             console.error('Failed to load tenant settings:', err);
+          }
+        } else {
+          // Load compliance settings even for non-pro tiers
+          try {
+            const settingsRes = await settingsAPI.get();
+            if (settingsRes.data?.compliance) {
+              setComplianceSettings(settingsRes.data.compliance);
+            }
+          } catch (err) {
+            console.error('Failed to load compliance settings:', err);
           }
         }
       }
@@ -443,6 +469,16 @@ const TenantDashboard = () => {
       toast.error('Failed to save settings');
       console.error(err);
     }
+  };
+  
+  // Compliance Settings Handler
+  const handleSaveComplianceSettings = async (newSettings) => {
+    const token = localStorage.getItem('token');
+    const response = await axios.put(`${API}/tenant/settings/compliance`, newSettings, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setComplianceSettings(response.data.compliance);
+    fetchData();
   };
 
   // Calculate cost analytics based on settings
@@ -736,37 +772,13 @@ const TenantDashboard = () => {
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
-                {/* Compliance Alerts */}
-                {isAdmin && vehicles.some(v => v.tax_expiry || v.service_due_at) && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                    <h3 className="font-semibold text-amber-800 mb-3 flex items-center">
-                      <AlertTriangle size={20} className="mr-2" />
-                      Compliance Alerts
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {vehicles.filter(v => {
-                        if (!v.tax_expiry) return false;
-                        const daysLeft = Math.ceil((new Date(v.tax_expiry) - new Date()) / (1000 * 60 * 60 * 24));
-                        return daysLeft <= 30;
-                      }).map(vehicle => {
-                        const daysLeft = Math.ceil((new Date(vehicle.tax_expiry) - new Date()) / (1000 * 60 * 60 * 24));
-                        return (
-                          <div 
-                            key={vehicle.id} 
-                            className={`p-3 rounded-lg ${
-                              daysLeft <= 7 ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
-                            }`}
-                          >
-                            <p className="font-medium text-sm">{vehicle.name}</p>
-                            <p className="text-xs">{vehicle.registration}</p>
-                            <p className="text-xs mt-1 font-semibold">
-                              Tax: {daysLeft <= 0 ? 'EXPIRED' : `${daysLeft} days left`}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                {/* Compliance Alerts - Enhanced Component */}
+                {isAdmin && vehicles.length > 0 && (
+                  <ComplianceAlerts 
+                    vehicles={vehicles}
+                    complianceSettings={complianceSettings}
+                    onSettingsClick={() => setShowComplianceSettings(true)}
+                  />
                 )}
 
                 {/* Stats Cards */}
@@ -1218,14 +1230,25 @@ const TenantDashboard = () => {
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-gray-900">Fleet Vehicles</h2>
                   {isAdmin && (
-                    <button
-                      onClick={() => setShowAddVehicle(true)}
-                      className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                      data-testid="add-vehicle-btn"
-                    >
-                      <Plus size={18} />
-                      <span>Add Vehicle</span>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setShowComplianceSettings(true)}
+                        className="flex items-center space-x-2 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                        title="Compliance Reminder Settings"
+                        data-testid="compliance-settings-btn"
+                      >
+                        <Settings size={18} />
+                        <span className="hidden sm:inline">Reminders</span>
+                      </button>
+                      <button
+                        onClick={() => setShowAddVehicle(true)}
+                        className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        data-testid="add-vehicle-btn"
+                      >
+                        <Plus size={18} />
+                        <span>Add Vehicle</span>
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -1582,7 +1605,11 @@ const TenantDashboard = () => {
             {/* Fleet Reports Tab (Admin Only) */}
             {/* Fleet Reports Tab */}
             {((activeTab === 'fleet-reports') || (activeTab === 'reports' && activeSubTab === 'fleet-reports')) && isAdmin && (
-              <FleetReportsSection onRefresh={() => fetchData()} />
+              <FleetReportsSection 
+                onRefresh={() => fetchData()} 
+                vehicles={vehicles}
+                complianceSettings={complianceSettings}
+              />
             )}
 
             {/* Daily Timeline Tab */}
@@ -2369,6 +2396,14 @@ const TenantDashboard = () => {
           fetchData();
           setSuccess('Vehicle updated successfully');
         }}
+      />
+      
+      {/* Compliance Settings Modal */}
+      <ComplianceSettingsModal
+        isOpen={showComplianceSettings}
+        onClose={() => setShowComplianceSettings(false)}
+        settings={complianceSettings}
+        onSave={handleSaveComplianceSettings}
       />
 
       {/* Service Alert Toast */}

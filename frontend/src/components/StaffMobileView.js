@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Car, Calendar, Clock, MapPin, User, Phone,
   RefreshCw, X, ChevronRight, ChevronLeft, Send, CheckCircle,
-  Bell, LogOut, Navigation, Plus, Users
+  Bell, LogOut, Navigation, Plus, Users, Home
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -23,12 +23,10 @@ const StaffMobileView = ({ tenantSlug }) => {
   const [myBookings, setMyBookings] = useState([]);
   
   // Booking states
-  const [bookingView, setBookingView] = useState('all'); // 'all' or 'my'
-  const [showAvailableCars, setShowAvailableCars] = useState(true);
+  const [bookingView, setBookingView] = useState('all');
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState('day');
   const [bookingForm, setBookingForm] = useState({
     car_id: '',
     user_name: user?.name || '',
@@ -54,7 +52,7 @@ const StaffMobileView = ({ tenantSlug }) => {
   const [isSubmittingLift, setIsSubmittingLift] = useState(false);
   const [liftSuccess, setLiftSuccess] = useState(false);
 
-  // Lock viewport
+  // Lock viewport for mobile app experience
   useEffect(() => {
     const viewport = document.querySelector('meta[name="viewport"]');
     if (viewport) {
@@ -132,7 +130,7 @@ const StaffMobileView = ({ tenantSlug }) => {
   };
 
   const formatDate = (date) => {
-    return date.toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'short' });
+    return date.toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' });
   };
 
   const getVehicleName = (carId) => {
@@ -241,11 +239,12 @@ const StaffMobileView = ({ tenantSlug }) => {
   };
 
   const availableVehicles = vehicles.filter(v => getVehicleStatus(v) === 'available');
+  const inUseVehicles = vehicles.filter(v => getVehicleStatus(v) === 'in-use');
   const today = new Date().toISOString().split('T')[0];
 
   if (loading) {
     return (
-      <div className="staff-app">
+      <div className="staff-app" data-testid="staff-mobile-loading">
         <div className="loading-screen">
           <div className="spinner"></div>
           <p>Loading...</p>
@@ -259,215 +258,260 @@ const StaffMobileView = ({ tenantSlug }) => {
     <div className="staff-app" data-testid="staff-mobile-view">
       {/* Header */}
       <header className="app-header">
-        <span className="logo">Quick Wing</span>
+        <div className="header-brand">
+          <span className="logo-text">Quick Wing</span>
+        </div>
         <div className="header-actions">
-          <Bell size={20} />
-          <span className="user-name">{user?.name?.split(' ')[0] || 'staff'}</span>
-          <button onClick={logout} className="logout-btn"><LogOut size={18} /></button>
+          <button className="icon-btn" data-testid="notifications-btn">
+            <Bell size={20} />
+          </button>
+          <span className="user-badge">{user?.name?.split(' ')[0] || 'Staff'}</span>
+          <button onClick={logout} className="icon-btn logout" data-testid="logout-btn">
+            <LogOut size={18} />
+          </button>
         </div>
       </header>
 
-      {/* Content */}
+      {/* Main Content */}
       <main className="app-content">
-        {/* HOME TAB */}
+        {/* HOME TAB - Dashboard */}
         {activeTab === 'home' && (
-          <div className="tab-page">
-            <h1 className="page-title">Dashboard</h1>
-            <p className="page-subtitle"><Clock size={14} /> {new Date().toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}</p>
+          <div className="tab-page" data-testid="home-tab">
+            <div className="page-header">
+              <h1 className="page-title">Dashboard</h1>
+              <p className="current-time">
+                <Clock size={14} />
+                {new Date().toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
 
             {/* Stats Cards */}
-            <div className="stats-row">
-              <div className="stat-card blue">
-                <span className="stat-label">Available</span>
-                <span className="stat-value">{availableVehicles.length}</span>
+            <div className="stats-grid">
+              <div className="stat-card available">
+                <div className="stat-icon">
+                  <Car size={24} />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">{availableVehicles.length}</span>
+                  <span className="stat-label">Available</span>
+                </div>
               </div>
-              <div className="stat-card green">
-                <span className="stat-label">My Bookings</span>
-                <span className="stat-value">{myBookings.length}</span>
+              <div className="stat-card in-use">
+                <div className="stat-icon">
+                  <Car size={24} />
+                </div>
+                <div className="stat-info">
+                  <span className="stat-value">{inUseVehicles.length}</span>
+                  <span className="stat-label">In Use</span>
+                </div>
               </div>
             </div>
 
             {/* Refresh Button */}
-            <button onClick={() => fetchData(true)} className="refresh-btn-full" disabled={refreshing}>
-              <RefreshCw size={18} className={refreshing ? 'spin' : ''} />
-              Refresh
+            <button 
+              onClick={() => fetchData(true)} 
+              className="refresh-btn" 
+              disabled={refreshing}
+              data-testid="refresh-btn"
+            >
+              <RefreshCw size={18} className={refreshing ? 'spinning' : ''} />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
             </button>
 
-            {/* Live Fleet Status */}
-            <div className="section-header">
-              <span className="live-dot"></span>
-              <span>Live Fleet Status</span>
-              <span className="update-text">(updates every 15s)</span>
-            </div>
+            {/* Live Fleet Status Section */}
+            <div className="section">
+              <div className="section-header">
+                <span className="live-indicator"></span>
+                <h2>Live Fleet Status</h2>
+                <span className="update-info">Auto-updates every 15s</span>
+              </div>
 
-            {/* Vehicle Grid */}
-            <div className="vehicle-grid">
-              {vehicles.map(vehicle => {
-                const status = getVehicleStatus(vehicle);
-                const currentBooking = bookings.find(b => 
-                  b.car_id === vehicle.id && 
-                  new Date(b.start_time) <= new Date() && 
-                  new Date(b.end_time) >= new Date()
-                );
-                return (
-                  <div key={vehicle.id} className="vehicle-card">
-                    <div className="vehicle-card-header">
-                      <span className="vehicle-name">{vehicle.name}</span>
-                      <span className={`status-toggle ${status}`}></span>
+              {/* Vehicle Grid - 2 Column */}
+              <div className="vehicle-grid">
+                {vehicles.map(vehicle => {
+                  const status = getVehicleStatus(vehicle);
+                  const currentBooking = bookings.find(b => 
+                    b.car_id === vehicle.id && 
+                    new Date(b.start_time) <= new Date() && 
+                    new Date(b.end_time) >= new Date()
+                  );
+                  
+                  return (
+                    <div 
+                      key={vehicle.id} 
+                      className={`vehicle-card ${status}`}
+                      data-testid={`vehicle-card-${vehicle.id}`}
+                    >
+                      <div className="vehicle-header">
+                        <span className="vehicle-name">{vehicle.name}</span>
+                        <div className={`status-toggle ${status}`}>
+                          <span className="toggle-knob"></span>
+                        </div>
+                      </div>
+                      <p className="vehicle-reg">{vehicle.registration}</p>
+                      
+                      {currentBooking && (
+                        <div className="vehicle-booking">
+                          <p className="booking-user">
+                            <User size={12} />
+                            {currentBooking.user_name}
+                          </p>
+                          <p className="booking-time">
+                            <Clock size={12} />
+                            Until {formatTime(currentBooking.end_time)}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {!currentBooking && status === 'available' && (
+                        <p className="available-text">Available Now</p>
+                      )}
+                      
+                      {status === 'blocked' && (
+                        <p className="blocked-text">Blocked</p>
+                      )}
                     </div>
-                    <p className="vehicle-reg">{vehicle.registration}</p>
-                    {currentBooking && (
-                      <>
-                        <p className="vehicle-location"><MapPin size={12} /> {currentBooking.user_name}</p>
-                        <p className="vehicle-time">{formatTime(currentBooking.end_time)}</p>
-                      </>
-                    )}
-                    {!currentBooking && status === 'available' && (
-                      <p className="vehicle-available">Available</p>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
 
         {/* BOOKINGS TAB */}
         {activeTab === 'bookings' && !showBookingForm && (
-          <div className="tab-page">
-            <h1 className="page-title">Car Bookings</h1>
-            <p className="page-subtitle">Auto-updates every 15 seconds</p>
+          <div className="tab-page" data-testid="bookings-tab">
+            <div className="page-header">
+              <h1 className="page-title">Car Bookings</h1>
+              <p className="page-subtitle">Auto-updates every 15 seconds</p>
+            </div>
 
             {/* New Booking Button */}
-            <button onClick={() => setShowBookingForm(true)} className="new-booking-btn">
+            <button 
+              onClick={() => setShowBookingForm(true)} 
+              className="primary-btn full-width"
+              data-testid="new-booking-btn"
+            >
               <Plus size={18} />
               New Booking
             </button>
 
-            {/* Tabs */}
-            <div className="booking-tabs">
+            {/* Booking View Tabs */}
+            <div className="tab-pills">
               <button 
-                className={`tab-btn ${bookingView === 'all' ? 'active' : ''}`}
+                className={`pill ${bookingView === 'all' ? 'active' : ''}`}
                 onClick={() => setBookingView('all')}
+                data-testid="all-bookings-tab"
               >
-                <Users size={16} /> All Bookings
+                <Users size={16} />
+                All Bookings
               </button>
               <button 
-                className={`tab-btn ${bookingView === 'my' ? 'active' : ''}`}
+                className={`pill ${bookingView === 'my' ? 'active' : ''}`}
                 onClick={() => setBookingView('my')}
+                data-testid="my-bookings-tab"
               >
-                <User size={16} /> My Bookings <span className="badge">{myBookings.length}</span>
+                <User size={16} />
+                My Bookings
+                {myBookings.length > 0 && <span className="pill-badge">{myBookings.length}</span>}
               </button>
             </div>
 
-            {/* Available Cars Section */}
-            <div className={`available-section ${showAvailableCars ? 'expanded' : ''}`}>
-              <button className="available-header" onClick={() => setShowAvailableCars(!showAvailableCars)}>
-                <span>Available Cars & Time Slots</span>
-                <span className="car-count">{availableVehicles.length} cars</span>
-                <ChevronRight size={18} className={showAvailableCars ? 'rotated' : ''} />
-              </button>
+            {/* Car Selection */}
+            <div className="car-selector">
+              <p className="selector-label">Select a car to view slots:</p>
+              <div className="car-chips">
+                <button 
+                  className={`car-chip ${!selectedVehicle ? 'active' : ''}`}
+                  onClick={() => setSelectedVehicle(null)}
+                >
+                  <Calendar size={14} />
+                  All Cars
+                </button>
+                {vehicles.map(v => (
+                  <button 
+                    key={v.id}
+                    className={`car-chip ${selectedVehicle?.id === v.id ? 'active' : ''}`}
+                    onClick={() => setSelectedVehicle(v)}
+                  >
+                    <Car size={14} />
+                    {v.name}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-              {showAvailableCars && (
-                <div className="available-content">
-                  <p className="help-text">Click on any available hour to book</p>
-                  
-                  {/* Car Selection Pills */}
-                  <div className="car-pills">
-                    <button 
-                      className={`car-pill ${!selectedVehicle ? 'active' : ''}`}
-                      onClick={() => setSelectedVehicle(null)}
-                    >
-                      <Calendar size={14} /> All Cars
-                    </button>
-                    {vehicles.map(v => (
-                      <button 
-                        key={v.id}
-                        className={`car-pill ${selectedVehicle?.id === v.id ? 'active' : ''}`}
-                        onClick={() => setSelectedVehicle(v)}
-                      >
-                        <Car size={14} /> {v.name}
-                      </button>
-                    ))}
+            {/* Date Navigation */}
+            <div className="date-navigator">
+              <button 
+                className="nav-arrow"
+                onClick={() => setSelectedDate(new Date(selectedDate.setDate(selectedDate.getDate() - 1)))}
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <span className="date-display">
+                <Calendar size={16} />
+                {formatDate(selectedDate)}
+              </span>
+              <button 
+                className="nav-arrow"
+                onClick={() => setSelectedDate(new Date(selectedDate.setDate(selectedDate.getDate() + 1)))}
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+
+            {/* Time Slots for Selected Vehicle(s) */}
+            {(selectedVehicle ? [selectedVehicle] : vehicles.slice(0, 2)).map(vehicle => (
+              <div key={vehicle.id} className="vehicle-schedule-card">
+                <div className="schedule-header">
+                  <Car size={20} />
+                  <div className="schedule-info">
+                    <span className="schedule-name">{vehicle.name}</span>
+                    <span className="schedule-reg">{vehicle.registration}</span>
                   </div>
-
-                  {/* Vehicle Time Slots */}
-                  {(selectedVehicle ? [selectedVehicle] : vehicles.slice(0, 3)).map(vehicle => (
-                    <div key={vehicle.id} className="vehicle-schedule">
-                      <div className="schedule-header">
-                        <Car size={18} />
-                        <div className="schedule-info">
-                          <span className="schedule-name">{vehicle.name}</span>
-                          <span className="schedule-reg">{vehicle.registration}</span>
-                        </div>
-                        <div className="view-toggle">
-                          {['Day', 'Week', 'Month'].map(v => (
-                            <button 
-                              key={v}
-                              className={viewMode === v.toLowerCase() ? 'active' : ''}
-                              onClick={() => setViewMode(v.toLowerCase())}
-                            >
-                              {v}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Date Navigation */}
-                      <div className="date-nav">
-                        <button onClick={() => setSelectedDate(new Date(selectedDate.setDate(selectedDate.getDate() - 1)))}>
-                          <ChevronLeft size={18} />
-                        </button>
-                        <span><Calendar size={14} /> {formatDate(selectedDate)}</span>
-                        <button onClick={() => setSelectedDate(new Date(selectedDate.setDate(selectedDate.getDate() + 1)))}>
-                          <ChevronRight size={18} />
-                        </button>
-                      </div>
-
-                      {/* Time Slots Grid */}
-                      <div className="time-slots">
-                        {generateTimeSlots().map(slot => {
-                          const hour = parseInt(slot.split(':')[0]);
-                          const isBooked = isSlotBooked(vehicle.id, hour);
-                          return (
-                            <button 
-                              key={slot}
-                              className={`time-slot ${isBooked ? 'booked' : 'free'}`}
-                              onClick={() => !isBooked && handleBookSlot(vehicle.id, hour)}
-                              disabled={isBooked}
-                            >
-                              {slot}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Legend */}
-                      <div className="legend">
-                        <span><span className="dot green"></span> Free</span>
-                        <span><span className="dot red"></span> Booked</span>
-                        <span><span className="dot purple"></span> Recurring</span>
-                        <button className="book-btn-small" onClick={() => {
-                          setBookingForm({...bookingForm, car_id: vehicle.id});
-                          setShowBookingForm(true);
-                        }}>Book</button>
-                      </div>
-                    </div>
-                  ))}
                 </div>
-              )}
-            </div>
+
+                <div className="time-slots-grid">
+                  {generateTimeSlots().map(slot => {
+                    const hour = parseInt(slot.split(':')[0]);
+                    const isBooked = isSlotBooked(vehicle.id, hour);
+                    return (
+                      <button 
+                        key={slot}
+                        className={`time-slot ${isBooked ? 'booked' : 'free'}`}
+                        onClick={() => !isBooked && handleBookSlot(vehicle.id, hour)}
+                        disabled={isBooked}
+                        data-testid={`slot-${vehicle.id}-${hour}`}
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="slot-legend">
+                  <span><span className="dot green"></span> Free</span>
+                  <span><span className="dot red"></span> Booked</span>
+                </div>
+              </div>
+            ))}
 
             {/* My Bookings List */}
             {bookingView === 'my' && myBookings.length > 0 && (
-              <div className="my-bookings-list">
+              <div className="bookings-list">
+                <h3>My Upcoming Bookings</h3>
                 {myBookings.map(b => (
-                  <div key={b.id} className="booking-card">
-                    <div className="booking-card-header">
+                  <div key={b.id} className="booking-item">
+                    <div className="booking-item-header">
                       <strong>{getVehicleName(b.car_id)}</strong>
-                      <span className={`status-badge ${b.status}`}>{b.status}</span>
+                      <span className={`status-badge ${b.status || 'pending'}`}>
+                        {b.status || 'Pending'}
+                      </span>
                     </div>
-                    <p>{formatDate(new Date(b.start_time))} | {formatTime(b.start_time)} - {formatTime(b.end_time)}</p>
+                    <p className="booking-item-time">
+                      {formatDate(new Date(b.start_time))} | {formatTime(b.start_time)} - {formatTime(b.end_time)}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -477,110 +521,120 @@ const StaffMobileView = ({ tenantSlug }) => {
 
         {/* BOOKING FORM */}
         {activeTab === 'bookings' && showBookingForm && (
-          <div className="tab-page booking-form-page">
-            <h1 className="page-title">Create New Booking</h1>
+          <div className="tab-page form-page" data-testid="booking-form">
+            <div className="page-header">
+              <h1 className="page-title">New Booking</h1>
+              <button className="close-btn" onClick={() => setShowBookingForm(false)}>
+                <X size={24} />
+              </button>
+            </div>
 
             <form onSubmit={handleSubmitBooking} className="booking-form">
-              <div className="form-group">
+              <div className="form-field">
                 <label>Select Car *</label>
                 <select 
                   value={bookingForm.car_id}
                   onChange={e => setBookingForm({...bookingForm, car_id: e.target.value})}
                   required
+                  data-testid="car-select"
                 >
-                  <option value="">Choose a car</option>
+                  <option value="">Choose a car...</option>
                   {vehicles.map(v => (
                     <option key={v.id} value={v.id}>{v.name} ({v.registration})</option>
                   ))}
                 </select>
               </div>
 
-              <div className="form-group">
+              <div className="form-field">
                 <label>Booked By</label>
-                <input type="text" value={user?.name || ''} disabled className="disabled" />
-                <span className="help">Auto-filled from your account</span>
+                <input type="text" value={user?.name || ''} disabled className="disabled-input" />
+                <span className="field-hint">Auto-filled from your account</span>
               </div>
 
-              <div className="form-group">
-                <label>Start Time *</label>
-                <input 
-                  type="datetime-local" 
-                  value={bookingForm.start_time?.replace(':00Z', '').replace('Z', '')} 
-                  onChange={e => setBookingForm({...bookingForm, start_time: e.target.value})}
-                  required
-                />
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Start Time *</label>
+                  <input 
+                    type="datetime-local" 
+                    value={bookingForm.start_time?.replace(':00Z', '').replace('Z', '')} 
+                    onChange={e => setBookingForm({...bookingForm, start_time: e.target.value})}
+                    required
+                    data-testid="start-time"
+                  />
+                </div>
+                <div className="form-field">
+                  <label>End Time *</label>
+                  <input 
+                    type="datetime-local" 
+                    value={bookingForm.end_time?.replace(':00Z', '').replace('Z', '')} 
+                    onChange={e => setBookingForm({...bookingForm, end_time: e.target.value})}
+                    required
+                    data-testid="end-time"
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label>End Time *</label>
-                <input 
-                  type="datetime-local" 
-                  value={bookingForm.end_time?.replace(':00Z', '').replace('Z', '')} 
-                  onChange={e => setBookingForm({...bookingForm, end_time: e.target.value})}
-                  required
-                />
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Start Eircode</label>
+                  <input 
+                    type="text" 
+                    value={bookingForm.start_eircode}
+                    onChange={e => setBookingForm({...bookingForm, start_eircode: e.target.value})}
+                    placeholder="e.g. V92 H6TP"
+                  />
+                </div>
+                <div className="form-field">
+                  <label>End Eircode</label>
+                  <input 
+                    type="text" 
+                    value={bookingForm.end_eircode}
+                    onChange={e => setBookingForm({...bookingForm, end_eircode: e.target.value})}
+                    placeholder="e.g. V23 KV29"
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label>Starting Eircode <span className="required">*</span></label>
-                <input 
-                  type="text" 
-                  value={bookingForm.start_eircode}
-                  onChange={e => setBookingForm({...bookingForm, start_eircode: e.target.value})}
-                  placeholder="e.g. V92 H6TP"
-                />
-                <span className="help">Where the journey starts</span>
-              </div>
-
-              <div className="form-group">
-                <label>Destination Eircode <span className="required">*</span></label>
-                <input 
-                  type="text" 
-                  value={bookingForm.end_eircode}
-                  onChange={e => setBookingForm({...bookingForm, end_eircode: e.target.value})}
-                  placeholder="e.g. V23 KV29"
-                />
-                <span className="help">Where the journey ends</span>
-              </div>
-
-              <div className="form-group">
+              <div className="form-field">
                 <label>Purpose / Notes</label>
                 <input 
                   type="text" 
                   value={bookingForm.purpose}
                   onChange={e => setBookingForm({...bookingForm, purpose: e.target.value})}
-                  placeholder="e.g. Client visit, Home care, etc."
+                  placeholder="e.g. Client visit"
                 />
               </div>
 
-              <div className="checkbox-highlight">
-                <label>
+              <div className="checkbox-card highlight">
+                <label className="checkbox-label">
                   <input 
                     type="checkbox" 
                     checked={bookingForm.is_double_up_call}
                     onChange={e => setBookingForm({...bookingForm, is_double_up_call: e.target.checked})}
                   />
-                  <Users size={16} /> Double up call?
+                  <Users size={18} />
+                  Double up call?
                 </label>
-                <span className="hint">(Check if this is a shared/double up visit)</span>
+                <span className="checkbox-hint">Check if this is a shared visit</span>
               </div>
 
-              <div className="checkbox-group">
-                <label>
+              <div className="checkbox-card">
+                <label className="checkbox-label">
                   <input 
                     type="checkbox" 
                     checked={bookingForm.is_recurring}
                     onChange={e => setBookingForm({...bookingForm, is_recurring: e.target.checked})}
                   />
-                  <RefreshCw size={16} /> Make this a recurring booking
+                  <RefreshCw size={18} />
+                  Make recurring
                 </label>
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="submit-btn" disabled={isSubmittingBooking}>
+                <button type="submit" className="primary-btn" disabled={isSubmittingBooking} data-testid="submit-booking">
                   {isSubmittingBooking ? 'Creating...' : 'Create Booking'}
                 </button>
-                <button type="button" className="cancel-btn" onClick={() => setShowBookingForm(false)}>
+                <button type="button" className="secondary-btn" onClick={() => setShowBookingForm(false)}>
                   Cancel
                 </button>
               </div>
@@ -590,20 +644,22 @@ const StaffMobileView = ({ tenantSlug }) => {
 
         {/* REQUEST LIFT TAB */}
         {activeTab === 'lift' && (
-          <div className="tab-page">
+          <div className="tab-page" data-testid="lift-tab">
             {liftSuccess ? (
-              <div className="success-screen">
+              <div className="success-state">
                 <CheckCircle size={64} />
                 <h2>Request Sent!</h2>
                 <p>Staff members have been notified</p>
               </div>
             ) : (
               <>
-                <h1 className="page-title">Request a Lift</h1>
-                <p className="page-subtitle">Ask a colleague for a ride</p>
+                <div className="page-header">
+                  <h1 className="page-title">Request a Lift</h1>
+                  <p className="page-subtitle">Ask a colleague for a ride</p>
+                </div>
 
                 <form onSubmit={handleSubmitLiftRequest} className="lift-form">
-                  <div className="form-group">
+                  <div className="form-field">
                     <label><User size={14} /> Your Name</label>
                     <input 
                       type="text" 
@@ -613,19 +669,19 @@ const StaffMobileView = ({ tenantSlug }) => {
                     />
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-field">
                     <label><Phone size={14} /> Phone Number *</label>
                     <input 
                       type="tel" 
                       value={liftForm.phone}
                       onChange={e => setLiftForm({...liftForm, phone: e.target.value})}
-                      placeholder="Your number"
+                      placeholder="Your contact number"
                       required
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label><MapPin size={14} className="green" /> Where are you? *</label>
+                  <div className="form-field">
+                    <label><MapPin size={14} className="icon-green" /> Where are you? *</label>
                     <input 
                       type="text" 
                       value={liftForm.from_location}
@@ -635,8 +691,8 @@ const StaffMobileView = ({ tenantSlug }) => {
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label><MapPin size={14} className="red" /> Where to? *</label>
+                  <div className="form-field">
+                    <label><MapPin size={14} className="icon-red" /> Where to? *</label>
                     <input 
                       type="text" 
                       value={liftForm.to_location}
@@ -647,7 +703,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                   </div>
 
                   <div className="form-row">
-                    <div className="form-group">
+                    <div className="form-field">
                       <label><Calendar size={14} /> Date *</label>
                       <input 
                         type="date" 
@@ -657,7 +713,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                         required
                       />
                     </div>
-                    <div className="form-group">
+                    <div className="form-field">
                       <label><Clock size={14} /> Time *</label>
                       <input 
                         type="time" 
@@ -668,7 +724,7 @@ const StaffMobileView = ({ tenantSlug }) => {
                     </div>
                   </div>
 
-                  <button type="submit" className="submit-btn" disabled={isSubmittingLift}>
+                  <button type="submit" className="primary-btn full-width" disabled={isSubmittingLift} data-testid="submit-lift">
                     {isSubmittingLift ? 'Sending...' : <><Send size={18} /> Send Request</>}
                   </button>
                 </form>
@@ -679,16 +735,28 @@ const StaffMobileView = ({ tenantSlug }) => {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="bottom-nav">
-        <button onClick={() => setActiveTab('home')} className={activeTab === 'home' ? 'active' : ''}>
-          <span className="nav-icon">88</span>
+      <nav className="bottom-nav" data-testid="bottom-nav">
+        <button 
+          onClick={() => setActiveTab('home')} 
+          className={`nav-item ${activeTab === 'home' ? 'active' : ''}`}
+          data-testid="nav-home"
+        >
+          <Home size={22} />
           <span>Home</span>
         </button>
-        <button onClick={() => { setActiveTab('bookings'); setShowBookingForm(false); }} className={activeTab === 'bookings' ? 'active' : ''}>
+        <button 
+          onClick={() => { setActiveTab('bookings'); setShowBookingForm(false); }} 
+          className={`nav-item ${activeTab === 'bookings' ? 'active' : ''}`}
+          data-testid="nav-bookings"
+        >
           <Calendar size={22} />
           <span>Bookings</span>
         </button>
-        <button onClick={() => setActiveTab('lift')} className={activeTab === 'lift' ? 'active' : ''}>
+        <button 
+          onClick={() => setActiveTab('lift')} 
+          className={`nav-item ${activeTab === 'lift' ? 'active' : ''}`}
+          data-testid="nav-lift"
+        >
           <Navigation size={22} />
           <span>Lift</span>
         </button>
@@ -700,6 +768,7 @@ const StaffMobileView = ({ tenantSlug }) => {
 };
 
 const styles = `
+  /* Reset & Base */
   * { box-sizing: border-box; margin: 0; padding: 0; }
   
   .staff-app {
@@ -707,11 +776,14 @@ const styles = `
     inset: 0;
     display: flex;
     flex-direction: column;
-    background: #f5f5f5;
+    background: #F8F9FA;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow: hidden;
+    height: 100dvh;
+    width: 100vw;
   }
   
+  /* Loading */
   .loading-screen {
     flex: 1;
     display: flex;
@@ -719,19 +791,20 @@ const styles = `
     align-items: center;
     justify-content: center;
     gap: 16px;
+    color: #6B7280;
   }
   
   .spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid #2563eb;
+    border: 4px solid #007BFF;
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
   
   @keyframes spin { to { transform: rotate(360deg); } }
-  .spin { animation: spin 1s linear infinite; }
+  .spinning { animation: spin 1s linear infinite; }
   
   /* Header */
   .app-header {
@@ -741,37 +814,48 @@ const styles = `
     justify-content: space-between;
     padding: 12px 16px;
     padding-top: max(12px, env(safe-area-inset-top));
-    background: white;
-    border-bottom: 1px solid #e5e7eb;
+    background: #FFFFFF;
+    border-bottom: 1px solid #E5E7EB;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
   
-  .logo {
+  .header-brand { display: flex; align-items: center; gap: 8px; }
+  
+  .logo-text {
     font-size: 20px;
     font-weight: 700;
-    color: #2563eb;
+    color: #007BFF;
   }
   
   .header-actions {
     display: flex;
     align-items: center;
     gap: 12px;
-    color: #6b7280;
   }
   
-  .user-name {
-    font-size: 14px;
-    color: #374151;
-  }
-  
-  .logout-btn {
+  .icon-btn {
     background: none;
     border: none;
-    color: #6b7280;
+    color: #6B7280;
+    padding: 6px;
     cursor: pointer;
-    padding: 4px;
+    border-radius: 8px;
+    transition: background 0.2s;
   }
   
-  /* Content */
+  .icon-btn:hover { background: #F3F4F6; }
+  .icon-btn.logout { color: #DC2626; }
+  
+  .user-badge {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    background: #F3F4F6;
+    padding: 4px 10px;
+    border-radius: 12px;
+  }
+  
+  /* Main Content */
   .app-content {
     flex: 1;
     overflow-y: auto;
@@ -783,24 +867,45 @@ const styles = `
     padding-bottom: 100px;
   }
   
+  .form-page { background: #FFFFFF; }
+  
+  /* Page Header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  
   .page-title {
     font-size: 24px;
     font-weight: 700;
     color: #111827;
-    margin-bottom: 4px;
   }
   
   .page-subtitle {
     font-size: 13px;
-    color: #6b7280;
+    color: #6B7280;
+  }
+  
+  .current-time {
     display: flex;
     align-items: center;
     gap: 4px;
-    margin-bottom: 16px;
+    font-size: 14px;
+    color: #6B7280;
   }
   
-  /* Stats Row */
-  .stats-row {
+  .close-btn {
+    background: none;
+    border: none;
+    color: #6B7280;
+    padding: 4px;
+    cursor: pointer;
+  }
+  
+  /* Stats Grid */
+  .stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
@@ -808,90 +913,111 @@ const styles = `
   }
   
   .stat-card {
+    background: #FFFFFF;
+    border-radius: 12px;
     padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  
+  .stat-card.available .stat-icon { background: #DCFCE7; color: #22C55E; }
+  .stat-card.in-use .stat-icon { background: #FEE2E2; color: #EF4444; }
+  
+  .stat-icon {
+    width: 48px;
+    height: 48px;
     border-radius: 12px;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
   
-  .stat-card.blue { background: #dbeafe; }
-  .stat-card.green { background: #dcfce7; }
-  
-  .stat-label {
-    font-size: 13px;
-    color: #374151;
-    margin-bottom: 4px;
-  }
-  
-  .stat-value {
-    font-size: 28px;
-    font-weight: 700;
-    color: #111827;
-  }
+  .stat-info { display: flex; flex-direction: column; }
+  .stat-value { font-size: 28px; font-weight: 700; color: #111827; }
+  .stat-label { font-size: 13px; color: #6B7280; }
   
   /* Refresh Button */
-  .refresh-btn-full {
+  .refresh-btn {
     width: 100%;
     padding: 14px;
-    background: #2563eb;
-    color: white;
+    background: #007BFF;
+    color: #FFFFFF;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 15px;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin-bottom: 20px;
     cursor: pointer;
+    margin-bottom: 20px;
+    transition: background 0.2s;
   }
   
-  .refresh-btn-full:disabled { opacity: 0.7; }
+  .refresh-btn:hover { background: #0056b3; }
+  .refresh-btn:disabled { opacity: 0.7; cursor: not-allowed; }
   
-  /* Section Header */
+  /* Section */
+  .section { margin-bottom: 20px; }
+  
   .section-header {
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 12px;
-    font-size: 15px;
+  }
+  
+  .section-header h2 {
+    font-size: 16px;
     font-weight: 600;
     color: #111827;
   }
   
-  .live-dot {
+  .live-indicator {
     width: 10px;
     height: 10px;
-    background: #22c55e;
+    background: #22C55E;
     border-radius: 50%;
+    animation: pulse 2s infinite;
   }
   
-  .update-text {
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  
+  .update-info {
     font-size: 12px;
-    font-weight: 400;
-    color: #9ca3af;
+    color: #9CA3AF;
+    margin-left: auto;
   }
   
-  /* Vehicle Grid */
+  /* Vehicle Grid - 2 Column */
   .vehicle-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
   
   .vehicle-card {
-    background: white;
+    background: #FFFFFF;
     border-radius: 12px;
-    padding: 12px;
-    border: 1px solid #e5e7eb;
+    padding: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #E5E7EB;
+    transition: transform 0.2s, box-shadow 0.2s;
   }
   
-  .vehicle-card-header {
+  .vehicle-card:active { transform: scale(0.98); }
+  
+  .vehicle-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
   
   .vehicle-name {
@@ -901,276 +1027,241 @@ const styles = `
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 80%;
+    max-width: 70%;
   }
   
+  /* Toggle Switch Style */
   .status-toggle {
-    width: 32px;
-    height: 18px;
-    border-radius: 9px;
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
     position: relative;
+    transition: background 0.2s;
   }
   
-  .status-toggle::after {
-    content: '';
+  .status-toggle.available { background: #22C55E; }
+  .status-toggle.in-use { background: #EF4444; }
+  .status-toggle.blocked { background: #9CA3AF; }
+  
+  .toggle-knob {
     position: absolute;
-    width: 14px;
-    height: 14px;
-    background: white;
+    width: 16px;
+    height: 16px;
+    background: #FFFFFF;
     border-radius: 50%;
     top: 2px;
     transition: left 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   }
   
-  .status-toggle.available { background: #22c55e; }
-  .status-toggle.available::after { left: 16px; }
-  .status-toggle.in-use { background: #ef4444; }
-  .status-toggle.in-use::after { left: 2px; }
-  .status-toggle.blocked { background: #9ca3af; }
-  .status-toggle.blocked::after { left: 2px; }
+  .status-toggle.available .toggle-knob { left: 18px; }
+  .status-toggle.in-use .toggle-knob,
+  .status-toggle.blocked .toggle-knob { left: 2px; }
   
   .vehicle-reg {
     font-size: 12px;
-    color: #6b7280;
-    margin-bottom: 4px;
+    color: #6B7280;
+    margin-bottom: 8px;
   }
   
-  .vehicle-location {
+  .vehicle-booking {
+    padding-top: 8px;
+    border-top: 1px solid #F3F4F6;
+  }
+  
+  .booking-user, .booking-time {
     font-size: 12px;
-    color: #ef4444;
+    color: #6B7280;
     display: flex;
     align-items: center;
     gap: 4px;
-    margin-bottom: 2px;
   }
   
-  .vehicle-time {
-    font-size: 12px;
-    color: #6b7280;
-  }
+  .booking-user { color: #DC2626; margin-bottom: 2px; }
   
-  .vehicle-available {
+  .available-text {
     font-size: 12px;
-    color: #22c55e;
     font-weight: 500;
+    color: #22C55E;
+    padding-top: 8px;
   }
   
-  /* Bookings Tab */
-  .new-booking-btn {
-    width: 100%;
-    padding: 12px;
-    background: #2563eb;
-    color: white;
+  .blocked-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: #9CA3AF;
+    padding-top: 8px;
+  }
+  
+  /* Primary Button */
+  .primary-btn {
+    padding: 14px 24px;
+    background: #007BFF;
+    color: #FFFFFF;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 15px;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin-bottom: 16px;
     cursor: pointer;
+    transition: background 0.2s;
   }
   
-  .booking-tabs {
+  .primary-btn:hover { background: #0056b3; }
+  .primary-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+  .primary-btn.full-width { width: 100%; margin-bottom: 16px; }
+  
+  .secondary-btn {
+    padding: 14px 24px;
+    background: #FFFFFF;
+    color: #374151;
+    border: 1px solid #D1D5DB;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  
+  .secondary-btn:hover { background: #F9FAFB; }
+  
+  /* Tab Pills */
+  .tab-pills {
     display: flex;
     gap: 8px;
     margin-bottom: 16px;
   }
   
-  .tab-btn {
+  .pill {
     flex: 1;
-    padding: 10px;
-    background: white;
-    border: 2px solid #e5e7eb;
+    padding: 10px 12px;
+    background: #FFFFFF;
+    border: 2px solid #E5E7EB;
     border-radius: 20px;
     font-size: 14px;
     font-weight: 500;
-    color: #2563eb;
+    color: #007BFF;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
     cursor: pointer;
+    transition: all 0.2s;
   }
   
-  .tab-btn.active {
-    background: #2563eb;
-    border-color: #2563eb;
-    color: white;
+  .pill.active {
+    background: #007BFF;
+    border-color: #007BFF;
+    color: #FFFFFF;
   }
   
-  .badge {
-    background: #e5e7eb;
-    color: #374151;
+  .pill-badge {
+    background: rgba(255,255,255,0.3);
     padding: 2px 8px;
     border-radius: 10px;
     font-size: 12px;
   }
   
-  .tab-btn.active .badge {
-    background: rgba(255,255,255,0.3);
-    color: white;
+  .pill:not(.active) .pill-badge {
+    background: #E5E7EB;
+    color: #374151;
   }
   
-  /* Available Section */
-  .available-section {
-    background: #fef9c3;
-    border-radius: 12px;
-    margin-bottom: 16px;
-    overflow: hidden;
-  }
+  /* Car Selector */
+  .car-selector { margin-bottom: 16px; }
   
-  .available-header {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 16px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 15px;
-    font-weight: 600;
-    color: #92400e;
-  }
-  
-  .car-count {
-    background: #fcd34d;
-    color: #92400e;
-    padding: 4px 10px;
-    border-radius: 12px;
+  .selector-label {
     font-size: 13px;
+    color: #6B7280;
+    margin-bottom: 8px;
   }
   
-  .available-header svg {
-    transition: transform 0.2s;
-    color: #f59e0b;
-  }
-  
-  .available-header svg.rotated {
-    transform: rotate(90deg);
-  }
-  
-  .available-content {
-    padding: 0 16px 16px;
-  }
-  
-  .help-text {
-    font-size: 13px;
-    color: #b45309;
-    margin-bottom: 12px;
-  }
-  
-  /* Car Pills */
-  .car-pills {
+  .car-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 16px;
   }
   
-  .car-pill {
+  .car-chip {
     display: flex;
     align-items: center;
     gap: 4px;
     padding: 8px 12px;
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
     border-radius: 20px;
     font-size: 13px;
     color: #374151;
     cursor: pointer;
+    transition: all 0.2s;
   }
   
-  .car-pill.active {
-    background: #fef08a;
-    border-color: #fcd34d;
-    color: #2563eb;
+  .car-chip.active {
+    background: #FEF3C7;
+    border-color: #FCD34D;
+    color: #92400E;
     font-weight: 600;
   }
   
-  /* Vehicle Schedule */
-  .vehicle-schedule {
-    background: #fef9c3;
-    border: 2px solid #fcd34d;
+  /* Date Navigator */
+  .date-navigator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #FFFFFF;
     border-radius: 12px;
     padding: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  
+  .nav-arrow {
+    background: none;
+    border: none;
+    color: #6B7280;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.2s;
+  }
+  
+  .nav-arrow:hover { background: #F3F4F6; }
+  
+  .date-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #111827;
+  }
+  
+  /* Vehicle Schedule Card */
+  .vehicle-schedule-card {
+    background: #FEF9C3;
+    border: 2px solid #FCD34D;
+    border-radius: 12px;
+    padding: 14px;
     margin-bottom: 12px;
   }
   
   .schedule-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     margin-bottom: 12px;
-    color: #b45309;
+    color: #92400E;
   }
   
-  .schedule-info {
-    flex: 1;
-  }
+  .schedule-info { flex: 1; }
+  .schedule-name { font-weight: 600; color: #111827; display: block; }
+  .schedule-reg { font-size: 12px; color: #6B7280; }
   
-  .schedule-name {
-    font-weight: 600;
-    color: #111827;
-    display: block;
-  }
-  
-  .schedule-reg {
-    font-size: 12px;
-    color: #6b7280;
-  }
-  
-  .view-toggle {
-    display: flex;
-    background: white;
-    border-radius: 20px;
-    overflow: hidden;
-    border: 1px solid #e5e7eb;
-  }
-  
-  .view-toggle button {
-    padding: 6px 12px;
-    background: transparent;
-    border: none;
-    font-size: 12px;
-    font-weight: 500;
-    color: #6b7280;
-    cursor: pointer;
-  }
-  
-  .view-toggle button.active {
-    background: #fcd34d;
-    color: #92400e;
-  }
-  
-  .date-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  
-  .date-nav button {
-    background: none;
-    border: none;
-    color: #6b7280;
-    cursor: pointer;
-    padding: 4px;
-  }
-  
-  .date-nav span {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 14px;
-    color: #374151;
-  }
-  
-  /* Time Slots */
-  .time-slots {
+  /* Time Slots Grid */
+  .time-slots-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 6px;
@@ -1179,38 +1270,40 @@ const styles = `
   
   .time-slot {
     padding: 10px 4px;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    background: #FFFFFF;
     font-size: 13px;
+    font-weight: 500;
     color: #374151;
     cursor: pointer;
+    transition: all 0.2s;
   }
   
   .time-slot.free:hover {
-    background: #dcfce7;
-    border-color: #22c55e;
+    background: #DCFCE7;
+    border-color: #22C55E;
+    color: #16A34A;
   }
   
   .time-slot.booked {
-    background: #fee2e2;
-    color: #dc2626;
+    background: #FEE2E2;
+    color: #DC2626;
     cursor: not-allowed;
   }
   
-  /* Legend */
-  .legend {
+  /* Slot Legend */
+  .slot-legend {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    gap: 16px;
     font-size: 12px;
-    color: #6b7280;
+    color: #6B7280;
   }
   
-  .legend span {
+  .slot-legend span {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
   }
   
   .dot {
@@ -1219,41 +1312,38 @@ const styles = `
     border-radius: 50%;
   }
   
-  .dot.green { background: #22c55e; }
-  .dot.red { background: #ef4444; }
-  .dot.purple { background: #a855f7; }
+  .dot.green { background: #22C55E; }
+  .dot.red { background: #EF4444; }
   
-  .book-btn-small {
-    margin-left: auto;
-    padding: 6px 16px;
-    background: #fcd34d;
-    border: none;
-    border-radius: 6px;
-    color: #92400e;
+  /* Bookings List */
+  .bookings-list {
+    margin-top: 20px;
+  }
+  
+  .bookings-list h3 {
+    font-size: 16px;
     font-weight: 600;
-    cursor: pointer;
+    color: #111827;
+    margin-bottom: 12px;
   }
   
-  /* My Bookings List */
-  .my-bookings-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  .booking-card {
-    background: white;
+  .booking-item {
+    background: #FFFFFF;
     border-radius: 12px;
-    padding: 12px;
-    border: 1px solid #e5e7eb;
+    padding: 14px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #E5E7EB;
   }
   
-  .booking-card-header {
+  .booking-item-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
+  
+  .booking-item-header strong { color: #111827; }
   
   .status-badge {
     font-size: 11px;
@@ -1263,33 +1353,26 @@ const styles = `
     text-transform: capitalize;
   }
   
-  .status-badge.approved, .status-badge.confirmed { background: #dcfce7; color: #16a34a; }
-  .status-badge.pending { background: #fef3c7; color: #d97706; }
-  .status-badge.rejected { background: #fee2e2; color: #dc2626; }
+  .status-badge.approved, .status-badge.confirmed { background: #DCFCE7; color: #16A34A; }
+  .status-badge.pending { background: #FEF3C7; color: #D97706; }
+  .status-badge.rejected { background: #FEE2E2; color: #DC2626; }
   
-  .booking-card p {
-    font-size: 13px;
-    color: #6b7280;
-  }
+  .booking-item-time { font-size: 13px; color: #6B7280; }
   
-  /* Booking Form */
-  .booking-form-page {
-    background: #f3f4f6;
-  }
-  
+  /* Form Styles */
   .booking-form, .lift-form {
     display: flex;
     flex-direction: column;
     gap: 16px;
   }
   
-  .form-group {
+  .form-field {
     display: flex;
     flex-direction: column;
     gap: 6px;
   }
   
-  .form-group label {
+  .form-field label {
     font-size: 14px;
     font-weight: 500;
     color: #374151;
@@ -1298,26 +1381,28 @@ const styles = `
     gap: 6px;
   }
   
-  .form-group label .green { color: #16a34a; }
-  .form-group label .red { color: #dc2626; }
-  .required { color: #dc2626; }
-  
-  .form-group input, .form-group select {
+  .form-field input, .form-field select {
     padding: 14px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
+    border: 1px solid #D1D5DB;
+    border-radius: 10px;
     font-size: 16px;
-    background: white;
+    background: #FFFFFF;
+    transition: border-color 0.2s;
   }
   
-  .form-group input.disabled {
-    background: #f3f4f6;
-    color: #6b7280;
+  .form-field input:focus, .form-field select:focus {
+    outline: none;
+    border-color: #007BFF;
   }
   
-  .form-group .help {
+  .disabled-input {
+    background: #F3F4F6 !important;
+    color: #6B7280 !important;
+  }
+  
+  .field-hint {
     font-size: 12px;
-    color: #9ca3af;
+    color: #9CA3AF;
   }
   
   .form-row {
@@ -1326,134 +1411,120 @@ const styles = `
     gap: 12px;
   }
   
-  .checkbox-highlight {
-    background: #fef9c3;
-    border: 1px solid #fcd34d;
-    border-radius: 8px;
-    padding: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
+  /* Checkbox Card */
+  .checkbox-card {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 10px;
+    padding: 14px;
   }
   
-  .checkbox-highlight label {
+  .checkbox-card.highlight {
+    background: #FEF9C3;
+    border-color: #FCD34D;
+  }
+  
+  .checkbox-label {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     font-size: 14px;
     font-weight: 500;
-    color: #92400e;
-  }
-  
-  .checkbox-highlight .hint {
-    font-size: 12px;
-    color: #b45309;
-  }
-  
-  .checkbox-group {
-    display: flex;
-    align-items: center;
-  }
-  
-  .checkbox-group label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
     color: #374151;
+    cursor: pointer;
   }
   
+  .checkbox-card.highlight .checkbox-label { color: #92400E; }
+  
+  .checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #007BFF;
+  }
+  
+  .checkbox-hint {
+    display: block;
+    font-size: 12px;
+    color: #B45309;
+    margin-top: 4px;
+    margin-left: 28px;
+  }
+  
+  /* Form Actions */
   .form-actions {
     display: flex;
     gap: 12px;
     margin-top: 8px;
   }
   
-  .submit-btn {
-    flex: 1;
-    padding: 16px;
-    background: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    cursor: pointer;
-  }
+  .form-actions .primary-btn,
+  .form-actions .secondary-btn { flex: 1; }
   
-  .submit-btn:disabled { opacity: 0.7; }
+  /* Icons */
+  .icon-green { color: #22C55E; }
+  .icon-red { color: #DC2626; }
   
-  .cancel-btn {
-    flex: 1;
-    padding: 16px;
-    background: white;
-    color: #374151;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-  }
-  
-  /* Success Screen */
-  .success-screen {
+  /* Success State */
+  .success-state {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 60px 20px;
-    color: #16a34a;
+    padding: 80px 20px;
+    color: #22C55E;
   }
   
-  .success-screen h2 {
-    margin: 16px 0 8px;
+  .success-state h2 {
+    margin: 20px 0 8px;
     color: #111827;
+    font-size: 24px;
   }
   
-  .success-screen p {
-    color: #6b7280;
-  }
+  .success-state p { color: #6B7280; }
   
-  /* Bottom Nav */
+  /* Bottom Navigation */
   .bottom-nav {
     flex-shrink: 0;
     display: flex;
-    background: white;
-    border-top: 1px solid #e5e7eb;
+    background: #FFFFFF;
+    border-top: 1px solid #E5E7EB;
     padding: 8px 0;
     padding-bottom: max(8px, env(safe-area-inset-bottom));
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
   }
   
-  .bottom-nav button {
+  .nav-item {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 4px;
     background: none;
     border: none;
-    padding: 8px;
-    color: #9ca3af;
+    padding: 10px 8px;
+    color: #9CA3AF;
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
+    transition: color 0.2s;
   }
   
-  .bottom-nav button.active {
-    color: #2563eb;
+  .nav-item.active {
+    color: #007BFF;
   }
   
-  .nav-icon {
-    font-size: 20px;
-    font-weight: 700;
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 3px;
+    background: #007BFF;
+    border-radius: 0 0 3px 3px;
   }
 `;
 

@@ -284,8 +284,15 @@ const TenantRoutes = () => {
   const isTenantAdmin = activeTenant?.role === 'admin' || activeTenant?.role === 'master_admin' || user?.role === 'super_admin';
   
   // STAFF MOBILE VIEW - Takes priority for staff users on mobile
-  // Uses persisted flag so refresh works instantly without flash
-  if (isMobile && isStaffMobileUser) {
+  // Check both persisted flag (for quick refresh) AND current activeTenant role (for initial login)
+  const isStaffRole = activeTenant?.role === 'staff' || activeTenant?.role === 'driver';
+  const shouldShowStaffMobile = isMobile && (isStaffMobileUser || isStaffRole);
+  
+  if (shouldShowStaffMobile) {
+    // Update the flag for persistence if not already set
+    if (!isStaffMobileUser && isStaffRole) {
+      localStorage.setItem('qw_staff_mobile_user', 'true');
+    }
     return (
       <>
         <StaffMobileView tenantSlug={tenantSlug} />

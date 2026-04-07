@@ -29,7 +29,10 @@ const FleetReportsSection = ({ onRefresh, vehicles = [], complianceSettings = {}
       if (toDate) params.append('to_date', toDate);
       if (params.toString()) url += `?${params.toString()}`;
       
-      const response = await axios.get(url);
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setReports(response.data);
     } catch (err) {
       setError('Failed to load fleet reports');
@@ -40,7 +43,8 @@ const FleetReportsSection = ({ onRefresh, vehicles = [], complianceSettings = {}
   };
 
   const handleExportCSV = () => {
-    window.open(`${API}/tenant/fleet-reports/csv`, '_blank');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    window.open(`${API}/tenant/fleet-reports/csv?token=${token}`, '_blank');
   };
 
   const applyDates = () => {

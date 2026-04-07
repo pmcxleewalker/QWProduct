@@ -5,6 +5,24 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 
 ## Recent Changes (April 2026)
 
+### Feature Updates - April 7, 2026
+**Removed:**
+- Maps features removed entirely
+- Map tab removed from admin panel
+- Updates/Deployment notes tab removed from navigation
+- FleetMap.js component deleted
+
+**Booking Enhancements:**
+- **Recurring booking approval**: Bookings exceeding 4 straight weeks now require admin approval
+- **Double-up call feature**: Can add a secondary user to a booking
+  - Secondary user's booking also populates their calendar
+  - System checks for conflicts to avoid double-booking same car/time
+- New API endpoints: `/api/bookings/pending-approval`, `/api/bookings/{id}/approve`, `/api/bookings/{id}/reject`
+
+**Fleet Reports & Analytics:**
+- Fixed authentication headers for report fetching
+- Reports section fully functional with date filtering and CSV export
+
 ### Compliance Warning System - COMPLETED ✅ (April 7, 2026)
 - **Dashboard Compliance Alerts**: New `ComplianceAlerts` component on Overview tab
   - Shows critical/warning/upcoming issues for Tax, NCT, and Service Due

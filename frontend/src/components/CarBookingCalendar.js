@@ -10,7 +10,7 @@ for (let hour = 7; hour <= 22; hour++) {
   TIME_SLOTS.push(`${hour.toString().padStart(2, '0')}:00`);
 }
 
-const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tenantSlug }) => {
+const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tenantSlug, users = [] }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('day'); // day, week, month
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -21,6 +21,9 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
     end_time: '',
     notes: '',
     is_recurring: false,
+    is_double_up_call: false,
+    secondary_user_id: '',
+    secondary_user_name: '',
     start_eircode: '',
     start_address: '',
     end_eircode: '',
@@ -90,7 +93,10 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         notes: '',
-        is_recurring: false
+        is_recurring: false,
+        is_double_up_call: false,
+        secondary_user_id: '',
+        secondary_user_name: ''
       });
       setShowBookingModal(true);
     }
@@ -110,6 +116,7 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
     }
 
     try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       await axios.post(`${API}/bookings`, {
         car_id: vehicle.id,
         user_name: bookingForm.user_name,
@@ -117,11 +124,16 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
         end_time: bookingForm.end_time,
         notes: bookingForm.notes,
         is_recurring: bookingForm.is_recurring,
+        is_double_up_call: bookingForm.is_double_up_call,
+        secondary_user_id: bookingForm.secondary_user_id || null,
+        secondary_user_name: bookingForm.secondary_user_name || null,
         start_eircode: bookingForm.start_eircode,
         start_address: bookingForm.start_address,
         end_eircode: bookingForm.end_eircode,
         end_address: bookingForm.end_address,
         journey_stops: bookingForm.journey_stops
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       setShowBookingModal(false);
@@ -273,7 +285,15 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
               start_time: now.toISOString(),
               end_time: end.toISOString(),
               notes: '',
-              is_recurring: false
+              is_recurring: false,
+              is_double_up_call: false,
+              secondary_user_id: '',
+              secondary_user_name: '',
+              start_eircode: '',
+              start_address: '',
+              end_eircode: '',
+              end_address: '',
+              journey_stops: []
             });
             setShowBookingModal(true);
           }}
@@ -456,6 +476,70 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label htmlFor="is_recurring" className="text-sm text-gray-700">Recurring booking</label>
+              </div>
+
+              {/* Double-Up Call Option */}
+              <div className="border-t pt-4">
+                <div className="flex items-center space-x-2 mb-3">
+                  <input
+                    type="checkbox"
+                    id="is_double_up"
+                    checked={bookingForm.is_double_up_call}
+                    onChange={(e) => setBookingForm({ 
+                      ...bookingForm, 
+                      is_double_up_call: e.target.checked,
+                      secondary_user_id: '',
+                      secondary_user_name: ''
+                    })}
+                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                  />
+                  <label htmlFor="is_double_up" className="text-sm text-gray-700">
+                    Double-up call (add another user)
+                  </label>
+                </div>
+
+                {bookingForm.is_double_up_call && (
+                  <div className="bg-purple-50 p-3 rounded-lg">
+                    <label className="block text-sm font-medium text-purple-800 mb-1">
+                      Select Secondary User
+                    </label>
+                    {users.length > 0 ? (
+                      <select
+                        value={bookingForm.secondary_user_id}
+                        onChange={(e) => {
+                          const selectedUser = users.find(u => u.id === e.target.value);
+                          setBookingForm({
+                            ...bookingForm,
+                            secondary_user_id: e.target.value,
+                            secondary_user_name: selectedUser?.name || ''
+                          });
+                        }}
+                        className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                        required={bookingForm.is_double_up_call}
+                      >
+                        <option value="">-- Select User --</option>
+                        {users.map(u => (
+                          <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={bookingForm.secondary_user_name}
+                        onChange={(e) => setBookingForm({
+                          ...bookingForm,
+                          secondary_user_name: e.target.value
+                        })}
+                        className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                        placeholder="Enter secondary user name"
+                        required={bookingForm.is_double_up_call}
+                      />
+                    )}
+                    <p className="text-xs text-purple-600 mt-2">
+                      This booking will also appear in the secondary user's calendar
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex space-x-3 pt-2">

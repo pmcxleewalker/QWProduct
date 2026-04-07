@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Megaphone, Crown, Building2, Eye, Shield, BarChart3 } from 'lucide-react';
+import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Crown, Building2, Eye, Shield, BarChart3 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { liftRequestAPI } from '../api/api';
 import ChangePasswordModal from './ChangePasswordModal';
@@ -15,9 +15,7 @@ const Navigation = ({ tenantSlug }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showPushSettings, setShowPushSettings] = useState(false);
-  const [showDeploymentUpdates, setShowDeploymentUpdates] = useState(false);
   const notificationRef = useRef(null);
-  const deploymentRef = useRef(null);
   const seenRequestIds = useRef(new Set());
   
   // Get the base path for tenant-scoped navigation
@@ -29,30 +27,6 @@ const Navigation = ({ tenantSlug }) => {
     if (path === '/') return basePath || '/';
     return `${basePath}${path}`;
   };
-  
-  // Deployment updates for admins
-  const deploymentUpdates = [
-    {
-      date: '2 Mar 2026',
-      title: 'Multi-Tenant SaaS Platform',
-      changes: [
-        '🏢 Multi-franchise support with tenant isolation',
-        '👑 Super Admin & Master Admin roles',
-        '🔐 Strict data isolation per franchise',
-        '📊 Platform Command Centre for management',
-        '⏸️ Tenant suspension for payment management'
-      ]
-    },
-    {
-      date: '16 Feb 2026',
-      title: 'Master Admin & Reports Update',
-      changes: [
-        '👑 Master Admin role for Carly O\'Donovan',
-        '📊 Enhanced reports with date filtering',
-        '📈 Charts view in Booking Details Report'
-      ]
-    }
-  ];
   
   // Push notification hook
   const { isSupported, isSubscribed, permission, subscribe, unsubscribe } = usePushNotifications(user);
@@ -94,9 +68,6 @@ const Navigation = ({ tenantSlug }) => {
     const handleClickOutside = (event) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setShowNotifications(false);
-      }
-      if (deploymentRef.current && !deploymentRef.current.contains(event.target)) {
-        setShowDeploymentUpdates(false);
       }
     };
 
@@ -332,45 +303,6 @@ const Navigation = ({ tenantSlug }) => {
               </button>
             )}
             
-            {/* Deployment Updates - Admin only (Mobile) */}
-            {isTenantAdmin() && (
-              <div className="relative" ref={deploymentRef}>
-                <button
-                  onClick={() => setShowDeploymentUpdates(!showDeploymentUpdates)}
-                  className="flex items-center p-2 text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
-                  title="Deployment Updates"
-                >
-                  <Megaphone size={18} />
-                </button>
-                {showDeploymentUpdates && (
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
-                    <div className="p-3 border-b bg-indigo-50">
-                      <h3 className="font-semibold text-indigo-900 flex items-center">
-                        <Megaphone size={16} className="mr-2" />
-                        Deployment Updates
-                      </h3>
-                      <p className="text-xs text-indigo-600 mt-1">What's new in {process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}</p>
-                    </div>
-                    <div className="divide-y">
-                      {deploymentUpdates.map((update, idx) => (
-                        <div key={idx} className="p-3">
-                          <div className="flex justify-between items-start mb-2">
-                            <span className="font-medium text-gray-900 text-sm">{update.title}</span>
-                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{update.date}</span>
-                          </div>
-                          <ul className="space-y-1">
-                            {update.changes.map((change, cIdx) => (
-                              <li key={cIdx} className="text-xs text-gray-600">{change}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            
             <div className="flex items-center space-x-1">
               {isPlatformAdmin() && (
                 <Crown size={16} className="text-yellow-500" title="Master Admin" />
@@ -505,46 +437,6 @@ const Navigation = ({ tenantSlug }) => {
                   {isSubscribed ? <BellRing size={16} /> : <BellOff size={16} />}
                   <span className="hidden lg:inline">{isSubscribed ? 'Push On' : 'Push Off'}</span>
                 </button>
-              )}
-              
-              {/* Deployment Updates - Admin only (Desktop) */}
-              {isTenantAdmin() && (
-                <div className="relative">
-                  <button
-                    onClick={() => setShowDeploymentUpdates(!showDeploymentUpdates)}
-                    className="flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-colors text-sm text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
-                    title="Deployment Updates"
-                  >
-                    <Megaphone size={16} />
-                    <span className="hidden lg:inline">Updates</span>
-                  </button>
-                  {showDeploymentUpdates && (
-                    <div className="absolute right-0 top-full mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[500px] overflow-y-auto">
-                      <div className="p-4 border-b bg-indigo-50 sticky top-0">
-                        <h3 className="font-semibold text-indigo-900 flex items-center">
-                          <Megaphone size={18} className="mr-2" />
-                          Deployment Updates
-                        </h3>
-                        <p className="text-xs text-indigo-600 mt-1">What's new in {process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}</p>
-                      </div>
-                      <div className="divide-y">
-                        {deploymentUpdates.map((update, idx) => (
-                          <div key={idx} className="p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <span className="font-medium text-gray-900">{update.title}</span>
-                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{update.date}</span>
-                            </div>
-                            <ul className="space-y-1.5">
-                              {update.changes.map((change, cIdx) => (
-                                <li key={cIdx} className="text-sm text-gray-600">{change}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
               )}
               
               <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">

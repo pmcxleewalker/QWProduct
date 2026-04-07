@@ -69,6 +69,8 @@ class BookingCreate(BaseModel):
     location: Optional[str] = ""
     notes: Optional[str] = ""
     is_double_up_call: bool = False
+    secondary_user_id: Optional[str] = None  # For double-up: the additional user
+    secondary_user_name: Optional[str] = None
     is_recurring: bool = False
     recurrence_type: Optional[str] = None
     recurrence_end_date: Optional[str] = None
@@ -89,6 +91,8 @@ class BookingUpdate(BaseModel):
     location: Optional[str] = None
     status: Optional[str] = None
     is_double_up_call: Optional[bool] = None
+    secondary_user_id: Optional[str] = None
+    secondary_user_name: Optional[str] = None
     # Journey tracking fields
     start_eircode: Optional[str] = None
     start_address: Optional[str] = None
@@ -109,11 +113,14 @@ class Booking(BaseModel):
     location: str = ""
     notes: str = ""
     is_double_up_call: bool = False
+    secondary_user_id: Optional[str] = None  # For double-up: the additional user
+    secondary_user_name: Optional[str] = None
     is_recurring: bool = False
     recurrence_type: Optional[str] = None
     recurrence_end_date: Optional[str] = None
     recurrence_count: Optional[int] = None
     recurring_group_id: Optional[str] = None
+    requires_approval: bool = False  # True if recurring > 4 weeks
     status: str = "approved"  # pending, approved, rejected
     created_by_email: str
     created_by_user_id: str

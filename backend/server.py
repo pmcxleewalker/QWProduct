@@ -4268,11 +4268,65 @@ async def create_booking(
     if vehicle.get("is_blocked"):
         raise HTTPException(status_code=400, detail="Vehicle is currently blocked")
     
+    # Parse dates for recurring check
+    start_time = datetime.fromisoformat(booking_data.start_time.replace('Z', '+00:00'))
+    
+    # Check if recurring booking exceeds 4 weeks (requires admin approval)
+    requires_approval = False
+    if booking_data.is_recurring and booking_data.recurrence_end_date:
+        recurrence_end = datetime.fromisoformat(booking_data.recurrence_end_date.replace('Z', '+00:00'))
+        weeks_duration = (recurrence_end - start_time).days / 7
+        if weeks_duration > 4:
+            requires_approval = True
+    
+    # If double-up call with secondary user, check for conflicts
+    if booking_data.is_double_up_call and booking_data.secondary_user_id:
+        # Check if secondary user has any booking at the same time (for any car)
+        conflict_query = {
+            "tenant_id": context.tenant_id,
+            "$or": [
+                {"created_by_user_id": booking_data.secondary_user_id},
+                {"secondary_user_id": booking_data.secondary_user_id},
+                {"user_name": booking_data.secondary_user_name}
+            ],
+            "start_time": {"$lt": booking_data.end_time},
+            "end_time": {"$gt": booking_data.start_time},
+            "status": {"$ne": "rejected"}
+        }
+        existing_booking = await db.bookings.find_one(conflict_query, {"_id": 0})
+        if existing_booking:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Secondary user already has a booking at this time ({existing_booking.get('user_name')} - {existing_booking.get('car_id')})"
+            )
+    
+    # Also check primary user for conflicts
+    primary_conflict_query = {
+        "tenant_id": context.tenant_id,
+        "$or": [
+            {"created_by_user_id": context.user_id},
+            {"secondary_user_id": context.user_id}
+        ],
+        "start_time": {"$lt": booking_data.end_time},
+        "end_time": {"$gt": booking_data.start_time},
+        "status": {"$ne": "rejected"}
+    }
+    primary_existing = await db.bookings.find_one(primary_conflict_query, {"_id": 0})
+    if primary_existing:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"You already have a booking at this time ({primary_existing.get('car_id')})"
+        )
+    
+    # Determine booking status
+    booking_status = "pending" if requires_approval else "approved"
+    
     booking = {
         "id": str(uuid.uuid4()),
         "tenant_id": context.tenant_id,  # CRITICAL: Set tenant_id from context
         **booking_data.model_dump(),
-        "status": "approved",
+        "status": booking_status,
+        "requires_approval": requires_approval,
         "created_by_email": context.user_email,
         "created_by_user_id": context.user_id,
         "created_at": datetime.now(timezone.utc).isoformat()
@@ -4287,17 +4341,28 @@ async def create_booking(
 async def list_bookings(
     status: Optional[str] = None,
     car_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    include_secondary: bool = True,
     skip: int = 0,
     limit: int = 100,
     context: TenantContext = Depends(require_tenant_context)
 ):
     """List bookings in the current tenant"""
-    query = TenantQueryBuilder.scope(context.tenant_id)
+    query = {"tenant_id": context.tenant_id}
     
     if status:
         query["status"] = status
     if car_id:
         query["car_id"] = car_id
+    
+    # If user_id is specified, include bookings where they are primary OR secondary user
+    if user_id and include_secondary:
+        query["$or"] = [
+            {"created_by_user_id": user_id},
+            {"secondary_user_id": user_id}
+        ]
+    elif user_id:
+        query["created_by_user_id"] = user_id
     
     bookings = await db.bookings.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     return bookings
@@ -4362,6 +4427,59 @@ async def delete_booking(
     await db.bookings.delete_one(query)
     
     return {"message": "Booking deleted"}
+
+
+@api_router.get("/bookings/pending-approval")
+async def get_pending_approval_bookings(
+    context: TenantContext = Depends(require_admin)
+):
+    """Get bookings that require admin approval (recurring > 4 weeks)"""
+    query = {
+        "tenant_id": context.tenant_id,
+        "requires_approval": True,
+        "status": "pending"
+    }
+    bookings = await db.bookings.find(query, {"_id": 0}).to_list(100)
+    return bookings
+
+
+@api_router.post("/bookings/{booking_id}/approve")
+async def approve_booking(
+    booking_id: str,
+    context: TenantContext = Depends(require_admin)
+):
+    """Approve a pending booking"""
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, booking_id)
+    booking = await db.bookings.find_one(query, {"_id": 0})
+    
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    await db.bookings.update_one(query, {"$set": {"status": "approved"}})
+    
+    return {"message": "Booking approved", "booking_id": booking_id}
+
+
+@api_router.post("/bookings/{booking_id}/reject")
+async def reject_booking(
+    booking_id: str,
+    reason: Optional[str] = None,
+    context: TenantContext = Depends(require_admin)
+):
+    """Reject a pending booking"""
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, booking_id)
+    booking = await db.bookings.find_one(query, {"_id": 0})
+    
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    update = {"status": "rejected"}
+    if reason:
+        update["rejection_reason"] = reason
+    
+    await db.bookings.update_one(query, {"$set": update})
+    
+    return {"message": "Booking rejected", "booking_id": booking_id}
 
 
 # ==================== PROVIDERS (TENANT-SCOPED) ====================

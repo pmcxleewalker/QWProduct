@@ -11,7 +11,7 @@ import {
   ArrowRight, MoreVertical, BookOpen, HelpCircle, PieChart,
   Activity, TrendingDown, CalendarDays, QrCode, Camera, Gauge,
   ClipboardList, Bell, Megaphone, Crown, Star, Zap, Palette, DollarSign,
-  Save, X, Sparkles, Map
+  Save, X, Sparkles
 } from 'lucide-react';
 import AdminTraining from '../components/AdminTraining';
 import CarBookingCalendar from '../components/CarBookingCalendar';
@@ -26,7 +26,6 @@ import AnnouncementBanner from '../components/AnnouncementBanner';
 import AnnouncementsManager from '../components/AnnouncementsManager';
 import DailyTimelineChart from '../components/DailyTimelineChart';
 import NotificationBell from '../components/NotificationBell';
-import FleetMap from '../components/FleetMap';
 import GDPRSettings from '../components/GDPRSettings';
 import UserProfileMenu from '../components/UserProfileMenu';
 
@@ -504,9 +503,6 @@ const TenantDashboard = () => {
 
   // Staff only see: Live Fleet, Bookings
   // Admins and Master Admins see consolidated tabs with sub-tabs
-  // Fleet Map only shows for Essential and Professional tiers (show_map feature)
-  const hasMapFeature = planData?.features?.show_map || planData?.features?.map_booking_pins;
-  
   const tabs = isStaffUser 
     ? [
         { id: 'fleet-status', label: 'Live Fleet', icon: Car },
@@ -523,7 +519,6 @@ const TenantDashboard = () => {
             { id: 'live-fleet', label: 'Live Status' },
             { id: 'car-calendars', label: 'Car Calendars' },
             { id: 'all-cars', label: 'All Cars Calendar' },
-            ...(hasMapFeature ? [{ id: 'fleet-map', label: 'Journey Map' }] : []),
             { id: 'vehicles', label: 'Manage Vehicles' }
           ]
         },
@@ -1262,46 +1257,6 @@ const TenantDashboard = () => {
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* Fleet Map Tab (Essential & Professional only) */}
-            {((activeTab === 'fleet' && activeSubTab === 'fleet-map')) && hasMapFeature && (
-              <div className="space-y-6" data-testid="fleet-map-section">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                      <Map size={20} className="mr-2 text-blue-600" />
-                      Fleet Journey Map
-                    </h2>
-                    <p className="text-xs text-gray-500">
-                      View booking journeys with start/end locations and stops
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => fetchData()}
-                    className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 flex items-center space-x-2"
-                  >
-                    <RefreshCw size={16} />
-                    <span>Refresh</span>
-                  </button>
-                </div>
-
-                {/* Map Component */}
-                <FleetMap
-                  bookings={bookings}
-                  vehicles={vehicles}
-                />
-
-                {/* Info about journey data */}
-                {bookings.filter(b => b.start_eircode && b.end_eircode).length === 0 && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
-                    <p className="font-medium">No journey data available</p>
-                    <p className="text-blue-600 mt-1">
-                      Create bookings with Start Eircode and End Eircode to see them on the map.
-                    </p>
-                  </div>
-                )}
               </div>
             )}
 

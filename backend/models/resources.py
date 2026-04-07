@@ -281,6 +281,7 @@ class Location(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     tenant_id: str  # REQUIRED - tenant isolation
     name: str
+    type: Optional[str] = "depot"  # depot, office, warehouse, service_center, client_site, other
     eircode: Optional[str] = None
     address: Optional[str] = None
     is_default: bool = False

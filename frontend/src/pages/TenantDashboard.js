@@ -28,6 +28,7 @@ import DailyTimelineChart from '../components/DailyTimelineChart';
 import NotificationBell from '../components/NotificationBell';
 import GDPRSettings from '../components/GDPRSettings';
 import UserProfileMenu from '../components/UserProfileMenu';
+import LocationManager from '../components/LocationManager';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -2700,6 +2701,11 @@ const TenantDashboard = () => {
                   </div>
                 </div>
               )}
+
+              {/* Location Management */}
+              <div className="mt-6">
+                <LocationManager />
+              </div>
 
               {/* GDPR Data & Privacy Settings */}
               <div className="mt-6">

@@ -17,6 +17,13 @@ const EditVehicleModal = ({ vehicle, isOpen, onClose, onSaved }) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [locations, setLocations] = useState([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchLocations();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (vehicle && isOpen) {
@@ -32,6 +39,18 @@ const EditVehicleModal = ({ vehicle, isOpen, onClose, onSaved }) => {
       });
     }
   }, [vehicle, isOpen]);
+
+  const fetchLocations = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/locations`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setLocations(response.data.locations || []);
+    } catch (error) {
+      console.error('Failed to fetch locations:', error);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -217,13 +236,33 @@ const EditVehicleModal = ({ vehicle, isOpen, onClose, onSaved }) => {
                 <span>Base Location</span>
               </div>
             </label>
-            <input
-              type="text"
-              value={form.base_location}
-              onChange={(e) => setForm({ ...form, base_location: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., Main Office, Depot A"
-            />
+            {locations.length > 0 ? (
+              <select
+                value={form.base_location}
+                onChange={(e) => setForm({ ...form, base_location: e.target.value })}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">-- Select Location --</option>
+                {locations.map((loc) => (
+                  <option key={loc.id} value={loc.name}>
+                    {loc.name} {loc.is_default ? '(Default)' : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={form.base_location}
+                onChange={(e) => setForm({ ...form, base_location: e.target.value })}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., Main Office, Depot A"
+              />
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              {locations.length > 0 
+                ? 'Select from configured locations' 
+                : 'Add locations in Settings to use dropdown'}
+            </p>
           </div>
         </form>
 

@@ -17,6 +17,22 @@ const StaffMobileView = ({ tenantSlug }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
+  // Ensure proper mobile viewport on mount
+  useEffect(() => {
+    // Set viewport meta for proper mobile scaling
+    let viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (viewportMeta) {
+      viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
+    }
+    
+    // Add class to html for mobile app mode
+    document.documentElement.classList.add('staff-mobile-app');
+    
+    return () => {
+      document.documentElement.classList.remove('staff-mobile-app');
+    };
+  }, []);
+  
   // Data states
   const [vehicles, setVehicles] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -1049,14 +1065,31 @@ const StaffMobileView = ({ tenantSlug }) => {
         .safe-area-bottom {
           padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
+        html.staff-mobile-app,
+        html.staff-mobile-app body {
+          height: 100%;
+          overflow: hidden;
+        }
         .staff-mobile-container {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100vw;
+          height: 100vh;
+          height: 100dvh; /* Dynamic viewport height for mobile */
+          overflow-y: auto;
+          overflow-x: hidden;
+          -webkit-overflow-scrolling: touch;
           -webkit-text-size-adjust: 100%;
           -webkit-tap-highlight-color: transparent;
           touch-action: manipulation;
+          background: #f3f4f6;
         }
         .staff-mobile-container input,
         .staff-mobile-container button {
-          font-size: 16px; /* Prevents iOS zoom on focus */
+          font-size: 16px !important; /* Prevents iOS zoom on focus */
         }
       `}</style>
     </div>

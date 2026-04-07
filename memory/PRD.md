@@ -43,20 +43,24 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
   - `GET /api/tenant/settings` - includes compliance settings
   - `PUT /api/tenant/settings/compliance` - update compliance thresholds
 
-### Staff Mobile View - UPDATED ✅ (April 7, 2026)
+### Staff Mobile View - REDESIGNED ✅ (April 7-8, 2026)
+- **Visual Redesign** matching user-provided reference images:
+  - Clean white/light gray background (#F8F9FA)
+  - Vibrant blue accent (#007BFF) for buttons and active states
+  - Green indicators (#22C55E) for available status
+  - Amber/yellow highlights (#FCD34D) for selected items
+  - 2-column vehicle grid with card shadows
+  - Toggle-style status indicators
 - **Simplified 3-Tab Interface** for staff/driver users on mobile:
-  1. **Live Status** - Live fleet status, today's booking reminders
-  2. **Bookings** - Book available cars, personal calendar, my bookings list
-  3. **Request Lift** - Form to request lift from colleagues
-- **Fixed Issues**:
-  - Screen now properly fits mobile viewport (100vh/100dvh)
-  - Refresh no longer kicks back to web view (localStorage persistence)
+  1. **Home** - Dashboard with stats cards (Available/In Use), Live Fleet Status with 2-column vehicle grid
+  2. **Bookings** - Car selection chips, date navigator, time slots grid, New Booking form
+  3. **Lift** - Request a Lift form with all fields pre-validated
+- **Technical Fixes**:
+  - Fixed initial render timing: now checks both localStorage flag AND activeTenant.role
+  - Screen properly fits mobile viewport (100dvh with fixed positioning)
+  - Refresh persists correctly via localStorage 'qw_staff_mobile_user' flag
   - Bottom navigation is static and fixed to screen
   - Body scroll is locked for proper app-like behavior
-- **UI Updates**:
-  - Quick Wing logo in header
-  - Purple color scheme matching admin
-  - No live sheet or export access for staff
 - **Test User**: teststaff@standard-fleet.com / teststaff123
 
 ### Fleet Map & Journey Tracking - COMPLETED ✅ (April 2026)
@@ -75,15 +79,26 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 - **Improved Modal**: Booking details use correct colors for booking types
 - **Better Organization**: Clearer visual hierarchy with gradient header
 
-### Public QR Code Mileage Submission - COMPLETED ✅ (April 2026)
+### Public QR Code Mileage Submission - VERIFIED ✅ (April 7-8, 2026)
 - **No login required** - Anyone can scan QR and submit mileage
-- Public page shows: Vehicle name, registration, organisation, last mileage
-- Optional "Your Name" field for accountability
-- Optional "Notes" field for reporting issues
-- Public API endpoints: 
-  - `GET /api/public/vehicle/{tenant_slug}/{vehicle_id}` - Get vehicle info
-  - `POST /api/public/vehicle/{tenant_slug}/{vehicle_id}/submit-mileage` - Submit mileage
-- Service due alerts displayed after submission
+- **QR Code Generation**: 
+  - Endpoint: `GET /api/vehicles/{vehicle_id}/qr` returns PNG image
+  - QR encodes URL: `{baseUrl}/{tenant_slug}/vehicle/{vehicle_id}/mileage`
+  - Download and Print functionality in Admin UI
+- **Public Mileage Page** (`/{tenant}/vehicle/{id}/mileage`):
+  - Vehicle name, registration, organisation displayed
+  - Last recorded mileage shown
+  - Optional "Your Name" field for accountability
+  - Optional "Notes" field for reporting issues
+  - Shows calculated difference from last reading
+  - Service alerts displayed after submission (warning/urgent/overdue)
+- **Public API Endpoints**: 
+  - `GET /api/public/vehicle/{tenant_slug}/{vehicle_id}` - Get vehicle info (no auth)
+  - `POST /api/public/vehicle/{tenant_slug}/{vehicle_id}/submit-mileage` - Submit mileage (no auth)
+- **Service Alert Integration**:
+  - Triggers when mileage within 1000km of service_due_mileage (warning)
+  - Triggers when mileage within 500km of service_due_mileage (urgent)
+  - Triggers when mileage exceeds service_due_mileage (overdue)
 
 ### Live Status Updates - COMPLETED ✅ (April 2026)
 - Vehicle status now reflects **active bookings in real-time**

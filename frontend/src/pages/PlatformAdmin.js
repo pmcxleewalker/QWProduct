@@ -636,6 +636,7 @@ const PlatformAdmin = () => {
               { id: 'overview', label: 'Dashboard', sublabel: 'Platform Overview', icon: Activity, roles: ['super_admin', 'master_admin'] },
               { id: 'tenants', label: 'Franchises', sublabel: 'Manage Tenants', icon: Building2, roles: ['super_admin', 'master_admin', 'bot'] },
               { id: 'users', label: 'Team', sublabel: 'User Management', icon: Users, roles: ['super_admin', 'master_admin'] },
+              { id: 'vehicles', label: 'Vehicles', sublabel: 'Manage Fleet', icon: Car, roles: ['super_admin', 'master_admin'] },
               { id: 'content-worker', label: 'Content', sublabel: 'Social Media', icon: Instagram, roles: ['super_admin', 'master_admin', 'content_manager'] },
               { id: 'plans', label: 'Subscriptions', sublabel: 'Plans & Features', icon: Layers, roles: ['super_admin', 'master_admin', 'content_manager'] },
               { id: 'reports', label: 'Finance', sublabel: 'Reports & Billing', icon: Receipt, roles: ['super_admin', 'master_admin'] },
@@ -1997,6 +1998,38 @@ const PlatformAdmin = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Vehicles Management Tab */}
+        {activeTab === 'vehicles' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm border p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Vehicle Management</h2>
+                  <p className="text-sm text-gray-500 mt-1">Manage fleet vehicles across all franchises</p>
+                </div>
+              </div>
+              
+              <div className="text-center py-12 text-gray-500">
+                <Car size={48} className="mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium">Vehicle Management</p>
+                <p className="text-sm mt-2">
+                  To manage vehicles for a specific franchise, please select a franchise from the 
+                  <button 
+                    onClick={() => setActiveTab('tenants')} 
+                    className="text-blue-600 hover:underline mx-1"
+                  >
+                    Franchises tab
+                  </button>
+                  and use the "Impersonate" feature to access their dashboard.
+                </p>
+                <p className="text-sm mt-4 text-gray-400">
+                  Vehicle management is handled at the franchise level for proper data isolation.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

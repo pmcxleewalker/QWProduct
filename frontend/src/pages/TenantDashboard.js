@@ -28,7 +28,6 @@ import DailyTimelineChart from '../components/DailyTimelineChart';
 import NotificationBell from '../components/NotificationBell';
 import GDPRSettings from '../components/GDPRSettings';
 import UserProfileMenu from '../components/UserProfileMenu';
-import LocationManager from '../components/LocationManager';
 import ComplianceAlerts, { ComplianceSettingsModal } from '../components/ComplianceAlerts';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -555,8 +554,7 @@ const TenantDashboard = () => {
           subTabs: [
             { id: 'live-fleet', label: 'Live Status' },
             { id: 'car-calendars', label: 'Car Calendars' },
-            { id: 'all-cars', label: 'All Cars Calendar' },
-            { id: 'vehicles', label: 'Manage Vehicles' }
+            { id: 'all-cars', label: 'All Cars Calendar' }
           ]
         },
         { id: 'bookings', label: 'Bookings', icon: Calendar },
@@ -566,7 +564,6 @@ const TenantDashboard = () => {
           label: 'Reports', 
           icon: PieChart,
           subTabs: [
-            { id: 'analytics', label: 'Analytics' },
             { id: 'fleet-reports', label: 'Fleet Reports' },
             { id: 'daily-timeline', label: 'Daily Timeline' }
           ]
@@ -597,7 +594,7 @@ const TenantDashboard = () => {
       setActiveSubTab('live-fleet');
     }
     if (activeTab === 'reports' && !activeSubTab) {
-      setActiveSubTab('analytics');
+      setActiveSubTab('fleet-reports');
     }
   }, [isStaffUser, activeTab, activeSubTab]);
 
@@ -2736,11 +2733,6 @@ const TenantDashboard = () => {
                   </div>
                 </div>
               )}
-
-              {/* Location Management */}
-              <div className="mt-6">
-                <LocationManager />
-              </div>
 
               {/* GDPR Data & Privacy Settings */}
               <div className="mt-6">

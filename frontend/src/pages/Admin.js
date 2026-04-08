@@ -961,22 +961,6 @@ const Admin = () => {
           </button>
           
           <button
-            onClick={() => setActiveTab('staffmap')}
-            data-testid="tab-staffmap"
-            className={`flex flex-col items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'staffmap'
-                ? 'bg-white text-emerald-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <div className="flex items-center space-x-1">
-              <Map size={16} />
-              <span className="font-semibold">Map</span>
-            </div>
-            <span className="text-xs text-gray-400">Locations</span>
-          </button>
-          
-          <button
             onClick={() => setActiveTab('users')}
             data-testid="tab-users"
             className={`flex flex-col items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -1006,22 +990,6 @@ const Admin = () => {
               <span className="font-semibold">Access</span>
             </div>
             <span className="text-xs text-gray-400">Logins</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('reports')}
-            data-testid="tab-reports"
-            className={`flex flex-col items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'reports'
-                ? 'bg-white text-indigo-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <div className="flex items-center space-x-1">
-              <BarChart3 size={16} />
-              <span className="font-semibold">Reports</span>
-            </div>
-            <span className="text-xs text-gray-400">Analytics</span>
           </button>
           
           {/* More dropdown for less used items */}

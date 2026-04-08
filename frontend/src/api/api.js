@@ -11,6 +11,9 @@ export const carAPI = {
   update: (id, data) => axios.put(`${API}/vehicles/${id}`, data),
   delete: (id) => axios.delete(`${API}/vehicles/${id}`),
   getQRCode: (id) => `${API}/vehicles/${id}/qr`,
+  getAvailability: (id, date, view = 'day') => axios.get(`${API}/vehicles/${id}/availability`, { 
+    params: { date, view } 
+  }),
 };
 
 // Booking API (tenant-scoped)

@@ -5074,6 +5074,126 @@ async def delete_location(
     return {"message": "Location deleted"}
 
 
+# ==================== VEHICLE AVAILABILITY ====================
+
+@api_router.get("/vehicles/{vehicle_id}/availability")
+async def get_vehicle_availability(
+    vehicle_id: str,
+    date: Optional[str] = None,
+    view: str = "day",  # day, week, month
+    context: TenantContext = Depends(require_tenant_context)
+):
+    """
+    Get availability timeline for a specific vehicle.
+    Returns hourly slots with status (available, booked, recurring, past).
+    """
+    # Verify vehicle exists
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, vehicle_id)
+    vehicle = await db.vehicles.find_one(query, {"_id": 0})
+    
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    # Parse date or use today
+    if date:
+        try:
+            target_date = datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    else:
+        target_date = datetime.now(timezone.utc)
+    
+    # Determine date range based on view
+    if view == "week":
+        # Get start of week (Monday)
+        start_of_week = target_date - timedelta(days=target_date.weekday())
+        dates = [start_of_week + timedelta(days=i) for i in range(7)]
+    elif view == "month":
+        # Get all days in the month
+        first_day = target_date.replace(day=1)
+        if target_date.month == 12:
+            last_day = target_date.replace(year=target_date.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            last_day = target_date.replace(month=target_date.month + 1, day=1) - timedelta(days=1)
+        dates = [first_day + timedelta(days=i) for i in range((last_day - first_day).days + 1)]
+    else:
+        # Single day
+        dates = [target_date]
+    
+    # Get all bookings for the date range
+    start_range = dates[0].replace(hour=0, minute=0, second=0, microsecond=0)
+    end_range = dates[-1].replace(hour=23, minute=59, second=59, microsecond=999999)
+    
+    bookings = await db.bookings.find({
+        "tenant_id": context.tenant_id,
+        "car_id": vehicle_id,
+        "start_time": {"$lte": end_range.isoformat()},
+        "end_time": {"$gte": start_range.isoformat()}
+    }, {"_id": 0}).to_list(1000)
+    
+    now = datetime.now(timezone.utc)
+    availability_data = []
+    
+    for day in dates:
+        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        hours = []
+        
+        # Generate hourly slots from 7am to 10pm
+        for hour in range(7, 23):
+            slot_start = day.replace(hour=hour, minute=0, second=0, microsecond=0)
+            slot_end = day.replace(hour=hour, minute=59, second=59, microsecond=999999)
+            
+            # Default status
+            status = "available"
+            booked_by = None
+            is_recurring = False
+            
+            # Check if slot is in the past
+            slot_start_utc = slot_start.replace(tzinfo=timezone.utc)
+            if slot_start_utc < now:
+                status = "past"
+            
+            # Check bookings that overlap this slot
+            for booking in bookings:
+                try:
+                    booking_start = datetime.fromisoformat(booking["start_time"].replace("Z", "+00:00"))
+                    booking_end = datetime.fromisoformat(booking["end_time"].replace("Z", "+00:00"))
+                    
+                    slot_start_aware = slot_start.replace(tzinfo=timezone.utc)
+                    slot_end_aware = slot_end.replace(tzinfo=timezone.utc)
+                    
+                    # Check overlap
+                    if booking_start <= slot_end_aware and booking_end >= slot_start_aware:
+                        is_recurring = booking.get("is_recurring", False)
+                        status = "recurring" if is_recurring else "booked"
+                        booked_by = booking.get("user_name", "Unknown")
+                        break
+                except:
+                    continue
+            
+            hours.append({
+                "hour": hour,
+                "time_display": f"{hour:02d}:00",
+                "status": status,
+                "booked_by": booked_by,
+                "is_recurring": is_recurring
+            })
+        
+        availability_data.append({
+            "date": day.strftime("%Y-%m-%d"),
+            "date_display": day.strftime("%d %b"),
+            "day_short": day.strftime("%a"),
+            "hours": hours
+        })
+    
+    return {
+        "vehicle_id": vehicle_id,
+        "vehicle_name": vehicle.get("name", vehicle.get("registration")),
+        "view": view,
+        "availability": availability_data
+    }
+
+
 # ==================== QR CODE ====================
 
 @api_router.get("/vehicles/{vehicle_id}/qr")

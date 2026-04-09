@@ -29,6 +29,7 @@ import NotificationBell from '../components/NotificationBell';
 import GDPRSettings from '../components/GDPRSettings';
 import UserProfileMenu from '../components/UserProfileMenu';
 import ComplianceAlerts, { ComplianceSettingsModal } from '../components/ComplianceAlerts';
+import CostAnalyticsDashboard from '../components/CostAnalyticsDashboard';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -478,6 +479,30 @@ const TenantDashboard = () => {
     });
     setComplianceSettings(response.data.compliance);
     fetchData();
+  };
+
+  // Reset Cost Analytics Settings to Defaults
+  const handleResetCostAnalytics = async () => {
+    const defaultSettings = {
+      mileage_rate: 0.35,
+      fuel_cost_per_km: 0.12,
+      maintenance_cost_per_km: 0.08,
+      currency: 'EUR',
+      distance_unit: 'km'
+    };
+    
+    setSettingsForm(prev => ({
+      ...prev,
+      ...defaultSettings
+    }));
+    
+    try {
+      await settingsAPI.update(defaultSettings);
+      toast.success('Cost analytics settings reset to defaults');
+      fetchData();
+    } catch (err) {
+      toast.error('Failed to reset settings');
+    }
   };
 
   // Calculate cost analytics based on settings
@@ -1602,11 +1627,27 @@ const TenantDashboard = () => {
             {/* Fleet Reports Tab (Admin Only) */}
             {/* Fleet Reports Tab */}
             {((activeTab === 'fleet-reports') || (activeTab === 'reports' && activeSubTab === 'fleet-reports')) && isAdmin && (
-              <FleetReportsSection 
-                onRefresh={() => fetchData()} 
-                vehicles={vehicles}
-                complianceSettings={complianceSettings}
-              />
+              <div className="space-y-8">
+                <FleetReportsSection 
+                  onRefresh={() => fetchData()} 
+                  vehicles={vehicles}
+                  complianceSettings={complianceSettings}
+                />
+                
+                {/* Cost Analytics Dashboard */}
+                <CostAnalyticsDashboard
+                  settings={{
+                    mileage_rate: settingsForm.mileage_rate || 0.35,
+                    fuel_cost_per_km: settingsForm.fuel_cost_per_km || 0.12,
+                    maintenance_cost_per_km: settingsForm.maintenance_cost_per_km || 0.08,
+                    currency: settingsForm.currency || 'EUR',
+                    distance_unit: settingsForm.distance_unit || 'km'
+                  }}
+                  vehicles={vehicles}
+                  mileageLogs={[]}
+                  onResetSettings={handleResetCostAnalytics}
+                />
+              </div>
             )}
 
             {/* Daily Timeline Tab */}

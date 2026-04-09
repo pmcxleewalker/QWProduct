@@ -10,7 +10,8 @@ import {
   FileText, Settings, RefreshCw, LogOut, Trash2, Key,
   Receipt, Download, Send, Edit2, UserPlus, UserMinus,
   Globe, Copy, Layers, Star, Zap, ArrowRight, Instagram,
-  BarChart3, Headphones as HeadphonesIcon, MessageSquare
+  BarChart3, Headphones as HeadphonesIcon, MessageSquare,
+  Database, HardDrive, CloudDownload, RotateCcw, AlertCircle
 } from 'lucide-react';
 import ContentWorker from '../components/ContentWorker';
 
@@ -640,7 +641,8 @@ const PlatformAdmin = () => {
               { id: 'content-worker', label: 'Content', sublabel: 'Social Media', icon: Instagram, roles: ['super_admin', 'master_admin', 'content_manager'] },
               { id: 'plans', label: 'Subscriptions', sublabel: 'Plans & Features', icon: Layers, roles: ['super_admin', 'master_admin', 'content_manager'] },
               { id: 'reports', label: 'Finance', sublabel: 'Reports & Billing', icon: Receipt, roles: ['super_admin', 'master_admin'] },
-              { id: 'audit', label: 'Activity', sublabel: 'Audit Log', icon: FileText, roles: ['super_admin', 'master_admin'] }
+              { id: 'audit', label: 'Activity', sublabel: 'Audit Log', icon: FileText, roles: ['super_admin', 'master_admin'] },
+              { id: 'backup', label: 'Backup', sublabel: 'Disaster Recovery', icon: Database, roles: ['super_admin', 'master_admin'] }
             ]
             .filter(tab => !tab.roles || tab.roles.includes(user?.role))
             .map(tab => (
@@ -3314,6 +3316,221 @@ const PlatformAdmin = () => {
                 }
                 return null;
               })()}
+            </div>
+          </div>
+        )}
+
+        {/* Backup & Disaster Recovery Tab */}
+        {activeTab === 'backup' && (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl p-6 text-white">
+              <div className="flex items-center space-x-3 mb-2">
+                <Database size={28} />
+                <h2 className="text-2xl font-bold">Backup & Disaster Recovery</h2>
+              </div>
+              <p className="text-emerald-100">
+                Protect your franchise data with regular backups. Download backup files and store them safely.
+              </p>
+            </div>
+
+            {/* Warning Banner */}
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start space-x-3">
+              <AlertCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={20} />
+              <div>
+                <p className="font-medium text-amber-800">Important: Store backups securely</p>
+                <p className="text-sm text-amber-700 mt-1">
+                  Downloaded backup files contain sensitive data. Store them in a secure location like encrypted cloud storage (Google Drive, Dropbox) or an offline hard drive.
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Full Platform Backup */}
+              <div className="bg-white rounded-xl shadow-sm border p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <HardDrive className="text-blue-600" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">Full Platform Backup</h3>
+                    <p className="text-sm text-gray-500">All franchises, users & data</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Download a complete backup of your entire Quick Wing platform including all {tenants.length} franchises.
+                </p>
+                <button
+                  onClick={async () => {
+                    try {
+                      toast.loading('Creating full platform backup...', { id: 'backup' });
+                      const token = localStorage.getItem('token');
+                      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/platform/backup/full`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      });
+                      if (!response.ok) throw new Error('Backup failed');
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `quickwing-full-backup-${new Date().toISOString().split('T')[0]}.json`;
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      toast.success('Full backup downloaded!', { id: 'backup' });
+                    } catch (err) {
+                      toast.error('Failed to create backup', { id: 'backup' });
+                    }
+                  }}
+                  className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  <CloudDownload size={18} />
+                  <span>Download Full Backup</span>
+                </button>
+              </div>
+
+              {/* Individual Franchise Backup */}
+              <div className="bg-white rounded-xl shadow-sm border p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <Building2 className="text-purple-600" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">Franchise Backup</h3>
+                    <p className="text-sm text-gray-500">Single franchise data</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Download backup for a specific franchise. Useful for restoring individual businesses.
+                </p>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-3 text-sm"
+                  id="backup-franchise-select"
+                  defaultValue=""
+                >
+                  <option value="" disabled>Select a franchise...</option>
+                  {tenants.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={async () => {
+                    const select = document.getElementById('backup-franchise-select');
+                    const tenantId = select.value;
+                    if (!tenantId) {
+                      toast.error('Please select a franchise');
+                      return;
+                    }
+                    const tenantName = tenants.find(t => t.id === tenantId)?.name || 'franchise';
+                    try {
+                      toast.loading(`Creating backup for ${tenantName}...`, { id: 'backup' });
+                      const token = localStorage.getItem('token');
+                      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/platform/backup/tenant/${tenantId}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      });
+                      if (!response.ok) throw new Error('Backup failed');
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `quickwing-${tenantName.replace(/\s+/g, '-').toLowerCase()}-backup-${new Date().toISOString().split('T')[0]}.json`;
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      toast.success(`${tenantName} backup downloaded!`, { id: 'backup' });
+                    } catch (err) {
+                      toast.error('Failed to create backup', { id: 'backup' });
+                    }
+                  }}
+                  className="w-full flex items-center justify-center space-x-2 bg-purple-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+                >
+                  <CloudDownload size={18} />
+                  <span>Download Franchise Backup</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Backup Schedule Recommendation */}
+            <div className="bg-white rounded-xl shadow-sm border p-6">
+              <h3 className="font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                <Clock size={20} className="text-gray-400" />
+                <span>Recommended Backup Schedule</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                  <p className="font-medium text-green-800">Daily</p>
+                  <p className="text-sm text-green-600 mt-1">Individual franchise backups for active businesses</p>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                  <p className="font-medium text-blue-800">Weekly</p>
+                  <p className="text-sm text-blue-600 mt-1">Full platform backup every Sunday</p>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
+                  <p className="font-medium text-purple-800">Monthly</p>
+                  <p className="text-sm text-purple-600 mt-1">Archive backup to offline storage</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Restore Information */}
+            <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
+              <h3 className="font-bold text-gray-900 mb-3 flex items-center space-x-2">
+                <RotateCcw size={20} className="text-gray-400" />
+                <span>Need to Restore Data?</span>
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                If you need to restore a franchise from a backup file, please contact support or use the API endpoint. 
+                Restoration requires careful handling to avoid data conflicts.
+              </p>
+              <div className="bg-white rounded-lg p-4 border">
+                <p className="text-xs font-mono text-gray-500">
+                  POST /api/platform/backup/restore/tenant
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Upload backup JSON file to restore franchise data
+                </p>
+              </div>
+            </div>
+
+            {/* MongoDB Atlas Recommendation */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Database className="text-white" size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-green-900 mb-2">Upgrade to MongoDB Atlas for Automated Backups</h3>
+                  <p className="text-sm text-green-700 mb-3">
+                    For production-grade disaster recovery, we recommend migrating to MongoDB Atlas which provides:
+                  </p>
+                  <ul className="text-sm text-green-700 space-y-1 mb-4">
+                    <li className="flex items-center space-x-2">
+                      <CheckCircle size={14} className="text-green-600" />
+                      <span>Automated backups every 6 hours</span>
+                    </li>
+                    <li className="flex items-center space-x-2">
+                      <CheckCircle size={14} className="text-green-600" />
+                      <span>Point-in-time recovery (restore to any second)</span>
+                    </li>
+                    <li className="flex items-center space-x-2">
+                      <CheckCircle size={14} className="text-green-600" />
+                      <span>Multi-region replication for high availability</span>
+                    </li>
+                    <li className="flex items-center space-x-2">
+                      <CheckCircle size={14} className="text-green-600" />
+                      <span>99.995% uptime SLA</span>
+                    </li>
+                  </ul>
+                  <a 
+                    href="https://www.mongodb.com/atlas" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center space-x-2 text-green-700 hover:text-green-800 font-medium text-sm"
+                  >
+                    <span>Learn more about MongoDB Atlas</span>
+                    <ArrowRight size={14} />
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         )}

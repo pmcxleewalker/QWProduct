@@ -16,6 +16,7 @@ from datetime import timedelta, datetime, timezone
 import uuid
 import qrcode
 from io import BytesIO
+import json
 from passlib.context import CryptContext
 from jose import jwt
 import httpx
@@ -64,6 +65,7 @@ from middleware.tenant import (
     validate_resource_tenant, TenantQueryBuilder
 )
 from services.audit import AuditService
+from backup_service import BackupService, serialize_backup
 
 # Initialize services
 audit_service = AuditService(db)
@@ -2186,6 +2188,168 @@ async def get_platform_stats(context: TenantContext = Depends(require_platform_a
             "this_month": bookings_this_month
         }
     }
+
+
+# ==================== BACKUP & DISASTER RECOVERY ====================
+
+@api_router.get("/platform/backup/stats")
+async def get_backup_stats(context: TenantContext = Depends(require_platform_admin)):
+    """Get database statistics for backup planning."""
+    backup_service = BackupService(db)
+    return await backup_service.get_backup_stats()
+
+
+@api_router.get("/platform/backup/full")
+async def create_full_backup(context: TenantContext = Depends(require_platform_admin)):
+    """
+    Create a full platform backup.
+    Downloads all data as a JSON file.
+    WARNING: This may take time for large databases.
+    """
+    backup_service = BackupService(db)
+    backup_data = await backup_service.create_full_backup()
+    
+    # Log backup action
+    await audit_service.log(
+        tenant_id="platform",
+        user_id=context.user_id,
+        action=AuditAction.SETTINGS_UPDATE,
+        resource_type="backup",
+        resource_id="full",
+        status="success",
+        user_email=context.user_email,
+        meta={"backup_type": "full", "documents": backup_data["backup_info"]["total_documents"]}
+    )
+    
+    # Return as downloadable JSON file
+    json_content = serialize_backup(backup_data)
+    filename = f"quickwing-full-backup-{datetime.now().strftime('%Y-%m-%d-%H%M%S')}.json"
+    
+    return StreamingResponse(
+        iter([json_content]),
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@api_router.get("/platform/backup/tenant/{tenant_id}")
+async def create_tenant_backup(
+    tenant_id: str,
+    context: TenantContext = Depends(require_platform_admin)
+):
+    """
+    Create a backup for a specific franchise/tenant.
+    Downloads all tenant data as a JSON file.
+    """
+    backup_service = BackupService(db)
+    
+    try:
+        backup_data = await backup_service.create_tenant_backup(tenant_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    
+    tenant_name = backup_data.get("tenant_info", {}).get("name", tenant_id)
+    
+    # Log backup action
+    await audit_service.log(
+        tenant_id=tenant_id,
+        user_id=context.user_id,
+        action=AuditAction.SETTINGS_UPDATE,
+        resource_type="backup",
+        resource_id=tenant_id,
+        status="success",
+        user_email=context.user_email,
+        meta={"backup_type": "tenant", "tenant_name": tenant_name, "documents": backup_data["backup_info"]["total_documents"]}
+    )
+    
+    # Return as downloadable JSON file
+    json_content = serialize_backup(backup_data)
+    safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in tenant_name)
+    filename = f"quickwing-{safe_name}-backup-{datetime.now().strftime('%Y-%m-%d-%H%M%S')}.json"
+    
+    return StreamingResponse(
+        iter([json_content]),
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@api_router.post("/platform/backup/restore/tenant")
+async def restore_tenant_backup(
+    backup_file: UploadFile = File(...),
+    overwrite: bool = False,
+    context: TenantContext = Depends(require_platform_admin)
+):
+    """
+    Restore a tenant from a backup file.
+    
+    - Upload a tenant backup JSON file
+    - Set overwrite=True to replace existing data (DANGEROUS)
+    """
+    try:
+        content = await backup_file.read()
+        backup_data = json.loads(content.decode('utf-8'))
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON backup file")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error reading backup file: {str(e)}")
+    
+    backup_service = BackupService(db)
+    
+    try:
+        result = await backup_service.restore_tenant_backup(backup_data, overwrite=overwrite)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    # Log restore action
+    await audit_service.log(
+        tenant_id=result.get("tenant_id", "unknown"),
+        user_id=context.user_id,
+        action=AuditAction.SETTINGS_UPDATE,
+        resource_type="restore",
+        resource_id=result.get("tenant_id"),
+        status="success" if not result.get("errors") else "partial",
+        user_email=context.user_email,
+        meta={"restored_collections": result.get("collections_restored"), "errors": result.get("errors")}
+    )
+    
+    return result
+
+
+@api_router.get("/admin/backup/my-franchise")
+async def backup_my_franchise(context: TenantContext = Depends(require_admin)):
+    """
+    Franchise admin can backup their own franchise data.
+    """
+    if not context.tenant_id:
+        raise HTTPException(status_code=400, detail="No tenant context")
+    
+    backup_service = BackupService(db)
+    backup_data = await backup_service.create_tenant_backup(context.tenant_id)
+    
+    tenant_name = backup_data.get("tenant_info", {}).get("name", "franchise")
+    
+    # Log backup action
+    await audit_service.log(
+        tenant_id=context.tenant_id,
+        user_id=context.user_id,
+        action=AuditAction.SETTINGS_UPDATE,
+        resource_type="backup",
+        resource_id=context.tenant_id,
+        status="success",
+        user_email=context.user_email,
+        meta={"backup_type": "franchise_admin", "documents": backup_data["backup_info"]["total_documents"]}
+    )
+    
+    json_content = serialize_backup(backup_data)
+    safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in tenant_name)
+    filename = f"quickwing-{safe_name}-backup-{datetime.now().strftime('%Y-%m-%d-%H%M%S')}.json"
+    
+    return StreamingResponse(
+        iter([json_content]),
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 
 @api_router.get("/platform/audit-log")

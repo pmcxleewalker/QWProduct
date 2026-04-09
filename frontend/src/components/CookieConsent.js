@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Cookie, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const CookieConsent = () => {
   const [showBanner, setShowBanner] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     // Check if user has already made a choice
@@ -15,12 +16,32 @@ const CookieConsent = () => {
     }
   }, []);
 
+  // Hide cookie banner inside franchise dashboards (authenticated areas)
+  // Only show on public pages like landing, login, privacy policy
+  const isPublicPage = () => {
+    const path = location.pathname;
+    // Public pages where cookie banner should show
+    const publicPaths = ['/', '/login', '/privacy-policy', '/terms'];
+    
+    // Check if it's a tenant login page
+    if (path.match(/^\/[^/]+\/login$/)) return true;
+    
+    // Check if it's a public mileage page
+    if (path.includes('/vehicle/') && path.includes('/mileage')) return true;
+    
+    // Check if it's the root or other public paths
+    if (publicPaths.includes(path)) return true;
+    
+    // All other paths are considered authenticated/franchise areas
+    return false;
+  };
+
   const acceptCookies = () => {
     localStorage.setItem('cookieConsent', JSON.stringify({
       accepted: true,
       timestamp: new Date().toISOString(),
       essential: true,
-      analytics: false // We don't use analytics cookies
+      analytics: false
     }));
     setShowBanner(false);
   };
@@ -29,13 +50,14 @@ const CookieConsent = () => {
     localStorage.setItem('cookieConsent', JSON.stringify({
       accepted: false,
       timestamp: new Date().toISOString(),
-      essential: true, // Essential cookies always needed
+      essential: true,
       analytics: false
     }));
     setShowBanner(false);
   };
 
-  if (!showBanner) return null;
+  // Don't show banner if already consented, or if inside franchise dashboard
+  if (!showBanner || !isPublicPage()) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-slide-up">

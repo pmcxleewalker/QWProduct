@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Plus, X, Calendar as CalendarIcon, MapPin } from 'lucide-react';
 import axios from 'axios';
 
@@ -10,7 +11,8 @@ for (let hour = 7; hour <= 22; hour++) {
   TIME_SLOTS.push(`${hour.toString().padStart(2, '0')}:00`);
 }
 
-const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tenantSlug, users = [] }) => {
+const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tenantSlug, users = [], redirectToBookings = false }) => {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('day'); // day, week, month
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -275,6 +277,15 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
       <div className="px-4 pb-4">
         <button
           onClick={() => {
+            // If redirectToBookings is enabled, navigate to the main bookings page
+            if (redirectToBookings) {
+              // Navigate to bookings page with the car pre-selected
+              const bookingsPath = tenantSlug ? `/${tenantSlug}/bookings` : '/bookings';
+              navigate(bookingsPath, { state: { selectedCarId: vehicle.id } });
+              return;
+            }
+            
+            // Otherwise, show the inline booking modal
             setSelectedSlot(null);
             const now = new Date();
             now.setMinutes(0, 0, 0);

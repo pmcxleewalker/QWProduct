@@ -1,11 +1,9 @@
 import React, { useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { X, Download, Printer, Car } from 'lucide-react';
-import { useParams } from 'react-router-dom';
 
-const VehicleQRCode = ({ vehicle, isOpen, onClose }) => {
+const VehicleQRCode = ({ vehicle, isOpen, onClose, tenantSlug }) => {
   const qrRef = useRef(null);
-  const { tenantSlug } = useParams();
   
   if (!isOpen || !vehicle) return null;
 
@@ -13,7 +11,10 @@ const VehicleQRCode = ({ vehicle, isOpen, onClose }) => {
   const baseUrl = process.env.REACT_APP_FRONTEND_URL || window.location.origin;
   
   // Generate QR code value - URL to mileage log page
-  const qrValue = `${baseUrl}/${tenantSlug}/vehicle/${vehicle.id}/mileage`;
+  // tenantSlug should be passed as a prop from the parent component
+  const qrValue = tenantSlug 
+    ? `${baseUrl}/${tenantSlug}/vehicle/${vehicle.id}/mileage`
+    : `${baseUrl}/vehicle/${vehicle.id}/mileage`; // Fallback if no tenant slug
 
   const handleDownload = () => {
     const svg = qrRef.current?.querySelector('svg');

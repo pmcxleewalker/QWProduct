@@ -5,6 +5,20 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 
 ## Recent Changes (April 2026)
 
+### Bug Fixes - April 10, 2026
+**QR Code Fix:**
+- Fixed `VehicleQRCode.js` component to accept `tenantSlug` as a prop instead of using `useParams()`
+- This fix ensures the QR code URL is correctly generated even when the user is on routes without the tenant slug in the URL (e.g., `/dashboard`)
+- Updated `TenantDashboard.js` to pass `activeTenant?.tenant_slug` to the VehicleQRCode component
+- QR codes now correctly encode URLs like: `{baseUrl}/{tenant_slug}/vehicle/{vehicle_id}/mileage`
+
+**"+ Book" Button Redirect:**
+- Modified `CarBookingCalendar.js` to support a `redirectToBookings` prop
+- When `redirectToBookings={true}`, clicking the "+ Book" button navigates to the main bookings page instead of opening an inline modal
+- The navigation uses the correct tenant-prefixed route: `/{tenant_slug}/bookings`
+- State is passed with `selectedCarId` for potential pre-selection functionality
+- Updated `TenantDashboard.js` Fleet > Car Calendars section to use `redirectToBookings={true}`
+
 ### Feature Updates - April 7, 2026
 **Removed:**
 - Maps features removed entirely

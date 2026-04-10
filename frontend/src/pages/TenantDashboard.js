@@ -1213,6 +1213,7 @@ const TenantDashboard = () => {
                         onBookingCreated={() => fetchData()}
                         isAdmin={isAdmin}
                         tenantSlug={activeTenant?.tenant_slug}
+                        redirectToBookings={true}
                       />
                     ))}
                   </div>
@@ -2420,6 +2421,7 @@ const TenantDashboard = () => {
           setShowQRCode(false);
           setSelectedVehicleForQR(null);
         }}
+        tenantSlug={activeTenant?.tenant_slug}
       />
 
       {/* Edit Vehicle Modal */}

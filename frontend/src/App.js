@@ -223,9 +223,27 @@ const TenantRoutes = () => {
             setAccessDenied(!isPlatformAdminUser);
           }
         } else if (isPlatformAdminUser) {
-          // Platform admin without direct membership - allow access anyway
-          // They can impersonate any tenant
-          setAccessDenied(false);
+          // Platform admin without direct membership - need to find tenant by slug and impersonate
+          try {
+            const API = process.env.REACT_APP_BACKEND_URL + '/api';
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            const response = await fetch(`${API}/tenants/by-slug/${tenantSlug}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+              const tenantData = await response.json();
+              // Select the tenant to get a proper tenant-scoped token
+              await selectTenant(tenantData.id);
+              setAccessDenied(false);
+            } else {
+              console.error('Tenant not found by slug');
+              setAccessDenied(true);
+            }
+          } catch (err) {
+            console.error('Failed to lookup and select tenant:', err);
+            // Still allow access for platform admins, but log the issue
+            setAccessDenied(false);
+          }
         } else {
           // Regular user doesn't have membership to this tenant
           setAccessDenied(true);

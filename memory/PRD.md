@@ -26,6 +26,7 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 - Updated `TenantDashboard.js` to pass `activeTenant?.tenant_slug` to the VehicleQRCode component
 - QR codes now correctly encode URLs like: `{baseUrl}/{tenant_slug}/vehicle/{vehicle_id}/mileage`
 - **Admin Panel QR Fix**: Fixed QR download in Admin Panel > Fleet Vehicles. The download function now uses axios with proper Authorization headers and blob response type, instead of trying to download directly via a link (which didn't send auth headers)
+- **Critical: QR codes scanning to wrong franchise fix**: When platform admins (super_admin) navigated to a tenant route without direct membership, they weren't getting a tenant-scoped token. This caused QR codes to generate with the wrong/missing tenant slug. Fixed by auto-selecting tenant by slug lookup when platform admins navigate to a franchise route.
 
 **"+ Book" Button Redirect:**
 - Modified `CarBookingCalendar.js` to support a `redirectToBookings` prop

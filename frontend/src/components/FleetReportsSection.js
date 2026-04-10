@@ -2,22 +2,82 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Car, Calendar, Clock, Download, TrendingUp, MapPin,
   PieChart, BarChart3, AlertCircle, CheckCircle, Lock,
-  Shield, Gauge, AlertTriangle
+  Shield, Gauge, AlertTriangle, ChevronDown, ChevronUp,
+  List, FileSpreadsheet, User
 } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-const FleetReportsSection = ({ onRefresh, vehicles = [], complianceSettings = {} }) => {
+// Collapsible Section Component
+const CollapsibleSection = ({ title, icon: Icon, iconColor = 'text-blue-600', badge, badgeColor, headerBgClass = 'bg-gray-50', children, defaultOpen = true }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  
+  return (
+    <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+      <div 
+        className={`px-4 py-3 border-b ${headerBgClass} cursor-pointer hover:bg-opacity-80 transition-colors`}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-gray-900 flex items-center">
+            {Icon && <Icon size={18} className={`mr-2 ${iconColor}`} />}
+            {title}
+            {badge && (
+              <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${badgeColor}`}>
+                {badge}
+              </span>
+            )}
+          </h3>
+          <button className="p-1 hover:bg-white/50 rounded transition-colors">
+            {isOpen ? <ChevronUp size={18} className="text-gray-500" /> : <ChevronDown size={18} className="text-gray-500" />}
+          </button>
+        </div>
+      </div>
+      {isOpen && children}
+    </div>
+  );
+};
+
+const FleetReportsSection = ({ onRefresh, vehicles = [], complianceSettings = {}, bookings = [] }) => {
   const [reports, setReports] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  
+  // All Bookings List state
+  const [bookingsFromDate, setBookingsFromDate] = useState('');
+  const [bookingsToDate, setBookingsToDate] = useState('');
+  const [filteredBookings, setFilteredBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  
+  // Section collapse states
+  const [sectionsOpen, setSectionsOpen] = useState({
+    summary: true,
+    mostBooked: true,
+    availability: true,
+    compliance: true,
+    locations: true,
+    allBookings: true
+  });
 
   useEffect(() => {
     fetchReports();
+    // Set default date range for bookings (last 30 days)
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    setBookingsFromDate(thirtyDaysAgo.toISOString().split('T')[0]);
+    setBookingsToDate(today.toISOString().split('T')[0]);
   }, []);
+  
+  // Fetch bookings when date range changes or vehicles are loaded
+  useEffect(() => {
+    if (bookingsFromDate && bookingsToDate && vehicles.length > 0) {
+      fetchAllBookings();
+    }
+  }, [bookingsFromDate, bookingsToDate, vehicles]);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -49,6 +109,77 @@ const FleetReportsSection = ({ onRefresh, vehicles = [], complianceSettings = {}
 
   const applyDates = () => {
     fetchReports();
+  };
+  
+  // Fetch all bookings for the list
+  const fetchAllBookings = async () => {
+    setBookingsLoading(true);
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      let url = `${API}/bookings`;
+      const params = new URLSearchParams();
+      if (bookingsFromDate) params.append('from_date', bookingsFromDate);
+      if (bookingsToDate) params.append('to_date', bookingsToDate);
+      if (params.toString()) url += `?${params.toString()}`;
+      
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Map vehicle names to bookings using the passed vehicles prop
+      const vehicleMap = {};
+      vehicles.forEach(v => {
+        vehicleMap[v.id] = { name: v.name, registration: v.registration };
+      });
+      
+      const bookingsWithNames = (response.data || []).map(booking => ({
+        ...booking,
+        car_name: vehicleMap[booking.car_id]?.name || 'Unknown Vehicle',
+        car_registration: vehicleMap[booking.car_id]?.registration || ''
+      }));
+      
+      setFilteredBookings(bookingsWithNames);
+    } catch (err) {
+      console.error('Failed to load bookings:', err);
+      setFilteredBookings([]);
+    } finally {
+      setBookingsLoading(false);
+    }
+  };
+  
+  // Export bookings to CSV
+  const exportBookingsCSV = () => {
+    if (filteredBookings.length === 0) return;
+    
+    // Create CSV content
+    const headers = ['Booking ID', 'User', 'Vehicle', 'Registration', 'Start Time', 'End Time', 'Status', 'Notes', 'Start Eircode', 'End Eircode', 'Created At'];
+    const rows = filteredBookings.map(booking => [
+      booking.id || '',
+      booking.user_name || '',
+      booking.car_name || booking.car_id || '',
+      booking.car_registration || '',
+      booking.start_time ? new Date(booking.start_time).toLocaleString() : '',
+      booking.end_time ? new Date(booking.end_time).toLocaleString() : '',
+      booking.status || 'confirmed',
+      (booking.notes || '').replace(/,/g, ';').replace(/\n/g, ' '),
+      booking.start_eircode || '',
+      booking.end_eircode || '',
+      booking.created_at ? new Date(booking.created_at).toLocaleString() : ''
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+    
+    // Download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `all-bookings-${bookingsFromDate}-to-${bookingsToDate}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) {
@@ -200,67 +331,203 @@ const FleetReportsSection = ({ onRefresh, vehicles = [], complianceSettings = {}
         </div>
       </div>
 
-      {/* Summary Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-5 shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Vehicles</p>
-              <p className="text-3xl font-bold text-gray-900">{summary.total_vehicles}</p>
+      {/* Summary Stats Cards - Collapsible */}
+      <CollapsibleSection 
+        title="Summary Statistics" 
+        icon={BarChart3} 
+        iconColor="text-blue-600"
+        defaultOpen={true}
+      >
+        <div className="p-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-gray-50 rounded-xl p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Total Vehicles</p>
+                  <p className="text-3xl font-bold text-gray-900">{summary.total_vehicles}</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Car className="text-blue-600" size={24} />
+                </div>
+              </div>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Car className="text-blue-600" size={24} />
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white rounded-xl p-5 shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Bookings</p>
-              <p className="text-3xl font-bold text-gray-900">{summary.total_bookings.toLocaleString()}</p>
+            <div className="bg-gray-50 rounded-xl p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Total Bookings</p>
+                  <p className="text-3xl font-bold text-gray-900">{summary.total_bookings.toLocaleString()}</p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Calendar className="text-green-600" size={24} />
+                </div>
+              </div>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <Calendar className="text-green-600" size={24} />
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white rounded-xl p-5 shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Pending Bookings</p>
-              <p className="text-3xl font-bold text-orange-600">{summary.pending_bookings}</p>
+            <div className="bg-gray-50 rounded-xl p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Pending Bookings</p>
+                  <p className="text-3xl font-bold text-orange-600">{summary.pending_bookings}</p>
+                </div>
+                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <Clock className="text-orange-600" size={24} />
+                </div>
+              </div>
             </div>
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Clock className="text-orange-600" size={24} />
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white rounded-xl p-5 shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Blocked Cars</p>
-              <p className="text-3xl font-bold text-red-600">{summary.blocked_cars}</p>
-            </div>
-            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-              <Lock className="text-red-600" size={24} />
+            <div className="bg-gray-50 rounded-xl p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Blocked Cars</p>
+                  <p className="text-3xl font-bold text-red-600">{summary.blocked_cars}</p>
+                </div>
+                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                  <Lock className="text-red-600" size={24} />
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </CollapsibleSection>
+
+      {/* All Bookings List - NEW SECTION */}
+      <CollapsibleSection 
+        title="All Bookings List" 
+        icon={List} 
+        iconColor="text-indigo-600"
+        badge={filteredBookings.length > 0 ? `${filteredBookings.length} bookings` : null}
+        badgeColor="bg-indigo-100 text-indigo-700"
+        defaultOpen={true}
+      >
+        <div className="p-4">
+          {/* Date Range Filters */}
+          <div className="flex flex-wrap items-center gap-3 mb-4 pb-4 border-b">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">From:</label>
+              <input
+                type="date"
+                value={bookingsFromDate}
+                onChange={(e) => setBookingsFromDate(e.target.value)}
+                className="px-3 py-1.5 border rounded-lg text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">To:</label>
+              <input
+                type="date"
+                value={bookingsToDate}
+                onChange={(e) => setBookingsToDate(e.target.value)}
+                className="px-3 py-1.5 border rounded-lg text-sm"
+              />
+            </div>
+            <button
+              onClick={fetchAllBookings}
+              className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
+            >
+              Apply Filter
+            </button>
+            <button
+              onClick={exportBookingsCSV}
+              disabled={filteredBookings.length === 0}
+              className="px-4 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+            >
+              <FileSpreadsheet size={16} />
+              <span>Export CSV</span>
+            </button>
+          </div>
+          
+          {/* Bookings Table */}
+          {bookingsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+          ) : filteredBookings.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <List size={40} className="mx-auto mb-3 opacity-50" />
+              <p>No bookings found for the selected date range</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700">User</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700">Vehicle</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700">Start Time</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700">End Time</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700">Status</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700">Route</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredBookings.slice(0, 50).map((booking, idx) => (
+                    <tr key={booking.id || idx} className="hover:bg-gray-50">
+                      <td className="px-3 py-2">
+                        <div className="flex items-center space-x-2">
+                          <User size={14} className="text-gray-400" />
+                          <span className="font-medium text-gray-900">{booking.user_name || 'Unknown'}</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div>
+                          <p className="font-medium text-gray-900">{booking.car_name || 'N/A'}</p>
+                          <p className="text-xs text-gray-500">{booking.car_registration || ''}</p>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-gray-600">
+                        {booking.start_time ? new Date(booking.start_time).toLocaleString('en-IE', {
+                          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                        }) : '-'}
+                      </td>
+                      <td className="px-3 py-2 text-gray-600">
+                        {booking.end_time ? new Date(booking.end_time).toLocaleString('en-IE', {
+                          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                        }) : '-'}
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
+                          booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                          booking.status === 'pending' || booking.status === 'pending_approval' ? 'bg-amber-100 text-amber-700' :
+                          booking.status === 'cancelled' || booking.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {booking.status || 'confirmed'}
+                        </span>
+                        {booking.is_recurring && (
+                          <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+                            Recurring
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-gray-600 text-xs">
+                        {booking.start_eircode && booking.end_eircode ? (
+                          <span>{booking.start_eircode} → {booking.end_eircode}</span>
+                        ) : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filteredBookings.length > 50 && (
+                <p className="text-center text-sm text-gray-500 mt-3 pt-3 border-t">
+                  Showing 50 of {filteredBookings.length} bookings. Export CSV to see all.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </CollapsibleSection>
 
       {/* Most Booked Cars and Daily Availability */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Most Booked Cars */}
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="px-4 py-3 border-b bg-gray-50">
-            <h3 className="font-semibold text-gray-900 flex items-center">
-              <TrendingUp size={18} className="mr-2 text-green-600" />
-              Most Booked Cars (Ranked)
-            </h3>
-          </div>
+        {/* Most Booked Cars - Collapsible */}
+        <CollapsibleSection 
+          title="Most Booked Cars (Ranked)" 
+          icon={TrendingUp} 
+          iconColor="text-green-600"
+          defaultOpen={true}
+        >
           <div className="p-4">
             {most_booked_cars.length === 0 ? (
               <p className="text-center text-gray-500 py-4">No booking data available</p>
@@ -294,18 +561,16 @@ const FleetReportsSection = ({ onRefresh, vehicles = [], complianceSettings = {}
               </div>
             )}
           </div>
-        </div>
+        </CollapsibleSection>
 
-        {/* Daily Availability Report */}
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="px-4 py-3 border-b bg-gray-50">
-            <h3 className="font-semibold text-gray-900 flex items-center">
-              <PieChart size={18} className="mr-2 text-purple-600" />
-              Daily Availability Report
-            </h3>
-            <p className="text-xs text-gray-500 mt-1">{daily_availability.date}</p>
-          </div>
-          
+        {/* Daily Availability Report - Collapsible */}
+        <CollapsibleSection 
+          title="Daily Availability Report" 
+          icon={PieChart} 
+          iconColor="text-purple-600"
+          defaultOpen={true}
+        >
+          <div className="px-4 py-2 bg-gray-50 text-xs text-gray-500">{daily_availability.date}</div>
           <div className="p-4">
             {/* Summary Cards */}
             <div className="grid grid-cols-4 gap-2 mb-4">
@@ -400,32 +665,23 @@ const FleetReportsSection = ({ onRefresh, vehicles = [], complianceSettings = {}
               </div>
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
       </div>
 
-      {/* Compliance Summary */}
+      {/* Compliance Summary - Collapsible */}
       {vehicles.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className={`px-4 py-3 border-b ${
-            (complianceSummary.taxExpired + complianceSummary.nctExpired + complianceSummary.serviceOverdue) > 0 
-              ? 'bg-red-50' : totalIssues > 0 ? 'bg-amber-50' : 'bg-green-50'
-          }`}>
-            <h3 className="font-semibold text-gray-900 flex items-center">
-              <AlertTriangle size={18} className={`mr-2 ${
-                (complianceSummary.taxExpired + complianceSummary.nctExpired + complianceSummary.serviceOverdue) > 0 
-                  ? 'text-red-500' : totalIssues > 0 ? 'text-amber-500' : 'text-green-500'
-              }`} />
-              Compliance Report
-              {totalIssues > 0 && (
-                <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
-                  (complianceSummary.taxExpired + complianceSummary.nctExpired + complianceSummary.serviceOverdue) > 0 
-                    ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-800'
-                }`}>
-                  {totalIssues} issues
-                </span>
-              )}
-            </h3>
-          </div>
+        <CollapsibleSection 
+          title="Compliance Report" 
+          icon={AlertTriangle} 
+          iconColor={(complianceSummary.taxExpired + complianceSummary.nctExpired + complianceSummary.serviceOverdue) > 0 
+            ? 'text-red-500' : totalIssues > 0 ? 'text-amber-500' : 'text-green-500'}
+          badge={totalIssues > 0 ? `${totalIssues} issues` : null}
+          badgeColor={(complianceSummary.taxExpired + complianceSummary.nctExpired + complianceSummary.serviceOverdue) > 0 
+            ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-800'}
+          headerBgClass={(complianceSummary.taxExpired + complianceSummary.nctExpired + complianceSummary.serviceOverdue) > 0 
+            ? 'bg-red-50' : totalIssues > 0 ? 'bg-amber-50' : 'bg-green-50'}
+          defaultOpen={true}
+        >
           <div className="p-4">
             {/* Compliance Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -525,18 +781,17 @@ const FleetReportsSection = ({ onRefresh, vehicles = [], complianceSettings = {}
               Alert settings: Tax/NCT {settings.tax_warning_days} days notice | Service {settings.service_warning_km}km notice
             </p>
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
-      {/* By Location Summary */}
+      {/* By Location Summary - Collapsible */}
       {location_summary && location_summary.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="px-4 py-3 border-b bg-gray-50">
-            <h3 className="font-semibold text-gray-900 flex items-center">
-              <MapPin size={18} className="mr-2 text-red-500" />
-              By Location Summary
-            </h3>
-          </div>
+        <CollapsibleSection 
+          title="By Location Summary" 
+          icon={MapPin} 
+          iconColor="text-red-500"
+          defaultOpen={true}
+        >
           <div className="p-4">
             <div className="space-y-3">
               {location_summary.map((loc) => (
@@ -583,7 +838,7 @@ const FleetReportsSection = ({ onRefresh, vehicles = [], complianceSettings = {}
               ))}
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
       )}
     </div>
   );

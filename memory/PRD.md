@@ -5,6 +5,20 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 
 ## Recent Changes (April 2026)
 
+### New Features - April 10, 2026
+**All Bookings List Report:**
+- Added new "All Bookings List" section in Fleet Reports with:
+  - Custom date range selector (defaults to last 30 days)
+  - CSV export functionality with all booking details
+  - Full table view with User, Vehicle, Start Time, End Time, Status, Route
+  - Badge showing total booking count
+  
+**Collapsible Report Sections:**
+- All report sections now have a collapsible feature with chevron icon in top right
+- Sections include: Summary Statistics, All Bookings List, Most Booked Cars, Daily Availability Report, Compliance Report, By Location Summary
+- Click header to toggle section open/closed
+- State persists while on the page
+
 ### Bug Fixes - April 10, 2026
 **QR Code Fix:**
 - Fixed `VehicleQRCode.js` component to accept `tenantSlug` as a prop instead of using `useParams()`

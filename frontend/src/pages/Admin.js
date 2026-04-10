@@ -1,10 +1,13 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import axios from 'axios';
 import { carAPI, assistanceAPI, userAPI, bookingAPI, messageAPI, todoAPI, reportsAPI, planAPI } from '../api/api';
 import { toast } from 'sonner';
 import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlock, Clock, Check, X, MessageSquare, ListTodo, Settings, Key, BarChart3, Download, TrendingUp, TrendingDown, Calendar as CalendarIcon, PieChart, List, MapPin, AlertCircle, Crown, ShieldAlert, ChevronDown, ChevronUp, Activity, Map, BookOpen, HelpCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AdminTraining from '../components/AdminTraining';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 // Lazy load the map component to avoid loading Leaflet until needed
 const BookingLocationsMap = lazy(() => import('../components/BookingLocationsMap'));
@@ -860,14 +863,29 @@ const Admin = () => {
     }
   };
 
-  const handleDownloadQR = (carId, carName) => {
-    const qrUrl = carAPI.getQRCode(carId);
-    const link = document.createElement('a');
-    link.href = qrUrl;
-    link.download = `${carName}-QRCode.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadQR = async (carId, carName) => {
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const response = await axios.get(`${API}/vehicles/${carId}/qr`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      
+      // Create blob URL and download
+      const blob = new Blob([response.data], { type: 'image/png' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${carName}-QRCode.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success(`QR code downloaded for ${carName}`);
+    } catch (err) {
+      console.error('Failed to download QR code:', err);
+      toast.error('Failed to download QR code');
+    }
   };
 
   if (loading) {

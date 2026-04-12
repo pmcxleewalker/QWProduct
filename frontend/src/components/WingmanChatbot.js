@@ -22,7 +22,7 @@ const WingmanChatbot = () => {
       setMessages([
         {
           role: 'assistant',
-          content: "Hi there! I'm Wingman, your Quick Wing assistant. I can help you learn about our fleet management platform, answer questions about features, or connect you with our team. How can I help you today?"
+          content: "Hey! 👋 I'm Wingman from Quick Wing. We help fleet managers cut admin time by 70% with automated compliance tracking and zero double-bookings.\n\nQuick question: How many vehicles are you currently managing?"
         }
       ]);
     }

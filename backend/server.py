@@ -8622,7 +8622,7 @@ async def chatbot_message(chat_data: ChatMessage):
 
 @api_router.post("/chatbot/capture-lead")
 async def capture_lead(lead_info: LeadInfo):
-    """Capture lead information and send notification email"""
+    """Capture lead information and send notification email with full transcript"""
     try:
         # Store lead in database
         lead_data = {
@@ -8638,6 +8638,39 @@ async def capture_lead(lead_info: LeadInfo):
         }
         
         await db.chatbot_leads.insert_one(lead_data)
+        
+        # Get full conversation transcript
+        conversation = await db.chatbot_conversations.find_one(
+            {"session_id": lead_info.session_id},
+            {"_id": 0}
+        )
+        
+        # Build transcript HTML
+        transcript_html = ""
+        if conversation and conversation.get("messages"):
+            for msg in conversation["messages"]:
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                timestamp = msg.get("timestamp", "")
+                
+                if role == "user":
+                    transcript_html += f'''
+                    <div style="margin-bottom: 12px; text-align: right;">
+                        <div style="display: inline-block; background: #2563eb; color: white; padding: 10px 14px; border-radius: 16px 16px 4px 16px; max-width: 80%; text-align: left;">
+                            <p style="margin: 0; font-size: 14px;">{content}</p>
+                        </div>
+                        <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8;">Visitor</p>
+                    </div>
+                    '''
+                else:
+                    transcript_html += f'''
+                    <div style="margin-bottom: 12px;">
+                        <div style="display: inline-block; background: #f1f5f9; color: #1e293b; padding: 10px 14px; border-radius: 16px 16px 16px 4px; max-width: 80%;">
+                            <p style="margin: 0; font-size: 14px;">{content}</p>
+                        </div>
+                        <p style="margin: 4px 0 0 0; font-size: 10px; color: #94a3b8;">Wingman AI</p>
+                    </div>
+                    '''
         
         # Update conversation with lead info
         await db.chatbot_conversations.update_one(
@@ -8655,42 +8688,56 @@ async def capture_lead(lead_info: LeadInfo):
             }
         )
         
-        # Send notification email
+        # Send notification email with full transcript
         if resend.api_key and LEAD_NOTIFICATION_EMAIL:
             html_content = f"""
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 20px; border-radius: 8px 8px 0 0;">
                     <h1 style="color: white; margin: 0; font-size: 24px;">🚀 New Lead from Wingman Chatbot</h1>
+                    <p style="color: #93c5fd; margin: 8px 0 0 0; font-size: 14px;">Quick Wing Fleet Management</p>
                 </div>
-                <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
-                    <h2 style="color: #1e293b; margin-top: 0;">Contact Information</h2>
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tr>
-                            <td style="padding: 8px 0; color: #64748b; width: 100px;"><strong>Name:</strong></td>
-                            <td style="padding: 8px 0; color: #1e293b;">{lead_info.name or 'Not provided'}</td>
+                <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none;">
+                    <h2 style="color: #1e293b; margin-top: 0; font-size: 18px;">📋 Lead Information</h2>
+                    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 12px 16px; color: #64748b; width: 100px; font-weight: 600;">Name</td>
+                            <td style="padding: 12px 16px; color: #1e293b; font-weight: 500;">{lead_info.name or 'Not provided'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 12px 16px; color: #64748b; font-weight: 600;">Company</td>
+                            <td style="padding: 12px 16px; color: #1e293b; font-weight: 500;">{lead_info.company or 'Not provided'}</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 12px 16px; color: #64748b; font-weight: 600;">Email</td>
+                            <td style="padding: 12px 16px; color: #1e293b;"><a href="mailto:{lead_info.email}" style="color: #2563eb; text-decoration: none;">{lead_info.email or 'Not provided'}</a></td>
                         </tr>
                         <tr>
-                            <td style="padding: 8px 0; color: #64748b;"><strong>Company:</strong></td>
-                            <td style="padding: 8px 0; color: #1e293b;">{lead_info.company or 'Not provided'}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px 0; color: #64748b;"><strong>Email:</strong></td>
-                            <td style="padding: 8px 0; color: #1e293b;">{lead_info.email or 'Not provided'}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px 0; color: #64748b;"><strong>Phone:</strong></td>
-                            <td style="padding: 8px 0; color: #1e293b;">{lead_info.phone or 'Not provided'}</td>
+                            <td style="padding: 12px 16px; color: #64748b; font-weight: 600;">Phone</td>
+                            <td style="padding: 12px 16px; color: #1e293b;"><a href="tel:{lead_info.phone}" style="color: #2563eb; text-decoration: none;">{lead_info.phone or 'Not provided'}</a></td>
                         </tr>
                     </table>
                     
-                    <div style="margin-top: 20px; padding: 16px; background: white; border-radius: 8px; border-left: 4px solid #2563eb;">
-                        <h3 style="color: #1e293b; margin-top: 0; font-size: 14px;">Initial Message:</h3>
-                        <p style="color: #475569; margin-bottom: 0; white-space: pre-wrap;">{lead_info.initial_message or 'No message provided'}</p>
+                    <h2 style="color: #1e293b; margin-top: 24px; font-size: 18px;">💬 Full Conversation Transcript</h2>
+                    <div style="background: white; border-radius: 8px; padding: 16px; border: 1px solid #e2e8f0;">
+                        {transcript_html if transcript_html else '<p style="color: #94a3b8; font-style: italic;">No messages recorded</p>'}
                     </div>
                     
-                    <p style="color: #64748b; font-size: 12px; margin-top: 24px; margin-bottom: 0;">
-                        Received at: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}<br>
-                        Session ID: {lead_info.session_id}
+                    <div style="margin-top: 24px; padding: 16px; background: #eff6ff; border-radius: 8px; border-left: 4px solid #2563eb;">
+                        <h3 style="color: #1e293b; margin: 0 0 8px 0; font-size: 14px;">💡 Quick Actions</h3>
+                        <p style="margin: 0; font-size: 13px; color: #475569;">
+                            Reply to this lead: <a href="mailto:{lead_info.email}?subject=Re: Your Quick Wing Inquiry" style="color: #2563eb;">Send Email</a>
+                            {f' | <a href="tel:{lead_info.phone}" style="color: #2563eb;">Call Now</a>' if lead_info.phone else ''}
+                        </p>
+                    </div>
+                    
+                    <p style="color: #94a3b8; font-size: 11px; margin-top: 24px; margin-bottom: 0; text-align: center;">
+                        Received: {datetime.now(timezone.utc).strftime('%B %d, %Y at %H:%M UTC')}<br>
+                        Session: {lead_info.session_id}
+                    </p>
+                </div>
+                <div style="background: #1e293b; padding: 16px; text-align: center; border-radius: 0 0 8px 8px;">
+                    <p style="color: #94a3b8; margin: 0; font-size: 12px;">
+                        Powered by <span style="color: white; font-weight: 600;">Quick Wing</span> Wingman AI
                     </p>
                 </div>
             </div>

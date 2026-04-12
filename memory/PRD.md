@@ -35,6 +35,13 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 - Changed status exclusion from `"rejected"` to `["rejected", "cancelled"]` for accurate availability
 - Clear error messages: "Vehicle is already booked at this time by {user} (starts: {time})"
 
+**Smart Car Recommendations on Conflict:**
+- Added new endpoint `GET /api/bookings/check-availability` that returns conflict info AND available alternatives
+- When user selects a car/time that conflicts, the system now recommends available cars
+- Frontend shows clickable green buttons for each available car (e.g., "Van 2 (STD-002)")
+- Clicking a recommended car auto-selects it in the form
+- Also shows "No other cars available" message if all cars are booked at that time
+
 **"+ Book" Button Redirect:**
 - Modified `CarBookingCalendar.js` to support a `redirectToBookings` prop
 - When `redirectToBookings={true}`, clicking the "+ Book" button navigates to the main bookings page instead of opening an inline modal

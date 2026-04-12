@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { bookingAPI, carAPI } from '../api/api';
-import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp, Minus, AlertTriangle, Users, Map } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp, Minus, AlertTriangle, Users, Map, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import EditBookingModal from '../components/EditBookingModal';
 import CarAvailabilityCard from '../components/CarAvailabilityCard';
@@ -93,8 +93,8 @@ const Bookings = () => {
     }
   };
 
-  // Check for booking conflicts when car or time changes
-  const checkBookingConflicts = (carId, startTime, endTime) => {
+  // Check for booking conflicts when car or time changes - now with API-based recommendations
+  const checkBookingConflicts = async (carId, startTime, endTime) => {
     if (!carId || !startTime || !endTime) {
       setConflictWarning(null);
       return;
@@ -109,32 +109,61 @@ const Bookings = () => {
         return;
       }
 
-      // Find existing bookings for this car that overlap with the requested time
-      const conflictingBookings = bookings.filter(booking => {
-        if (booking.car_id !== carId) return false;
-        if (booking.status === 'rejected') return false;
+      // Use the API to check availability and get recommendations
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/bookings/check-availability?car_id=${carId}&start_time=${startTime}&end_time=${endTime}`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
         
-        const existingStart = new Date(booking.start_time);
-        const existingEnd = new Date(booking.end_time);
-        
-        // Check for overlap: new booking starts before existing ends AND new booking ends after existing starts
-        return newStart < existingEnd && newEnd > existingStart;
-      });
-
-      if (conflictingBookings.length > 0) {
-        const conflicts = conflictingBookings.map(b => ({
-          user: b.user_name,
-          start: formatTime(b.start_time),
-          end: formatTime(b.end_time),
-          date: new Date(b.start_time).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' }),
-          status: b.status
-        }));
-        setConflictWarning({
-          carName: cars.find(c => c.id === carId)?.name || 'Unknown',
-          conflicts
-        });
+        if (!data.available && data.conflict) {
+          setConflictWarning({
+            carName: data.requested_car?.name || cars.find(c => c.id === carId)?.name || 'Unknown',
+            conflicts: [{
+              user: data.conflict.booked_by,
+              start: formatTime(data.conflict.start_time),
+              end: formatTime(data.conflict.end_time),
+              date: new Date(data.conflict.start_time).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' }),
+              status: 'confirmed'
+            }],
+            recommendedCars: data.recommended_cars || [],
+            totalAvailable: data.total_available || 0
+          });
+        } else {
+          setConflictWarning(null);
+        }
       } else {
-        setConflictWarning(null);
+        // Fallback to local check if API fails
+        const conflictingBookings = bookings.filter(booking => {
+          if (booking.car_id !== carId) return false;
+          if (booking.status === 'rejected' || booking.status === 'cancelled') return false;
+          
+          const existingStart = new Date(booking.start_time);
+          const existingEnd = new Date(booking.end_time);
+          
+          return newStart < existingEnd && newEnd > existingStart;
+        });
+
+        if (conflictingBookings.length > 0) {
+          const conflicts = conflictingBookings.map(b => ({
+            user: b.user_name,
+            start: formatTime(b.start_time),
+            end: formatTime(b.end_time),
+            date: new Date(b.start_time).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' }),
+            status: b.status
+          }));
+          setConflictWarning({
+            carName: cars.find(c => c.id === carId)?.name || 'Unknown',
+            conflicts,
+            recommendedCars: [],
+            totalAvailable: 0
+          });
+        } else {
+          setConflictWarning(null);
+        }
       }
     } catch (error) {
       console.error('Error checking conflicts:', error);
@@ -255,7 +284,24 @@ const Bookings = () => {
       // Handle error - detail can be string or array of validation errors
       let errorMsg = 'Failed to create booking';
       const detail = err.response?.data?.detail;
-      if (typeof detail === 'string') {
+      
+      // Handle 409 Conflict with recommendations
+      if (err.response?.status === 409 && detail && typeof detail === 'object' && detail.available_cars) {
+        errorMsg = detail.message || 'Vehicle is already booked at this time';
+        // Show recommendations in the conflict warning
+        setConflictWarning({
+          carName: cars.find(c => c.id === formData.car_id)?.name || 'Selected car',
+          conflicts: [{
+            user: detail.conflict?.booked_by || 'Another user',
+            start: formatTime(detail.conflict?.start_time),
+            end: formatTime(detail.conflict?.end_time),
+            date: detail.conflict?.start_time ? new Date(detail.conflict.start_time).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' }) : '',
+            status: 'confirmed'
+          }],
+          recommendedCars: detail.available_cars || [],
+          totalAvailable: detail.total_available || 0
+        });
+      } else if (typeof detail === 'string') {
         errorMsg = detail;
       } else if (Array.isArray(detail)) {
         // Validation errors come as array of objects
@@ -954,9 +1000,45 @@ const Bookings = () => {
                       </li>
                     ))}
                   </ul>
-                  <p className="text-xs text-orange-600 mt-2">
-                    💡 Consider choosing a different time or car to avoid scheduling conflicts.
-                  </p>
+                  
+                  {/* Recommended Available Cars */}
+                  {conflictWarning.recommendedCars && conflictWarning.recommendedCars.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-orange-200">
+                      <h5 className="font-semibold text-green-700 flex items-center">
+                        <CheckCircle size={16} className="mr-1.5" />
+                        Available Cars at This Time:
+                      </h5>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {conflictWarning.recommendedCars.map((car) => (
+                          <button
+                            key={car.id}
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, car_id: car.id }));
+                              setConflictWarning(null);
+                            }}
+                            className="px-3 py-1.5 bg-green-100 hover:bg-green-200 text-green-800 text-sm rounded-lg border border-green-300 transition-colors flex items-center space-x-1"
+                          >
+                            <Car size={14} />
+                            <span className="font-medium">{car.name}</span>
+                            <span className="text-xs text-green-600">({car.registration})</span>
+                          </button>
+                        ))}
+                      </div>
+                      {conflictWarning.totalAvailable > 5 && (
+                        <p className="text-xs text-green-600 mt-2">
+                          + {conflictWarning.totalAvailable - 5} more cars available
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* No cars available message */}
+                  {conflictWarning.recommendedCars && conflictWarning.recommendedCars.length === 0 && conflictWarning.totalAvailable === 0 && (
+                    <p className="text-xs text-red-600 mt-3 pt-2 border-t border-orange-200">
+                      ⚠️ No other cars are available at this time. Please choose a different time slot.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

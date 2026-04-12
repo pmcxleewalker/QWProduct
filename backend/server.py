@@ -4448,9 +4448,44 @@ async def create_booking(
     if existing_vehicle_booking:
         existing_start = existing_vehicle_booking.get('start_time', '')
         existing_user = existing_vehicle_booking.get('user_name', 'Another user')
+        
+        # Find alternative cars that ARE available at this time
+        # Get all tenant vehicles that are not blocked
+        all_vehicles = await db.vehicles.find(
+            {"tenant_id": context.tenant_id, "is_blocked": {"$ne": True}},
+            {"_id": 0, "id": 1, "name": 1, "registration": 1}
+        ).to_list(100)
+        
+        # Find which cars have conflicting bookings
+        conflicting_bookings = await db.bookings.find({
+            "tenant_id": context.tenant_id,
+            "start_time": {"$lt": booking_data.end_time},
+            "end_time": {"$gt": booking_data.start_time},
+            "status": {"$nin": ["rejected", "cancelled"]}
+        }, {"_id": 0, "car_id": 1}).to_list(100)
+        
+        booked_car_ids = set(b["car_id"] for b in conflicting_bookings)
+        
+        # Available cars are those not in the booked list
+        available_cars = [
+            {"id": v["id"], "name": v["name"], "registration": v.get("registration", "")}
+            for v in all_vehicles 
+            if v["id"] not in booked_car_ids
+        ]
+        
+        # Return error with recommendations
         raise HTTPException(
-            status_code=400, 
-            detail=f"Vehicle is already booked at this time by {existing_user} (starts: {existing_start})"
+            status_code=409,  # Conflict status code
+            detail={
+                "message": f"Vehicle is already booked at this time by {existing_user} (starts: {existing_start})",
+                "conflict": {
+                    "booked_by": existing_user,
+                    "start_time": existing_start,
+                    "end_time": existing_vehicle_booking.get('end_time', '')
+                },
+                "available_cars": available_cars[:5],  # Limit to 5 suggestions
+                "total_available": len(available_cars)
+            }
         )
     # ================================================
     
@@ -4518,6 +4553,80 @@ async def create_booking(
     await db.bookings.insert_one(booking)
     
     return {k: v for k, v in booking.items() if k != "_id"}
+
+
+
+@api_router.get("/bookings/check-availability")
+async def check_booking_availability(
+    car_id: str,
+    start_time: str,
+    end_time: str,
+    context: TenantContext = Depends(require_tenant_context)
+):
+    """
+    Check if a car is available at the requested time and get recommendations.
+    Returns conflict info and available alternatives if the requested car is booked.
+    """
+    # Check if requested car has conflicts
+    vehicle_conflict_query = {
+        "tenant_id": context.tenant_id,
+        "car_id": car_id,
+        "start_time": {"$lt": end_time},
+        "end_time": {"$gt": start_time},
+        "status": {"$nin": ["rejected", "cancelled"]}
+    }
+    existing_booking = await db.bookings.find_one(vehicle_conflict_query, {"_id": 0})
+    
+    # Get requested car details
+    requested_car = await db.vehicles.find_one(
+        {"tenant_id": context.tenant_id, "id": car_id},
+        {"_id": 0, "id": 1, "name": 1, "registration": 1}
+    )
+    
+    if existing_booking:
+        # Car is booked - find alternatives
+        all_vehicles = await db.vehicles.find(
+            {"tenant_id": context.tenant_id, "is_blocked": {"$ne": True}},
+            {"_id": 0, "id": 1, "name": 1, "registration": 1}
+        ).to_list(100)
+        
+        # Find which cars have conflicting bookings
+        conflicting_bookings = await db.bookings.find({
+            "tenant_id": context.tenant_id,
+            "start_time": {"$lt": end_time},
+            "end_time": {"$gt": start_time},
+            "status": {"$nin": ["rejected", "cancelled"]}
+        }, {"_id": 0, "car_id": 1}).to_list(100)
+        
+        booked_car_ids = set(b["car_id"] for b in conflicting_bookings)
+        
+        available_cars = [
+            {"id": v["id"], "name": v["name"], "registration": v.get("registration", "")}
+            for v in all_vehicles 
+            if v["id"] not in booked_car_ids
+        ]
+        
+        return {
+            "available": False,
+            "requested_car": requested_car,
+            "conflict": {
+                "booked_by": existing_booking.get("user_name", "Another user"),
+                "start_time": existing_booking.get("start_time"),
+                "end_time": existing_booking.get("end_time"),
+                "booking_id": existing_booking.get("id")
+            },
+            "recommended_cars": available_cars[:5],
+            "total_available": len(available_cars)
+        }
+    
+    return {
+        "available": True,
+        "requested_car": requested_car,
+        "conflict": None,
+        "recommended_cars": [],
+        "total_available": 0
+    }
+
 
 
 @api_router.get("/bookings")

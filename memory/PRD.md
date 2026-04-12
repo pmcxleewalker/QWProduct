@@ -28,6 +28,13 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 - **Admin Panel QR Fix**: Fixed QR download in Admin Panel > Fleet Vehicles. The download function now uses axios with proper Authorization headers and blob response type, instead of trying to download directly via a link (which didn't send auth headers)
 - **Critical: QR codes scanning to wrong franchise fix**: When platform admins (super_admin) navigated to a tenant route without direct membership, they weren't getting a tenant-scoped token. This caused QR codes to generate with the wrong/missing tenant slug. Fixed by auto-selecting tenant by slug lookup when platform admins navigate to a franchise route.
 
+**Booking Conflict Detection Fix:**
+- **Critical bug fixed**: The booking system was NOT checking if a vehicle was already booked for a time period. This allowed double-booking of vehicles by different users.
+- Added vehicle conflict check in `POST /api/bookings` endpoint that rejects bookings when the vehicle is already booked
+- Added vehicle conflict check in `PUT /api/bookings/{id}` endpoint for booking updates
+- Changed status exclusion from `"rejected"` to `["rejected", "cancelled"]` for accurate availability
+- Clear error messages: "Vehicle is already booked at this time by {user} (starts: {time})"
+
 **"+ Book" Button Redirect:**
 - Modified `CarBookingCalendar.js` to support a `redirectToBookings` prop
 - When `redirectToBookings={true}`, clicking the "+ Book" button navigates to the main bookings page instead of opening an inline modal

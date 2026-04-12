@@ -4435,6 +4435,25 @@ async def create_booking(
     # Parse dates for recurring check
     start_time = datetime.fromisoformat(booking_data.start_time.replace('Z', '+00:00'))
     
+    # ============ VEHICLE CONFLICT CHECK ============
+    # Check if this vehicle is already booked during the requested time period
+    vehicle_conflict_query = {
+        "tenant_id": context.tenant_id,
+        "car_id": booking_data.car_id,
+        "start_time": {"$lt": booking_data.end_time},
+        "end_time": {"$gt": booking_data.start_time},
+        "status": {"$nin": ["rejected", "cancelled"]}
+    }
+    existing_vehicle_booking = await db.bookings.find_one(vehicle_conflict_query, {"_id": 0})
+    if existing_vehicle_booking:
+        existing_start = existing_vehicle_booking.get('start_time', '')
+        existing_user = existing_vehicle_booking.get('user_name', 'Another user')
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Vehicle is already booked at this time by {existing_user} (starts: {existing_start})"
+        )
+    # ================================================
+    
     # Check if recurring booking exceeds 4 weeks (requires admin approval)
     requires_approval = False
     if booking_data.is_recurring and booking_data.recurrence_end_date:
@@ -4455,7 +4474,7 @@ async def create_booking(
             ],
             "start_time": {"$lt": booking_data.end_time},
             "end_time": {"$gt": booking_data.start_time},
-            "status": {"$ne": "rejected"}
+            "status": {"$nin": ["rejected", "cancelled"]}
         }
         existing_booking = await db.bookings.find_one(conflict_query, {"_id": 0})
         if existing_booking:
@@ -4473,7 +4492,7 @@ async def create_booking(
         ],
         "start_time": {"$lt": booking_data.end_time},
         "end_time": {"$gt": booking_data.start_time},
-        "status": {"$ne": "rejected"}
+        "status": {"$nin": ["rejected", "cancelled"]}
     }
     primary_existing = await db.bookings.find_one(primary_conflict_query, {"_id": 0})
     if primary_existing:
@@ -4565,7 +4584,30 @@ async def update_booking(
         raise HTTPException(status_code=403, detail="You can only edit your own bookings")
     
     update_dict = {k: v for k, v in update_data.model_dump().items() if v is not None}
+    
+    # If time or vehicle is being changed, check for conflicts
     if update_dict:
+        new_start = update_dict.get('start_time', booking.get('start_time'))
+        new_end = update_dict.get('end_time', booking.get('end_time'))
+        new_car_id = update_dict.get('car_id', booking.get('car_id'))
+        
+        # Check vehicle conflict (exclude current booking)
+        vehicle_conflict_query = {
+            "tenant_id": context.tenant_id,
+            "car_id": new_car_id,
+            "id": {"$ne": booking_id},  # Exclude current booking
+            "start_time": {"$lt": new_end},
+            "end_time": {"$gt": new_start},
+            "status": {"$nin": ["rejected", "cancelled"]}
+        }
+        existing_vehicle_booking = await db.bookings.find_one(vehicle_conflict_query, {"_id": 0})
+        if existing_vehicle_booking:
+            existing_user = existing_vehicle_booking.get('user_name', 'Another user')
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Vehicle is already booked at this time by {existing_user}"
+            )
+        
         await db.bookings.update_one(query, {"$set": update_dict})
     
     updated = await db.bookings.find_one(query, {"_id": 0})

@@ -42,6 +42,16 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 - Clicking a recommended car auto-selects it in the form
 - Also shows "No other cars available" message if all cars are booked at that time
 
+**Wingman AI Chatbot (April 12, 2026):**
+- Added AI-powered chatbot widget to the landing page (bottom-right corner)
+- Uses Gemini 3 Flash via emergentintegrations for fast, cost-effective responses
+- Chatbot knows about Quick Wing features: fleet management, compliance tracking, QR mileage, staff app, etc.
+- Lead capture form appears when users ask about demos, pricing, or contact
+- Email notifications sent to lee.quickwing@gmail.com when leads are captured
+- Backend stores conversations in `chatbot_conversations` collection
+- Leads stored in `chatbot_leads` collection with status tracking
+- API endpoints: `POST /api/chatbot/message`, `POST /api/chatbot/capture-lead`, `GET /api/chatbot/conversation/{session_id}`
+
 **"+ Book" Button Redirect:**
 - Modified `CarBookingCalendar.js` to support a `redirectToBookings` prop
 - When `redirectToBookings={true}`, clicking the "+ Book" button navigates to the main bookings page instead of opening an inline modal

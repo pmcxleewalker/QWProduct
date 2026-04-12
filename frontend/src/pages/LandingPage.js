@@ -5,6 +5,7 @@ import {
   CheckCircle, Mail, Instagram,
   ArrowRight, Menu, X, Play, ChevronLeft, ChevronRight
 } from 'lucide-react';
+import WingmanChatbot from '../components/WingmanChatbot';
 
 const ScreenshotCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -310,6 +311,9 @@ const LandingPage = () => {
           </div>
         </div>
       </footer>
+      
+      {/* Wingman AI Chatbot */}
+      <WingmanChatbot />
     </main>
   );
 };

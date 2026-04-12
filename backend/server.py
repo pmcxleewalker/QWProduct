@@ -8509,6 +8509,234 @@ async def get_draft_with_full_details(
     return draft
 
 
+# ==================== WINGMAN AI CHATBOT ====================
+import asyncio
+import resend
+from emergentintegrations.llm.chat import LlmChat, UserMessage
+
+# Resend configuration
+resend.api_key = os.environ.get('RESEND_API_KEY', '')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+LEAD_NOTIFICATION_EMAIL = os.environ.get('LEAD_NOTIFICATION_EMAIL', 'lee.quickwing@gmail.com')
+EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
+
+# Quick Wing chatbot system prompt
+WINGMAN_SYSTEM_PROMPT = """You are Wingman, the AI assistant for Quick Wing - a modern fleet management SaaS platform for franchises.
+
+About Quick Wing:
+- Multi-tenant fleet management platform designed for franchise operations
+- Key features: Real-time vehicle tracking, booking management, driver scheduling, compliance monitoring (tax, NCT, service), cost analytics, QR code-based mileage logging
+- Staff mobile app for drivers with live status, bookings, and lift requests
+- Admin dashboard with fleet reports, backup/restore, and user management
+- Subscription tiers: Standard, Pro, and Enterprise plans
+
+Your role:
+- Answer questions about Quick Wing features and pricing
+- Help potential customers understand how Quick Wing can help their franchise
+- Be friendly, professional, and helpful
+- If someone asks to speak to a human or wants a demo, encourage them to share their contact details
+- Keep responses concise (2-3 sentences max unless more detail is needed)
+
+If a user provides their name, company, or contact info, acknowledge it warmly and let them know the Quick Wing team will reach out soon."""
+
+
+class ChatMessage(BaseModel):
+    message: str
+    session_id: str
+    user_info: Optional[dict] = None  # Optional: {name, company, email, phone}
+
+
+class LeadInfo(BaseModel):
+    name: Optional[str] = None
+    company: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    initial_message: Optional[str] = None
+    session_id: str
+
+
+@api_router.post("/chatbot/message")
+async def chatbot_message(chat_data: ChatMessage):
+    """Process a chatbot message and return AI response"""
+    try:
+        # Initialize chat with Gemini 3 Flash
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=chat_data.session_id,
+            system_message=WINGMAN_SYSTEM_PROMPT
+        ).with_model("gemini", "gemini-3-flash-preview")
+        
+        # Create user message
+        user_message = UserMessage(text=chat_data.message)
+        
+        # Get AI response
+        response = await chat.send_message(user_message)
+        
+        # Store conversation in database for lead tracking
+        await db.chatbot_conversations.update_one(
+            {"session_id": chat_data.session_id},
+            {
+                "$push": {
+                    "messages": {
+                        "role": "user",
+                        "content": chat_data.message,
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                },
+                "$set": {
+                    "last_activity": datetime.now(timezone.utc).isoformat(),
+                    "user_info": chat_data.user_info
+                },
+                "$setOnInsert": {
+                    "session_id": chat_data.session_id,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+            },
+            upsert=True
+        )
+        
+        # Store AI response
+        await db.chatbot_conversations.update_one(
+            {"session_id": chat_data.session_id},
+            {
+                "$push": {
+                    "messages": {
+                        "role": "assistant",
+                        "content": response,
+                        "timestamp": datetime.now(timezone.utc).isoformat()
+                    }
+                }
+            }
+        )
+        
+        return {"response": response, "session_id": chat_data.session_id}
+        
+    except Exception as e:
+        logging.error(f"Chatbot error: {str(e)}")
+        return {
+            "response": "I apologize, I'm having trouble connecting right now. Please try again in a moment, or feel free to email us directly at info@quick-wing.com!",
+            "session_id": chat_data.session_id,
+            "error": True
+        }
+
+
+@api_router.post("/chatbot/capture-lead")
+async def capture_lead(lead_info: LeadInfo):
+    """Capture lead information and send notification email"""
+    try:
+        # Store lead in database
+        lead_data = {
+            "id": str(uuid.uuid4()),
+            "session_id": lead_info.session_id,
+            "name": lead_info.name,
+            "company": lead_info.company,
+            "email": lead_info.email,
+            "phone": lead_info.phone,
+            "initial_message": lead_info.initial_message,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "status": "new"
+        }
+        
+        await db.chatbot_leads.insert_one(lead_data)
+        
+        # Update conversation with lead info
+        await db.chatbot_conversations.update_one(
+            {"session_id": lead_info.session_id},
+            {
+                "$set": {
+                    "lead_captured": True,
+                    "lead_info": {
+                        "name": lead_info.name,
+                        "company": lead_info.company,
+                        "email": lead_info.email,
+                        "phone": lead_info.phone
+                    }
+                }
+            }
+        )
+        
+        # Send notification email
+        if resend.api_key and LEAD_NOTIFICATION_EMAIL:
+            html_content = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 20px; border-radius: 8px 8px 0 0;">
+                    <h1 style="color: white; margin: 0; font-size: 24px;">🚀 New Lead from Wingman Chatbot</h1>
+                </div>
+                <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+                    <h2 style="color: #1e293b; margin-top: 0;">Contact Information</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b; width: 100px;"><strong>Name:</strong></td>
+                            <td style="padding: 8px 0; color: #1e293b;">{lead_info.name or 'Not provided'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b;"><strong>Company:</strong></td>
+                            <td style="padding: 8px 0; color: #1e293b;">{lead_info.company or 'Not provided'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b;"><strong>Email:</strong></td>
+                            <td style="padding: 8px 0; color: #1e293b;">{lead_info.email or 'Not provided'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 0; color: #64748b;"><strong>Phone:</strong></td>
+                            <td style="padding: 8px 0; color: #1e293b;">{lead_info.phone or 'Not provided'}</td>
+                        </tr>
+                    </table>
+                    
+                    <div style="margin-top: 20px; padding: 16px; background: white; border-radius: 8px; border-left: 4px solid #2563eb;">
+                        <h3 style="color: #1e293b; margin-top: 0; font-size: 14px;">Initial Message:</h3>
+                        <p style="color: #475569; margin-bottom: 0; white-space: pre-wrap;">{lead_info.initial_message or 'No message provided'}</p>
+                    </div>
+                    
+                    <p style="color: #64748b; font-size: 12px; margin-top: 24px; margin-bottom: 0;">
+                        Received at: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}<br>
+                        Session ID: {lead_info.session_id}
+                    </p>
+                </div>
+            </div>
+            """
+            
+            try:
+                email_params = {
+                    "from": SENDER_EMAIL,
+                    "to": [LEAD_NOTIFICATION_EMAIL],
+                    "subject": f"🚀 New Lead: {lead_info.name or 'Anonymous'} from {lead_info.company or 'Unknown Company'}",
+                    "html": html_content
+                }
+                
+                # Send email in background thread (non-blocking)
+                await asyncio.to_thread(resend.Emails.send, email_params)
+                logging.info(f"Lead notification email sent for session {lead_info.session_id}")
+                
+            except Exception as email_error:
+                logging.error(f"Failed to send lead notification email: {str(email_error)}")
+                # Don't fail the whole request if email fails
+        
+        return {
+            "success": True,
+            "message": "Lead captured successfully",
+            "lead_id": lead_data["id"]
+        }
+        
+    except Exception as e:
+        logging.error(f"Lead capture error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to capture lead: {str(e)}")
+
+
+@api_router.get("/chatbot/conversation/{session_id}")
+async def get_conversation(session_id: str):
+    """Get conversation history for a session"""
+    conversation = await db.chatbot_conversations.find_one(
+        {"session_id": session_id},
+        {"_id": 0}
+    )
+    
+    if not conversation:
+        return {"session_id": session_id, "messages": []}
+    
+    return conversation
+
+
 # Include router - MUST be after all routes are defined
 app.include_router(api_router)
 

@@ -595,7 +595,7 @@ const PlatformAdmin = () => {
                 />
               </div>
               <div className="border-l border-slate-600 pl-4">
-                <h1 className="text-lg font-bold tracking-tight">Franchise Command Centre</h1>
+                <h1 className="text-lg font-bold tracking-tight">Command Centre</h1>
                 <p className="text-slate-400 text-xs">Platform Administration</p>
               </div>
             </div>
@@ -635,9 +635,7 @@ const PlatformAdmin = () => {
           <div className="flex space-x-1 py-2 overflow-x-auto">
             {[
               { id: 'overview', label: 'Dashboard', sublabel: 'Platform Overview', icon: Activity, roles: ['super_admin', 'master_admin'] },
-              { id: 'tenants', label: 'Franchises', sublabel: 'Manage Tenants', icon: Building2, roles: ['super_admin', 'master_admin', 'bot'] },
-              { id: 'users', label: 'Team', sublabel: 'User Management', icon: Users, roles: ['super_admin', 'master_admin'] },
-              { id: 'vehicles', label: 'Vehicles', sublabel: 'Manage Fleet', icon: Car, roles: ['super_admin', 'master_admin'] },
+              { id: 'tenants', label: 'Clients', sublabel: 'Manage Clients', icon: Building2, roles: ['super_admin', 'master_admin', 'bot'] },
               { id: 'content-worker', label: 'Content', sublabel: 'Social Media', icon: Instagram, roles: ['super_admin', 'master_admin', 'content_manager'] },
               { id: 'plans', label: 'Subscriptions', sublabel: 'Plans & Features', icon: Layers, roles: ['super_admin', 'master_admin', 'content_manager'] },
               { id: 'reports', label: 'Finance', sublabel: 'Reports & Billing', icon: Receipt, roles: ['super_admin', 'master_admin'] },
@@ -759,14 +757,7 @@ const PlatformAdmin = () => {
                   className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                   <Plus size={18} />
-                  <span>New Tenant</span>
-                </button>
-                <button
-                  onClick={() => { setActiveTab('users'); setShowCreateUserForm(true); }}
-                  className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                >
-                  <Plus size={18} />
-                  <span>New User</span>
+                  <span>New Client</span>
                 </button>
                 <button
                   onClick={fetchData}
@@ -778,10 +769,10 @@ const PlatformAdmin = () => {
               </div>
             </div>
 
-            {/* Recent Tenants */}
+            {/* Recent Clients */}
             <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
               <div className="p-4 border-b flex items-center justify-between">
-                <h2 className="font-semibold text-gray-900">Recent Tenants</h2>
+                <h2 className="font-semibold text-gray-900">Recent Clients</h2>
                 <button 
                   onClick={() => setActiveTab('tenants')}
                   className="text-sm text-blue-600 hover:text-blue-700"
@@ -826,7 +817,7 @@ const PlatformAdmin = () => {
                   }`}
                 >
                   <Building2 size={16} className="inline mr-2" />
-                  Franchises
+                  Clients
                 </button>
                 <button
                   onClick={() => setTenantsSubTab('admins')}
@@ -851,13 +842,13 @@ const PlatformAdmin = () => {
               )}
             </div>
 
-            {/* Franchises Sub-Tab */}
+            {/* Clients Sub-Tab */}
             {tenantsSubTab === 'franchises' && (
               <>
             {/* Create Tenant Form */}
             {showCreateForm && (
               <div className="bg-white rounded-xl p-6 shadow-sm border">
-                <h3 className="font-semibold text-gray-900 mb-4">Create New Franchise</h3>
+                <h3 className="font-semibold text-gray-900 mb-4">Create New Client</h3>
                 <form onSubmit={handleCreateTenant} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -2042,7 +2033,7 @@ const PlatformAdmin = () => {
             <div className="flex space-x-2 border-b pb-3">
               {[
                 { id: 'executive', label: 'Executive Summary' },
-                { id: 'franchises', label: 'Franchises Report' },
+                { id: 'franchises', label: 'Clients Report' },
                 { id: 'invoices', label: 'Invoices' },
                 { id: 'settings', label: 'Company Settings' }
               ].map(tab => (
@@ -2079,7 +2070,7 @@ const PlatformAdmin = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="bg-white rounded-xl p-4 shadow-sm border">
-                    <p className="text-sm text-gray-500">Total Franchises</p>
+                    <p className="text-sm text-gray-500">Total Clients</p>
                     <p className="text-2xl font-bold text-gray-900">{executiveSummary.summary?.tenants?.total || 0}</p>
                     <p className="text-xs text-green-600">{executiveSummary.summary?.tenants?.active || 0} active</p>
                   </div>
@@ -2099,13 +2090,13 @@ const PlatformAdmin = () => {
               </div>
             )}
 
-            {/* Franchises Report */}
+            {/* Clients Report */}
             {reportsTab === 'franchises' && franchisesReport && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900">All Franchises ({franchisesReport.total})</h3>
+                  <h3 className="font-semibold text-gray-900">All Clients ({franchisesReport.total})</h3>
                   <button
-                    onClick={() => downloadPdf('/platform/reports/franchises/pdf', 'franchises_report.pdf')}
+                    onClick={() => downloadPdf('/platform/reports/franchises/pdf', 'clients_report.pdf')}
                     disabled={downloadingPdf}
                     className="flex items-center space-x-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
                     data-testid="export-franchises-pdf-btn"

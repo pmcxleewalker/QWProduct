@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, User, Bot, Loader2, Minimize2 } from 'lucide-react';
+import { MessageCircle, X, Send, User, Bot, Loader2, Minimize2, CheckCircle } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -10,11 +10,27 @@ const WingmanChatbot = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(() => `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
-  const [showContactForm, setShowContactForm] = useState(false);
-  const [contactInfo, setContactInfo] = useState({ name: '', company: '', email: '', phone: '' });
   const [leadCaptured, setLeadCaptured] = useState(false);
+  const [conversationStep, setConversationStep] = useState(0);
+  const [leadInfo, setLeadInfo] = useState({ name: '', company: '', challenge: '', email: '' });
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Structured conversation flow
+  const CONVERSATION_STEPS = {
+    0: {
+      question: "Welcome! 👋 To help you best, what is your name, company, and the #1 challenge you're currently facing in managing your fleet?",
+      placeholder: "e.g., John from ABC Fleet - struggling with compliance tracking"
+    },
+    1: {
+      question: "Understood. And what's the best work email for me to send some fleet-specific solutions over to?",
+      placeholder: "your.email@company.com"
+    },
+    2: {
+      // Final thank you - no more input needed
+      question: null
+    }
+  };
 
   // Initial greeting
   useEffect(() => {
@@ -22,7 +38,7 @@ const WingmanChatbot = () => {
       setMessages([
         {
           role: 'assistant',
-          content: "Hey! 👋 I'm Wingman from Quick Wing. We help fleet managers cut admin time by 70% with automated compliance tracking and zero double-bookings.\n\nQuick question: How many vehicles are you currently managing?"
+          content: CONVERSATION_STEPS[0].question
         }
       ]);
     }
@@ -35,111 +51,146 @@ const WingmanChatbot = () => {
 
   // Focus input when opened
   useEffect(() => {
-    if (isOpen && !isMinimized) {
+    if (isOpen && !isMinimized && !leadCaptured) {
       inputRef.current?.focus();
     }
-  }, [isOpen, isMinimized]);
+  }, [isOpen, isMinimized, leadCaptured]);
 
-  const sendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  // Parse first response to extract name, company, challenge
+  const parseFirstResponse = (text) => {
+    // Try to extract name, company, and challenge from the response
+    const info = { name: '', company: '', challenge: '' };
+    
+    // Simple extraction - the whole response is valuable context
+    const parts = text.split(/[-–—,]/);
+    
+    if (parts.length >= 2) {
+      // Format: "Name from Company - challenge"
+      const firstPart = parts[0].trim();
+      const fromMatch = firstPart.match(/^(.+?)\s+from\s+(.+)$/i);
+      
+      if (fromMatch) {
+        info.name = fromMatch[1].trim();
+        info.company = fromMatch[2].trim();
+      } else {
+        info.name = firstPart;
+      }
+      
+      info.challenge = parts.slice(1).join(' - ').trim();
+    } else {
+      // Just use the whole thing as context
+      info.challenge = text;
+    }
+    
+    // Fallback - use the full text as the challenge if nothing parsed
+    if (!info.challenge) {
+      info.challenge = text;
+    }
+    
+    return info;
+  };
+
+  const captureLead = async (finalLeadInfo) => {
+    setIsLoading(true);
+    
+    try {
+      await fetch(`${API}/api/chatbot/capture-lead`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: finalLeadInfo.name || 'Not provided',
+          company: finalLeadInfo.company || 'Not provided',
+          email: finalLeadInfo.email,
+          phone: '',
+          initial_message: `Challenge: ${finalLeadInfo.challenge}`,
+          session_id: sessionId
+        })
+      });
+
+      setLeadCaptured(true);
+      
+      // Store conversation in backend
+      await fetch(`${API}/api/chatbot/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `[Lead Captured] Name: ${finalLeadInfo.name}, Company: ${finalLeadInfo.company}, Email: ${finalLeadInfo.email}, Challenge: ${finalLeadInfo.challenge}`,
+          session_id: sessionId
+        })
+      });
+
+    } catch (error) {
+      console.error('Lead capture error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!inputValue.trim() || isLoading || leadCaptured) return;
 
     const userMessage = inputValue.trim();
     setInputValue('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
 
-    // Check if this is the first user message - capture for lead notification
-    const isFirstMessage = messages.filter(m => m.role === 'user').length === 0;
-
-    try {
-      const response = await fetch(`${API}/api/chatbot/message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage,
-          session_id: sessionId,
-          user_info: leadCaptured ? contactInfo : null
-        })
-      });
-
-      const data = await response.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
-
-      // Check if AI response suggests capturing contact info
-      const lowerResponse = data.response.toLowerCase();
-      const lowerMessage = userMessage.toLowerCase();
+    // Handle based on conversation step
+    if (conversationStep === 0) {
+      // Parse name, company, challenge from first response
+      const parsed = parseFirstResponse(userMessage);
+      const updatedInfo = { ...leadInfo, ...parsed };
+      setLeadInfo(updatedInfo);
       
-      if (
-        (lowerMessage.includes('demo') || 
-         lowerMessage.includes('pricing') || 
-         lowerMessage.includes('contact') ||
-         lowerMessage.includes('talk to') ||
-         lowerMessage.includes('speak to') ||
-         lowerMessage.includes('call me') ||
-         lowerMessage.includes('get in touch')) &&
-        !leadCaptured
-      ) {
-        setShowContactForm(true);
-      }
-
-    } catch (error) {
-      console.error('Chat error:', error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: "I apologize, I'm having trouble connecting right now. Please try again in a moment!" 
-      }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleContactSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!contactInfo.name && !contactInfo.email) {
-      return;
-    }
-
-    setIsLoading(true);
-    
-    try {
-      // Get the first user message for context
-      const firstUserMessage = messages.find(m => m.role === 'user')?.content || '';
-
-      await fetch(`${API}/api/chatbot/capture-lead`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...contactInfo,
-          initial_message: firstUserMessage,
-          session_id: sessionId
-        })
-      });
-
-      setLeadCaptured(true);
-      setShowContactForm(false);
+      // Move to step 1 - ask for email
+      setTimeout(() => {
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: CONVERSATION_STEPS[1].question 
+        }]);
+        setConversationStep(1);
+        setIsLoading(false);
+      }, 800);
       
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: `Thanks ${contactInfo.name || 'for your interest'}! Our team will reach out to you shortly. Is there anything else I can help you with in the meantime?` 
-      }]);
+    } else if (conversationStep === 1) {
+      // Got the email - capture lead and send thank you
+      const email = userMessage.trim();
+      const finalInfo = { ...leadInfo, email };
+      setLeadInfo(finalInfo);
+      
+      // Show thank you message
+      setTimeout(async () => {
+        const thankYouMessage = `Thank you${finalInfo.name ? `, ${finalInfo.name.split(' ')[0]}` : ''}! 🙏
 
-    } catch (error) {
-      console.error('Lead capture error:', error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: "I had trouble saving your details. Please try again or email us directly at info@quick-wing.com" 
-      }]);
-    } finally {
-      setIsLoading(false);
+I really appreciate you taking the time to share your fleet challenges with me. Your information has been sent to our team, and I'll personally be in touch within 24 hours with some tailored solutions for ${finalInfo.company || 'your fleet'}.
+
+In the meantime, feel free to explore our website to learn more about how Quick Wing helps fleet managers like yourself cut admin time by 70%.
+
+Talk soon!
+— Lee, Quick Wing`;
+
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: thankYouMessage
+        }]);
+        setConversationStep(2);
+        setIsLoading(false);
+        
+        // Capture lead and trigger email
+        await captureLead(finalInfo);
+      }, 800);
     }
   };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      handleSubmit();
     }
+  };
+
+  const getPlaceholder = () => {
+    if (leadCaptured) return "Thanks for connecting!";
+    return CONVERSATION_STEPS[conversationStep]?.placeholder || "Type your message...";
   };
 
   if (!isOpen) {
@@ -231,61 +282,13 @@ const WingmanChatbot = () => {
               </div>
             )}
 
-            {/* Contact Form */}
-            {showContactForm && !leadCaptured && (
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-blue-100">
-                <h4 className="font-medium text-gray-900 mb-3 flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                  Let's connect!
-                </h4>
-                <form onSubmit={handleContactSubmit} className="space-y-2">
-                  <input
-                    type="text"
-                    placeholder="Your name *"
-                    value={contactInfo.name}
-                    onChange={(e) => setContactInfo(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Company name"
-                    value={contactInfo.company}
-                    onChange={(e) => setContactInfo(prev => ({ ...prev, company: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <input
-                    type="email"
-                    placeholder="Email address *"
-                    value={contactInfo.email}
-                    onChange={(e) => setContactInfo(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                  <input
-                    type="tel"
-                    placeholder="Phone number (optional)"
-                    value={contactInfo.phone}
-                    onChange={(e) => setContactInfo(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <div className="flex space-x-2 pt-2">
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                    >
-                      {isLoading ? 'Submitting...' : 'Get in Touch'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowContactForm(false)}
-                      className="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      Later
-                    </button>
-                  </div>
-                </form>
+            {/* Lead captured success indicator */}
+            {leadCaptured && (
+              <div className="flex justify-center">
+                <div className="bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm flex items-center space-x-2 border border-green-200">
+                  <CheckCircle size={16} />
+                  <span>Details sent to our team!</span>
+                </div>
               </div>
             )}
             
@@ -297,18 +300,18 @@ const WingmanChatbot = () => {
             <div className="flex items-center space-x-2">
               <input
                 ref={inputRef}
-                type="text"
+                type={conversationStep === 1 ? "email" : "text"}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
-                className="flex-1 px-4 py-2.5 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-                disabled={isLoading}
+                placeholder={getPlaceholder()}
+                className="flex-1 px-4 py-2.5 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading || leadCaptured}
                 data-testid="wingman-input"
               />
               <button
-                onClick={sendMessage}
-                disabled={!inputValue.trim() || isLoading}
+                onClick={handleSubmit}
+                disabled={!inputValue.trim() || isLoading || leadCaptured}
                 className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Send message"
                 data-testid="wingman-send"
@@ -317,7 +320,7 @@ const WingmanChatbot = () => {
               </button>
             </div>
             <p className="text-xs text-gray-400 text-center mt-2">
-              Powered by Quick Wing AI
+              Powered by Quick Wing
             </p>
           </div>
         </>

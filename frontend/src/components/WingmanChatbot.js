@@ -161,7 +161,7 @@ const WingmanChatbot = () => {
       setTimeout(async () => {
         const thankYouMessage = `Thank you${finalInfo.name ? `, ${finalInfo.name.split(' ')[0]}` : ''}! 🙏
 
-I really appreciate you taking the time to share your fleet challenges with me. Your information has been sent to our team, and I'll personally be in touch within 24 hours with some tailored solutions for ${finalInfo.company || 'your fleet'}.
+I really appreciate you taking the time to share your fleet challenges with me. Your information has been sent to our team, and either myself or one of our team will be in contact with you to arrange a call within the next 24hrs.
 
 In the meantime, feel free to explore our website to learn more about how Quick Wing helps fleet managers like yourself cut admin time by 70%.
 

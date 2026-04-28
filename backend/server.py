@@ -977,6 +977,38 @@ async def create_tenant(
             }
             await db.memberships.insert_one(sa_membership)
     
+    # AUTO-ADD SUPPORT ADMIN (off-site support — same credentials across all tenants).
+    # This account has master_admin role: full equal access to Master Admin.
+    # support@quickwing.com / QuickWing123! — does NOT force password change.
+    support_admin = await db.users.find_one({"email": SUPPORT_ADMIN_EMAIL}, {"_id": 0})
+    if not support_admin:
+        # Lazy-seed if startup seeder didn't run yet (e.g. fresh deploy)
+        support_user_id = str(uuid.uuid4())
+        await db.users.insert_one({
+            "id": support_user_id,
+            "email": SUPPORT_ADMIN_EMAIL,
+            "name": SUPPORT_ADMIN_NAME,
+            "password_hash": get_password_hash(SUPPORT_ADMIN_PASSWORD),
+            "is_active": True,
+            "require_password_change": False,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+    else:
+        support_user_id = support_admin["id"]
+    
+    existing_support_membership = await db.memberships.find_one({
+        "user_id": support_user_id,
+        "tenant_id": tenant_id,
+    })
+    if not existing_support_membership:
+        await db.memberships.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": support_user_id,
+            "tenant_id": tenant_id,
+            "role": UserRole.MASTER_ADMIN.value,  # Equal access to Master Admin
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+    
     # Log audit event
     await audit_service.log_tenant_action(
         actor_user_id=context.user_id,
@@ -6242,6 +6274,9 @@ async def startup():
     # Seed database with super admin
     await seed_super_admin()
     
+    # Seed dedicated Support Admin (off-site support — same credentials across all tenants)
+    await seed_support_admin()
+    
     # Seed Malcolm's super admin account
     await seed_malcolm_admin()
     
@@ -6372,6 +6407,51 @@ async def seed_malcolm_admin():
             
     except Exception as e:
         logger.error(f"Error seeding Malcolm admin: {e}")
+
+
+# ==================== SUPPORT ADMIN (CROSS-TENANT) ====================
+# Shared off-site support account. SAME credentials work in every tenant.
+# Master admins are created per-tenant; this account is auto-attached to every
+# tenant at creation time so support can access any franchise without per-tenant setup.
+# IMPORTANT: This account does NOT force password change (would break shared access).
+SUPPORT_ADMIN_EMAIL = "support@quickwing.com"
+SUPPORT_ADMIN_PASSWORD = "QuickWing123!"
+SUPPORT_ADMIN_NAME = "Quick Wing Support"
+
+
+async def seed_support_admin():
+    """Ensure the cross-tenant Support Admin user exists on startup."""
+    try:
+        existing = await db.users.find_one({"email": SUPPORT_ADMIN_EMAIL}, {"_id": 0})
+        password_hash = get_password_hash(SUPPORT_ADMIN_PASSWORD)
+        if existing:
+            # Keep password fresh and account active
+            await db.users.update_one(
+                {"email": SUPPORT_ADMIN_EMAIL},
+                {"$set": {
+                    "password_hash": password_hash,
+                    "is_active": True,
+                    "name": SUPPORT_ADMIN_NAME,
+                    "require_password_change": False,
+                }}
+            )
+            logger.info(f"Support admin exists: {SUPPORT_ADMIN_EMAIL}")
+        else:
+            user = {
+                "id": str(uuid.uuid4()),
+                "email": SUPPORT_ADMIN_EMAIL,
+                "name": SUPPORT_ADMIN_NAME,
+                "password_hash": password_hash,
+                "is_active": True,
+                "require_password_change": False,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+            await db.users.insert_one(user)
+            logger.info(f"Created Support Admin: {SUPPORT_ADMIN_EMAIL}")
+    except Exception as e:
+        logger.error(f"Error seeding Support Admin: {e}")
+
+
 
 
 async def seed_super_admin():

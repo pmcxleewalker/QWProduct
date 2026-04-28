@@ -6,6 +6,20 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 ## Recent Changes (Feb 2026)
 
 ### New Features - Feb 28, 2026
+**Cross-Tenant Support Admin + Tenant Cleanup:**
+- Deleted all 43 pre-existing test/demo tenants and their data (1601 vehicles, 151324 bookings, orphan users) — kept Super Admin intact
+- New seeded user `support@quickwing.com` / `QuickWing123!` — name "Quick Wing Support", role `master_admin`
+- This account does NOT force password change (shared credentials must remain stable across tenants)
+- `create_tenant` endpoint auto-attaches Support Admin to every new tenant with `master_admin` role (full equal access to the tenant Master Admin)
+- Confirmed: same credentials work across multiple tenants — login response returns all attached tenants, each with `master_admin` role
+- Files: MODIFIED `/app/backend/server.py` (added `seed_support_admin()` + `SUPPORT_ADMIN_*` constants, hooked into startup, hooked into `create_tenant`)
+
+**Tenant URL Generation Fix:**
+- Tenant login URLs and QR codes were using `FRONTEND_URL` env var which Emergent's deployment auto-populates with the deployment hostname (e.g. `cartrack-19.emergent.host`)
+- New `get_public_url()` helper returns `QUICK_WING_PUBLIC_URL` env var or hardcoded `https://quick-wing.com` — ignores `FRONTEND_URL`
+- Applied to: tenant creation `login_url`/`staff_login_url`, user creation `staff_login_url`, vehicle QR code generation
+- Files: MODIFIED `/app/backend/server.py`
+
 **Bulk Vehicle + Staff Import (Platform Admin onboarding):**
 - New backend endpoint `POST /api/vehicles/bulk-import` accepts CSV upload, validates per row, inserts valid rows, returns per-row success/failure summary
 - New backend endpoint `POST /api/users/bulk-import` accepts CSV (`name`, `email`, `role`), creates user accounts with default password `QuickWing123!` and `require_password_change=True`, creates membership records

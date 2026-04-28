@@ -6,6 +6,22 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 ## Recent Changes (Feb 2026)
 
 ### New Features - Feb 28, 2026
+**Custom-Only Tenant Plan + Landing Page Polish:**
+- Replaced 3-tier plan picker (Standard/Essential/Professional) in tenant creation with a **single Custom Plan form** — super admin enters `Number of Cars`, `Number of Staff`, `Monthly Cost (€)` directly
+- Added `TenantPlan.CUSTOM` enum value, added `custom_price` field to `TenantCreate` model, added `monthly_price` to tenant DB doc
+- Default plan in form = `custom`; old tier UI removed
+- Confirmed via curl: creating with `plan=custom, custom_max_vehicles=17, custom_max_users=22, custom_price=249` correctly stores all three values
+- Landing page tweaks:
+  - Removed "Built for Irish fleets" hero badge
+  - Removed "Trusted by Irish businesses" mention from hero subtitle
+  - Removed entire "Trusted by Irish businesses" industries strip section
+  - Updated Product Tour images to use newer screenshots (IMG_6022/6023/6024)
+- ROI Calculator polish:
+  - Hourly rate slider range changed from €10–€60 to €10–€40
+  - Restructured headline as **twin equally-prominent cards**: "You save €X/year" (emerald) + "You free up Y hrs/week" (blue)
+- Files: MODIFIED `/app/backend/models/tenant.py`, `/app/backend/server.py`, `/app/frontend/src/pages/PlatformAdmin.js`, `/app/frontend/src/pages/LandingPage.js`, `/app/frontend/src/components/ROICalculator.js`
+- DB cleanup: removed 1685 orphan users left behind from earlier tenant deletion
+
 **Cross-Tenant Support Admin + Tenant Cleanup:**
 - Deleted all 43 pre-existing test/demo tenants and their data (1601 vehicles, 151324 bookings, orphan users) — kept Super Admin intact
 - New seeded user `support@quickwing.com` / `QuickWing123!` — name "Quick Wing Support", role `master_admin`

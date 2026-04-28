@@ -19,6 +19,7 @@ class TenantPlan(str, Enum):
     STANDARD = "standard"       # Quick Wing Standard - €179/month
     ESSENTIAL = "essential"     # Quick Wing Essential - €299/month (Most Popular)
     PROFESSIONAL = "professional"  # Quick Wing Professional - €499/month
+    CUSTOM = "custom"           # Custom plan - super admin sets vehicles, users, and price
 
 
 # ============================================
@@ -341,6 +342,18 @@ PLAN_CONFIG = {
         "features": get_plan_default_features("professional"),
         "description": "For larger franchises that need more scale and visibility",
         "tagline": "Designed for larger teams that need flexibility, oversight and structure at scale"
+    },
+    TenantPlan.CUSTOM: {
+        "name": "Custom Plan",
+        "price": 0,                  # Set per-tenant via custom_price at creation time
+        "currency": "EUR",
+        "max_vehicles": 10,          # Default — overridden per-tenant
+        "max_users": 15,             # Default — overridden per-tenant
+        "customizations_per_month": 4,
+        "sub_label": "Tailored",
+        "features": get_plan_default_features("professional"),  # Full feature set
+        "description": "Custom-built plan for this franchise",
+        "tagline": "Bespoke limits and pricing set by Quick Wing"
     }
 }
 
@@ -359,13 +372,15 @@ class UserRole(str, Enum):
 class TenantCreate(BaseModel):
     name: str
     slug: str  # URL-friendly identifier
-    plan: TenantPlan = TenantPlan.STANDARD
+    plan: TenantPlan = TenantPlan.CUSTOM
     # Optional: Master Admin credentials. If not provided, will be auto-generated
     master_admin_email: Optional[EmailStr] = None  # Now validates email format
     master_admin_name: Optional[str] = None
     # Custom limits (super admin can override plan defaults)
     custom_max_vehicles: Optional[int] = None
     custom_max_users: Optional[int] = None
+    # Custom monthly price (€) — required for CUSTOM plan, optional for others
+    custom_price: Optional[float] = None
     # Feature overrides (super admin can enable/disable specific features)
     feature_overrides: Optional[dict] = None
     

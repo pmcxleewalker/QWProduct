@@ -192,7 +192,7 @@ const ROICalculator = () => {
                 id="roi-rate"
                 type="range"
                 min="10"
-                max="60"
+                max="40"
                 step="1"
                 value={hourlyRate}
                 onChange={(e) => setHourlyRate(Number(e.target.value))}
@@ -201,7 +201,7 @@ const ROICalculator = () => {
               />
               <div className="flex justify-between text-xs text-slate-500 mt-1">
                 <span>€10</span>
-                <span>€60</span>
+                <span>€40</span>
               </div>
             </div>
 
@@ -229,36 +229,36 @@ const ROICalculator = () => {
 
           {/* RESULTS PANEL */}
           <div className="space-y-4" data-testid="roi-results-panel">
-            {/* Headline savings card */}
-            <div className="bg-gradient-to-br from-emerald-500 to-cyan-600 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-cyan-500/20">
-              <div className="flex items-center gap-2 mb-2 text-emerald-50">
-                <TrendingUp size={18} />
-                <span className="text-sm font-medium">You could save</span>
-              </div>
-              <div
-                className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-1"
-                data-testid="roi-yearly-savings"
-              >
-                {formatEuro(aCostYear)}
-              </div>
-              <p className="text-emerald-50 text-sm">
-                per year by automating fleet admin
-              </p>
-            </div>
-
-            {/* Time saved per week */}
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 flex items-center gap-4">
-              <div className="w-12 h-12 bg-cyan-400/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Clock className="text-cyan-300" size={22} />
-              </div>
-              <div className="flex-1">
-                <div className="text-xs text-slate-400 mb-1">Time freed up every week</div>
+            {/* TWIN HEADLINE CARDS — money + time, side by side */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Money saved per year */}
+              <div className="bg-gradient-to-br from-emerald-500 to-cyan-600 rounded-2xl p-5 sm:p-6 shadow-2xl shadow-cyan-500/20">
+                <div className="flex items-center gap-2 mb-2 text-emerald-50">
+                  <TrendingUp size={16} />
+                  <span className="text-xs font-medium uppercase tracking-wide">You save</span>
+                </div>
                 <div
-                  className="text-2xl font-bold text-white"
+                  className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-1 leading-none"
+                  data-testid="roi-yearly-savings"
+                >
+                  {formatEuro(aCostYear)}
+                </div>
+                <p className="text-emerald-50 text-xs sm:text-sm">per year</p>
+              </div>
+
+              {/* Time freed up per week */}
+              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-5 sm:p-6 shadow-2xl shadow-blue-500/20">
+                <div className="flex items-center gap-2 mb-2 text-blue-50">
+                  <Clock size={16} />
+                  <span className="text-xs font-medium uppercase tracking-wide">You free up</span>
+                </div>
+                <div
+                  className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-1 leading-none"
                   data-testid="roi-hours-saved"
                 >
-                  {formatHours(aHoursWeek)} hours
+                  {formatHours(aHoursWeek)}<span className="text-2xl sm:text-3xl ml-1">hrs</span>
                 </div>
+                <p className="text-blue-50 text-xs sm:text-sm">per week</p>
               </div>
             </div>
 

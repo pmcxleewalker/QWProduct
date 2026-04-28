@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   Car, Calendar, Users, Shield, BarChart3, Clock,
   CheckCircle2, Mail, Instagram,
-  ArrowRight, Menu, X, Play, Sparkles
+  ArrowRight, Menu, X, Play
 } from 'lucide-react';
 import WingmanChatbot from '../components/WingmanChatbot';
 import ROICalculator from '../components/ROICalculator';
@@ -14,21 +14,21 @@ const showcaseItems = [
     id: 'bookings',
     title: 'Smart Car Bookings',
     description: 'A clean, conflict-free booking calendar for your whole team — book in seconds, never double-book.',
-    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/88y0o78p_IMG_5914.jpeg',
+    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/snt8pfbc_IMG_6022.png',
     alt: 'Quick Wing car bookings calendar',
   },
   {
     id: 'availability',
     title: 'Daily Availability Timeline',
     description: 'See every vehicle, every booking, every gap — at a glance, all day long.',
-    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/iku1do9b_IMG_5909.jpeg',
+    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/1k0enw3b_IMG_6023.png',
     alt: 'Quick Wing daily availability timeline',
   },
   {
     id: 'reports',
     title: 'Fleet Reports & Insights',
     description: 'Mileage, compliance, usage and cost reports — exportable to CSV in one click.',
-    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/n105nizt_IMG_5913.jpeg',
+    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/wepz2d4j_IMG_6024.png',
     alt: 'Quick Wing fleet reports dashboard',
   },
 ];
@@ -394,10 +394,6 @@ const LandingPage = () => {
         </div>
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/20 rounded-full text-cyan-200 text-xs font-medium mb-6 backdrop-blur-sm">
-            <Sparkles size={13} />
-            Built for Irish fleets
-          </div>
           <h1
             id="hero-heading"
             className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-5"
@@ -406,7 +402,7 @@ const LandingPage = () => {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-400"> just works.</span>
           </h1>
           <p className="text-base sm:text-lg text-slate-300 mb-9 max-w-2xl mx-auto leading-relaxed">
-            Book vehicles, track compliance, manage your team and pull reports — all in one place. Trusted by Irish businesses to cut admin time by 70%.
+            Book vehicles, track compliance, manage your team and pull reports — all in one place. Cut fleet admin time by 70%.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a
@@ -437,26 +433,6 @@ const LandingPage = () => {
 
       {/* ROI Calculator */}
       <ROICalculator />
-
-      {/* Industries strip */}
-      <section className="py-12 bg-white border-y border-slate-200/60" aria-labelledby="industries-heading">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 id="industries-heading" className="text-xs font-medium tracking-widest uppercase text-slate-500 mb-6">
-            Trusted by Irish businesses
-          </h2>
-          <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-slate-600 text-sm font-medium">
-            <span>Care Providers</span>
-            <span className="text-slate-300">·</span>
-            <span>Transport Companies</span>
-            <span className="text-slate-300">·</span>
-            <span>Delivery Services</span>
-            <span className="text-slate-300">·</span>
-            <span>Construction Firms</span>
-            <span className="text-slate-300">·</span>
-            <span>Healthcare</span>
-          </div>
-        </div>
-      </section>
 
       {/* Contact */}
       <section

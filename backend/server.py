@@ -895,6 +895,12 @@ async def create_tenant(
     customizations = plan_config["customizations_per_month"]
     
     tenant_id = str(uuid.uuid4())
+    # Monthly price: custom price overrides plan default
+    monthly_price = (
+        tenant_data.custom_price
+        if tenant_data.custom_price is not None
+        else float(plan_config.get("price", 0))
+    )
     tenant = {
         "id": tenant_id,
         "name": tenant_data.name,
@@ -903,6 +909,7 @@ async def create_tenant(
         "plan": tenant_data.plan.value,
         "max_vehicles": max_vehicles,
         "max_users": max_users,
+        "monthly_price": monthly_price,
         "customizations_remaining": customizations,
         "customizations_reset_date": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
         "feature_overrides": tenant_data.feature_overrides or {},

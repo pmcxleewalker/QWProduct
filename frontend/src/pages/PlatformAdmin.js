@@ -64,11 +64,12 @@ const PlatformAdmin = () => {
   const [newTenant, setNewTenant] = useState({ 
     name: '', 
     slug: '', 
-    plan: 'standard',
+    plan: 'custom',
     master_admin_email: '', 
     master_admin_name: '',
-    custom_max_vehicles: null,
-    custom_max_users: null
+    custom_max_vehicles: 10,
+    custom_max_users: 15,
+    custom_price: 199,
   });
   
   // Created tenant result (to show credentials)
@@ -350,7 +351,16 @@ const PlatformAdmin = () => {
       // Store the result to show credentials
       setCreatedTenantResult(response.data);
       setShowCreateForm(false);
-      setNewTenant({ name: '', slug: '', plan: 'starter', master_admin_email: '', master_admin_name: '' });
+      setNewTenant({ 
+        name: '', 
+        slug: '', 
+        plan: 'custom', 
+        master_admin_email: '', 
+        master_admin_name: '',
+        custom_max_vehicles: 10,
+        custom_max_users: 15,
+        custom_price: 199,
+      });
       fetchData();
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to create tenant'));
@@ -890,75 +900,53 @@ const PlatformAdmin = () => {
                     </div>
                   </div>
                   
-                  {/* Plan Selection */}
+                  {/* Custom Plan Configuration */}
                   <div className="border-t pt-4 mt-4">
-                    <h4 className="font-medium text-gray-900 mb-3">Select Plan</h4>
+                    <h4 className="font-medium text-gray-900 mb-3">Plan Configuration</h4>
+                    <p className="text-xs text-gray-500 mb-4">Set the limits and price for this franchise's custom plan.</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {planConfigs.map(plan => (
-                        <div
-                          key={plan.id}
-                          onClick={() => setNewTenant({ ...newTenant, plan: plan.id })}
-                          className={`relative cursor-pointer rounded-xl p-4 border-2 transition-all ${
-                            newTenant.plan === plan.id 
-                              ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' 
-                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          {plan.is_popular && (
-                            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                              <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                                MOST POPULAR
-                              </span>
-                            </div>
-                          )}
-                          <div className="text-center">
-                            <h5 className="font-bold text-gray-900">{plan.name}</h5>
-                            <div className="mt-2">
-                              <span className="text-3xl font-bold text-blue-600">€{plan.price}</span>
-                              <span className="text-gray-500">/month</span>
-                            </div>
-                            <div className="mt-3 text-sm text-gray-600 space-y-1">
-                              <p>Up to <strong>{plan.max_vehicles}</strong> vehicles</p>
-                              <p>Up to <strong>{plan.max_users}</strong> users</p>
-                              <p><strong>{plan.customizations_per_month}</strong> customization{plan.customizations_per_month > 1 ? 's' : ''}/month</p>
-                            </div>
-                            <p className="mt-3 text-xs text-gray-500">{plan.tagline}</p>
-                          </div>
-                          {newTenant.plan === plan.id && (
-                            <div className="absolute top-2 right-2">
-                              <Check size={20} className="text-blue-600" />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* Custom Limits Override */}
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                      <h5 className="text-sm font-medium text-gray-700 mb-2">Custom Limits (Optional)</h5>
-                      <p className="text-xs text-gray-500 mb-3">Override plan limits for this franchise. Leave empty to use plan defaults.</p>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Max Vehicles</label>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Number of Cars *</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={newTenant.custom_max_vehicles ?? ''}
+                          onChange={(e) => setNewTenant({ ...newTenant, custom_max_vehicles: e.target.value ? parseInt(e.target.value) : null })}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g. 25"
+                          required
+                          data-testid="tenant-vehicles-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Number of Staff *</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={newTenant.custom_max_users ?? ''}
+                          onChange={(e) => setNewTenant({ ...newTenant, custom_max_users: e.target.value ? parseInt(e.target.value) : null })}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g. 30"
+                          required
+                          data-testid="tenant-users-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Cost (€) *</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">€</span>
                           <input
                             type="number"
-                            min="1"
-                            value={newTenant.custom_max_vehicles || ''}
-                            onChange={(e) => setNewTenant({ ...newTenant, custom_max_vehicles: e.target.value ? parseInt(e.target.value) : null })}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                            placeholder={`Plan default: ${planConfigs.find(p => p.id === newTenant.plan)?.max_vehicles || 10}`}
+                            min="0"
+                            step="1"
+                            value={newTenant.custom_price ?? ''}
+                            onChange={(e) => setNewTenant({ ...newTenant, custom_price: e.target.value ? parseFloat(e.target.value) : null })}
+                            className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g. 199"
+                            required
+                            data-testid="tenant-price-input"
                           />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-600 mb-1">Max Users</label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={newTenant.custom_max_users || ''}
-                            onChange={(e) => setNewTenant({ ...newTenant, custom_max_users: e.target.value ? parseInt(e.target.value) : null })}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                            placeholder={`Plan default: ${planConfigs.find(p => p.id === newTenant.plan)?.max_users || 20}`}
-                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">/ month</span>
                         </div>
                       </div>
                     </div>

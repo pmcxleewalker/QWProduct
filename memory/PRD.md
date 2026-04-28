@@ -6,14 +6,17 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 ## Recent Changes (Feb 2026)
 
 ### New Features - Feb 28, 2026
-**Bulk Vehicle Import (Platform Admin onboarding):**
+**Bulk Vehicle + Staff Import (Platform Admin onboarding):**
 - New backend endpoint `POST /api/vehicles/bulk-import` accepts CSV upload, validates per row, inserts valid rows, returns per-row success/failure summary
-- CSV columns: `name` (required), `registration` (required), `current_status`, `tax_due_date` (YYYY-MM-DD), `nct_due_date` (YYYY-MM-DD), `current_mileage`, `service_due_mileage`, `base_location`
-- Validates duplicate registrations (against existing tenant fleet AND within the CSV itself), date format, plan vehicle limit
+- New backend endpoint `POST /api/users/bulk-import` accepts CSV (`name`, `email`, `role`), creates user accounts with default password `QuickWing123!` and `require_password_change=True`, creates membership records
+- CSV columns (vehicles): `name` (required), `registration` (required), `current_status`, `tax_due_date` (YYYY-MM-DD), `nct_due_date` (YYYY-MM-DD), `current_mileage`, `service_due_mileage`, `base_location`
+- CSV columns (staff): `name` (required), `email` (required), `role` (optional, defaults to `staff`; allowed: `staff`, `admin`, `master_admin`)
+- Both endpoints validate duplicates (against existing tenant data AND within the CSV itself), required fields, format errors, plan limits
 - Fail-soft model: imports valid rows, returns failed rows with row number + reason — user can download an error report CSV
-- Frontend modal `/app/frontend/src/components/BulkImportVehiclesModal.js` with 2-step flow (download template → upload CSV) + results panel with summary tiles + error table
+- Frontend tabbed modal `/app/frontend/src/components/BulkImportVehiclesModal.js` — tabs (Vehicles | Staff), 2-step flow per tab, results panel with summary tiles, error table, AND for staff: credentials table showing each user's email+role+temp password with a "Copy all credentials" clipboard button
 - Button is gated on `user.role === 'super_admin'` OR `user.is_impersonating === true` — only platform admins see it on the Fleet Vehicles page
-- Files: NEW `/app/frontend/src/components/BulkImportVehiclesModal.js`, MODIFIED `/app/backend/server.py` (line ~3858), MODIFIED `/app/frontend/src/pages/Admin.js`
+- All bulk-imported staff are forced to change password on first login (verified working)
+- Files: NEW `/app/frontend/src/components/BulkImportVehiclesModal.js`, MODIFIED `/app/backend/server.py` (vehicles endpoint at line ~3858, users endpoint at line ~4032), MODIFIED `/app/frontend/src/pages/Admin.js`
 
 **ROI Calculator on Landing Page:**
 - New interactive ROI calculator section between the demo carousel and contact section

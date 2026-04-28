@@ -1,25 +1,79 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { X, Upload, Download, FileSpreadsheet, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import {
+  X, Upload, Download, FileSpreadsheet, CheckCircle2, AlertTriangle,
+  Loader2, Car, Users, Copy
+} from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-const TEMPLATE_COLUMNS = [
-  'name',
-  'registration',
-  'current_status',
-  'tax_due_date',
-  'nct_due_date',
-  'current_mileage',
-  'service_due_mileage',
-  'base_location',
-];
+/* ---------------- Tab definitions ---------------- */
 
-const TEMPLATE_SAMPLE_ROWS = [
-  ['Ford Transit Van 2022', '12-D-12345', 'Free', '2026-12-01', '2026-08-15', '15000', '30000', 'Dublin North'],
-  ['VW Caddy', '13-D-67890', 'Free', '2026-09-30', '', '8500', '20000', 'Dublin Central'],
-];
+const TABS = {
+  vehicles: {
+    id: 'vehicles',
+    label: 'Vehicles',
+    icon: Car,
+    endpoint: '/vehicles/bulk-import',
+    templateName: 'quick-wing-vehicles-template.csv',
+    errorReportName: 'quick-wing-vehicle-errors.csv',
+    successKey: 'created_vehicles',
+    title: 'Bulk Import Vehicles',
+    subtitle: 'Upload a CSV to onboard a fleet in seconds',
+    columns: ['name', 'registration', 'current_status', 'tax_due_date', 'nct_due_date', 'current_mileage', 'service_due_mileage', 'base_location'],
+    sampleRows: [
+      ['Ford Transit Van 2022', '12-D-12345', 'Free', '2026-12-01', '2026-08-15', '15000', '30000', 'Dublin North'],
+      ['VW Caddy', '13-D-67890', 'Free', '2026-09-30', '', '8500', '20000', 'Dublin Central'],
+    ],
+    requiredHint: (
+      <>
+        Required: <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">name</code>,{' '}
+        <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">registration</code>. Dates use{' '}
+        <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">YYYY-MM-DD</code>.
+      </>
+    ),
+    successWord: (n) => `${n} vehicle${n === 1 ? '' : 's'} added to the fleet.`,
+    errorColumns: ['row', 'name', 'registration', 'error'],
+    errorRowMap: (e) => [e.row, e.name, e.registration, e.error],
+    errorTableHead: ['Row', 'Registration', 'Error'],
+    errorTableRow: (e) => [e.row, e.registration || '—', e.error],
+  },
+  staff: {
+    id: 'staff',
+    label: 'Staff',
+    icon: Users,
+    endpoint: '/users/bulk-import',
+    templateName: 'quick-wing-staff-template.csv',
+    errorReportName: 'quick-wing-staff-errors.csv',
+    successKey: 'created_users',
+    title: 'Bulk Import Staff',
+    subtitle: 'Onboard drivers and admins with default credentials',
+    columns: ['name', 'email', 'role'],
+    sampleRows: [
+      ['Alice Driver', 'alice@client.com', 'staff'],
+      ['Bob Manager', 'bob@client.com', 'admin'],
+      ['Carol Smith', 'carol@client.com', 'staff'],
+    ],
+    requiredHint: (
+      <>
+        Required: <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">name</code>,{' '}
+        <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">email</code>. Role:{' '}
+        <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">staff</code>,{' '}
+        <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">admin</code>, or{' '}
+        <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">master_admin</code>{' '}
+        (defaults to staff).
+      </>
+    ),
+    successWord: (n) => `${n} user account${n === 1 ? '' : 's'} added to the tenant.`,
+    errorColumns: ['row', 'name', 'email', 'error'],
+    errorRowMap: (e) => [e.row, e.name, e.email, e.error],
+    errorTableHead: ['Row', 'Email', 'Error'],
+    errorTableRow: (e) => [e.row, e.email || '—', e.error],
+  },
+};
+
+/* ---------------- Helpers ---------------- */
 
 const buildCsvBlob = (rows) => {
   const escape = (v) => {
@@ -42,11 +96,15 @@ const downloadBlob = (blob, filename) => {
   URL.revokeObjectURL(url);
 };
 
-const BulkImportVehiclesModal = ({ isOpen, onClose, onImported }) => {
+/* ---------------- Modal ---------------- */
+
+const BulkImportModal = ({ isOpen, onClose, onImported, defaultTab = 'vehicles' }) => {
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState(null); // { succeeded, failed, errors, created_vehicles }
+  const [result, setResult] = useState(null);
   const fileInputRef = useRef(null);
+  const tab = TABS[activeTab];
 
   if (!isOpen) return null;
 
@@ -62,17 +120,42 @@ const BulkImportVehiclesModal = ({ isOpen, onClose, onImported }) => {
     onClose();
   };
 
+  const switchTab = (tabId) => {
+    if (uploading) return;
+    setActiveTab(tabId);
+    reset();
+  };
+
   const downloadTemplate = () => {
-    const blob = buildCsvBlob([TEMPLATE_COLUMNS, ...TEMPLATE_SAMPLE_ROWS]);
-    downloadBlob(blob, 'quick-wing-vehicles-template.csv');
+    const blob = buildCsvBlob([tab.columns, ...tab.sampleRows]);
+    downloadBlob(blob, tab.templateName);
   };
 
   const downloadErrorReport = () => {
     if (!result?.errors?.length) return;
-    const headers = ['row', 'name', 'registration', 'error'];
-    const rows = [headers, ...result.errors.map((e) => [e.row, e.name, e.registration, e.error])];
+    const rows = [tab.errorColumns, ...result.errors.map(tab.errorRowMap)];
     const blob = buildCsvBlob(rows);
-    downloadBlob(blob, 'quick-wing-import-errors.csv');
+    downloadBlob(blob, tab.errorReportName);
+  };
+
+  const copyAllCredentials = async () => {
+    if (!result?.created_users?.length) return;
+    const lines = [
+      'email,name,role,temporary_password',
+      ...result.created_users.map((u) => [
+        u.email, u.name, u.role, u.temporary_password || '(existing account — unchanged)'
+      ].join(',')),
+    ];
+    const text = lines.join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Credentials copied to clipboard');
+    } catch {
+      // Fallback — download instead
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
+      downloadBlob(blob, 'quick-wing-staff-credentials.csv');
+      toast.success('Downloaded credentials.csv');
+    }
   };
 
   const handleFileChange = (e) => {
@@ -95,12 +178,11 @@ const BulkImportVehiclesModal = ({ isOpen, onClose, onImported }) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      // Auth header is set globally by AuthContext via axios.defaults
-      const resp = await axios.post(`${API}/vehicles/bulk-import`, formData);
+      const resp = await axios.post(`${API}${tab.endpoint}`, formData);
       setResult(resp.data);
       if (resp.data.succeeded > 0) {
-        toast.success(`Imported ${resp.data.succeeded} of ${resp.data.total_rows} vehicles`);
-        onImported && onImported();
+        toast.success(`Imported ${resp.data.succeeded} of ${resp.data.total_rows} ${tab.label.toLowerCase()}`);
+        onImported && onImported(activeTab);
       }
       if (resp.data.failed > 0) {
         toast.warning(`${resp.data.failed} row(s) failed — see details below`);
@@ -112,6 +194,8 @@ const BulkImportVehiclesModal = ({ isOpen, onClose, onImported }) => {
       setUploading(false);
     }
   };
+
+  const successList = result ? (result[tab.successKey] || []) : [];
 
   return (
     <div
@@ -130,8 +214,10 @@ const BulkImportVehiclesModal = ({ isOpen, onClose, onImported }) => {
               <FileSpreadsheet size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Bulk Import Vehicles</h2>
-              <p className="text-xs text-slate-500">Upload a CSV to onboard a fleet in seconds</p>
+              <h2 className="text-lg font-bold text-slate-900" data-testid="bulk-import-title">
+                {tab.title}
+              </h2>
+              <p className="text-xs text-slate-500">{tab.subtitle}</p>
             </div>
           </div>
           <button
@@ -143,6 +229,32 @@ const BulkImportVehiclesModal = ({ isOpen, onClose, onImported }) => {
           >
             <X size={20} className="text-slate-600" />
           </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="px-6 pt-4 border-b border-slate-200 bg-white" data-testid="bulk-import-tabs">
+          <div className="flex gap-1">
+            {Object.values(TABS).map((t) => {
+              const TabIcon = t.icon;
+              const isActive = t.id === activeTab;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => switchTab(t.id)}
+                  data-testid={`bulk-import-tab-${t.id}`}
+                  disabled={uploading}
+                  className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors disabled:opacity-50 ${
+                    isActive
+                      ? 'border-blue-600 text-blue-700'
+                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                  }`}
+                >
+                  <TabIcon size={16} />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Body */}
@@ -159,11 +271,7 @@ const BulkImportVehiclesModal = ({ isOpen, onClose, onImported }) => {
                     <h3 className="text-sm font-semibold text-slate-900 mb-1">
                       Download the template
                     </h3>
-                    <p className="text-xs text-slate-600 mb-3">
-                      Required columns: <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">name</code>,{' '}
-                      <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">registration</code>. Dates use{' '}
-                      <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">YYYY-MM-DD</code>.
-                    </p>
+                    <p className="text-xs text-slate-600 mb-3">{tab.requiredHint}</p>
                     <button
                       onClick={downloadTemplate}
                       data-testid="download-template-btn"
@@ -210,6 +318,18 @@ const BulkImportVehiclesModal = ({ isOpen, onClose, onImported }) => {
                   </div>
                 </div>
               </div>
+
+              {/* Staff-only: notice about default password */}
+              {activeTab === 'staff' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2 text-xs text-amber-900">
+                  <AlertTriangle size={14} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p>
+                    All new accounts will be created with the default password{' '}
+                    <code className="bg-white px-1.5 py-0.5 rounded font-mono">QuickWing123!</code>{' '}
+                    and will be required to change it on first login.
+                  </p>
+                </div>
+              )}
             </>
           )}
 
@@ -237,8 +357,58 @@ const BulkImportVehiclesModal = ({ isOpen, onClose, onImported }) => {
               {result.succeeded > 0 && (
                 <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4">
                   <CheckCircle2 size={18} className="text-emerald-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-emerald-800">
-                    <strong>{result.succeeded}</strong> vehicle{result.succeeded === 1 ? '' : 's'} added to the fleet.
+                  <p className="text-sm text-emerald-800">{tab.successWord(result.succeeded)}</p>
+                </div>
+              )}
+
+              {/* Staff-only: credentials table */}
+              {activeTab === 'staff' && successList.length > 0 && (
+                <div className="mb-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      New credentials ({successList.length})
+                    </h3>
+                    <button
+                      onClick={copyAllCredentials}
+                      data-testid="copy-credentials-btn"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <Copy size={12} />
+                      Copy all credentials
+                    </button>
+                  </div>
+                  <div className="border border-slate-200 rounded-xl overflow-hidden">
+                    <div className="max-h-64 overflow-y-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-slate-50 text-slate-600 sticky top-0">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-medium">Email</th>
+                            <th className="px-3 py-2 text-left font-medium">Role</th>
+                            <th className="px-3 py-2 text-left font-medium">Temp password</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {successList.map((u, i) => (
+                            <tr key={i} className="bg-white">
+                              <td className="px-3 py-2 text-slate-700">{u.email}</td>
+                              <td className="px-3 py-2 text-slate-500 capitalize">{u.role}</td>
+                              <td className="px-3 py-2">
+                                {u.temporary_password ? (
+                                  <code className="font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-800">
+                                    {u.temporary_password}
+                                  </code>
+                                ) : (
+                                  <span className="text-slate-400 italic">existing account</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    Users will be required to change their password on first login.
                   </p>
                 </div>
               )}
@@ -267,19 +437,22 @@ const BulkImportVehiclesModal = ({ isOpen, onClose, onImported }) => {
                       <table className="w-full text-xs">
                         <thead className="bg-slate-50 text-slate-600 sticky top-0">
                           <tr>
-                            <th className="px-3 py-2 text-left font-medium">Row</th>
-                            <th className="px-3 py-2 text-left font-medium">Registration</th>
-                            <th className="px-3 py-2 text-left font-medium">Error</th>
+                            {tab.errorTableHead.map((h, i) => (
+                              <th key={i} className="px-3 py-2 text-left font-medium">{h}</th>
+                            ))}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                          {result.errors.map((e, i) => (
-                            <tr key={i} className="bg-white">
-                              <td className="px-3 py-2 font-mono text-slate-500">{e.row}</td>
-                              <td className="px-3 py-2 text-slate-700">{e.registration || '—'}</td>
-                              <td className="px-3 py-2 text-rose-700">{e.error}</td>
-                            </tr>
-                          ))}
+                          {result.errors.map((e, i) => {
+                            const cells = tab.errorTableRow(e);
+                            return (
+                              <tr key={i} className="bg-white">
+                                <td className="px-3 py-2 font-mono text-slate-500">{cells[0]}</td>
+                                <td className="px-3 py-2 text-slate-700">{cells[1]}</td>
+                                <td className="px-3 py-2 text-rose-700">{cells[2]}</td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -324,9 +497,7 @@ const BulkImportVehiclesModal = ({ isOpen, onClose, onImported }) => {
           ) : (
             <>
               <button
-                onClick={() => {
-                  reset();
-                }}
+                onClick={reset}
                 className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
                 data-testid="bulk-import-another-btn"
               >
@@ -347,4 +518,6 @@ const BulkImportVehiclesModal = ({ isOpen, onClose, onImported }) => {
   );
 };
 
-export default BulkImportVehiclesModal;
+// Backward-compat export — Admin.js still imports this name.
+export const BulkImportVehiclesModal = BulkImportModal;
+export default BulkImportModal;

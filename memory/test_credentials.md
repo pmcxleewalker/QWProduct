@@ -5,6 +5,10 @@
 - Password: `Super123`
 - Role: `super_admin`
 
+## Bulk-Imported Staff Default Password
+- Default temp password: `QuickWing123!`
+- All bulk-imported staff have `require_password_change=True` — must reset on first login
+
 ## Tenant Admin (sample)
 - Tenant: `Standard Fleet Co` (slug: `standard-fleet`)
 - Master admin email: `admin@standardfleet.com`

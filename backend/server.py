@@ -4030,6 +4030,194 @@ async def bulk_import_vehicles(
 
 
 
+# Default password for bulk-imported staff accounts.
+# Users will be forced to change this on their first login.
+BULK_IMPORT_DEFAULT_PASSWORD = "QuickWing123!"
+
+
+@api_router.post("/users/bulk-import")
+async def bulk_import_users(
+    file: UploadFile = File(...),
+    context: TenantContext = Depends(require_admin),
+    request: Request = None
+):
+    """
+    Bulk import staff/driver accounts from a CSV file into the current tenant.
+    
+    Expected CSV columns (header row required):
+      name, email, role
+    
+    Required: name, email
+    Optional: role (defaults to 'staff'; allowed: staff, admin, master_admin)
+    
+    All imported users are created with the default one-time password
+    (BULK_IMPORT_DEFAULT_PASSWORD) and `require_password_change=True`,
+    so they must reset it on first login.
+    
+    Returns a per-row summary including the temporary password for each
+    successful row, so the platform admin can share credentials.
+    """
+    import csv as _csv
+    from io import StringIO as _StringIO
+    import re as _re
+
+    filename = (file.filename or "").lower()
+    if not filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="File must be a .csv file")
+
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty")
+    if len(raw) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 5 MB)")
+
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = raw.decode("latin-1", errors="replace")
+
+    reader = _csv.DictReader(_StringIO(text))
+    if not reader.fieldnames:
+        raise HTTPException(status_code=400, detail="CSV has no header row")
+
+    norm_fieldnames = [(fn or "").strip().lower() for fn in reader.fieldnames]
+    required = {"name", "email"}
+    missing_required = required - set(norm_fieldnames)
+    if missing_required:
+        raise HTTPException(
+            status_code=400,
+            detail=f"CSV missing required columns: {', '.join(sorted(missing_required))}"
+        )
+
+    # Plan limit
+    tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0}) or {}
+    max_users = int(tenant.get("max_users", 20))
+    current_count = await db.memberships.count_documents({"tenant_id": context.tenant_id})
+
+    # Pre-load existing tenant members (by email) for fast duplicate detection
+    member_rows = await db.memberships.find(
+        {"tenant_id": context.tenant_id}, {"_id": 0, "user_id": 1}
+    ).to_list(10000)
+    member_user_ids = [m["user_id"] for m in member_rows]
+    if member_user_ids:
+        member_users = await db.users.find(
+            {"id": {"$in": member_user_ids}}, {"_id": 0, "email": 1}
+        ).to_list(10000)
+        existing_member_emails = {(u.get("email") or "").strip().lower() for u in member_users}
+    else:
+        existing_member_emails = set()
+
+    EMAIL_RE = _re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+    ALLOWED_ROLES = {"staff", "admin", "master_admin"}
+    DEFAULT_PASSWORD_HASH = get_password_hash(BULK_IMPORT_DEFAULT_PASSWORD)
+
+    succeeded = []
+    errors = []
+    seen_in_batch = set()
+
+    def _norm_row(raw_row):
+        return {(k or "").strip().lower(): (v.strip() if isinstance(v, str) else v) for k, v in raw_row.items()}
+
+    row_num = 1
+    for raw_row in reader:
+        row_num += 1
+        try:
+            row = _norm_row(raw_row)
+            name = (row.get("name") or "").strip()
+            email = (row.get("email") or "").strip().lower()
+            role_str = (row.get("role") or "staff").strip().lower() or "staff"
+
+            if not name:
+                raise ValueError("Missing required field 'name'")
+            if not email:
+                raise ValueError("Missing required field 'email'")
+            if not EMAIL_RE.match(email):
+                raise ValueError(f"Invalid email '{email}'")
+            if role_str not in ALLOWED_ROLES:
+                raise ValueError(f"Invalid role '{role_str}' (allowed: staff, admin, master_admin)")
+
+            if email in existing_member_emails:
+                raise ValueError(f"User '{email}' is already in this tenant")
+            if email in seen_in_batch:
+                raise ValueError(f"Duplicate email '{email}' appears twice in CSV")
+
+            if (current_count + len(succeeded)) >= max_users:
+                raise ValueError(f"User limit reached ({max_users}). Upgrade plan to add more.")
+
+            # Re-use existing user account if email exists globally; otherwise create a new one.
+            existing_user = await db.users.find_one({"email": email}, {"_id": 0})
+            if existing_user:
+                user_id = existing_user["id"]
+                created_new_user = False
+            else:
+                user_id = str(uuid.uuid4())
+                user_doc = {
+                    "id": user_id,
+                    "email": email,
+                    "name": name,
+                    "password_hash": DEFAULT_PASSWORD_HASH,
+                    "is_active": True,
+                    "require_password_change": True,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+                await db.users.insert_one(user_doc)
+                created_new_user = True
+
+            membership = {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "tenant_id": context.tenant_id,
+                "role": role_str,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+            await db.memberships.insert_one(membership)
+            seen_in_batch.add(email)
+
+            succeeded.append({
+                "row": row_num,
+                "user_id": user_id,
+                "name": name,
+                "email": email,
+                "role": role_str,
+                "temporary_password": BULK_IMPORT_DEFAULT_PASSWORD if created_new_user else None,
+                "is_new_account": created_new_user,
+            })
+        except Exception as e:
+            errors.append({
+                "row": row_num,
+                "email": (raw_row.get("email") or raw_row.get("Email") or "").strip(),
+                "name": (raw_row.get("name") or raw_row.get("Name") or "").strip(),
+                "error": str(e),
+            })
+
+    try:
+        await audit_service.log(
+            actor_user_id=context.user_id,
+            actor_email=context.user_email,
+            action=AuditAction.USER_CREATED,
+            tenant_id=context.tenant_id,
+            resource_type="user_bulk_import",
+            resource_id=f"bulk_{datetime.now(timezone.utc).isoformat()}",
+            ip_address=request.client.host if request and request.client else None,
+            meta={"succeeded": len(succeeded), "failed": len(errors)},
+        )
+    except Exception:
+        pass
+
+    return {
+        "message": f"Imported {len(succeeded)} of {len(succeeded) + len(errors)} users",
+        "total_rows": len(succeeded) + len(errors),
+        "succeeded": len(succeeded),
+        "failed": len(errors),
+        "default_password": BULK_IMPORT_DEFAULT_PASSWORD,
+        "created_users": succeeded,
+        "errors": errors,
+    }
+
+
+
+
+
 
 @api_router.get("/vehicles")
 async def list_vehicles(

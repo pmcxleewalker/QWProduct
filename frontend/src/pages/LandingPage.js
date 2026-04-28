@@ -11,25 +11,39 @@ import ROICalculator from '../components/ROICalculator';
 /* ----------------------- Product Showcase (Tabbed) ----------------------- */
 const showcaseItems = [
   {
-    id: 'bookings',
-    title: 'Smart Car Bookings',
-    description: 'A clean, conflict-free booking calendar for your whole team — book in seconds, never double-book.',
-    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/snt8pfbc_IMG_6022.png',
-    alt: 'Quick Wing car bookings calendar',
-  },
-  {
-    id: 'availability',
-    title: 'Daily Availability Timeline',
-    description: 'See every vehicle, every booking, every gap — at a glance, all day long.',
-    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/1k0enw3b_IMG_6023.png',
-    alt: 'Quick Wing daily availability timeline',
-  },
-  {
     id: 'reports',
-    title: 'Fleet Reports & Insights',
-    description: 'Mileage, compliance, usage and cost reports — exportable to CSV in one click.',
-    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/wepz2d4j_IMG_6024.png',
-    alt: 'Quick Wing fleet reports dashboard',
+    title: 'Reports on all fleet data',
+    description: 'Pull mileage, bookings, compliance and usage reports across the entire fleet — with date filters and one-click CSV export.',
+    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/u25ipeut_image.png',
+    alt: 'Quick Wing fleet reports and bookings list',
+  },
+  {
+    id: 'live-fleet',
+    title: 'Live fleet overview',
+    description: 'A live status sheet of every vehicle — Free, Booked, In Use, Needs Cleaning, Needs Repair — refreshed in real time for fast tracking.',
+    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/jf15xjia_image.png',
+    alt: 'Quick Wing live fleet sheet',
+  },
+  {
+    id: 'calendars',
+    title: 'Dedicated & master calendars',
+    description: 'A clean calendar for every individual vehicle, plus a master calendar that shows the whole fleet at once.',
+    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/x0rvqyhd_image.png',
+    alt: 'Quick Wing per-car booking calendars',
+  },
+  {
+    id: 'dashboard',
+    title: 'Dashboard with compliance alerts',
+    description: 'Critical Tax, NCT and Service alerts surface on the dashboard the second a vehicle is overdue — no more missed renewals.',
+    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/4bthtz0k_image.png',
+    alt: 'Quick Wing dashboard overview with compliance alerts',
+  },
+  {
+    id: 'car-cards',
+    title: 'Admin control over car cards',
+    description: 'Edit each vehicle, manage QR codes, set compliance thresholds and block cars for appointments — all from one screen.',
+    src: 'https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/ryytvkgq_image.png',
+    alt: 'Quick Wing fleet vehicles admin cards',
   },
 ];
 
@@ -107,7 +121,7 @@ const ProductShowcase = () => {
 
           {/* Browser frame mock (right) */}
           <div className="lg:col-span-7" data-testid="showcase-preview">
-            <div className="relative aspect-[4/3] w-full rounded-3xl overflow-hidden bg-white border border-slate-200/60 shadow-[0_20px_70px_-20px_rgb(15,23,42,0.25)]">
+            <div className="relative aspect-[4/3] w-full rounded-3xl overflow-hidden bg-slate-50 border border-slate-200/60 shadow-[0_20px_70px_-20px_rgb(15,23,42,0.25)]">
               {/* macOS-style top bar */}
               <div className="absolute top-0 left-0 right-0 h-10 bg-slate-100 flex items-center px-4 gap-2 border-b border-slate-200/60 z-20">
                 <span className="w-3 h-3 rounded-full bg-rose-400" />
@@ -118,18 +132,23 @@ const ProductShowcase = () => {
                 </span>
               </div>
 
-              {/* Image stack with cross-fade */}
+              {/* Image stack with cross-fade — object-contain ensures every screenshot fits fully without cropping */}
               {showcaseItems.map((item, idx) => (
-                <img
+                <div
                   key={item.id}
-                  src={item.src}
-                  alt={item.alt}
                   className={
                     idx === activeIdx
-                      ? 'absolute inset-0 top-10 w-full h-[calc(100%-2.5rem)] object-cover transition-opacity duration-700 ease-in-out opacity-100 z-10'
-                      : 'absolute inset-0 top-10 w-full h-[calc(100%-2.5rem)] object-cover transition-opacity duration-700 ease-in-out opacity-0 z-0'
+                      ? 'absolute inset-0 top-10 transition-opacity duration-700 ease-in-out opacity-100 z-10 bg-slate-50 flex items-center justify-center p-3'
+                      : 'absolute inset-0 top-10 transition-opacity duration-700 ease-in-out opacity-0 z-0 bg-slate-50 flex items-center justify-center p-3 pointer-events-none'
                   }
-                />
+                >
+                  <img
+                    src={item.src}
+                    alt={item.alt}
+                    className="max-w-full max-h-full object-contain rounded-lg"
+                    loading={idx === activeIdx ? 'eager' : 'lazy'}
+                  />
+                </div>
               ))}
             </div>
 

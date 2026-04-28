@@ -3857,6 +3857,180 @@ async def create_vehicle(
     return {"message": "Vehicle created", "vehicle": {k: v for k, v in vehicle.items() if k != "_id"}}
 
 
+@api_router.post("/vehicles/bulk-import")
+async def bulk_import_vehicles(
+    file: UploadFile = File(...),
+    context: TenantContext = Depends(require_admin),
+    request: Request = None
+):
+    """
+    Bulk import vehicles from a CSV file into the current tenant.
+    
+    Expected CSV columns (header row required):
+      name, registration, current_status, tax_due_date, nct_due_date,
+      current_mileage, service_due_mileage, base_location
+    
+    Required: name, registration
+    Optional: all others (use blank cells to skip)
+    
+    Returns a per-row summary so the client can show which rows succeeded/failed.
+    """
+    import csv as _csv
+    from io import StringIO as _StringIO
+
+    # Validate file
+    filename = (file.filename or "").lower()
+    if not filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="File must be a .csv file")
+
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty")
+    if len(raw) > 5 * 1024 * 1024:  # 5 MB hard cap
+        raise HTTPException(status_code=400, detail="File too large (max 5 MB)")
+
+    # Decode (try utf-8, fallback to latin-1)
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = raw.decode("latin-1", errors="replace")
+
+    reader = _csv.DictReader(_StringIO(text))
+    if not reader.fieldnames:
+        raise HTTPException(status_code=400, detail="CSV has no header row")
+
+    # Normalise field names (strip + lowercase)
+    norm_fieldnames = [(fn or "").strip().lower() for fn in reader.fieldnames]
+
+    required = {"name", "registration"}
+    missing_required = required - set(norm_fieldnames)
+    if missing_required:
+        raise HTTPException(
+            status_code=400,
+            detail=f"CSV missing required columns: {', '.join(sorted(missing_required))}"
+        )
+
+    # Plan limit check
+    tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0}) or {}
+    max_vehicles = int(tenant.get("max_vehicles", 10))
+    current_count = await db.vehicles.count_documents({"tenant_id": context.tenant_id})
+
+    # Pre-load existing registrations to detect duplicates fast
+    existing = await db.vehicles.find(
+        {"tenant_id": context.tenant_id},
+        {"_id": 0, "registration": 1}
+    ).to_list(10000)
+    existing_regs = {(v.get("registration") or "").strip().upper() for v in existing}
+
+    succeeded = []
+    errors = []
+    created_in_batch_regs = set()
+
+    def _norm_row(raw_row):
+        """Lowercase keys + strip values."""
+        return {(k or "").strip().lower(): (v.strip() if isinstance(v, str) else v) for k, v in raw_row.items()}
+
+    def _parse_date(s):
+        """Validate YYYY-MM-DD; return string or raise."""
+        if not s:
+            return None
+        try:
+            datetime.strptime(s, "%Y-%m-%d")
+            return s
+        except ValueError:
+            raise ValueError(f"Invalid date '{s}' (expected YYYY-MM-DD)")
+
+    def _parse_int(s):
+        if s is None or s == "":
+            return None
+        try:
+            return int(float(s))
+        except (TypeError, ValueError):
+            raise ValueError(f"Invalid integer '{s}'")
+
+    row_num = 1  # header is row 1; first data row is 2
+    for raw_row in reader:
+        row_num += 1
+        try:
+            row = _norm_row(raw_row)
+            name = (row.get("name") or "").strip()
+            reg = (row.get("registration") or "").strip()
+
+            if not name:
+                raise ValueError("Missing required field 'name'")
+            if not reg:
+                raise ValueError("Missing required field 'registration'")
+
+            reg_upper = reg.upper()
+            if reg_upper in existing_regs:
+                raise ValueError(f"Duplicate registration '{reg}' (already exists in tenant)")
+            if reg_upper in created_in_batch_regs:
+                raise ValueError(f"Duplicate registration '{reg}' appears twice in CSV")
+
+            # Plan limit
+            if (current_count + len(succeeded)) >= max_vehicles:
+                raise ValueError(f"Vehicle limit reached ({max_vehicles}). Upgrade plan to add more.")
+
+            vehicle = {
+                "id": str(uuid.uuid4()),
+                "tenant_id": context.tenant_id,
+                "name": name,
+                "registration": reg,
+                "current_status": (row.get("current_status") or "Free").strip() or "Free",
+                "tax_due_date": _parse_date(row.get("tax_due_date") or ""),
+                "nct_due_date": _parse_date(row.get("nct_due_date") or ""),
+                "current_mileage": _parse_int(row.get("current_mileage") or ""),
+                "service_due_mileage": _parse_int(row.get("service_due_mileage") or ""),
+                "base_location": (row.get("base_location") or "").strip() or None,
+                "is_blocked": False,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+            await db.vehicles.insert_one(vehicle)
+            created_in_batch_regs.add(reg_upper)
+            succeeded.append({
+                "row": row_num,
+                "id": vehicle["id"],
+                "name": name,
+                "registration": reg,
+            })
+        except Exception as e:
+            errors.append({
+                "row": row_num,
+                "registration": (raw_row.get("registration") or raw_row.get("Registration") or "").strip(),
+                "name": (raw_row.get("name") or raw_row.get("Name") or "").strip(),
+                "error": str(e),
+            })
+
+    # Audit log (one entry per import)
+    try:
+        await audit_service.log(
+            actor_user_id=context.user_id,
+            actor_email=context.user_email,
+            action=AuditAction.VEHICLE_CREATED,
+            tenant_id=context.tenant_id,
+            resource_type="vehicle_bulk_import",
+            resource_id=f"bulk_{datetime.now(timezone.utc).isoformat()}",
+            ip_address=request.client.host if request and request.client else None,
+            meta={"succeeded": len(succeeded), "failed": len(errors)},
+        )
+    except Exception:
+        # Audit log failure should not fail the import
+        pass
+
+    return {
+        "message": f"Imported {len(succeeded)} of {len(succeeded) + len(errors)} vehicles",
+        "total_rows": len(succeeded) + len(errors),
+        "succeeded": len(succeeded),
+        "failed": len(errors),
+        "created_vehicles": succeeded,
+        "errors": errors,
+    }
+
+
+
+
 @api_router.get("/vehicles")
 async def list_vehicles(
     skip: int = 0,

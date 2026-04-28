@@ -3,9 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { carAPI, assistanceAPI, userAPI, bookingAPI, messageAPI, todoAPI, reportsAPI, planAPI } from '../api/api';
 import { toast } from 'sonner';
-import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlock, Clock, Check, X, MessageSquare, ListTodo, Settings, Key, BarChart3, Download, TrendingUp, TrendingDown, Calendar as CalendarIcon, PieChart, List, MapPin, AlertCircle, Crown, ShieldAlert, ChevronDown, ChevronUp, Activity, Map, BookOpen, HelpCircle } from 'lucide-react';
+import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlock, Clock, Check, X, MessageSquare, ListTodo, Settings, Key, BarChart3, Download, TrendingUp, TrendingDown, Calendar as CalendarIcon, PieChart, List, MapPin, AlertCircle, Crown, ShieldAlert, ChevronDown, ChevronUp, Activity, Map, BookOpen, HelpCircle, Upload } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AdminTraining from '../components/AdminTraining';
+import BulkImportVehiclesModal from '../components/BulkImportVehiclesModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -37,6 +38,7 @@ const Admin = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showTraining, setShowTraining] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
   
   // Plan and usage limits state
   const [planData, setPlanData] = useState(null);
@@ -1126,27 +1128,40 @@ const Admin = () => {
                 </span>
               )}
             </div>
-            <button
-              onClick={() => {
-                if (planData && planData.usage.vehicles >= planData.limits.max_vehicles) {
-                  toast.error(`Vehicle limit reached (${planData.limits.max_vehicles}). Please upgrade your plan.`);
-                  return;
-                }
-                setShowCarForm(true);
-                setEditingCar(null);
-                setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_mileage: '' });
-              }}
-              data-testid="add-car-button"
-              disabled={planData && planData.usage.vehicles >= planData.limits.max_vehicles}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
-                planData && planData.usage.vehicles >= planData.limits.max_vehicles
-                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              <Plus size={18} />
-              <span>Add Car</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {(user?.role === 'super_admin' || user?.is_impersonating) && (
+                <button
+                  onClick={() => setShowBulkImport(true)}
+                  data-testid="bulk-import-vehicles-btn"
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
+                  title="Platform admin: bulk import vehicles via CSV"
+                >
+                  <Upload size={16} />
+                  <span>Bulk Import</span>
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  if (planData && planData.usage.vehicles >= planData.limits.max_vehicles) {
+                    toast.error(`Vehicle limit reached (${planData.limits.max_vehicles}). Please upgrade your plan.`);
+                    return;
+                  }
+                  setShowCarForm(true);
+                  setEditingCar(null);
+                  setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_mileage: '' });
+                }}
+                data-testid="add-car-button"
+                disabled={planData && planData.usage.vehicles >= planData.limits.max_vehicles}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
+                  planData && planData.usage.vehicles >= planData.limits.max_vehicles
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                <Plus size={18} />
+                <span>Add Car</span>
+              </button>
+            </div>
           </div>
 
           {/* Car Form */}
@@ -3886,6 +3901,13 @@ const Admin = () => {
         onClose={handleCloseTraining}
         franchiseName={activeTenant?.tenant_name}
         planData={planData}
+      />
+
+      {/* Bulk Import Vehicles Modal */}
+      <BulkImportVehiclesModal
+        isOpen={showBulkImport}
+        onClose={() => setShowBulkImport(false)}
+        onImported={fetchData}
       />
 
     </div>

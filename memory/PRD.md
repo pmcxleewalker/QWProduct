@@ -6,13 +6,28 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 ## Recent Changes (Feb 2026)
 
 ### New Features - Feb 28, 2026
+**Bulk Vehicle Import (Platform Admin onboarding):**
+- New backend endpoint `POST /api/vehicles/bulk-import` accepts CSV upload, validates per row, inserts valid rows, returns per-row success/failure summary
+- CSV columns: `name` (required), `registration` (required), `current_status`, `tax_due_date` (YYYY-MM-DD), `nct_due_date` (YYYY-MM-DD), `current_mileage`, `service_due_mileage`, `base_location`
+- Validates duplicate registrations (against existing tenant fleet AND within the CSV itself), date format, plan vehicle limit
+- Fail-soft model: imports valid rows, returns failed rows with row number + reason — user can download an error report CSV
+- Frontend modal `/app/frontend/src/components/BulkImportVehiclesModal.js` with 2-step flow (download template → upload CSV) + results panel with summary tiles + error table
+- Button is gated on `user.role === 'super_admin'` OR `user.is_impersonating === true` — only platform admins see it on the Fleet Vehicles page
+- Files: NEW `/app/frontend/src/components/BulkImportVehiclesModal.js`, MODIFIED `/app/backend/server.py` (line ~3858), MODIFIED `/app/frontend/src/pages/Admin.js`
+
 **ROI Calculator on Landing Page:**
 - New interactive ROI calculator section between the demo carousel and contact section
-- Inputs (sliders): number of fleet managers (1-20), hours/week each spends on admin (1-40), hourly rate (€10-€60, default €18), and time-saved % (30-90%, default 70%)
+- Inputs (sliders): number of fleet managers (1-20), hours/week each spends on admin (1-40), hourly rate (€10-€60, default €18). Time-saved % is locked at 70% (Quick Wing's proven claim)
 - Animated outputs: total annual savings, hours freed up per week, savings per week/month, before/after annual cost comparison
 - "Book a Free Demo" CTA opens email to lee.quickwing@gmail.com with subject "Quick Wing Demo Request — ROI Calculator"
 - File: `/app/frontend/src/components/ROICalculator.js`
 - Wired into `/app/frontend/src/pages/LandingPage.js`
+
+**Landing Page Redesign (Feb 28, 2026):**
+- Replaced 6-icon flat features grid with asymmetric Bento Grid (hero "Smart Booking" card with mocked overlapping booking pills, Compliance/Real-Time cards with status pills, dark essentials banner)
+- Replaced screenshot carousel with interactive tabbed `ProductShowcase` — clickable feature cards on the left, macOS-style browser frame on the right with cross-fading screenshots, auto-advances every 6s
+- Softened overall aesthetic: bg-slate-50, rounded-3xl, ambient shadows, sticky nav backdrop blur, "Built for Irish fleets" badge
+- Files: rewrote `/app/frontend/src/pages/LandingPage.js`
 
 ## Recent Changes (April 2026)
 

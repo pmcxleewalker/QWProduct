@@ -3,6 +3,17 @@
 ## Product Overview
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
+## Recent Changes (Feb 2026)
+
+### New Features - Feb 28, 2026
+**ROI Calculator on Landing Page:**
+- New interactive ROI calculator section between the demo carousel and contact section
+- Inputs (sliders): number of fleet managers (1-20), hours/week each spends on admin (1-40), hourly rate (€10-€60, default €18), and time-saved % (30-90%, default 70%)
+- Animated outputs: total annual savings, hours freed up per week, savings per week/month, before/after annual cost comparison
+- "Book a Free Demo" CTA opens email to lee.quickwing@gmail.com with subject "Quick Wing Demo Request — ROI Calculator"
+- File: `/app/frontend/src/components/ROICalculator.js`
+- Wired into `/app/frontend/src/pages/LandingPage.js`
+
 ## Recent Changes (April 2026)
 
 ### New Features - April 10, 2026

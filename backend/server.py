@@ -8511,14 +8511,118 @@ async def get_draft_with_full_details(
 
 # ==================== WINGMAN AI CHATBOT ====================
 import asyncio
-import resend
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
-# Resend configuration
-resend.api_key = os.environ.get('RESEND_API_KEY', '')
-SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+# Email configuration (Gmail SMTP)
+GMAIL_USER = os.environ.get('GMAIL_USER', '')
+GMAIL_APP_PASSWORD = os.environ.get('GMAIL_APP_PASSWORD', '')
 LEAD_NOTIFICATION_EMAIL = os.environ.get('LEAD_NOTIFICATION_EMAIL', 'lee.quickwing@gmail.com')
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
+
+
+async def send_lead_email(lead_info: dict, transcript_html: str):
+    """Send lead notification email via Gmail SMTP"""
+    if not GMAIL_USER or not GMAIL_APP_PASSWORD:
+        logging.warning("Gmail credentials not configured - email not sent")
+        return False
+    
+    try:
+        # Create email
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = f"🚛 NEW FLEET LEAD: {lead_info.get('name', 'Unknown')} from {lead_info.get('company', 'Unknown Company')}"
+        msg['From'] = GMAIL_USER
+        msg['To'] = LEAD_NOTIFICATION_EMAIL
+        
+        # Plain text version
+        plain_text = f"""
+NEW FLEET LEAD - Quick Wing
+
+Full Name: {lead_info.get('name', 'Not provided')}
+Company Name: {lead_info.get('company', 'Not provided')}
+Fleet Management Challenge: {lead_info.get('challenge', 'Not provided')}
+Work Email: {lead_info.get('email', 'Not provided')}
+
+--- Chat Transcript ---
+{lead_info.get('transcript_text', 'No transcript available')}
+
+---
+Captured: {datetime.now(timezone.utc).strftime('%B %d, %Y at %H:%M UTC')}
+Wingman Bot
+        """
+        
+        # HTML version
+        html_content = f"""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc;">
+            <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+                <h1 style="color: white; margin: 0; font-size: 22px;">🚛 NEW FLEET LEAD</h1>
+                <p style="color: #bfdbfe; margin: 8px 0 0 0; font-size: 14px;">Quick Wing Wingman Chatbot</p>
+            </div>
+            
+            <div style="background: white; padding: 24px; border: 1px solid #e2e8f0; border-top: none;">
+                <h2 style="color: #1e293b; margin: 0 0 16px 0; font-size: 18px; border-bottom: 2px solid #2563eb; padding-bottom: 8px;">📋 Lead Details</h2>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 12px 0; color: #64748b; font-weight: 600; width: 180px;">Full Name</td>
+                        <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">{lead_info.get('name', 'Not provided')}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 12px 0; color: #64748b; font-weight: 600;">Company Name</td>
+                        <td style="padding: 12px 0; color: #1e293b; font-weight: 500;">{lead_info.get('company', 'Not provided')}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 12px 0; color: #64748b; font-weight: 600;">Fleet Challenge</td>
+                        <td style="padding: 12px 0; color: #1e293b;">{lead_info.get('challenge', 'Not provided')}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px 0; color: #64748b; font-weight: 600;">Work Email</td>
+                        <td style="padding: 12px 0;"><a href="mailto:{lead_info.get('email', '')}" style="color: #2563eb; text-decoration: none; font-weight: 500;">{lead_info.get('email', 'Not provided')}</a></td>
+                    </tr>
+                </table>
+                
+                <h2 style="color: #1e293b; margin: 0 0 16px 0; font-size: 18px; border-bottom: 2px solid #2563eb; padding-bottom: 8px;">💬 Full Chat Transcript</h2>
+                <div style="background: #f8fafc; border-radius: 8px; padding: 16px; border: 1px solid #e2e8f0;">
+                    {transcript_html if transcript_html else '<p style="color: #94a3b8; font-style: italic;">No transcript available</p>'}
+                </div>
+                
+                <div style="margin-top: 24px; padding: 16px; background: #eff6ff; border-radius: 8px; border-left: 4px solid #2563eb;">
+                    <p style="margin: 0; font-size: 14px; color: #1e40af;">
+                        <strong>Quick Actions:</strong><br>
+                        <a href="mailto:{lead_info.get('email', '')}?subject=Re: Your Fleet Management Inquiry - Quick Wing" style="color: #2563eb;">📧 Reply via Email</a>
+                    </p>
+                </div>
+            </div>
+            
+            <div style="background: #1e293b; padding: 16px; text-align: center; border-radius: 0 0 12px 12px;">
+                <p style="color: #94a3b8; margin: 0; font-size: 12px;">
+                    Captured: {datetime.now(timezone.utc).strftime('%B %d, %Y at %H:%M UTC')}<br>
+                    Powered by <span style="color: white; font-weight: 600;">Quick Wing</span> Wingman Bot 🚛💨
+                </p>
+            </div>
+        </div>
+        """
+        
+        part1 = MIMEText(plain_text, 'plain')
+        part2 = MIMEText(html_content, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        # Send via Gmail SMTP
+        def send_smtp():
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+                server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+                server.send_message(msg)
+        
+        await asyncio.to_thread(send_smtp)
+        logging.info(f"Lead email sent successfully to {LEAD_NOTIFICATION_EMAIL}")
+        return True
+        
+    except Exception as e:
+        logging.error(f"Failed to send lead email: {str(e)}")
+        return False
 
 # Quick Wing chatbot system prompt - Sales-focused B2B assistant
 WINGMAN_SYSTEM_PROMPT = """You are Wingman, a consultative sales assistant for Quick Wing - Ireland's leading fleet management platform built specifically for franchise operations.

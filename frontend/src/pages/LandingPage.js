@@ -6,6 +6,7 @@ import {
   ArrowRight, Menu, X, Play, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import WingmanChatbot from '../components/WingmanChatbot';
+import ROICalculator from '../components/ROICalculator';
 
 const ScreenshotCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -210,6 +211,9 @@ const LandingPage = () => {
           <ScreenshotCarousel />
         </div>
       </section>
+
+      {/* ROI Calculator */}
+      <ROICalculator />
 
       {/* Contact Section */}
       <section id="contact" className="py-12" aria-labelledby="contact-heading">

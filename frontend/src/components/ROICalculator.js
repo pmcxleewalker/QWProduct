@@ -48,7 +48,8 @@ const ROICalculator = () => {
   const [managers, setManagers] = useState(2);
   const [hoursPerWeek, setHoursPerWeek] = useState(15);
   const [hourlyRate, setHourlyRate] = useState(18);
-  const [savingsPct, setSavingsPct] = useState(70);
+  // Quick Wing's proven time savings — fixed at 70%
+  const savingsPct = 70;
 
   // Derived calculations
   const totalHoursWeek = managers * hoursPerWeek;
@@ -204,36 +205,24 @@ const ROICalculator = () => {
               </div>
             </div>
 
-            {/* Savings % */}
+            {/* Savings % — fixed Quick Wing claim */}
             <div className="pt-6 border-t border-white/10">
-              <div className="flex justify-between items-baseline mb-2">
-                <label htmlFor="roi-savings" className="text-sm text-slate-300">
-                  Time saved by automating with Quick Wing
-                </label>
+              <div className="flex items-center justify-between bg-emerald-400/10 border border-emerald-400/30 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-emerald-300" />
+                  <span className="text-sm text-slate-200">
+                    Time saved by automating with Quick Wing
+                  </span>
+                </div>
                 <span
-                  className="text-xl font-bold text-emerald-300"
+                  className="text-2xl font-bold text-emerald-300"
                   data-testid="roi-savings-value"
                 >
                   {savingsPct}%
                 </span>
               </div>
-              <input
-                id="roi-savings"
-                type="range"
-                min="30"
-                max="90"
-                step="5"
-                value={savingsPct}
-                onChange={(e) => setSavingsPct(Number(e.target.value))}
-                className="w-full accent-emerald-400 cursor-pointer"
-                data-testid="roi-savings-slider"
-              />
-              <div className="flex justify-between text-xs text-slate-500 mt-1">
-                <span>Conservative (30%)</span>
-                <span>Aggressive (90%)</span>
-              </div>
-              <p className="text-xs text-slate-400 mt-2 italic">
-                Most Quick Wing customers report a 70% reduction in fleet admin time.
+              <p className="text-xs text-slate-400 mt-2 italic text-center">
+                Based on real Quick Wing customer results.
               </p>
             </div>
           </div>

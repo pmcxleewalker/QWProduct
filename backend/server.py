@@ -88,6 +88,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+# ==================== PUBLIC URL HELPER ====================
+# Quick Wing's stable customer-facing domain.
+# DO NOT use FRONTEND_URL here — Emergent's deployment platform may auto-populate
+# FRONTEND_URL with the deployment's default domain (e.g. *.emergent.host),
+# but franchise login URLs and QR codes must always point to the branded domain.
+def get_public_url() -> str:
+    """Return the public customer-facing URL for tenant login links and QR codes."""
+    return os.environ.get('QUICK_WING_PUBLIC_URL') or 'https://quick-wing.com'
+
+
 # ==================== AUTH HELPERS ====================
 
 def get_password_hash(password: str) -> str:
@@ -982,9 +992,10 @@ async def create_tenant(
     )
     
     # Build the tenant login URL - Path-based branded URL
-    # Format: {FRONTEND_URL}/{tenant_slug}/login
-    # Uses environment variable for deployment flexibility
-    base_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+    # Format: {QUICK_WING_PUBLIC_URL}/{tenant_slug}/login
+    # Uses get_public_url() (not FRONTEND_URL) to ensure tenant URLs always point
+    # to the branded customer domain, not the Emergent deployment hostname.
+    base_url = get_public_url()
     tenant_login_url = f"{base_url}/{tenant_data.slug}/login"
     staff_login_url = f"{base_url}/{tenant_data.slug}/login"
     
@@ -3173,7 +3184,7 @@ async def create_tenant_user(
     
     # Get tenant slug for login URL
     tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
-    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+    frontend_url = get_public_url()
     staff_login_url = f"{frontend_url}/{tenant['slug']}/login" if tenant else None
     
     return {
@@ -5886,8 +5897,9 @@ async def get_vehicle_qr(
         raise HTTPException(status_code=404, detail="Vehicle not found")
     
     # Generate QR with tenant context - links to mileage log page
-    # Use FRONTEND_URL from environment, default to production URL
-    base_url = os.environ.get('FRONTEND_URL', 'https://quick-wing.com')
+    # Use stable public URL — must NOT use FRONTEND_URL (which may be the Emergent
+    # deployment hostname) so QR codes always scan to the branded customer domain.
+    base_url = get_public_url()
     qr_url = f"{base_url}/{context.tenant_slug}/vehicle/{vehicle_id}/mileage"
     
     logger.info(f"Generating QR code for vehicle {vehicle_id} with URL: {qr_url}")

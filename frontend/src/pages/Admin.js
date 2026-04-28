@@ -1129,17 +1129,15 @@ const Admin = () => {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {(user?.role === 'super_admin' || user?.is_impersonating) && (
-                <button
-                  onClick={() => setShowBulkImport(true)}
-                  data-testid="bulk-import-vehicles-btn"
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
-                  title="Platform admin: bulk import vehicles via CSV"
-                >
-                  <Upload size={16} />
-                  <span>Bulk Import</span>
-                </button>
-              )}
+              <button
+                onClick={() => setShowBulkImport(true)}
+                data-testid="bulk-import-vehicles-btn"
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
+                title="Bulk import vehicles or staff via CSV"
+              >
+                <Upload size={16} />
+                <span>Bulk Import</span>
+              </button>
               <button
                 onClick={() => {
                   if (planData && planData.usage.vehicles >= planData.limits.max_vehicles) {

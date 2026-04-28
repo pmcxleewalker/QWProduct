@@ -1,101 +1,97 @@
 {
-  "identity": {
-    "name": "Quick Wing",
-    "tone": "Ultra-Professional, Executive, Precision, Automotive",
-    "archetype": "The Performance Pro (Archetype 2) mixed with Swiss High-Contrast (Archetype 4)",
-    "keywords": ["Fleet", "Precision", "Control", "Executive", "Silver", "Aero"]
+  "theme_and_archetype": {
+    "name": "Archetype 1 / Soft Utility Hybrid (Light Theme)",
+    "reasoning": "For a friendly B2B Irish fleet management tool, we want to move away from cold, sterile 'tech bro' design (dark greys, sharp corners, pure white) and towards a warm, approachable, reliable partner vibe. Soft radii, warm slate neutrals, and premium diffuse shadows achieve this."
   },
-  "typography": {
-    "primary_font": "Inter",
-    "secondary_font": "Barlow",
-    "mono_font": "JetBrains Mono",
-    "scale": {
-      "h1": "text-4xl md:text-5xl font-bold tracking-tight",
-      "h2": "text-3xl font-semibold tracking-tight",
-      "h3": "text-2xl font-medium tracking-tight",
-      "body": "text-base leading-relaxed text-slate-600",
-      "caption": "text-sm text-slate-500 uppercase tracking-widest"
+  "overall_visual_polish": {
+    "critique": [
+      "1. Cold color palette: The use of pure white 'bg-white' and 'bg-grey-50' with harsh text colors feels sterile and template-like.",
+      "2. Lack of hierarchy: The 6-icon grid provides no hierarchy. Everything is equal, meaning nothing stands out.",
+      "3. Passive engagement: The screenshot carousel is passive and disconnected from feature benefits.",
+      "4. Boxy elements: Small border radii ('rounded-lg', 'rounded-xl') and standard drop shadows feel dated and heavy."
+    ],
+    "colors": {
+      "background": "Use 'bg-slate-50' for main sections instead of harsh white or cold grey.",
+      "text": "Use 'text-slate-900' for headings, 'text-slate-600' for body.",
+      "primary": "Keep brand 'blue-600' for active states. Introduce 'blue-50' for soft highlight backgrounds behind icons.",
+      "accents": "Keep 'cyan-400' but use sparingly. Introduce 'emerald-50/600' and 'amber-50/600' for status/bento card accents."
     },
-    "instructions": "Use Barlow for all Headings (h1-h3) to give an automotive/dashboard feel. Use Inter for body text for maximum legibility."
-  },
-  "colors": {
-    "palette": {
-      "primary": {
-        "DEFAULT": "#0B1120",
-        "foreground": "#FFFFFF"
-      },
-      "secondary": {
-        "DEFAULT": "#F1F5F9",
-        "foreground": "#0F172A"
-      },
-      "accent": {
-        "DEFAULT": "#3B82F6",
-        "foreground": "#FFFFFF"
-      },
-      "background": "#F8FAFC",
-      "surface": "#FFFFFF",
-      "border": "#E2E8F0",
-      "muted": "#64748B"
+    "typography": {
+      "headings": "font-sans tracking-tight text-slate-900 (The tight tracking removes the generic feel).",
+      "body": "font-sans leading-relaxed text-slate-600",
+      "microcopy": "text-sm font-medium tracking-wide text-slate-500 uppercase"
     },
-    "gradients": {
-      "subtle_silver": "bg-gradient-to-b from-white to-slate-50",
-      "metallic_sheen": "bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200"
-    },
-    "semantic": {
-      "success": "#10B981",
-      "warning": "#F59E0B",
-      "error": "#EF4444",
-      "info": "#3B82F6"
+    "shapes_and_shadows": {
+      "border_radius": "Use 'rounded-2xl' and 'rounded-3xl' for a friendlier, softer feel.",
+      "shadows": "Use 'shadow-[0_8px_30px_rgb(0,0,0,0.04)]' (soft, ambient premium shadow) instead of harsh default shadows.",
+      "borders": "Use 'border border-slate-200/60' for delicate card edges."
     }
   },
-  "layout": {
-    "structure": "Centered Card Layout with 'Floating' Header or Split Screen (Brand Left, Form Right)",
-    "spacing": {
-      "container_padding": "p-8 md:p-12",
-      "element_gap": "gap-6",
-      "section_gap": "gap-12"
+  "sections": {
+    "features_section": {
+      "new_layout": "Asymmetric Bento Box Grid (Condensed but warm)",
+      "structure": "grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-6xl mx-auto pt-10",
+      "heading": "Visible section header: 'Everything you need to run your fleet, without the headache.' - text-center text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-12",
+      "items": [
+        {
+          "name": "Smart Booking",
+          "span": "lg:col-span-2 row-span-2",
+          "styling": "bg-white p-8 md:p-10 rounded-3xl border border-slate-200/60 shadow-sm relative overflow-hidden group hover:shadow-md transition-all flex flex-col justify-between h-full",
+          "content": "Large text-2xl font-bold heading, text-slate-600 body. Icon: Calendar in a bg-blue-50 text-blue-600 rounded-2xl p-4 w-14 h-14 flex items-center justify-center. Focus on preventing double-bookings. Suggest adding a pure CSS mini-visual (like 2 overlapping pill tags: 'Booked - Transit' and 'Available')."
+        },
+        {
+          "name": "Compliance Tracking",
+          "span": "lg:col-span-2 row-span-1",
+          "styling": "bg-white p-8 rounded-3xl border border-slate-200/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-6 hover:shadow-md transition-all",
+          "content": "Icon: Shield in bg-emerald-50 text-emerald-600. Focus on Tax, NCT, Insurance. Add a mock 'Status: Valid' green pill badge next to the title."
+        },
+        {
+          "name": "Real-Time Updates",
+          "span": "lg:col-span-2 row-span-1",
+          "styling": "bg-white p-8 rounded-3xl border border-slate-200/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-6 hover:shadow-md transition-all",
+          "content": "Icon: Clock in bg-amber-50 text-amber-600. Focus on instant notifications and live data."
+        },
+        {
+          "name": "The Essentials (Fleet, Staff, Reports)",
+          "span": "lg:col-span-4 row-span-1",
+          "styling": "bg-slate-900 p-8 rounded-3xl text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-6",
+          "content": "Dark high-contrast banner strip at the bottom of the bento. Contains 3 inline mini-features with Lucide icons (Car, Users, BarChart3) styled as 'flex items-center gap-3 text-white/90 font-medium'. Text: 'Plus all the essentials: Fleet Tracking, Staff Roles, and Analytics.' Add a 'Request Demo' arrow CTA button."
+        }
+      ]
     },
-    "grid_system": "Grid cols-1 for mobile, max-w-md mx-auto for login card."
-  },
-  "components": {
-    "LoginHeader": {
-      "description": "The focal point. Must look 'Ultra Professional'.",
-      "style": "Clean, minimalist, possibly glassmorphic or solid white with a subtle bottom border. Avoid the old 'blue-to-indigo' gradient block. Use whitespace to frame the logo.",
-      "logo_treatment": "The logo should have plenty of breathing room. If the logo text is dark blue, place it on White or Silver. If the logo is light, place it on Deep Navy.",
-      "instructions": "Redesign the header to be a distinct, premium section at the top of the login card. Use a subtle 'metallic' gradient (very light grey/silver) or pure white. Add a delicate bottom border."
-    },
-    "LoginForm": {
-      "style": "Clean inputs with 'ring' focus states. Primary button should be Deep Navy or Electric Blue."
-    },
-    "Background": {
-      "style": "Use a subtle abstract automotive background or a clean, high-end gradient.",
-      "image_url": "https://images.unsplash.com/photo-1665579213714-5470c2f13e45?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjh8MHwxfHNlYXJjaHw0fHxhYnN0cmFjdCUyMHNpbHZlciUyMGJsdWUlMjBtZXRhbGxpYyUyMGF1dG9tb3RpdmUlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3Mjc1MzMwNHww&ixlib=rb-4.1.0&q=85",
-      "overlay": "bg-slate-900/50 (if using image) or bg-slate-50 (if solid)"
+    "see_in_action_section": {
+      "new_layout": "Interactive Tabbed Showcase (Sticky Scroll / Side-by-side)",
+      "structure": "grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-6xl mx-auto items-center mt-10",
+      "heading": "Text: 'See Quick Wing in action' - text-center text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-12",
+      "left_column": {
+        "span": "lg:col-span-5",
+        "styling": "flex flex-col gap-4",
+        "items": "3 clickable tab cards. Each represents a screenshot state.",
+        "active_tab_styling": "text-left bg-white p-6 rounded-3xl border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all ring-1 ring-slate-900/5 cursor-default",
+        "inactive_tab_styling": "text-left p-6 rounded-3xl border border-transparent opacity-60 hover:opacity-100 hover:bg-slate-200/50 cursor-pointer transition-all",
+        "content_details": "Inside each tab: Title (text-xl font-bold tracking-tight text-slate-900) + brief 2-line description (text-slate-600). Add a small colored dot or indicator to show the active state."
+      },
+      "right_column": {
+        "span": "lg:col-span-7",
+        "styling": "relative aspect-[4/3] w-full rounded-3xl overflow-hidden bg-white border border-slate-200/60 shadow-2xl group",
+        "browser_frame": "Top bar: 'h-12 bg-slate-100 flex items-center px-4 gap-2 border-b border-slate-200/60'. Add 3 dots (red, yellow, green) simulating a macOS window to make it feel like a polished app.",
+        "image_handling": "Render the image corresponding to the active tab. Use 'absolute inset-0 top-12 w-full h-full object-cover transition-opacity duration-500 ease-in-out' to fade between images. Active image gets 'opacity-100 z-10', inactive gets 'opacity-0 z-0'."
+      }
     }
   },
-  "visual_enhancers": {
-    "shadows": "shadow-xl shadow-slate-200/50",
-    "borders": "border border-slate-200",
-    "radius": "rounded-xl",
-    "glassmorphism": "backdrop-blur-xl bg-white/80 border-white/20"
-  },
-  "assets": {
-    "logo_placeholder": "If actual SVG is missing, create a composite logo using Lucide-React icons (Wing or Activity) + Text. Style: Icon in Blue (#3B82F6) + Silver (#94A3B8), Text in Dark Navy (#0F172A).",
-    "icons": "Lucide React"
+  "images_and_media": {
+    "fleet_reports": "https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/n105nizt_IMG_5913.jpeg",
+    "car_bookings": "https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/88y0o78p_IMG_5914.jpeg",
+    "daily_availability": "https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/iku1do9b_IMG_5909.jpeg"
   },
   "instructions_to_main_agent": [
-    "1. Install 'lucide-react' if not present.",
-    "2. Modify the Login page to use a 'Card' based layout.",
-    "3. The 'Header' is the top section of this card.",
-    "4. Remove the old 'blue-to-indigo' gradient. Replace it with a 'Premium White/Silver' aesthetic.",
-    "5. Ensure the 'Quick Wing' logo is prominent and aligned with the 'Ultra Professional' goal.",
-    "6. Use the provided car grill image as a subtle background for the entire page (with heavy overlay) or as a side panel if doing a split layout.",
-    "7. Use 'Barlow' font for the 'Quick Wing' and 'Car Fleet Management' text to match the automotive theme."
-  ],
-  "universal_guidelines": [
-    "Do not use generic gradients.",
-    "Ensure high contrast for accessibility.",
-    "Use 'data-testid' on all inputs and buttons.",
-    "Add micro-interactions (hover, focus) to all elements."
+    "Open /app/frontend/src/pages/LandingPage.js.",
+    "Replace the existing generic 6-item 'features' grid with the asymmetrical Bento Grid layout detailed in this guideline.",
+    "Completely rewrite the 'ScreenshotCarousel' component into a new interactive 'ProductShowcase' component using the Tabbed approach, mapping to the 3 provided images.",
+    "Update the overall page background ('bg-white' -> 'bg-slate-50') and increase section padding ('py-12' -> 'py-20' or 'py-24') to give elements room to breathe.",
+    "Ensure all interactive elements have 'data-testid' attributes (e.g., data-testid='feature-tab-0').",
+    "Do NOT use external animation libraries like Framer Motion. Rely strictly on Tailwind CSS transitions ('transition-all duration-300 opacity-0 opacity-100' etc.).",
+    "Correct the British/Irish spelling 'grey' in Tailwind classes if they were typos causing fallbacks. Always use standard 'slate' (e.g., 'text-slate-900', 'bg-slate-50', 'border-slate-200').",
+    "Ensure the ROI Calculator and existing Hero section remain functional but adapt them to the new softer aesthetic where applicable (like removing harsh pure white backgrounds)."
   ]
 }

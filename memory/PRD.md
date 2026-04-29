@@ -6,7 +6,29 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 ## Recent Changes (Feb 2026)
 
 ### New Features - Feb 28, 2026
-**Custom-Only Tenant Plan + Landing Page Polish:**
+**Incident Reports (per-tenant):**
+- New collection `incidents` + `incident_form_configs` in MongoDB
+- Backend endpoints:
+  - `GET /api/incidents` — list (admin sees all, staff sees their own)
+  - `GET /api/incidents/stats` — dashboard stats (week/month/year/total, by severity/type/car/staff, unresolved count)
+  - `POST /api/incidents` — log (any authenticated user; staff submissions trigger dashboard notifications to all tenant admins)
+  - `PATCH /api/incidents/{id}` — edit/resolve (admin)
+  - `DELETE /api/incidents/{id}` — (admin)
+  - `GET /api/incidents/export` — CSV export
+  - `GET /api/incidents/form-config` — fetch staff-facing form config
+  - `PUT /api/incidents/form-config` — admin customises which fields appear
+- Photos: up to 5 per incident, compressed client-side to 1280px JPEG @ 80% quality, stored as base64 in the doc
+- Status workflow: `open` → `resolved` (with `resolved_at` + `resolved_by` audit fields)
+- Types: Damage / Accident / Breakdown / Theft / Fuel / Near-miss / Other
+- Severity: minor / moderate / severe
+- Frontend:
+  - NEW component `/app/frontend/src/components/IncidentReportsSection.js` (admin dashboard + staff button + log/edit modal + form-builder modal)
+  - Wired into `TenantDashboard.js` as new Reports sub-tab "Incident Reports"
+  - Staff see a prominent "Report Incident?" card on their Live Fleet Status landing view with red CTA
+  - Admin form-builder lets them toggle which optional fields (location, cost, police#, insurance#, photos) appear on the staff submission form + which are required
+- Tested end-to-end: creation, listing with car/staff name enrichment, stats aggregation, all working ✓
+
+
 - Replaced 3-tier plan picker (Standard/Essential/Professional) in tenant creation with a **single Custom Plan form** — super admin enters `Number of Cars`, `Number of Staff`, `Monthly Cost (€)` directly
 - Added `TenantPlan.CUSTOM` enum value, added `custom_price` field to `TenantCreate` model, added `monthly_price` to tenant DB doc
 - Default plan in form = `custom`; old tier UI removed

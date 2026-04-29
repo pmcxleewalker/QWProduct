@@ -21,6 +21,7 @@ import QRScanner from '../components/QRScanner';
 import VehicleQRCode from '../components/VehicleQRCode';
 import FleetVehicleCard from '../components/FleetVehicleCard';
 import FleetReportsSection from '../components/FleetReportsSection';
+import IncidentReportsSection from '../components/IncidentReportsSection';
 import EditVehicleModal from '../components/EditVehicleModal';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import AnnouncementsManager from '../components/AnnouncementsManager';
@@ -590,6 +591,7 @@ const TenantDashboard = () => {
           icon: PieChart,
           subTabs: [
             { id: 'fleet-reports', label: 'Fleet Reports' },
+            { id: 'incident-reports', label: 'Incident Reports' },
             { id: 'daily-timeline', label: 'Daily Timeline' }
           ]
         },
@@ -963,6 +965,11 @@ const TenantDashboard = () => {
             {/* Live Fleet Status Tab (Staff View) or Fleet > Live Status sub-tab */}
             {(activeTab === 'fleet-status' || (activeTab === 'fleet' && activeSubTab === 'live-fleet')) && (
               <div className="space-y-6">
+                {/* Report Incident card — prominent on staff landing view */}
+                {isStaffUser && (
+                  <IncidentReportsSection mode="staff" />
+                )}
+
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">Live Fleet Status</h2>
@@ -1654,6 +1661,11 @@ const TenantDashboard = () => {
             {/* Daily Timeline Tab */}
             {(activeTab === 'reports' && activeSubTab === 'daily-timeline') && isAdmin && (
               <DailyTimelineChart />
+            )}
+
+            {/* Incident Reports Tab */}
+            {(activeTab === 'reports' && activeSubTab === 'incident-reports') && isAdmin && (
+              <IncidentReportsSection mode="admin" />
             )}
 
             {/* Analytics Tab (was Reports Tab) */}

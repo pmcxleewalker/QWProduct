@@ -1,7 +1,7 @@
 """
 Quick Wing Fleet Management - Multi-Tenant SaaS Platform
 """
-from fastapi import FastAPI, APIRouter, HTTPException, Query, Depends, Request, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, Query, Depends, Request, UploadFile, File, Response
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
@@ -4263,6 +4263,377 @@ async def bulk_import_users(
         "created_users": succeeded,
         "errors": errors,
     }
+
+
+# ==================== INCIDENT REPORTS ====================
+# Each tenant can configure which fields appear on the staff-facing incident form.
+# Staff submit reports from their app; admins review, edit, resolve and export.
+
+INCIDENT_TYPES = ["Damage", "Accident", "Breakdown", "Theft", "Fuel", "Near-miss", "Other"]
+INCIDENT_SEVERITIES = ["minor", "moderate", "severe"]
+INCIDENT_STATUSES = ["open", "resolved"]
+
+DEFAULT_FORM_CONFIG = {
+    "show_location": True,
+    "show_estimated_cost": True,
+    "show_police_report": True,
+    "show_insurance_claim": True,
+    "show_photos": True,
+    "require_description": True,
+    "require_location": False,
+    "require_photos": False,
+}
+
+
+@api_router.get("/incidents/form-config")
+async def get_incident_form_config(context: TenantContext = Depends(get_tenant_context)):
+    """Return the staff-facing incident form config for this tenant."""
+    doc = await db.incident_form_configs.find_one(
+        {"tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    if not doc:
+        return {"tenant_id": context.tenant_id, **DEFAULT_FORM_CONFIG}
+    return doc
+
+
+@api_router.put("/incidents/form-config")
+async def update_incident_form_config(
+    config: dict,
+    context: TenantContext = Depends(require_admin),
+):
+    """Admin: update which fields appear on the staff incident form."""
+    allowed_keys = set(DEFAULT_FORM_CONFIG.keys())
+    cleaned = {k: bool(v) for k, v in config.items() if k in allowed_keys}
+    merged = {**DEFAULT_FORM_CONFIG, **cleaned}
+    merged["tenant_id"] = context.tenant_id
+    merged["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.incident_form_configs.update_one(
+        {"tenant_id": context.tenant_id},
+        {"$set": merged},
+        upsert=True,
+    )
+    return {**merged, "message": "Form configuration saved"}
+
+
+@api_router.get("/incidents")
+async def list_incidents(
+    status: Optional[str] = None,
+    severity: Optional[str] = None,
+    vehicle_id: Optional[str] = None,
+    limit: int = 200,
+    context: TenantContext = Depends(get_tenant_context),
+):
+    """List incidents for the current tenant (admins see all, staff see their own)."""
+    query = {"tenant_id": context.tenant_id}
+    if status:
+        query["status"] = status
+    if severity:
+        query["severity"] = severity
+    if vehicle_id:
+        query["car_id"] = vehicle_id
+    # Staff: only see their own submissions
+    if context.role not in ("admin", "master_admin", "super_admin"):
+        query["reporter_user_id"] = context.user_id
+
+    cursor = db.incidents.find(query, {"_id": 0}).sort("incident_date", -1).limit(limit)
+    items = await cursor.to_list(limit)
+
+    # Enrich with car + staff names
+    car_ids = list({i.get("car_id") for i in items if i.get("car_id")})
+    user_ids = list({i.get("staff_user_id") or i.get("reporter_user_id") for i in items
+                     if i.get("staff_user_id") or i.get("reporter_user_id")})
+    cars = {
+        c["id"]: c
+        for c in await db.vehicles.find(
+            {"id": {"$in": car_ids}}, {"_id": 0, "id": 1, "name": 1, "registration": 1}
+        ).to_list(1000)
+    }
+    users = {
+        u["id"]: u
+        for u in await db.users.find(
+            {"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "name": 1, "email": 1}
+        ).to_list(1000)
+    }
+    for i in items:
+        c = cars.get(i.get("car_id")) or {}
+        i["car_name"] = c.get("name")
+        i["car_registration"] = c.get("registration")
+        staff_id = i.get("staff_user_id") or i.get("reporter_user_id")
+        u = users.get(staff_id) or {}
+        i["staff_name"] = u.get("name")
+        i["staff_email"] = u.get("email")
+
+    return {"incidents": items, "total": len(items)}
+
+
+@api_router.get("/incidents/stats")
+async def incident_stats(context: TenantContext = Depends(require_admin)):
+    """Aggregated counts for the admin incident dashboard."""
+    tenant_id = context.tenant_id
+    now = datetime.now(timezone.utc)
+    week_ago = (now - timedelta(days=7)).isoformat()
+    month_ago = (now - timedelta(days=30)).isoformat()
+    year_ago = (now - timedelta(days=365)).isoformat()
+
+    total = await db.incidents.count_documents({"tenant_id": tenant_id})
+    week = await db.incidents.count_documents({"tenant_id": tenant_id, "incident_date": {"$gte": week_ago}})
+    month = await db.incidents.count_documents({"tenant_id": tenant_id, "incident_date": {"$gte": month_ago}})
+    year = await db.incidents.count_documents({"tenant_id": tenant_id, "incident_date": {"$gte": year_ago}})
+    unresolved = await db.incidents.count_documents({"tenant_id": tenant_id, "status": "open"})
+
+    # Breakdown by severity, type, car, staff
+    all_items = await db.incidents.find(
+        {"tenant_id": tenant_id},
+        {"_id": 0, "severity": 1, "type": 1, "car_id": 1, "staff_user_id": 1, "reporter_user_id": 1},
+    ).to_list(10000)
+
+    def _count_by(key, rows, transform=None):
+        out = {}
+        for r in rows:
+            v = r.get(key)
+            if transform:
+                v = transform(v)
+            if v is None:
+                continue
+            out[v] = out.get(v, 0) + 1
+        return out
+
+    by_severity = _count_by("severity", all_items)
+    by_type = _count_by("type", all_items)
+
+    # Per car (resolve names)
+    by_car_raw = _count_by("car_id", all_items)
+    car_ids = list(by_car_raw.keys())
+    cars = {
+        c["id"]: c for c in await db.vehicles.find(
+            {"id": {"$in": car_ids}}, {"_id": 0, "id": 1, "name": 1, "registration": 1}
+        ).to_list(1000)
+    }
+    by_car = [
+        {"car_id": cid, "name": cars.get(cid, {}).get("name", "Unknown"),
+         "registration": cars.get(cid, {}).get("registration"), "count": cnt}
+        for cid, cnt in sorted(by_car_raw.items(), key=lambda x: -x[1])
+    ]
+
+    # Per staff (use staff_user_id if set, else reporter_user_id)
+    staff_counts = {}
+    for r in all_items:
+        sid = r.get("staff_user_id") or r.get("reporter_user_id")
+        if sid:
+            staff_counts[sid] = staff_counts.get(sid, 0) + 1
+    users = {
+        u["id"]: u for u in await db.users.find(
+            {"id": {"$in": list(staff_counts.keys())}}, {"_id": 0, "id": 1, "name": 1}
+        ).to_list(1000)
+    }
+    by_staff = [
+        {"user_id": uid, "name": users.get(uid, {}).get("name", "Unknown"), "count": cnt}
+        for uid, cnt in sorted(staff_counts.items(), key=lambda x: -x[1])
+    ]
+
+    return {
+        "this_week": week,
+        "this_month": month,
+        "this_year": year,
+        "total": total,
+        "unresolved": unresolved,
+        "by_severity": by_severity,
+        "by_type": by_type,
+        "by_car": by_car,
+        "by_staff": by_staff,
+    }
+
+
+@api_router.post("/incidents")
+async def create_incident(
+    payload: dict,
+    context: TenantContext = Depends(get_tenant_context),
+    request: Request = None,
+):
+    """Log a new incident. Accepts submissions from both staff and admins."""
+    # Required fields
+    car_id = payload.get("car_id")
+    incident_date = payload.get("incident_date") or datetime.now(timezone.utc).date().isoformat()
+    incident_type = (payload.get("type") or "Damage").strip()
+    severity = (payload.get("severity") or "minor").strip().lower()
+    description = (payload.get("description") or "").strip()
+
+    if not car_id:
+        raise HTTPException(status_code=400, detail="Car is required")
+    if incident_type not in INCIDENT_TYPES:
+        raise HTTPException(status_code=400, detail=f"Type must be one of {INCIDENT_TYPES}")
+    if severity not in INCIDENT_SEVERITIES:
+        raise HTTPException(status_code=400, detail=f"Severity must be one of {INCIDENT_SEVERITIES}")
+
+    car = await db.vehicles.find_one({"id": car_id, "tenant_id": context.tenant_id}, {"_id": 0, "id": 1})
+    if not car:
+        raise HTTPException(status_code=404, detail="Car not found for this tenant")
+
+    # Photos — list of base64 data-url strings, cap at 5
+    photos = payload.get("photos") or []
+    if not isinstance(photos, list):
+        photos = []
+    photos = photos[:5]
+
+    # staff_user_id: who was involved (admin may log on behalf of staff)
+    staff_user_id = payload.get("staff_user_id") or context.user_id
+
+    incident = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": context.tenant_id,
+        "car_id": car_id,
+        "staff_user_id": staff_user_id,
+        "reporter_user_id": context.user_id,
+        "incident_date": incident_date,
+        "type": incident_type,
+        "severity": severity,
+        "location": (payload.get("location") or "").strip() or None,
+        "estimated_cost": payload.get("estimated_cost") or None,
+        "police_report_number": (payload.get("police_report_number") or "").strip() or None,
+        "insurance_claim_number": (payload.get("insurance_claim_number") or "").strip() or None,
+        "description": description,
+        "photos": photos,
+        "status": "open",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.incidents.insert_one(incident)
+
+    # Fire dashboard notification to all tenant admins (best-effort)
+    try:
+        admin_memberships = await db.memberships.find(
+            {"tenant_id": context.tenant_id, "role": {"$in": ["admin", "master_admin"]}},
+            {"_id": 0, "user_id": 1},
+        ).to_list(500)
+        reporter = await db.users.find_one({"id": context.user_id}, {"_id": 0, "name": 1}) or {}
+        reporter_name = reporter.get("name", "A staff member")
+        for m in admin_memberships:
+            if m["user_id"] == context.user_id:
+                continue  # don't notify the person who submitted it
+            await db.notifications.insert_one({
+                "id": str(uuid.uuid4()),
+                "tenant_id": context.tenant_id,
+                "user_id": m["user_id"],
+                "type": "incident_reported",
+                "title": f"New {severity} incident reported",
+                "message": f"{reporter_name} reported a {incident_type.lower()} involving a vehicle.",
+                "link": "/reports/incidents",
+                "read": False,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+    except Exception:
+        pass
+
+    try:
+        await audit_service.log(
+            actor_user_id=context.user_id, actor_email=context.user_email,
+            action=AuditAction.VEHICLE_UPDATED, tenant_id=context.tenant_id,
+            resource_type="incident", resource_id=incident["id"],
+            ip_address=request.client.host if request and request.client else None,
+            meta={"severity": severity, "type": incident_type, "car_id": car_id},
+        )
+    except Exception:
+        pass
+
+    return {"incident": incident, "message": "Incident logged"}
+
+
+@api_router.patch("/incidents/{incident_id}")
+async def update_incident(
+    incident_id: str,
+    payload: dict,
+    context: TenantContext = Depends(require_admin),
+):
+    """Admin: edit or resolve an incident."""
+    existing = await db.incidents.find_one(
+        {"id": incident_id, "tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    if not existing:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    allowed = {
+        "type", "severity", "location", "estimated_cost",
+        "police_report_number", "insurance_claim_number",
+        "description", "status", "staff_user_id",
+    }
+    updates = {k: v for k, v in payload.items() if k in allowed}
+    if "severity" in updates and updates["severity"] not in INCIDENT_SEVERITIES:
+        raise HTTPException(status_code=400, detail="Invalid severity")
+    if "status" in updates and updates["status"] not in INCIDENT_STATUSES:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    if "type" in updates and updates["type"] not in INCIDENT_TYPES:
+        raise HTTPException(status_code=400, detail="Invalid type")
+
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    if updates.get("status") == "resolved" and existing.get("status") != "resolved":
+        updates["resolved_at"] = updates["updated_at"]
+        updates["resolved_by"] = context.user_id
+
+    await db.incidents.update_one(
+        {"id": incident_id, "tenant_id": context.tenant_id},
+        {"$set": updates},
+    )
+    return {"message": "Incident updated", "incident_id": incident_id}
+
+
+@api_router.delete("/incidents/{incident_id}")
+async def delete_incident(
+    incident_id: str,
+    context: TenantContext = Depends(require_admin),
+):
+    """Admin: delete an incident."""
+    res = await db.incidents.delete_one(
+        {"id": incident_id, "tenant_id": context.tenant_id}
+    )
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    return {"message": "Incident deleted"}
+
+
+@api_router.get("/incidents/export")
+async def export_incidents_csv(context: TenantContext = Depends(require_admin)):
+    """Admin: export all incidents as CSV."""
+    from io import StringIO as _StringIO
+    import csv as _csv
+
+    items = await db.incidents.find(
+        {"tenant_id": context.tenant_id}, {"_id": 0}
+    ).sort("incident_date", -1).to_list(10000)
+
+    car_ids = list({i.get("car_id") for i in items if i.get("car_id")})
+    user_ids = list({i.get("staff_user_id") or i.get("reporter_user_id") for i in items})
+    cars = {c["id"]: c for c in await db.vehicles.find(
+        {"id": {"$in": car_ids}}, {"_id": 0, "id": 1, "name": 1, "registration": 1}
+    ).to_list(5000)}
+    users = {u["id"]: u for u in await db.users.find(
+        {"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "name": 1}
+    ).to_list(5000)}
+
+    out = _StringIO()
+    w = _csv.writer(out)
+    w.writerow([
+        "date", "type", "severity", "status", "car_name", "car_registration",
+        "staff", "location", "estimated_cost", "police_report", "insurance_claim",
+        "description", "created_at", "resolved_at",
+    ])
+    for i in items:
+        c = cars.get(i.get("car_id"), {})
+        u = users.get(i.get("staff_user_id") or i.get("reporter_user_id"), {})
+        w.writerow([
+            i.get("incident_date"), i.get("type"), i.get("severity"), i.get("status"),
+            c.get("name", ""), c.get("registration", ""), u.get("name", ""),
+            i.get("location") or "", i.get("estimated_cost") or "",
+            i.get("police_report_number") or "", i.get("insurance_claim_number") or "",
+            (i.get("description") or "").replace("\n", " ")[:500],
+            i.get("created_at", ""), i.get("resolved_at", ""),
+        ])
+    return Response(
+        content=out.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=incidents-{context.tenant_slug}.csv"},
+    )
+
+
 
 
 

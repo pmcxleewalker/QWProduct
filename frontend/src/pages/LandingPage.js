@@ -5,7 +5,6 @@ import {
   CheckCircle2, Mail, Instagram,
   ArrowRight, Menu, X, Play
 } from 'lucide-react';
-import WingmanChatbot from '../components/WingmanChatbot';
 import ROICalculator from '../components/ROICalculator';
 
 /* ----------------------- Product Showcase (Tabbed) ----------------------- */
@@ -537,9 +536,6 @@ const LandingPage = () => {
           </div>
         </div>
       </footer>
-
-      {/* Wingman AI Chatbot */}
-      <WingmanChatbot />
     </main>
   );
 };

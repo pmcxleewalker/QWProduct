@@ -6290,16 +6290,49 @@ async def startup():
     # Seed Open Claw bot account
     await seed_bot_account()
     
-    # Ensure indexes exist
-    try:
-        await db.vehicles.create_index([("tenant_id", 1), ("id", 1)])
-        await db.bookings.create_index([("tenant_id", 1), ("id", 1)])
-        await db.tenants.create_index([("slug", 1)], unique=True)
-        await db.memberships.create_index([("user_id", 1), ("tenant_id", 1)])
-        await db.users.create_index("email", unique=True)
-        await db.users.create_index("id", unique=True)
-    except Exception as e:
-        logger.warning(f"Index creation warning: {e}")
+    # Ensure indexes exist — each wrapped so one failure doesn't skip the rest
+    index_specs = [
+        # --- Tenant lookup & auth (critical path for every request) ---
+        ("tenants", [("slug", 1)], {"unique": True}),
+        ("users", "email", {"unique": True}),
+        ("users", "id", {"unique": True}),
+        ("memberships", [("user_id", 1), ("tenant_id", 1)], {}),
+        ("memberships", [("tenant_id", 1)], {}),
+
+        # --- Vehicles ---
+        ("vehicles", [("tenant_id", 1), ("id", 1)], {}),
+        ("vehicles", [("tenant_id", 1), ("registration", 1)], {}),  # bulk-import dedupe
+
+        # --- Bookings (highest-volume collection — conflict checks + reports) ---
+        ("bookings", [("tenant_id", 1), ("id", 1)], {}),
+        ("bookings", [("tenant_id", 1), ("car_id", 1), ("start_time", 1), ("end_time", 1)],
+            {"name": "booking_conflict_idx"}),
+        ("bookings", [("tenant_id", 1), ("start_time", -1)], {}),  # date-range reports
+        ("bookings", [("tenant_id", 1), ("user_id", 1), ("start_time", -1)], {}),
+
+        # --- Mileage logs (high-volume, time-series) ---
+        ("mileage_logs", [("tenant_id", 1), ("vehicle_id", 1), ("logged_at", -1)], {}),
+
+        # --- Car statuses (live fleet sheet) ---
+        ("car_statuses", [("tenant_id", 1), ("vehicle_id", 1)], {}),
+
+        # --- Audit / messages / todos ---
+        ("audit_events", [("tenant_id", 1), ("created_at", -1)], {}),
+        ("messages", [("tenant_id", 1), ("created_at", -1)], {}),
+        ("todos", [("tenant_id", 1), ("status", 1), ("due_date", 1)], {}),
+
+        # --- Chatbot ---
+        ("chatbot_conversations", [("session_id", 1)], {}),
+        ("chatbot_leads", [("created_at", -1)], {}),
+    ]
+    created = 0
+    for coll, keys, opts in index_specs:
+        try:
+            await db[coll].create_index(keys, **opts)
+            created += 1
+        except Exception as e:
+            logger.debug(f"Index skip on {coll} {keys}: {e}")
+    logger.info(f"Performance indexes ensured: {created}/{len(index_specs)} applied.")
 
 
 async def seed_bot_account():

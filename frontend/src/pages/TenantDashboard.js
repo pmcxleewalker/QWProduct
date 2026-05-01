@@ -1317,6 +1317,11 @@ const TenantDashboard = () => {
             {/* Bookings Tab */}
             {activeTab === 'bookings' && (
               <div className="space-y-6">
+                {/* Report Incident card — staff only */}
+                {isStaffUser && (
+                  <IncidentReportsSection mode="staff" />
+                )}
+
                 {/* Tier-specific Booking Header */}
                 <div className={`p-4 rounded-xl ${
                   planData?.plan?.id === 'professional' ? 'bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200' :

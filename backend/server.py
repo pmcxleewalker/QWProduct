@@ -4498,6 +4498,8 @@ async def create_incident(
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.incidents.insert_one(incident)
+    # Remove Mongo's injected _id from the dict before returning as JSON
+    incident.pop("_id", None)
 
     # Fire dashboard notification to all tenant admins (best-effort)
     try:
@@ -4632,6 +4634,249 @@ async def export_incidents_csv(context: TenantContext = Depends(require_admin)):
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=incidents-{context.tenant_slug}.csv"},
     )
+
+
+@api_router.get("/incidents/export-pdf")
+async def export_incidents_pdf(
+    incident_id: Optional[str] = None,
+    context: TenantContext = Depends(require_admin),
+):
+    """Admin: export incidents as a PDF (optionally a single incident with photos).
+    
+    If `incident_id` is provided, exports a detailed single-incident report with photos.
+    Otherwise, exports a summary PDF of all incidents for the tenant (no photos — table only).
+    """
+    from io import BytesIO
+    import base64 as _b64
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import mm, cm
+    from reportlab.lib import colors
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage,
+        PageBreak,
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "title", parent=styles["Heading1"], fontSize=18, textColor=colors.HexColor("#0f172a"),
+        spaceAfter=6,
+    )
+    h2 = ParagraphStyle(
+        "h2", parent=styles["Heading2"], fontSize=11, textColor=colors.HexColor("#dc2626"),
+        spaceAfter=4, spaceBefore=10,
+    )
+    label = ParagraphStyle(
+        "label", parent=styles["Normal"], fontSize=8, textColor=colors.HexColor("#64748b"),
+    )
+    body = ParagraphStyle(
+        "body", parent=styles["Normal"], fontSize=10, textColor=colors.HexColor("#1e293b"),
+    )
+    small = ParagraphStyle(
+        "small", parent=styles["Normal"], fontSize=8, textColor=colors.HexColor("#64748b"),
+    )
+
+    # Fetch incidents
+    if incident_id:
+        items = await db.incidents.find(
+            {"id": incident_id, "tenant_id": context.tenant_id}, {"_id": 0}
+        ).to_list(1)
+        if not items:
+            raise HTTPException(status_code=404, detail="Incident not found")
+    else:
+        items = await db.incidents.find(
+            {"tenant_id": context.tenant_id}, {"_id": 0}
+        ).sort("incident_date", -1).to_list(500)
+
+    # Enrich with car + staff names (same as CSV export)
+    car_ids = list({i.get("car_id") for i in items if i.get("car_id")})
+    user_ids = list({i.get("staff_user_id") or i.get("reporter_user_id") for i in items})
+    cars = {c["id"]: c for c in await db.vehicles.find(
+        {"id": {"$in": car_ids}}, {"_id": 0, "id": 1, "name": 1, "registration": 1}
+    ).to_list(5000)}
+    users = {u["id"]: u for u in await db.users.find(
+        {"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "name": 1, "email": 1}
+    ).to_list(5000)}
+
+    # Tenant name for header
+    tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0, "name": 1}) or {}
+    tenant_name = tenant.get("name", "Tenant")
+
+    buf = BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        topMargin=1.5*cm, bottomMargin=1.5*cm,
+        leftMargin=1.5*cm, rightMargin=1.5*cm,
+        title=f"Incident Report — {tenant_name}",
+    )
+    story = []
+
+    # Header
+    story.append(Paragraph(f"Quick Wing — Incident Report", title_style))
+    story.append(Paragraph(
+        f"<b>{tenant_name}</b> &nbsp;·&nbsp; Generated {datetime.now(timezone.utc).strftime('%d %b %Y %H:%M UTC')}",
+        small,
+    ))
+    story.append(Spacer(1, 8))
+
+    def _fmt(v, default="—"):
+        return v if (v is not None and str(v).strip() != "") else default
+
+    def _decode_photo(data_url):
+        """Turn a data: URL into a PIL-ready byte buffer for reportlab."""
+        if not isinstance(data_url, str) or not data_url.startswith("data:"):
+            return None
+        try:
+            header, b64part = data_url.split(",", 1)
+            raw = _b64.b64decode(b64part)
+            return BytesIO(raw)
+        except Exception:
+            return None
+
+    # --- Detailed: single incident w/ photos ---
+    if incident_id and items:
+        inc = items[0]
+        car = cars.get(inc.get("car_id"), {})
+        usr = users.get(inc.get("staff_user_id") or inc.get("reporter_user_id"), {})
+
+        severity_hex = {
+            "minor": "#d97706",
+            "moderate": "#ea580c",
+            "severe": "#dc2626",
+        }
+        sev = (inc.get("severity") or "minor").lower()
+
+        story.append(Paragraph("Incident Details", h2))
+        facts = [
+            ["Date", _fmt(inc.get("incident_date"))],
+            ["Type", _fmt(inc.get("type"))],
+            ["Severity",
+                f"<font color='{severity_hex.get(sev, '#000000')}'><b>{sev.upper()}</b></font>"],
+            ["Status", _fmt((inc.get("status") or "open")).upper()],
+            ["Vehicle", f"{_fmt(car.get('name'))}  <font color='#94a3b8'>({_fmt(car.get('registration'))})</font>"],
+            ["Staff involved", _fmt(usr.get("name") or usr.get("email"))],
+            ["Location", _fmt(inc.get("location"))],
+            ["Estimated cost", f"€{inc.get('estimated_cost'):.2f}" if inc.get("estimated_cost") is not None else "—"],
+            ["Police report #", _fmt(inc.get("police_report_number"))],
+            ["Insurance claim #", _fmt(inc.get("insurance_claim_number"))],
+        ]
+        facts_data = [[Paragraph(k, label), Paragraph(str(v), body)] for k, v in facts]
+        t = Table(facts_data, colWidths=[45*mm, None])
+        t.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("LINEBELOW", (0, 0), (-1, -2), 0.3, colors.HexColor("#e2e8f0")),
+        ]))
+        story.append(t)
+        story.append(Spacer(1, 8))
+
+        # Description
+        if inc.get("description"):
+            story.append(Paragraph("Description", h2))
+            story.append(Paragraph(
+                (inc["description"] or "").replace("\n", "<br/>"), body,
+            ))
+            story.append(Spacer(1, 8))
+
+        # Photos
+        photos = inc.get("photos") or []
+        if photos:
+            story.append(Paragraph(f"Photos ({len(photos)})", h2))
+            img_rows = []
+            row = []
+            max_w = 80*mm
+            max_h = 60*mm
+            for i, p in enumerate(photos):
+                bio = _decode_photo(p)
+                if not bio:
+                    continue
+                try:
+                    img = RLImage(bio, width=max_w, height=max_h, kind="proportional")
+                except Exception:
+                    continue
+                row.append(img)
+                if len(row) == 2:
+                    img_rows.append(row)
+                    row = []
+            if row:
+                row.append("")
+                img_rows.append(row)
+            if img_rows:
+                pt = Table(img_rows, colWidths=[90*mm, 90*mm])
+                pt.setStyle(TableStyle([
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ]))
+                story.append(pt)
+
+        filename = f"incident-{incident_id[:8]}.pdf"
+
+    else:
+        # --- Summary: all incidents as a table ---
+        story.append(Paragraph(f"All Incidents ({len(items)})", h2))
+        if not items:
+            story.append(Paragraph("No incidents recorded.", body))
+        else:
+            header_row = [
+                Paragraph("<b>Date</b>", small),
+                Paragraph("<b>Type</b>", small),
+                Paragraph("<b>Car</b>", small),
+                Paragraph("<b>Staff</b>", small),
+                Paragraph("<b>Sev.</b>", small),
+                Paragraph("<b>Status</b>", small),
+                Paragraph("<b>Cost</b>", small),
+            ]
+            table_data = [header_row]
+            for inc in items:
+                car = cars.get(inc.get("car_id"), {})
+                usr = users.get(inc.get("staff_user_id") or inc.get("reporter_user_id"), {})
+                table_data.append([
+                    Paragraph(str(inc.get("incident_date") or "—"), small),
+                    Paragraph(str(inc.get("type") or "—"), small),
+                    Paragraph(f"{_fmt(car.get('name'))}<br/><font color='#94a3b8' size='7'>{_fmt(car.get('registration'))}</font>", small),
+                    Paragraph(str(usr.get("name") or "—"), small),
+                    Paragraph(str(inc.get("severity") or "—").capitalize(), small),
+                    Paragraph(str(inc.get("status") or "—").capitalize(), small),
+                    Paragraph(f"€{inc['estimated_cost']:.0f}" if inc.get("estimated_cost") is not None else "—", small),
+                ])
+            tt = Table(
+                table_data,
+                colWidths=[22*mm, 22*mm, 42*mm, 34*mm, 18*mm, 18*mm, 18*mm],
+                repeatRows=1,
+            )
+            tt.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f1f5f9")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ("LINEBELOW", (0, 0), (-1, -1), 0.3, colors.HexColor("#e2e8f0")),
+            ]))
+            story.append(tt)
+
+        filename = f"incidents-{context.tenant_slug}.pdf"
+
+    # Footer
+    story.append(Spacer(1, 14))
+    story.append(Paragraph(
+        f"<font color='#94a3b8'>Quick Wing Fleet Management · quick-wing.com · Confidential</font>",
+        small,
+    ))
+
+    doc.build(story)
+    buf.seek(0)
+
+    return Response(
+        content=buf.getvalue(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+
 
 
 

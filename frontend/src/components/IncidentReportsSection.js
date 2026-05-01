@@ -12,7 +12,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import {
   AlertTriangle, Plus, Download, X, Trash2, Edit2, Check,
-  Camera, Settings, Loader2, User, Car as CarIcon,
+  Camera, Settings, Loader2, User, Car as CarIcon, FileText,
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -540,6 +540,23 @@ const IncidentReportsSection = ({ mode = 'admin' }) => {
     }
   };
 
+  const exportPdf = async (incidentId = null) => {
+    try {
+      const res = await axios.get(`${API}/incidents/export-pdf`, {
+        params: incidentId ? { incident_id: incidentId } : {},
+        responseType: 'blob',
+      });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = incidentId ? `incident-${incidentId.slice(0, 8)}.pdf` : 'incidents.pdf';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'PDF export failed');
+    }
+  };
+
   /* ---- Staff mode: just a prominent button ---- */
   if (!isAdmin) {
     return (
@@ -609,6 +626,14 @@ const IncidentReportsSection = ({ mode = 'admin' }) => {
           >
             <Download size={14} />
             Export CSV
+          </button>
+          <button
+            onClick={() => exportPdf(null)}
+            data-testid="export-pdf-btn"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white/15 text-white text-sm font-medium rounded-lg hover:bg-white/25 border border-white/20"
+          >
+            <FileText size={14} />
+            Export PDF
           </button>
           <button
             onClick={() => { setEditing(null); setShowLog(true); }}
@@ -744,8 +769,17 @@ const IncidentReportsSection = ({ mode = 'admin' }) => {
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       <button
+                        onClick={() => exportPdf(i.id)}
+                        className="p-1.5 text-slate-600 hover:bg-slate-100 rounded"
+                        aria-label="Download incident PDF with photos"
+                        title="Download PDF with photos"
+                        data-testid={`pdf-incident-${i.id}`}
+                      >
+                        <FileText size={15} />
+                      </button>
+                      <button
                         onClick={() => { setEditing(i); setShowLog(true); }}
-                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded ml-1"
                         aria-label="Edit incident"
                         data-testid={`edit-incident-${i.id}`}
                       >

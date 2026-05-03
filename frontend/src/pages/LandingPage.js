@@ -414,7 +414,7 @@ const LandingPage = () => {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
           <h1
             id="hero-heading"
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-5"
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-5 text-white"
           >
             Fleet management that
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-400"> just works.</span>

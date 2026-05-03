@@ -112,7 +112,7 @@ const ROICalculator = () => {
           >
             <div className="flex items-center gap-2 mb-6">
               <Calculator className="text-cyan-400" size={20} />
-              <h3 className="text-lg font-semibold">Your Fleet Today</h3>
+              <h3 className="text-lg font-semibold text-white">Your Fleet Today</h3>
             </div>
 
             {/* Managers */}

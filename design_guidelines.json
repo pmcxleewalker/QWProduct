@@ -1,97 +1,113 @@
 {
-  "theme_and_archetype": {
-    "name": "Archetype 1 / Soft Utility Hybrid (Light Theme)",
-    "reasoning": "For a friendly B2B Irish fleet management tool, we want to move away from cold, sterile 'tech bro' design (dark greys, sharp corners, pure white) and towards a warm, approachable, reliable partner vibe. Soft radii, warm slate neutrals, and premium diffuse shadows achieve this."
-  },
-  "overall_visual_polish": {
-    "critique": [
-      "1. Cold color palette: The use of pure white 'bg-white' and 'bg-grey-50' with harsh text colors feels sterile and template-like.",
-      "2. Lack of hierarchy: The 6-icon grid provides no hierarchy. Everything is equal, meaning nothing stands out.",
-      "3. Passive engagement: The screenshot carousel is passive and disconnected from feature benefits.",
-      "4. Boxy elements: Small border radii ('rounded-lg', 'rounded-xl') and standard drop shadows feel dated and heavy."
-    ],
-    "colors": {
-      "background": "Use 'bg-slate-50' for main sections instead of harsh white or cold grey.",
-      "text": "Use 'text-slate-900' for headings, 'text-slate-600' for body.",
-      "primary": "Keep brand 'blue-600' for active states. Introduce 'blue-50' for soft highlight backgrounds behind icons.",
-      "accents": "Keep 'cyan-400' but use sparingly. Introduce 'emerald-50/600' and 'amber-50/600' for status/bento card accents."
+  "theme": "Light",
+  "archetype": "Archetype 4 (Swiss & High-Contrast)",
+  "instructions_to_main_agent": "Execute these exact Tailwind class swaps. This is a polish pass across existing .js files. DO NOT restructure HTML excessively or add any new npm packages. Follow the before/after pairs directly.",
+  "highest_impact_change": "Killing 'shadow-md' and replacing it with crisp 1px borders (`border-slate-200`) and microscopic shadows (`shadow-sm` or none). This single change transitions an app from looking like a 2018 Bootstrap template to a modern 2024 Linear/Notion clone.",
+  "polish_checklist": [
+    {
+      "id": 1,
+      "category": "Border-Radius Doctrine",
+      "description": "Pick ONE strict radius scale to kill the 'mixed radius' chaos. Use `rounded-md` for small interactives, `rounded-xl` for large surfaces.",
+      "before": "rounded, rounded-lg, rounded-2xl, rounded-3xl mixed everywhere",
+      "after": "Buttons/Inputs: `rounded-md` | Cards/Modals/Panels: `rounded-xl` | Badges: `rounded-full`"
     },
-    "typography": {
-      "headings": "font-sans tracking-tight text-slate-900 (The tight tracking removes the generic feel).",
-      "body": "font-sans leading-relaxed text-slate-600",
-      "microcopy": "text-sm font-medium tracking-wide text-slate-500 uppercase"
+    {
+      "id": 2,
+      "category": "Color Rationalization",
+      "description": "Purge all `gray-*` and `grey-*` mixed tokens. Standardize on `slate-*` for a cooler, modern neutral base.",
+      "before": "bg-gray-50, text-gray-500, text-grey-700, border-gray-200",
+      "after": "bg-slate-50, text-slate-500, text-slate-700, border-slate-200"
     },
-    "shapes_and_shadows": {
-      "border_radius": "Use 'rounded-2xl' and 'rounded-3xl' for a friendlier, softer feel.",
-      "shadows": "Use 'shadow-[0_8px_30px_rgb(0,0,0,0.04)]' (soft, ambient premium shadow) instead of harsh default shadows.",
-      "borders": "Use 'border border-slate-200/60' for delicate card edges."
+    {
+      "id": 3,
+      "category": "App Background Pattern",
+      "description": "The app canvas must be off-white to make white cards pop effectively.",
+      "before": "bg-white or bg-gray-50 on the main wrapper",
+      "after": "bg-slate-50 on the main wrapper, with bg-white on individual cards"
+    },
+    {
+      "id": 4,
+      "category": "Typography: Headings",
+      "description": "Standardize the heading scale. Modern apps use tighter tracking and heavier weights for headings.",
+      "before": "text-2xl font-bold, text-xl text-gray-900",
+      "after": "H1: `text-2xl font-semibold tracking-tight text-slate-900` | H2: `text-lg font-semibold tracking-tight text-slate-900`"
+    },
+    {
+      "id": 5,
+      "category": "Typography: Body & Labels",
+      "description": "Establish a consistent, legible body text system.",
+      "before": "text-sm text-gray-700, text-xs text-gray-500",
+      "after": "Body: `text-sm text-slate-600` | Labels/Small: `text-xs font-medium text-slate-500`"
+    },
+    {
+      "id": 6,
+      "category": "Button System: Primary",
+      "description": "Flatten the primary buttons, remove huge padding, add subtle hover transition.",
+      "before": "bg-blue-600 text-white rounded-lg px-6 py-3 shadow-md",
+      "after": "bg-blue-600 text-white hover:bg-blue-700 rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-colors"
+    },
+    {
+      "id": 7,
+      "category": "Button System: Secondary/Ghost",
+      "description": "Sharp, subtle borders for secondary actions. No more heavy shadows.",
+      "before": "bg-white border border-gray-300 text-gray-700 rounded-lg shadow",
+      "after": "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+    },
+    {
+      "id": 8,
+      "category": "Button System: Destructive",
+      "description": "Make destructive actions obvious but not overwhelming (light bg, colored text).",
+      "before": "bg-rose-600 text-white rounded-lg shadow-md",
+      "after": "bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+    },
+    {
+      "id": 9,
+      "category": "Card System: Surfaces",
+      "description": "Kill 2018 drop shadows. Shift to 'tactile' 1px borders with microscopic shadow.",
+      "before": "bg-white rounded-lg shadow-md border-transparent",
+      "after": "bg-white rounded-xl border border-slate-200 shadow-sm"
+    },
+    {
+      "id": 10,
+      "category": "Card System: Internal Spacing",
+      "description": "Modernize the feeling of space. Cards need more breathing room inside.",
+      "before": "p-4 or p-5",
+      "after": "p-6"
+    },
+    {
+      "id": 11,
+      "category": "Input System",
+      "description": "Forms that look like Stripe: 1px border, crisp focus rings, no harsh blue outlines.",
+      "before": "border-gray-300 rounded-lg p-3 focus:border-blue-500",
+      "after": "bg-white border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
+    },
+    {
+      "id": 12,
+      "category": "Page Header Pattern",
+      "description": "Standardize the top of every dashboard page (Tenant, Admin, Platform).",
+      "before": "div flex flex-col mb-4",
+      "after": "flex items-center justify-between mb-8 (Left: flex-col with H1 and optional text-sm subtitle | Right: flex gap-3 items-center)"
+    },
+    {
+      "id": 13,
+      "category": "Quick Wins: Table & List Rows",
+      "description": "Add hover states to table rows so the app feels responsive.",
+      "before": "border-b border-gray-200",
+      "after": "border-b border-slate-200 hover:bg-slate-50/50 transition-colors"
+    },
+    {
+      "id": 14,
+      "category": "Quick Wins: Focus Rings (Universal Polish)",
+      "description": "Apply a standardized focus-visible ring to all interactive elements for accessibility and polish.",
+      "before": "(None)",
+      "after": "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+    },
+    {
+      "id": 15,
+      "category": "Testing Integrity",
+      "description": "Add testing attributes to all actionable elements.",
+      "before": "(None)",
+      "after": "Add `data-testid=\"{kebab-case-role}\"` to every modified interactive component."
     }
-  },
-  "sections": {
-    "features_section": {
-      "new_layout": "Asymmetric Bento Box Grid (Condensed but warm)",
-      "structure": "grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-6xl mx-auto pt-10",
-      "heading": "Visible section header: 'Everything you need to run your fleet, without the headache.' - text-center text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-12",
-      "items": [
-        {
-          "name": "Smart Booking",
-          "span": "lg:col-span-2 row-span-2",
-          "styling": "bg-white p-8 md:p-10 rounded-3xl border border-slate-200/60 shadow-sm relative overflow-hidden group hover:shadow-md transition-all flex flex-col justify-between h-full",
-          "content": "Large text-2xl font-bold heading, text-slate-600 body. Icon: Calendar in a bg-blue-50 text-blue-600 rounded-2xl p-4 w-14 h-14 flex items-center justify-center. Focus on preventing double-bookings. Suggest adding a pure CSS mini-visual (like 2 overlapping pill tags: 'Booked - Transit' and 'Available')."
-        },
-        {
-          "name": "Compliance Tracking",
-          "span": "lg:col-span-2 row-span-1",
-          "styling": "bg-white p-8 rounded-3xl border border-slate-200/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-6 hover:shadow-md transition-all",
-          "content": "Icon: Shield in bg-emerald-50 text-emerald-600. Focus on Tax, NCT, Insurance. Add a mock 'Status: Valid' green pill badge next to the title."
-        },
-        {
-          "name": "Real-Time Updates",
-          "span": "lg:col-span-2 row-span-1",
-          "styling": "bg-white p-8 rounded-3xl border border-slate-200/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-6 hover:shadow-md transition-all",
-          "content": "Icon: Clock in bg-amber-50 text-amber-600. Focus on instant notifications and live data."
-        },
-        {
-          "name": "The Essentials (Fleet, Staff, Reports)",
-          "span": "lg:col-span-4 row-span-1",
-          "styling": "bg-slate-900 p-8 rounded-3xl text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-6",
-          "content": "Dark high-contrast banner strip at the bottom of the bento. Contains 3 inline mini-features with Lucide icons (Car, Users, BarChart3) styled as 'flex items-center gap-3 text-white/90 font-medium'. Text: 'Plus all the essentials: Fleet Tracking, Staff Roles, and Analytics.' Add a 'Request Demo' arrow CTA button."
-        }
-      ]
-    },
-    "see_in_action_section": {
-      "new_layout": "Interactive Tabbed Showcase (Sticky Scroll / Side-by-side)",
-      "structure": "grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-6xl mx-auto items-center mt-10",
-      "heading": "Text: 'See Quick Wing in action' - text-center text-3xl md:text-4xl font-bold tracking-tight text-slate-900 mb-12",
-      "left_column": {
-        "span": "lg:col-span-5",
-        "styling": "flex flex-col gap-4",
-        "items": "3 clickable tab cards. Each represents a screenshot state.",
-        "active_tab_styling": "text-left bg-white p-6 rounded-3xl border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all ring-1 ring-slate-900/5 cursor-default",
-        "inactive_tab_styling": "text-left p-6 rounded-3xl border border-transparent opacity-60 hover:opacity-100 hover:bg-slate-200/50 cursor-pointer transition-all",
-        "content_details": "Inside each tab: Title (text-xl font-bold tracking-tight text-slate-900) + brief 2-line description (text-slate-600). Add a small colored dot or indicator to show the active state."
-      },
-      "right_column": {
-        "span": "lg:col-span-7",
-        "styling": "relative aspect-[4/3] w-full rounded-3xl overflow-hidden bg-white border border-slate-200/60 shadow-2xl group",
-        "browser_frame": "Top bar: 'h-12 bg-slate-100 flex items-center px-4 gap-2 border-b border-slate-200/60'. Add 3 dots (red, yellow, green) simulating a macOS window to make it feel like a polished app.",
-        "image_handling": "Render the image corresponding to the active tab. Use 'absolute inset-0 top-12 w-full h-full object-cover transition-opacity duration-500 ease-in-out' to fade between images. Active image gets 'opacity-100 z-10', inactive gets 'opacity-0 z-0'."
-      }
-    }
-  },
-  "images_and_media": {
-    "fleet_reports": "https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/n105nizt_IMG_5913.jpeg",
-    "car_bookings": "https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/88y0o78p_IMG_5914.jpeg",
-    "daily_availability": "https://customer-assets.emergentagent.com/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/iku1do9b_IMG_5909.jpeg"
-  },
-  "instructions_to_main_agent": [
-    "Open /app/frontend/src/pages/LandingPage.js.",
-    "Replace the existing generic 6-item 'features' grid with the asymmetrical Bento Grid layout detailed in this guideline.",
-    "Completely rewrite the 'ScreenshotCarousel' component into a new interactive 'ProductShowcase' component using the Tabbed approach, mapping to the 3 provided images.",
-    "Update the overall page background ('bg-white' -> 'bg-slate-50') and increase section padding ('py-12' -> 'py-20' or 'py-24') to give elements room to breathe.",
-    "Ensure all interactive elements have 'data-testid' attributes (e.g., data-testid='feature-tab-0').",
-    "Do NOT use external animation libraries like Framer Motion. Rely strictly on Tailwind CSS transitions ('transition-all duration-300 opacity-0 opacity-100' etc.).",
-    "Correct the British/Irish spelling 'grey' in Tailwind classes if they were typos causing fallbacks. Always use standard 'slate' (e.g., 'text-slate-900', 'bg-slate-50', 'border-slate-200').",
-    "Ensure the ROI Calculator and existing Hero section remain functional but adapt them to the new softer aesthetic where applicable (like removing harsh pure white backgrounds)."
   ]
 }

@@ -507,10 +507,15 @@ const LandingPage = () => {
               </p>
             </div>
 
-            <nav className="flex items-center gap-5 text-sm text-slate-400" aria-label="Footer navigation">
+            <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-400 justify-center md:justify-end" aria-label="Footer navigation">
               <a href="#features" className="hover:text-white transition-colors">Features</a>
-              <a href="#contact" className="hover:text-white transition-colors">Contact</a>
+              <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
+              <Link to="/legal" className="hover:text-white transition-colors">Legal</Link>
+              <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
               <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy</Link>
+              <Link to="/dpa" className="hover:text-white transition-colors">DPA</Link>
+              <Link to="/cookies" className="hover:text-white transition-colors">Cookies</Link>
+              <Link to="/security" className="hover:text-white transition-colors">Security</Link>
               <a
                 href="https://www.instagram.com/quick.wing2025"
                 target="_blank"
@@ -531,7 +536,10 @@ const LandingPage = () => {
 
           <div className="border-t border-slate-800 mt-8 pt-6 text-center">
             <p className="text-slate-500 text-xs">
-              © {new Date().getFullYear()} Quick Wing Fleet Management. All rights reserved. | Fleet Management Software Ireland
+              © 2026 QuickFleet Limited. Quick Wing is a product of QuickFleet Limited. All rights reserved.
+            </p>
+            <p className="text-slate-600 text-[11px] mt-1">
+              Fleet management software for Irish businesses.
             </p>
           </div>
         </div>

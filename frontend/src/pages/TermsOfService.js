@@ -157,8 +157,8 @@ const TermsOfService = () => {
       <LegalSection title="16. Contact">
         <p>
           Questions about these Terms can be sent to{' '}
-          <a className="text-blue-700 underline" href="mailto:legal@quick-wing.com">
-            legal@quick-wing.com
+          <a className="text-blue-700 underline" href="mailto:Lee.quickwing@gmail.com">
+            Lee.quickwing@gmail.com
           </a>.
         </p>
       </LegalSection>

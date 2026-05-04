@@ -92,8 +92,8 @@ const SecurityCompliance = () => {
           <div className="text-sm">
             If you believe you've discovered a security issue in Quick Wing,
             please email{' '}
-            <a className="underline" href="mailto:security@quick-wing.com">
-              security@quick-wing.com
+            <a className="underline" href="mailto:Lee.quickwing@gmail.com">
+              Lee.quickwing@gmail.com
             </a>{' '}
             with reproduction steps. We will acknowledge within 2 business days.
           </div>

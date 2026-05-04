@@ -82,8 +82,8 @@ const PrivacyPolicy = () => {
           You have the right to access, rectify, erase, restrict, port, and
           object to processing of your personal data, and to withdraw consent
           at any time. To exercise these rights, contact{' '}
-          <a className="text-blue-700 underline" href="mailto:privacy@quick-wing.com">
-            privacy@quick-wing.com
+          <a className="text-blue-700 underline" href="mailto:Lee.quickwing@gmail.com">
+            Lee.quickwing@gmail.com
           </a>.
         </p>
       </LegalSection>
@@ -114,7 +114,7 @@ const PrivacyPolicy = () => {
 
       <LegalSection title="12. Contact & complaints">
         <p>
-          Privacy questions: <a className="text-blue-700 underline" href="mailto:privacy@quick-wing.com">privacy@quick-wing.com</a>.
+          Privacy questions: <a className="text-blue-700 underline" href="mailto:Lee.quickwing@gmail.com">Lee.quickwing@gmail.com</a>.
           You also have the right to lodge a complaint with the Irish Data
           Protection Commission (dataprotection.ie).
         </p>

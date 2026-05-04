@@ -113,7 +113,7 @@ const DataProcessingAgreement = () => {
 
       <LegalSection title="11. Contact">
         <p>
-          DPA queries: <a className="text-blue-700 underline" href="mailto:privacy@quick-wing.com">privacy@quick-wing.com</a>.
+          DPA queries: <a className="text-blue-700 underline" href="mailto:Lee.quickwing@gmail.com">Lee.quickwing@gmail.com</a>.
         </p>
       </LegalSection>
     </LegalPageLayout>

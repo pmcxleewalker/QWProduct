@@ -34,7 +34,7 @@ const Contact = () => {
             icon={Building2}
             title="Sales & demos"
             lines={[
-              <a key="e" className="text-blue-700 underline" href="mailto:sales@quick-wing.com">sales@quick-wing.com</a>,
+              <a key="e" className="text-blue-700 underline" href="mailto:Lee.quickwing@gmail.com">Lee.quickwing@gmail.com</a>,
               'Pricing, demos, partnerships',
             ]}
           />
@@ -42,7 +42,7 @@ const Contact = () => {
             icon={ScrollText}
             title="Customer support"
             lines={[
-              <a key="e" className="text-blue-700 underline" href="mailto:support@quick-wing.com">support@quick-wing.com</a>,
+              <a key="e" className="text-blue-700 underline" href="mailto:Lee.quickwing@gmail.com">Lee.quickwing@gmail.com</a>,
               'In-app help & onboarding',
             ]}
           />
@@ -50,7 +50,7 @@ const Contact = () => {
             icon={ShieldQuestion}
             title="Privacy & DPA"
             lines={[
-              <a key="e" className="text-blue-700 underline" href="mailto:privacy@quick-wing.com">privacy@quick-wing.com</a>,
+              <a key="e" className="text-blue-700 underline" href="mailto:Lee.quickwing@gmail.com">Lee.quickwing@gmail.com</a>,
               'Data subject requests, DPIAs',
             ]}
           />
@@ -58,7 +58,7 @@ const Contact = () => {
             icon={ShieldQuestion}
             title="Security"
             lines={[
-              <a key="e" className="text-blue-700 underline" href="mailto:security@quick-wing.com">security@quick-wing.com</a>,
+              <a key="e" className="text-blue-700 underline" href="mailto:Lee.quickwing@gmail.com">Lee.quickwing@gmail.com</a>,
               'Vulnerability reports',
             ]}
           />
@@ -66,7 +66,7 @@ const Contact = () => {
             icon={ScrollText}
             title="Legal"
             lines={[
-              <a key="e" className="text-blue-700 underline" href="mailto:legal@quick-wing.com">legal@quick-wing.com</a>,
+              <a key="e" className="text-blue-700 underline" href="mailto:Lee.quickwing@gmail.com">Lee.quickwing@gmail.com</a>,
               'Contracts, IP, complaints',
             ]}
           />
@@ -86,8 +86,8 @@ const Contact = () => {
           <div><strong>Trading name:</strong> Quick Wing</div>
           <div><strong>Operator:</strong> QuickFleet Limited</div>
           <div><strong>Country of incorporation:</strong> Ireland</div>
-          <div><strong>Registered office:</strong> Available on request from legal@quick-wing.com</div>
-          <div><strong>General enquiries:</strong> hello@quick-wing.com</div>
+          <div><strong>Registered office:</strong> Available on request from Lee.quickwing@gmail.com</div>
+          <div><strong>General enquiries:</strong> Lee.quickwing@gmail.com</div>
         </div>
       </LegalSection>
 
@@ -95,8 +95,8 @@ const Contact = () => {
         <p>
           Our team is generally available Monday–Friday, 09:00–18:00 IST.
           Critical security issues are monitored outside of these hours via{' '}
-          <a className="text-blue-700 underline" href="mailto:security@quick-wing.com">
-            security@quick-wing.com
+          <a className="text-blue-700 underline" href="mailto:Lee.quickwing@gmail.com">
+            Lee.quickwing@gmail.com
           </a>.
         </p>
       </LegalSection>

@@ -131,7 +131,7 @@ const Legal = () => {
           <ul className="text-sm text-slate-700 space-y-1">
             <li><strong>Trading name:</strong> Quick Wing</li>
             <li><strong>Operator:</strong> QuickFleet Limited (Ireland)</li>
-            <li><strong>Email:</strong> legal@quick-wing.com</li>
+            <li><strong>Email:</strong> Lee.quickwing@gmail.com</li>
             <li><strong>Website:</strong> https://quick-wing.com</li>
           </ul>
         </div>

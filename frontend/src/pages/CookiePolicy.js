@@ -78,7 +78,7 @@ const CookiePolicy = () => {
 
       <LegalSection title="6. Contact">
         <p>
-          Questions: <a className="text-blue-700 underline" href="mailto:privacy@quick-wing.com">privacy@quick-wing.com</a>.
+          Questions: <a className="text-blue-700 underline" href="mailto:Lee.quickwing@gmail.com">Lee.quickwing@gmail.com</a>.
         </p>
       </LegalSection>
     </LegalPageLayout>

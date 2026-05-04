@@ -92,7 +92,7 @@ const ROICalculator = () => {
           </div>
           <h2
             id="roi-heading"
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4 text-white"
           >
             How much is fleet admin
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">

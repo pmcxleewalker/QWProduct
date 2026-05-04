@@ -1,30 +1,44 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, FileText } from 'lucide-react';
+import { Shield } from 'lucide-react';
+
+const LINKS = [
+  { to: '/legal', label: 'Legal' },
+  { to: '/terms', label: 'Terms' },
+  { to: '/privacy-policy', label: 'Privacy' },
+  { to: '/dpa', label: 'DPA' },
+  { to: '/cookies', label: 'Cookies' },
+  { to: '/security', label: 'Security' },
+  { to: '/contact', label: 'Contact' },
+];
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear();
-  
   return (
-    <footer className="bg-gray-50 border-t border-gray-200 py-4 mt-auto">
+    <footer
+      className="bg-white border-t border-slate-200 py-5 mt-auto"
+      data-testid="app-footer"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Shield size={16} className="text-blue-600" />
-            <span>© {currentYear} Lee Walker. All Rights Reserved.</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-xs text-gray-500">
-              Quick Wing Fleet Management System | Proprietary Software
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Shield size={14} className="text-blue-600" />
+            <span>
+              © 2026 QuickFleet Limited. Quick Wing is a product of QuickFleet
+              Limited. All rights reserved.
             </span>
-            <Link 
-              to="/terms" 
-              className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800"
-            >
-              <FileText size={12} className="mr-1" />
-              Terms
-            </Link>
           </div>
+          <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {LINKS.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                className="text-xs text-slate-500 hover:text-blue-700 transition-colors"
+                data-testid={`footer-link-${l.label.toLowerCase()}`}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
         </div>
       </div>
     </footer>

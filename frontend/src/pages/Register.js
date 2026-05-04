@@ -10,6 +10,7 @@ const Register = () => {
   const { register } = useAuth();
   
   const [formData, setFormData] = useState({ email: '', password: '', confirmPassword: '' });
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -42,6 +43,11 @@ const Register = () => {
 
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (!acceptedLegal) {
+      setError('You must agree to the Terms of Service, Privacy Policy, Data Processing Agreement, and Legal Terms.');
       return;
     }
 
@@ -122,6 +128,24 @@ const Register = () => {
               />
             </div>
 
+            <div className="flex items-start gap-2 pt-1">
+              <input
+                id="accept-legal"
+                type="checkbox"
+                data-testid="register-accept-legal"
+                checked={acceptedLegal}
+                onChange={(e) => setAcceptedLegal(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="accept-legal" className="text-xs text-gray-600 leading-relaxed">
+                I agree to the Quick Wing{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Terms of Service</a>,{' '}
+                <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Privacy Policy</a>,{' '}
+                <a href="/dpa" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Data Processing Agreement</a>, and{' '}
+                <a href="/legal" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Legal Terms</a>.
+              </label>
+            </div>
+
             <button
               type="submit"
               data-testid="register-button"
@@ -145,6 +169,9 @@ const Register = () => {
             </p>
           </div>
         </div>
+        <p className="text-center text-[11px] text-gray-400 mt-4">
+          © 2026 QuickFleet Limited. Quick Wing is a product of QuickFleet Limited. All rights reserved.
+        </p>
       </div>
     </div>
   );

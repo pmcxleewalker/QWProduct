@@ -1161,3 +1161,50 @@ The platform now uses a 3-tier subscription model:
 **Roadmap Changes:**
 - REMOVED: Stripe Integration (P1) from roadmap
 - REMOVED: Full Instagram API Integration (P2) from roadmap
+
+
+---
+## 2026-02 — Legal & Compliance Section + Legal Records (QuickFleet Limited)
+
+**Implemented:**
+- Re-branded all customer-facing copy from "Lee Walker" to "QuickFleet Limited" (operator) / "Quick Wing" (product).
+- Added 7 public legal pages with shared `LegalPageLayout` (sidebar nav, sticky header, slate aesthetic, disclaimer banner, footer copyright):
+  - `/legal` — Ownership, IP, licence terms, restrictions, contact
+  - `/terms` — Rewritten Terms of Service
+  - `/privacy-policy` — Rewritten GDPR-aligned Privacy Policy
+  - `/dpa` — Data Processing Agreement (Controller/Processor, sub-processors, transfers)
+  - `/cookies` — Cookie Policy with table
+  - `/security` — Security & Compliance pillars + vulnerability reporting
+  - `/contact` — Sales / Support / Privacy / Security / Legal inboxes
+- New global `Footer` with `© 2026 QuickFleet Limited. Quick Wing is a product of QuickFleet Limited. All rights reserved.` plus links to all legal pages.
+- `Register.js`: added required onboarding checkbox: *"I agree to the Quick Wing Terms of Service, Privacy Policy, Data Processing Agreement, and Legal Terms."* with inline links and submit-blocking validation.
+- **Legal Records (super-admin only)** — new singleton-doc CRUD:
+  - Backend: `GET /api/platform/legal-records`, `PUT /api/platform/legal-records` (require_super_admin); doc id `platform_legal_record`; `_id` stripped from responses.
+  - Frontend: `LegalRecordsSection.js` component + new `Legal` tab in PlatformAdmin (super_admin only) with all 14 fields: company legal name, registration number, registered address, trading/product name, trademark status, trademark reference, domain records, GitHub, hosting provider, dates of creation/launch, contributor records, IP assignment status, contract reference notes.
+- Disclaimer rendered on every legal page and the Legal Records dashboard.
+
+**Tested:**
+- Backend: GET/PUT/GET round-trip verified via curl with super-admin token. Defaults, upsert, and `_id` exclusion all confirmed.
+- Frontend: Smoke test on `/legal` route rendered correctly with sidebar nav, active state, blockquote licence/restriction text, disclaimer, and footer copyright.
+- New JS files all lint-clean. Pre-existing `server.py` linter errors remain unchanged (not in scope).
+
+**Files added:**
+- `/app/frontend/src/components/LegalPageLayout.js`
+- `/app/frontend/src/components/LegalRecordsSection.js`
+- `/app/frontend/src/pages/Legal.js`
+- `/app/frontend/src/pages/DataProcessingAgreement.js`
+- `/app/frontend/src/pages/CookiePolicy.js`
+- `/app/frontend/src/pages/SecurityCompliance.js`
+- `/app/frontend/src/pages/Contact.js`
+
+**Files modified:**
+- `/app/frontend/src/pages/TermsOfService.js` (overwritten)
+- `/app/frontend/src/pages/PrivacyPolicy.js` (overwritten)
+- `/app/frontend/src/pages/Register.js` (legal acceptance checkbox)
+- `/app/frontend/src/components/Footer.js` (new copyright + links)
+- `/app/frontend/src/App.js` (5 new routes)
+- `/app/frontend/src/pages/PlatformAdmin.js` (Legal tab, super_admin only)
+- `/app/backend/server.py` (Legal Records endpoints)
+
+**Routes:** `/legal`, `/terms`, `/privacy-policy`, `/dpa`, `/cookies`, `/security`, `/contact` — all public.
+

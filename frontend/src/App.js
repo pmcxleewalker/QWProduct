@@ -20,6 +20,11 @@ import Setup from './pages/Setup';
 import SetupWizard from './pages/SetupWizard';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import Legal from './pages/Legal';
+import DataProcessingAgreement from './pages/DataProcessingAgreement';
+import CookiePolicy from './pages/CookiePolicy';
+import SecurityCompliance from './pages/SecurityCompliance';
+import Contact from './pages/Contact';
 import TenantSelector from './pages/TenantSelector';
 import PlatformAdmin from './pages/PlatformAdmin';
 import Reports from './pages/Reports';
@@ -394,6 +399,11 @@ const AppContent = () => {
         <Route path="/setup" element={<Setup />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/legal" element={<Legal />} />
+        <Route path="/dpa" element={<DataProcessingAgreement />} />
+        <Route path="/cookies" element={<CookiePolicy />} />
+        <Route path="/security" element={<SecurityCompliance />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/status-update" element={<StatusUpdateRedirect />} />
         
         {/* Tenant Selection */}

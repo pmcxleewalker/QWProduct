@@ -10023,6 +10023,63 @@ async def get_conversation(session_id: str):
     return conversation
 
 
+# ==================== LEGAL RECORDS (Platform-level, super admin only) ====================
+
+class LegalRecord(BaseModel):
+    company_legal_name: Optional[str] = ""
+    company_registration_number: Optional[str] = ""
+    registered_address: Optional[str] = ""
+    trading_product_name: Optional[str] = "Quick Wing"
+    trademark_status: Optional[str] = ""
+    trademark_reference_number: Optional[str] = ""
+    domain_name_records: Optional[str] = ""
+    github_repository_link: Optional[str] = ""
+    hosting_provider: Optional[str] = ""
+    date_of_first_creation: Optional[str] = ""
+    date_of_first_launch: Optional[str] = ""
+    developer_contributor_records: Optional[str] = ""
+    ip_assignment_status: Optional[str] = ""
+    contract_upload_reference_notes: Optional[str] = ""
+
+
+LEGAL_RECORD_DOC_ID = "platform_legal_record"
+
+
+@api_router.get("/platform/legal-records")
+async def get_legal_records(
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Return the singleton legal record for QuickFleet Limited."""
+    doc = await db.legal_records.find_one(
+        {"_id": LEGAL_RECORD_DOC_ID},
+        {"_id": 0}
+    )
+    if not doc:
+        # Return defaults
+        return LegalRecord().model_dump()
+    # Strip metadata fields
+    doc.pop("updated_at", None)
+    doc.pop("updated_by", None)
+    return doc
+
+
+@api_router.put("/platform/legal-records")
+async def update_legal_records(
+    payload: LegalRecord,
+    context: TenantContext = Depends(require_super_admin)
+):
+    """Upsert the singleton legal record. Super admin only."""
+    data = payload.model_dump()
+    data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    data["updated_by"] = context.user_email if context else "unknown"
+    await db.legal_records.update_one(
+        {"_id": LEGAL_RECORD_DOC_ID},
+        {"$set": data},
+        upsert=True
+    )
+    return {"success": True, "record": data}
+
+
 # Include router - MUST be after all routes are defined
 app.include_router(api_router)
 

@@ -11,7 +11,7 @@ import {
   Receipt, Download, Send, Edit2, UserPlus, UserMinus,
   Globe, Copy, Layers, Star, Zap, ArrowRight, Instagram,
   BarChart3, Headphones as HeadphonesIcon, MessageSquare,
-  Database, HardDrive, CloudDownload, RotateCcw, AlertCircle
+  Database, HardDrive, CloudDownload, RotateCcw, AlertCircle, Scale
 } from 'lucide-react';
 import ContentWorker from '../components/ContentWorker';
 
@@ -650,7 +650,8 @@ const PlatformAdmin = () => {
               { id: 'plans', label: 'Subscriptions', sublabel: 'Plans & Features', icon: Layers, roles: ['super_admin', 'master_admin', 'content_manager'] },
               { id: 'reports', label: 'Finance', sublabel: 'Reports & Billing', icon: Receipt, roles: ['super_admin', 'master_admin'] },
               { id: 'audit', label: 'Activity', sublabel: 'Audit Log', icon: FileText, roles: ['super_admin', 'master_admin'] },
-              { id: 'backup', label: 'Backup', sublabel: 'Disaster Recovery', icon: Database, roles: ['super_admin', 'master_admin'] }
+              { id: 'backup', label: 'Backup', sublabel: 'Disaster Recovery', icon: Database, roles: ['super_admin', 'master_admin'] },
+              { id: 'legal-records', label: 'Legal', sublabel: 'Legal Records', icon: Scale, roles: ['super_admin'] }
             ]
             .filter(tab => !tab.roles || tab.roles.includes(user?.role))
             .map(tab => (
@@ -3512,6 +3513,14 @@ const PlatformAdmin = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Legal Records Tab */}
+        {activeTab === 'legal-records' && (
+          <LegalRecordsSection
+            token={localStorage.getItem('token') || sessionStorage.getItem('token')}
+            isSuperAdmin={user?.role === 'super_admin'}
+          />
         )}
       </div>
       

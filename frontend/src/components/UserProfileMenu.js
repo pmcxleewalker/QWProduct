@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Download, Trash2, LogOut, Shield, ChevronRight, Loader2, AlertTriangle, X, FileDown } from 'lucide-react';
+import { User, Download, Trash2, LogOut, Shield, ChevronRight, Loader2, AlertTriangle, X, FileDown, Scale } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
@@ -206,6 +206,25 @@ const UserProfileMenu = ({ isOpen, onClose }) => {
               <div className="text-left">
                 <p className="font-medium text-gray-900">Privacy Policy</p>
                 <p className="text-xs text-gray-500">How we handle your data</p>
+              </div>
+            </div>
+            <ChevronRight className="text-gray-400" size={20} />
+          </Link>
+
+          {/* Legal Centre */}
+          <Link
+            to="/legal"
+            data-testid="profile-menu-legal-centre"
+            className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+            onClick={onClose}
+          >
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Scale className="text-blue-600" size={20} />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-gray-900">Legal Centre</p>
+                <p className="text-xs text-gray-500">Terms, DPA, Security & more</p>
               </div>
             </div>
             <ChevronRight className="text-gray-400" size={20} />

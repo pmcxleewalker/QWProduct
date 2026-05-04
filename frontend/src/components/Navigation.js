@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Crown, Building2, Eye, Shield, BarChart3 } from 'lucide-react';
+import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Crown, Building2, Eye, Shield, BarChart3, Scale } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { liftRequestAPI } from '../api/api';
 import ChangePasswordModal from './ChangePasswordModal';
@@ -477,6 +477,14 @@ const Navigation = ({ tenantSlug }) => {
                     <Key size={18} />
                   </button>
                 )}
+                <Link
+                  to="/legal"
+                  data-testid="nav-legal-centre"
+                  className="flex items-center p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                  title="Legal Centre"
+                >
+                  <Scale size={18} />
+                </Link>
                 <button
                   onClick={handleLogout}
                   data-testid="logout-button"

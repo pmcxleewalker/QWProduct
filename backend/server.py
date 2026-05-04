@@ -65,6 +65,7 @@ from middleware.tenant import (
     validate_resource_tenant, TenantQueryBuilder
 )
 from services.audit import AuditService
+from services.email_service import send_staff_invitation_email
 from backup_service import BackupService, serialize_backup
 
 # Initialize services
@@ -3225,13 +3226,24 @@ async def create_tenant_user(
     tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
     frontend_url = get_public_url()
     staff_login_url = f"{frontend_url}/{tenant['slug']}/login" if tenant else None
-    
+
+    # Send invitation email with activation link (failures don't block).
+    invite_result = await _issue_staff_invitation(
+        user_id=user_id,
+        user_email=user_data.email,
+        user_name=user_data.name,
+        tenant_id=context.tenant_id,
+        temporary_password=temp_password,
+    )
+
     return {
         "message": "User created successfully", 
         "user_id": user_id,
         "temporary_password": temp_password,
         "login_url": staff_login_url,
-        "require_password_change": True
+        "require_password_change": True,
+        "email_sent": invite_result.get("sent", False),
+        "email_error": invite_result.get("error"),
     }
 
 
@@ -4254,6 +4266,33 @@ async def bulk_import_users(
     except Exception:
         pass
 
+    # Send invitation emails for newly created accounts (existing accounts
+    # don't get a temp password and don't need an invite). Failures here are
+    # non-fatal — admins can fall back to sharing creds manually.
+    emails_sent = 0
+    emails_failed = 0
+    for entry in succeeded:
+        if not entry.get("is_new_account"):
+            continue
+        try:
+            invite_result = await _issue_staff_invitation(
+                user_id=entry["user_id"],
+                user_email=entry["email"],
+                user_name=entry.get("name"),
+                tenant_id=context.tenant_id,
+                temporary_password=BULK_IMPORT_DEFAULT_PASSWORD,
+            )
+            entry["email_sent"] = invite_result.get("sent", False)
+            entry["email_error"] = invite_result.get("error")
+            if invite_result.get("sent"):
+                emails_sent += 1
+            else:
+                emails_failed += 1
+        except Exception as exc:  # noqa: BLE001
+            entry["email_sent"] = False
+            entry["email_error"] = str(exc)
+            emails_failed += 1
+
     return {
         "message": f"Imported {len(succeeded)} of {len(succeeded) + len(errors)} users",
         "total_rows": len(succeeded) + len(errors),
@@ -4262,6 +4301,8 @@ async def bulk_import_users(
         "default_password": BULK_IMPORT_DEFAULT_PASSWORD,
         "created_users": succeeded,
         "errors": errors,
+        "emails_sent": emails_sent,
+        "emails_failed": emails_failed,
     }
 
 
@@ -10007,6 +10048,163 @@ async def capture_lead(lead_info: LeadInfo):
     except Exception as e:
         logging.error(f"Lead capture error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to capture lead: {str(e)}")
+
+
+# ==================== STAFF INVITATION & ACTIVATION ====================
+
+ACTIVATION_TOKEN_TTL_DAYS = 7
+
+
+async def _issue_staff_invitation(
+    *,
+    user_id: str,
+    user_email: str,
+    user_name: Optional[str],
+    tenant_id: str,
+    temporary_password: str,
+) -> dict:
+    """
+    Generate an activation token for a newly invited staff member, then
+    send them an invitation email.
+
+    Returns: {"sent": bool, "error": Optional[str], "activation_url": str}
+    Failures here MUST NOT block account creation — they are surfaced in
+    the response so admins can fall back to sharing the temp password
+    manually.
+    """
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        return {"sent": False, "error": "Tenant not found", "activation_url": None}
+
+    public_url = get_public_url()
+    tenant_slug = tenant.get("slug")
+
+    # Generate single-use activation token (7-day expiry).
+    token_value = str(uuid.uuid4()).replace("-", "") + str(uuid.uuid4()).replace("-", "")
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(days=ACTIVATION_TOKEN_TTL_DAYS)
+
+    await db.activation_tokens.insert_one({
+        "token": token_value,
+        "user_id": user_id,
+        "user_email": user_email,
+        "tenant_id": tenant_id,
+        "tenant_slug": tenant_slug,
+        "used": False,
+        "created_at": now.isoformat(),
+        "expires_at": expires_at.isoformat(),
+    })
+
+    activation_url = f"{public_url}/{tenant_slug}/activate?token={token_value}"
+    login_url = f"{public_url}/{tenant_slug}/login"
+
+    email_result = await send_staff_invitation_email(
+        recipient_email=user_email,
+        staff_name=user_name,
+        tenant_name=tenant.get("name", "Quick Wing"),
+        activation_url=activation_url,
+        login_url=login_url,
+        temporary_password=temporary_password,
+    )
+
+    return {
+        "sent": email_result.get("success", False),
+        "error": email_result.get("error"),
+        "activation_url": activation_url,
+    }
+
+
+class ActivationTokenInfo(BaseModel):
+    valid: bool
+    user_email: Optional[str] = None
+    tenant_slug: Optional[str] = None
+    tenant_name: Optional[str] = None
+    error: Optional[str] = None
+
+
+@api_router.get("/auth/activate/{token}", response_model=ActivationTokenInfo)
+async def get_activation_token_info(token: str):
+    """
+    Public endpoint — return info needed for the activation page so the
+    frontend can show 'Welcome, you're joining {tenant}'.
+    """
+    record = await db.activation_tokens.find_one({"token": token}, {"_id": 0})
+    if not record:
+        return ActivationTokenInfo(valid=False, error="Invalid activation link")
+    if record.get("used"):
+        return ActivationTokenInfo(valid=False, error="This activation link has already been used")
+    expires_at = record.get("expires_at")
+    try:
+        if expires_at and datetime.fromisoformat(expires_at) < datetime.now(timezone.utc):
+            return ActivationTokenInfo(valid=False, error="This activation link has expired")
+    except Exception:
+        pass
+
+    tenant = await db.tenants.find_one({"id": record.get("tenant_id")}, {"_id": 0})
+    return ActivationTokenInfo(
+        valid=True,
+        user_email=record.get("user_email"),
+        tenant_slug=record.get("tenant_slug"),
+        tenant_name=tenant.get("name") if tenant else None,
+    )
+
+
+class ActivateAccountRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+@api_router.post("/auth/activate")
+async def activate_account(payload: ActivateAccountRequest):
+    """
+    Public endpoint — consume an activation token, set the new password,
+    clear the require_password_change flag, and return a login token plus
+    membership info so the frontend can drop the user straight into their
+    dashboard.
+    """
+    if len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    record = await db.activation_tokens.find_one({"token": payload.token}, {"_id": 0})
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid activation link")
+    if record.get("used"):
+        raise HTTPException(status_code=400, detail="This activation link has already been used")
+    expires_at = record.get("expires_at")
+    try:
+        if expires_at and datetime.fromisoformat(expires_at) < datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="This activation link has expired")
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
+    user = await db.users.find_one({"id": record["user_id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=400, detail="User account not found")
+
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {
+            "password_hash": get_password_hash(payload.new_password),
+            "require_password_change": False,
+        }}
+    )
+    await db.activation_tokens.update_one(
+        {"token": payload.token},
+        {"$set": {"used": True, "used_at": datetime.now(timezone.utc).isoformat()}}
+    )
+
+    # Issue a base access token (no tenant context yet — frontend can call
+    # /auth/select-tenant the same way the regular login flow does).
+    access_token = create_access_token({"sub": user["id"], "email": user["email"]})
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": user["id"],
+        "tenant_slug": record.get("tenant_slug"),
+    }
 
 
 @api_router.get("/chatbot/conversation/{session_id}")

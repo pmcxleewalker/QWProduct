@@ -25,6 +25,7 @@ import DataProcessingAgreement from './pages/DataProcessingAgreement';
 import CookiePolicy from './pages/CookiePolicy';
 import SecurityCompliance from './pages/SecurityCompliance';
 import Contact from './pages/Contact';
+import ActivateAccount from './pages/ActivateAccount';
 import TenantSelector from './pages/TenantSelector';
 import PlatformAdmin from './pages/PlatformAdmin';
 import Reports from './pages/Reports';
@@ -429,6 +430,8 @@ const AppContent = () => {
         
         {/* Path-based Tenant Routes: /{tenant-slug}/... */}
         <Route path="/:tenantSlug/login" element={<TenantLogin />} />
+        <Route path="/:tenantSlug/activate" element={<ActivateAccount />} />
+        <Route path="/activate" element={<ActivateAccount />} />
         
         {/* QR Code Mileage Log - Semi-public route (handles own auth) */}
         <Route path="/:tenantSlug/vehicle/:vehicleId/mileage" element={<MileageLog />} />

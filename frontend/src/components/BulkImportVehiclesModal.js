@@ -361,6 +361,27 @@ const BulkImportModal = ({ isOpen, onClose, onImported, defaultTab = 'vehicles' 
                 </div>
               )}
 
+              {/* Staff-only: invitation email status */}
+              {activeTab === 'staff' && (typeof result.emails_sent === 'number' || typeof result.emails_failed === 'number') && (
+                <div
+                  className={`flex items-start gap-2 border rounded-xl p-3 mb-4 ${
+                    (result.emails_failed || 0) > 0
+                      ? 'bg-amber-50 border-amber-200 text-amber-800'
+                      : 'bg-blue-50 border-blue-200 text-blue-800'
+                  }`}
+                  data-testid="bulk-import-email-status"
+                >
+                  <CheckCircle2 size={18} className="flex-shrink-0 mt-0.5" />
+                  <p className="text-sm">
+                    Invitation emails — sent <strong>{result.emails_sent || 0}</strong>
+                    {(result.emails_failed || 0) > 0 && (
+                      <>, failed <strong>{result.emails_failed}</strong> (share credentials below manually)</>
+                    )}
+                    .
+                  </p>
+                </div>
+              )}
+
               {/* Staff-only: credentials table */}
               {activeTab === 'staff' && successList.length > 0 && (
                 <div className="mb-5">

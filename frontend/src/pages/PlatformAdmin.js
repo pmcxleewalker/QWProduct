@@ -14,6 +14,7 @@ import {
   Database, HardDrive, CloudDownload, RotateCcw, AlertCircle, Scale
 } from 'lucide-react';
 import ContentWorker from '../components/ContentWorker';
+import LegalRecordsSection from '../components/LegalRecordsSection';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

@@ -1250,3 +1250,13 @@ The platform now uses a 3-tier subscription model:
 **Tested:**
 - E2E: create staff → token issued + stored → email API correctly attempts send → DKIM-verification error surfaced cleanly without crashing the user creation. Token validation endpoint returns correct tenant context for use by frontend activation page.
 
+
+
+## 2026-02 — Testing pass + bug fix
+
+- Ran `testing_agent_v3_fork`: **12/12 backend pytest passed** (Custom Documents CRUD, Submissions, Fuel Analytics, Activation tokens full lifecycle, Legal Records super-admin gating).
+- Verified in browser: all 7 public legal pages render with content, landing footer has 7 links, /activate?token=bogus shows the invalid state, super-admin login + navigation works.
+- **Bug found and fixed**: `PlatformAdmin.js` was using `<LegalRecordsSection />` without importing it — caused a runtime ReferenceError on click. Added the missing import; verified Legal tab now renders cleanly with the 14-field form.
+- Test report: `/app/test_reports/iteration_23.json`. Pytest fixtures: `/app/backend/tests/test_session_features.py`.
+- Outstanding (not in scope this run): PDF export for fuel reports; refactor monolithic server.py; Twilio/WhatsApp integration; Resend DKIM record fix on user side.
+

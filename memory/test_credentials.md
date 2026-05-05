@@ -27,7 +27,6 @@
 - Use super admin to impersonate or reset passwords as needed
 
 ## Test Tenants Available
-- standard-fleet (Standard Fleet Co) — 50 vehicle plan
-- essential-care (Essential Care Fleet) — 25 vehicle plan
-- pro-transport (Professional Transport Group) — 50 vehicle plan
-- dublin-metro, cork-city-cabs, galway-bay, etc. — 50 vehicle plan each
+- test-fleet (Test Fleet) — created in this session, used for backend curl tests
+- Other historical tenants may have been deleted — check `GET /api/platform/tenants` for current list
+- Default tenant master admin: email `admin.<slug>@quickwing.com`, password `admin123`

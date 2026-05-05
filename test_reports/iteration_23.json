@@ -1,0 +1,88 @@
+{
+  "summary": "Tested 4 major changes shipped this session: Custom Documents (templates/submissions/fuel-analytics), Staff invitation+activation tokens, Legal records API+UI, Tenant user create returning email_sent. Backend: 12/12 pytest tests pass (100%). Frontend: All 7 public legal pages load OK, landing footer has 7 legal links + QuickFleet copyright, /activate?token=bogus shows 'Link not valid' error state. CRITICAL frontend bug found: PlatformAdmin Legal tab throws uncaught ReferenceError because LegalRecordsSection component is used but never imported in PlatformAdmin.js.",
+
+  "backend_issues": {"critical": [], "minor": []},
+
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "PlatformAdmin.js (Legal tab)",
+        "issue": "Uncaught runtime error: 'LegalRecordsSection is not defined' (ReferenceError) when super_admin clicks the Legal tab. Component is used at line 3520 but never imported. The whole Legal admin UI is unreachable in the browser even though the underlying GET/PUT /api/platform/legal-records APIs work correctly.",
+        "selector": "button:has-text('Legal')",
+        "priority": "CRITICAL"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "=== Backend pytest (12/12 passed) ===",
+    "TestDocumentTemplates::test_list_seeds_fuel_log - PASSED (Fuel Log auto-seeded, no _id leakage)",
+    "TestDocumentTemplates::test_create_update_delete_template - PASSED (text/number/select/image/vehicle/checkbox; PUT toggles is_active; DELETE removes)",
+    "TestDocumentSubmissions::test_submission_required_validation - PASSED (400 with 'Date is required' when missing field)",
+    "TestDocumentSubmissions::test_submission_create_and_filter - PASSED (numbers coerced to float; vehicle_id+vehicle_registration extracted; filter by template_id and vehicle_id works)",
+    "TestDocumentSubmissions::test_fuel_analytics - PASSED (works with default month and ?month=2099-01 zero-fall-through)",
+    "TestActivation::test_create_user_returns_email_status - PASSED (email_sent=false, email_error returned, user creation still succeeds — DKIM expected)",
+    "TestActivation::test_bulk_import_returns_counts - PASSED",
+    "TestActivation::test_activate_invalid_token - PASSED (returns valid=false)",
+    "TestActivation::test_activate_full_flow - PASSED (GET /activate/{token} valid=true with user_email; POST consumes; second use returns 4xx)",
+    "TestLegalRecords::test_get_legal_super_admin - PASSED (no _id in response)",
+    "TestLegalRecords::test_put_legal_records_round_trip - PASSED (round-trip persists; _id stripped)",
+    "TestLegalRecords::test_legal_records_forbidden_for_non_super - PASSED (support@quickwing.com → 403)",
+    "=== Frontend (Playwright) ===",
+    "Landing footer renders all 7 legal links (Legal, Terms, Privacy, DPA, Cookies, Security, Contact) and QuickFleet copyright — PASSED",
+    "/legal, /terms, /privacy-policy, /dpa, /cookies, /security, /contact all load with H1 + body content (>1000 chars each) — PASSED",
+    "/activate?token=bogus shows 'Link not valid' / 'Invalid activation link' error state — PASSED",
+    "Super admin login + navigation to PlatformAdmin works — PASSED"
+  ],
+
+  "not_tested_due_to_time_or_blocker": [
+    "Tenant Dashboard → Reports → Documents sub-tab (Fuel Insights widget, New template modal, Submissions detail modal). super_admin lands on PlatformAdmin and the tenant impersonation icon button could not be triggered reliably from the test script in remaining time. Backend layer for all these flows is fully verified (see pytest above), and the test-fleet tenant has a Fuel Log template + a TEST_001 vehicle + 1 submission seeded by my pytest run, so manual smoke from the main agent should be quick.",
+    "Staff mobile view 'Docs' tab + image-upload + form submission (UI side). Backend submission flow is verified.",
+    "PlatformAdmin Legal tab UI fields & PUT round-trip from the browser — blocked by the LegalRecordsSection import bug above. Backend round-trip is verified."
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_session_features.py",
+    "/app/test_reports/pytest/test_session_features.xml"
+  ],
+
+  "action_items": [
+    "CRITICAL: In /app/frontend/src/pages/PlatformAdmin.js, add `import LegalRecordsSection from '../components/LegalRecordsSection';` (file already exists at /app/frontend/src/components/LegalRecordsSection.js). Without this import the entire Legal tab in the super-admin UI throws an uncaught ReferenceError on click. After fixing, verify the 14-field PUT round-trip in browser.",
+    "Optional smoke (main agent can self-test): Impersonate Test Fleet tenant → Reports → Documents sub-tab → confirm Fuel Insights widget renders 3 stat cards + per-vehicle bar list, and the 'New template' modal saves correctly.",
+    "Optional: confirm staff mobile 'Docs' tab + image upload UI on a mobile viewport using a freshly-activated staff account."
+  ],
+
+  "critical_code_review_comments": [
+    "PlatformAdmin.js uses <LegalRecordsSection /> at line ~3520 but never imports it — runtime crash on Legal tab. This is a missed import after extracting the component.",
+    "Legal-records GET response correctly strips _id and metadata fields; PUT upserts correctly.",
+    "documents service correctly coerces number strings to float, extracts vehicle_id+vehicle_registration from the data dict, and validates required fields server-side returning 400 with the human field label (e.g. \"'Date' is required\").",
+    "activation_tokens collection in Mongo stores token, user_id, user_email, tenant_id, used (bool), expires_at — schema is clean; second-use after activation correctly rejected.",
+    "Resend DKIM failure path returns email_sent=false with email_error from Resend in the user-create response — non-fatal, as designed."
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_session_features.py (new)"
+  ],
+
+  "success_rate": {
+    "backend": "100% (12/12 pytest tests passed)",
+    "frontend": "Public/legal/activate routes 100% pass; PlatformAdmin Legal tab BROKEN; Documents UI not exercised in browser this run."
+  },
+
+  "test_credentials": {
+    "super_admin": {"email": "superadmin@quickwing.com", "password": "Super123"},
+    "support_admin (any tenant, no force-change)": {"email": "support@quickwing.com", "password": "QuickWing123!"},
+    "tenant_master_admin": {"email": "admin.test-fleet@quickwing.com", "password": "admin123 (must change on first login)"}
+  },
+
+  "seed_data_creation": "test-fleet tenant: created vehicle 'TEST Van' (TEST-001) and one Fuel Log submission via API during pytest. Legal-records doc updated with safe non-prod values (company_legal_name=QuickFleet Limited, registered_address=1 Test St Dublin, etc.) — main agent may want to overwrite via PlatformAdmin once the import bug is fixed.",
+
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+
+  "context_for_next_testing_agent": "All 4 major shipped features are functionally correct on the backend (12/12 pytest tests pass against the preview env). Public legal pages + activate-link error state are good in browser. The single blocker for end-to-end browser validation of (1) the Legal admin tab and (2) the Documents tenant UI is that PlatformAdmin.js is missing `import LegalRecordsSection from '../components/LegalRecordsSection'` — this throws an uncaught ReferenceError as soon as a super_admin clicks the Legal tab. Fix that one line and rerun the pytest file plus a quick UI smoke of the Documents sub-tab and mobile staff Docs tab.",
+
+  "rca_of_legal_tab_bug": "PlatformAdmin.js references <LegalRecordsSection ... /> at line 3520 but never imports the component. The component file exists at /app/frontend/src/components/LegalRecordsSection.js. React renders the page fine until the user clicks the Legal tab, at which point JSX evaluation hits the undefined identifier and throws ReferenceError, surfaced by the dev overlay as 'LegalRecordsSection is not defined'. Fix: add the missing import statement at the top of PlatformAdmin.js."
+}

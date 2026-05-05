@@ -1208,3 +1208,45 @@ The platform now uses a 3-tier subscription model:
 
 **Routes:** `/legal`, `/terms`, `/privacy-policy`, `/dpa`, `/cookies`, `/security`, `/contact` — all public.
 
+
+
+---
+## 2026-02 — Custom Documents Builder + Resend staff invitation emails
+
+### Custom Documents Builder
+**Implemented:**
+- Admins can design their own forms for staff to submit (e.g. Fuel Log, pre-trip vehicle check, mileage log).
+- 9 supported field types: text, textarea, number, date, time, select (dropdown), checkbox, vehicle (auto), image (JPEG/PNG/WEBP, browser-side compressed to ~1280px JPEG).
+- Each tenant auto-seeds with a built-in **Fuel Log** template (vehicle, date, odometer, litres, fuel type, total cost, station, receipt photo, notes).
+- Admins can add/edit/reorder/delete fields, mark fields required, toggle template visibility for staff, soft-delete templates (submissions retained).
+- Submissions list per template with vehicle / staff / date / photo count + detail modal showing each field including image previews.
+- Staff see active templates as tappable cards in their mobile dashboard's new **Docs** tab → tap → fill form (renders dynamic fields based on template) → submit.
+
+**Backend:**
+- New service: `/app/backend/services/documents.py` (templates, fields, submissions, validation, builtin seed)
+- New collections: `document_templates`, `document_submissions`
+- 8 new endpoints under `/api/documents/*` (CRUD templates, CRUD submissions, all tenant-scoped)
+- Required fields enforced server-side; unknown keys silently dropped; numbers coerced; vehicle field auto-hydrates registration.
+
+**Frontend:**
+- `CustomDocumentsAdmin.js` — gallery + template editor modal + submissions viewer + detail modal
+- `CustomDocumentsStaff.js` — staff submission flow with image compression
+- Wired into `TenantDashboard.js` Reports → "Documents" sub-tab (admin) and `StaffMobileView.js` "Docs" tab (mobile)
+
+**Tested:**
+- E2E backend curl: list templates (auto-seed Fuel Log), submit Fuel Log with vehicle + photo, list submissions — all green.
+
+### Staff invitation emails (Resend)
+**Implemented:**
+- Resend SDK installed; `services/email_service.py` with branded HTML invitation (slate header, blue CTA, login URL + temp password fallback, QuickFleet legal footer).
+- Sender: `Quick Wing <invites@quick-wing.com>`. Domain `quick-wing.com` added in Resend; awaiting DKIM correction by user (SPF + MX verified).
+- Activation tokens collection (single-use, 7-day expiry).
+- Public endpoints: `GET /api/auth/activate/{token}` (validate), `POST /api/auth/activate` (consume + auto-login).
+- Triggered on **single staff add** (`POST /api/tenant/users`) AND **bulk CSV import** (`POST /api/users/bulk-import`).
+- Failures non-fatal — admin gets `email_sent` + `email_error` in response and can fall back to sharing creds manually.
+- Frontend: new `/{tenant-slug}/activate?token=…` page with token validation, password setup, success redirect.
+- Bulk import modal now shows email-sent / email-failed counts.
+
+**Tested:**
+- E2E: create staff → token issued + stored → email API correctly attempts send → DKIM-verification error surfaced cleanly without crashing the user creation. Token validation endpoint returns correct tenant context for use by frontend activation page.
+

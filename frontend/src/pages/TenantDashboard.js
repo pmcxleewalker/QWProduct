@@ -22,6 +22,7 @@ import VehicleQRCode from '../components/VehicleQRCode';
 import FleetVehicleCard from '../components/FleetVehicleCard';
 import FleetReportsSection from '../components/FleetReportsSection';
 import IncidentReportsSection from '../components/IncidentReportsSection';
+import CustomDocumentsAdmin from '../components/CustomDocumentsAdmin';
 import EditVehicleModal from '../components/EditVehicleModal';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import AnnouncementsManager from '../components/AnnouncementsManager';
@@ -592,6 +593,7 @@ const TenantDashboard = () => {
           subTabs: [
             { id: 'fleet-reports', label: 'Fleet Reports' },
             { id: 'incident-reports', label: 'Incident Reports' },
+            { id: 'documents', label: 'Documents' },
             { id: 'daily-timeline', label: 'Daily Timeline' }
           ]
         },
@@ -1671,6 +1673,11 @@ const TenantDashboard = () => {
             {/* Incident Reports Tab */}
             {(activeTab === 'reports' && activeSubTab === 'incident-reports') && isAdmin && (
               <IncidentReportsSection mode="admin" />
+            )}
+
+            {/* Custom Documents Tab */}
+            {(activeTab === 'reports' && activeSubTab === 'documents') && isAdmin && (
+              <CustomDocumentsAdmin />
             )}
 
             {/* Analytics Tab (was Reports Tab) */}

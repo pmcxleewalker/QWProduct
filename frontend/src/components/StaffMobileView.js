@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Car, Calendar, Clock, MapPin, User, Phone,
   RefreshCw, X, ChevronRight, ChevronLeft, Send, CheckCircle,
-  Bell, LogOut, Navigation, Plus, Users, Home
+  Bell, LogOut, Navigation, Plus, Users, Home, FileText
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { liftRequestAPI } from '../api/api';
+import CustomDocumentsStaff from './CustomDocumentsStaff';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -732,6 +733,17 @@ const StaffMobileView = ({ tenantSlug }) => {
             )}
           </div>
         )}
+
+        {/* DOCUMENTS TAB */}
+        {activeTab === 'documents' && (
+          <div className="tab-page" data-testid="documents-tab">
+            <div className="page-header">
+              <h1 className="page-title">Documents</h1>
+              <p className="page-subtitle">Submit fuel logs, checks and reports</p>
+            </div>
+            <CustomDocumentsStaff />
+          </div>
+        )}
       </main>
 
       {/* Bottom Navigation */}
@@ -751,6 +763,14 @@ const StaffMobileView = ({ tenantSlug }) => {
         >
           <Calendar size={22} />
           <span>Bookings</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('documents')} 
+          className={`nav-item ${activeTab === 'documents' ? 'active' : ''}`}
+          data-testid="nav-documents"
+        >
+          <FileText size={22} />
+          <span>Docs</span>
         </button>
         <button 
           onClick={() => setActiveTab('lift')} 

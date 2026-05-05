@@ -66,6 +66,14 @@ from middleware.tenant import (
 )
 from services.audit import AuditService
 from services.email_service import send_staff_invitation_email
+from services.documents import (
+    TemplateCreate as DocTemplateCreate,
+    TemplateUpdate as DocTemplateUpdate,
+    SubmissionCreate as DocSubmissionCreate,
+    SubmissionUpdate as DocSubmissionUpdate,
+    build_template_doc, merge_template_update, build_submission_doc,
+    BUILTIN_TEMPLATES,
+)
 from backup_service import BackupService, serialize_backup
 
 # Initialize services
@@ -10205,6 +10213,228 @@ async def activate_account(payload: ActivateAccountRequest):
         "user_id": user["id"],
         "tenant_slug": record.get("tenant_slug"),
     }
+
+
+# ==================== CUSTOM DOCUMENTS (templates + submissions) ====================
+# Admins design forms (e.g. Fuel Log, Pre-trip check). Staff submit them
+# from their dashboard. Each tenant has its own templates and submissions.
+
+
+async def _seed_builtin_templates_if_missing(tenant_id: str) -> None:
+    """Create the built-in templates (e.g. Fuel Log) for a tenant if they
+    don't already have one with the same name. Safe to call repeatedly.
+    """
+    for tpl in BUILTIN_TEMPLATES:
+        existing = await db.document_templates.find_one(
+            {"tenant_id": tenant_id, "name": tpl.name}, {"_id": 0, "id": 1}
+        )
+        if existing:
+            continue
+        doc = build_template_doc(tenant_id=tenant_id, payload=tpl, is_builtin=True)
+        await db.document_templates.insert_one(doc)
+
+
+@api_router.get("/documents/templates")
+async def list_document_templates(
+    include_inactive: bool = False,
+    context: TenantContext = Depends(require_tenant_context),
+):
+    """List all document templates for the tenant.
+    Staff get only active templates; admins can include inactive."""
+    await _seed_builtin_templates_if_missing(context.tenant_id)
+    query: dict = {"tenant_id": context.tenant_id}
+    is_admin = context.role in (UserRole.ADMIN, UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+    if not (is_admin and include_inactive):
+        query["is_active"] = True
+    cursor = db.document_templates.find(query, {"_id": 0}).sort("created_at", 1)
+    return await cursor.to_list(length=200)
+
+
+@api_router.post("/documents/templates")
+async def create_document_template(
+    payload: DocTemplateCreate,
+    context: TenantContext = Depends(require_admin),
+):
+    """Admin: create a new custom document template."""
+    try:
+        doc = build_template_doc(tenant_id=context.tenant_id, payload=payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await db.document_templates.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@api_router.get("/documents/templates/{template_id}")
+async def get_document_template(
+    template_id: str,
+    context: TenantContext = Depends(require_tenant_context),
+):
+    doc = await db.document_templates.find_one(
+        {"id": template_id, "tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return doc
+
+
+@api_router.put("/documents/templates/{template_id}")
+async def update_document_template(
+    template_id: str,
+    payload: DocTemplateUpdate,
+    context: TenantContext = Depends(require_admin),
+):
+    existing = await db.document_templates.find_one(
+        {"id": template_id, "tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    if not existing:
+        raise HTTPException(status_code=404, detail="Template not found")
+    try:
+        merged = merge_template_update(existing, payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await db.document_templates.update_one(
+        {"id": template_id, "tenant_id": context.tenant_id},
+        {"$set": merged},
+    )
+    return merged
+
+
+@api_router.delete("/documents/templates/{template_id}")
+async def delete_document_template(
+    template_id: str,
+    context: TenantContext = Depends(require_admin),
+):
+    existing = await db.document_templates.find_one(
+        {"id": template_id, "tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    if not existing:
+        raise HTTPException(status_code=404, detail="Template not found")
+    # Hard delete the template, but leave existing submissions in place so
+    # historical data remains visible to admins.
+    await db.document_templates.delete_one(
+        {"id": template_id, "tenant_id": context.tenant_id}
+    )
+    return {"success": True}
+
+
+@api_router.get("/documents/submissions")
+async def list_document_submissions(
+    template_id: Optional[str] = None,
+    vehicle_id: Optional[str] = None,
+    limit: int = 200,
+    skip: int = 0,
+    context: TenantContext = Depends(require_tenant_context),
+):
+    """List submissions. Admins see all; staff see only their own."""
+    query: dict = {"tenant_id": context.tenant_id}
+    if template_id:
+        query["template_id"] = template_id
+    if vehicle_id:
+        query["vehicle_id"] = vehicle_id
+
+    is_admin = context.role in (UserRole.ADMIN, UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+    if not is_admin:
+        query["submitted_by_user_id"] = context.user_id
+
+    cursor = db.document_submissions.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit)
+    items = await cursor.to_list(length=limit)
+    total = await db.document_submissions.count_documents(query)
+    return {"items": items, "total": total}
+
+
+@api_router.post("/documents/submissions")
+async def create_document_submission(
+    payload: DocSubmissionCreate,
+    context: TenantContext = Depends(require_tenant_context),
+):
+    """Staff or admin submits a document."""
+    template = await db.document_templates.find_one(
+        {"id": payload.template_id, "tenant_id": context.tenant_id, "is_active": True},
+        {"_id": 0},
+    )
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found or inactive")
+    try:
+        doc = build_submission_doc(
+            tenant_id=context.tenant_id,
+            template=template,
+            payload=payload,
+            submitted_by_user_id=context.user_id,
+            submitted_by_name=context.user_name,
+            submitted_by_email=context.user_email,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # If a vehicle field was provided as just an id, hydrate the registration.
+    if doc.get("vehicle_id") and not doc.get("vehicle_registration"):
+        veh = await db.vehicles.find_one(
+            {"id": doc["vehicle_id"], "tenant_id": context.tenant_id},
+            {"_id": 0, "registration": 1},
+        )
+        if veh:
+            doc["vehicle_registration"] = veh.get("registration")
+
+    await db.document_submissions.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@api_router.get("/documents/submissions/{submission_id}")
+async def get_document_submission(
+    submission_id: str,
+    context: TenantContext = Depends(require_tenant_context),
+):
+    doc = await db.document_submissions.find_one(
+        {"id": submission_id, "tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    is_admin = context.role in (UserRole.ADMIN, UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+    if not is_admin and doc.get("submitted_by_user_id") != context.user_id:
+        raise HTTPException(status_code=403, detail="Not authorised")
+    return doc
+
+
+@api_router.patch("/documents/submissions/{submission_id}")
+async def update_document_submission(
+    submission_id: str,
+    payload: DocSubmissionUpdate,
+    context: TenantContext = Depends(require_admin),
+):
+    existing = await db.document_submissions.find_one(
+        {"id": submission_id, "tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    if not existing:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    update: dict = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    data = payload.model_dump(exclude_unset=True)
+    if "data" in data and isinstance(data["data"], dict):
+        merged = {**(existing.get("data") or {}), **data["data"]}
+        update["data"] = merged
+    if "status" in data and data["status"]:
+        update["status"] = str(data["status"])
+    await db.document_submissions.update_one(
+        {"id": submission_id, "tenant_id": context.tenant_id}, {"$set": update}
+    )
+    refreshed = await db.document_submissions.find_one(
+        {"id": submission_id, "tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    return refreshed
+
+
+@api_router.delete("/documents/submissions/{submission_id}")
+async def delete_document_submission(
+    submission_id: str,
+    context: TenantContext = Depends(require_admin),
+):
+    res = await db.document_submissions.delete_one(
+        {"id": submission_id, "tenant_id": context.tenant_id}
+    )
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    return {"success": True}
 
 
 @api_router.get("/chatbot/conversation/{session_id}")

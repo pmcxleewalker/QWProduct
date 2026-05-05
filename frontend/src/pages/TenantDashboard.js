@@ -22,6 +22,7 @@ import VehicleQRCode from '../components/VehicleQRCode';
 import FleetVehicleCard from '../components/FleetVehicleCard';
 import FleetReportsSection from '../components/FleetReportsSection';
 import IncidentReportsSection from '../components/IncidentReportsSection';
+import IncidentAlertBanner from '../components/IncidentAlertBanner';
 import CustomDocumentsAdmin from '../components/CustomDocumentsAdmin';
 import EditVehicleModal from '../components/EditVehicleModal';
 import AnnouncementBanner from '../components/AnnouncementBanner';
@@ -798,6 +799,16 @@ const TenantDashboard = () => {
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
+                {/* Open incidents alert — admin-only, only renders when count > 0 */}
+                {isAdmin && (
+                  <IncidentAlertBanner
+                    onView={() => {
+                      setActiveTab('reports');
+                      setActiveSubTab('incident-reports');
+                    }}
+                  />
+                )}
+
                 {/* Compliance Alerts - Enhanced Component */}
                 {isAdmin && vehicles.length > 0 && (
                   <ComplianceAlerts 

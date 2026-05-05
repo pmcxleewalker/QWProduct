@@ -5,6 +5,7 @@ import {
   FileText, Fuel, ClipboardList, ChevronRight, X, Loader2, Camera, Send,
   Upload, AlertCircle, CheckCircle2
 } from 'lucide-react';
+import IncidentReportsSection from './IncidentReportsSection';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const ICON_MAP = { FileText, Fuel, ClipboardList };
@@ -269,17 +270,20 @@ const CustomDocumentsStaff = () => {
     return <div className="py-6 text-center text-sm text-slate-500"><Loader2 className="animate-spin inline mr-2" size={14} />Loading documents…</div>;
   }
 
-  if (templates.length === 0) {
-    return (
-      <div className="py-8 text-center" data-testid="staff-documents-empty">
-        <FileText className="mx-auto text-slate-300 mb-2" size={28} />
-        <p className="text-sm text-slate-500">No documents to submit yet.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-2" data-testid="staff-documents-list">
+    <div className="space-y-3" data-testid="staff-documents-list">
+      {/* Incident report — always shown so staff can log damage/accidents/breakdowns */}
+      <IncidentReportsSection mode="staff" />
+
+      {/* Section divider when there are also custom templates */}
+      {templates.length > 0 && (
+        <div className="pt-2 pb-1">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Other documents
+          </p>
+        </div>
+      )}
+
       {templates.map((tpl) => {
         const Icon = ICON_MAP[tpl.icon] || FileText;
         return (

@@ -11,7 +11,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 from datetime import timedelta, datetime, timezone
 import uuid
 import qrcode
@@ -10435,6 +10435,110 @@ async def delete_document_submission(
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Submission not found")
     return {"success": True}
+
+
+@api_router.get("/documents/fuel-analytics")
+async def get_fuel_analytics(
+    month: Optional[str] = None,  # YYYY-MM, defaults to current month
+    context: TenantContext = Depends(require_admin),
+):
+    """
+    Aggregate Fuel Log submissions for the requested month, grouped by
+    vehicle. Used by the admin reports dashboard.
+
+    Returns:
+      {
+        "month": "2026-02",
+        "total_cost": 1234.56,
+        "total_litres": 678.9,
+        "submissions_count": 42,
+        "vehicles": [
+          {"vehicle_id": ..., "vehicle_registration": ..., "cost": 250.0, "litres": 130.0, "fills": 4}
+        ],
+        "currency": "EUR"
+      }
+    """
+    # Find the Fuel Log template for this tenant. If missing, return zeros.
+    template = await db.document_templates.find_one(
+        {"tenant_id": context.tenant_id, "name": "Fuel Log"},
+        {"_id": 0, "id": 1},
+    )
+    if not template:
+        await _seed_builtin_templates_if_missing(context.tenant_id)
+        template = await db.document_templates.find_one(
+            {"tenant_id": context.tenant_id, "name": "Fuel Log"},
+            {"_id": 0, "id": 1},
+        )
+
+    # Default month = current
+    now = datetime.now(timezone.utc)
+    target_month = (month or now.strftime("%Y-%m")).strip()
+
+    if not template:
+        return {
+            "month": target_month,
+            "total_cost": 0.0,
+            "total_litres": 0.0,
+            "submissions_count": 0,
+            "vehicles": [],
+            "currency": "EUR",
+        }
+
+    # ISO date string range covers the calendar month inclusively.
+    month_start = f"{target_month}-01"
+    try:
+        year, mnum = [int(x) for x in target_month.split("-")]
+        nyear, nmonth = (year + 1, 1) if mnum == 12 else (year, mnum + 1)
+        next_month_start = f"{nyear:04d}-{nmonth:02d}-01"
+    except Exception:
+        raise HTTPException(status_code=400, detail="month must be YYYY-MM")
+
+    cursor = db.document_submissions.find(
+        {
+            "tenant_id": context.tenant_id,
+            "template_id": template["id"],
+            "created_at": {"$gte": month_start, "$lt": next_month_start},
+        },
+        {"_id": 0, "vehicle_id": 1, "vehicle_registration": 1, "data": 1},
+    )
+
+    by_vehicle: Dict[str, Dict[str, Any]] = {}
+    total_cost = 0.0
+    total_litres = 0.0
+    count = 0
+    async for sub in cursor:
+        count += 1
+        cost = float(sub.get("data", {}).get("cost_eur") or 0)
+        litres = float(sub.get("data", {}).get("litres") or 0)
+        total_cost += cost
+        total_litres += litres
+        veh_id = sub.get("vehicle_id") or "unknown"
+        veh_reg = sub.get("vehicle_registration") or "Unknown vehicle"
+        bucket = by_vehicle.setdefault(
+            veh_id,
+            {"vehicle_id": veh_id, "vehicle_registration": veh_reg, "cost": 0.0, "litres": 0.0, "fills": 0},
+        )
+        bucket["cost"] += cost
+        bucket["litres"] += litres
+        bucket["fills"] += 1
+
+    # Sort by cost desc.
+    vehicles = sorted(by_vehicle.values(), key=lambda x: x["cost"], reverse=True)
+    return {
+        "month": target_month,
+        "total_cost": round(total_cost, 2),
+        "total_litres": round(total_litres, 2),
+        "submissions_count": count,
+        "vehicles": [
+            {
+                **v,
+                "cost": round(v["cost"], 2),
+                "litres": round(v["litres"], 2),
+            }
+            for v in vehicles
+        ],
+        "currency": "EUR",
+    }
 
 
 @api_router.get("/chatbot/conversation/{session_id}")

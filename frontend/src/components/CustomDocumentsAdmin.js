@@ -6,6 +6,7 @@ import {
   Save, FileDown, Image as ImageIcon, Loader2, AlertCircle, Search, ChevronRight,
   Power, PowerOff
 } from 'lucide-react';
+import FuelAnalyticsWidget from './FuelAnalyticsWidget';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const ICON_MAP = { FileText, Fuel, ClipboardList };
@@ -521,6 +522,9 @@ const CustomDocumentsAdmin = () => {
           <Plus size={14} /> New template
         </button>
       </div>
+
+      {/* Fuel insights — auto-pulled from Fuel Log submissions */}
+      <FuelAnalyticsWidget />
 
       {loading ? (
         <div className="text-center py-10 text-sm text-slate-500"><Loader2 className="animate-spin inline mr-2" size={14} />Loading…</div>

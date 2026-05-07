@@ -556,6 +556,20 @@ const TenantDashboard = () => {
     }
   };
 
+  const handleResendInvitation = async (userId, userName) => {
+    if (!window.confirm(`Re-send invitation email to ${userName}? Their password will reset to QuickWing123!`)) return;
+    try {
+      const res = await axios.post(`${API}/tenant/users/${userId}/resend-invitation`);
+      if (res.data?.email_sent) {
+        toast.success(`Invitation sent to ${userName}`);
+      } else {
+        toast.warning(`User reset, but email failed: ${res.data?.email_error || 'unknown error'}`);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to resend invitation');
+    }
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
@@ -1617,6 +1631,14 @@ const TenantDashboard = () => {
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex items-center space-x-2">
+                                  <button
+                                    onClick={() => handleResendInvitation(member.id, member.name)}
+                                    className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                    title="Re-send invitation email with a fresh activation link"
+                                    data-testid={`resend-invite-${member.id}`}
+                                  >
+                                    Resend Invite
+                                  </button>
                                   <button
                                     onClick={() => handleResetPassword(member.id, member.name)}
                                     className="px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded hover:bg-amber-200"

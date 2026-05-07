@@ -16,8 +16,9 @@ logger = logging.getLogger(__name__)
 
 # Configure Resend with the API key from the environment.
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
-SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "invites@quick-wing.com").strip()
-SENDER_NAME = "Quick Wing"
+SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "invites@send.quick-wing.com").strip()
+SENDER_NAME = os.environ.get("SENDER_NAME", "Quick Wing").strip()
+REPLY_TO_EMAIL = os.environ.get("REPLY_TO_EMAIL", "Lee.quickwing@gmail.com").strip()
 
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
@@ -132,6 +133,10 @@ async def send_staff_invitation_email(
     """
     Send a staff invitation email via Resend.
 
+    Subject: "Welcome to Quick Wing"
+    From: "{tenant_name} via Quick Wing <invites@send.quick-wing.com>"
+    Reply-To: Lee.quickwing@gmail.com (so customer replies land in support)
+
     Returns: {"success": bool, "email_id": Optional[str], "error": Optional[str]}
     Never raises — failures are logged and reported in the return value so
     the calling endpoint can still return success for the user record itself.
@@ -148,10 +153,17 @@ async def send_staff_invitation_email(
         temporary_password=temporary_password,
     )
 
+    # Branded "from name": tenant name displayed first so the recipient sees
+    # who sent it at a glance, but still backed by the QuickFleet sending
+    # domain. Falls back to plain "Quick Wing" if no tenant name.
+    safe_tenant = (tenant_name or "").strip()
+    display_name = f"{safe_tenant} via {SENDER_NAME}" if safe_tenant else SENDER_NAME
+
     params = {
-        "from": f"{SENDER_NAME} <{SENDER_EMAIL}>",
+        "from": f"{display_name} <{SENDER_EMAIL}>",
         "to": [recipient_email],
-        "subject": f"Welcome to {tenant_name} on Quick Wing",
+        "reply_to": REPLY_TO_EMAIL,
+        "subject": "Welcome to Quick Wing",
         "html": html_body,
     }
 

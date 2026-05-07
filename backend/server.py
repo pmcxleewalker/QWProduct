@@ -10215,6 +10215,52 @@ async def activate_account(payload: ActivateAccountRequest):
     }
 
 
+# Resend an invitation to an existing tenant user. Admin only.
+# Generates a fresh activation token and emails the user a new invite.
+@api_router.post("/tenant/users/{user_id}/resend-invitation")
+async def resend_user_invitation(
+    user_id: str,
+    context: TenantContext = Depends(require_admin),
+):
+    """Re-issue the staff invitation email for an existing tenant user."""
+    membership = await db.tenant_users.find_one(
+        {"tenant_id": context.tenant_id, "user_id": user_id},
+        {"_id": 0},
+    )
+    if not membership:
+        raise HTTPException(status_code=404, detail="User is not a member of this tenant")
+
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Reset password to the default so the email's temp password works again
+    # and the user is forced to change it on first login.
+    new_temp = "QuickWing123!"
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "password_hash": get_password_hash(new_temp),
+            "require_password_change": True,
+        }}
+    )
+
+    invite_result = await _issue_staff_invitation(
+        user_id=user_id,
+        user_email=user["email"],
+        user_name=user.get("name"),
+        tenant_id=context.tenant_id,
+        temporary_password=new_temp,
+    )
+
+    return {
+        "message": "Invitation re-sent" if invite_result.get("sent") else "User reset; email failed",
+        "email_sent": invite_result.get("sent", False),
+        "email_error": invite_result.get("error"),
+        "temporary_password": new_temp,
+    }
+
+
 # ==================== CUSTOM DOCUMENTS (templates + submissions) ====================
 # Admins design forms (e.g. Fuel Log, Pre-trip check). Staff submit them
 # from their dashboard. Each tenant has its own templates and submissions.

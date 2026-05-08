@@ -751,7 +751,7 @@ const PlatformAdmin = () => {
               <div className="flex items-start justify-between flex-wrap gap-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-blue-300 mb-1">
-                    Franchise Command Centre
+                    Tenant Command Centre
                   </p>
                   <h1 className="text-2xl font-bold">Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}</h1>
                   <p className="text-sm text-slate-300 mt-1">

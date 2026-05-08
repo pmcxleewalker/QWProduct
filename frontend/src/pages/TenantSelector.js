@@ -95,7 +95,7 @@ const TenantSelector = () => {
                   <Crown size={24} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Franchise Command Centre</h3>
+                  <h3 className="font-semibold text-gray-900">Tenant Command Centre</h3>
                   <p className="text-sm text-gray-500">Manage all franchises and users</p>
                 </div>
               </div>

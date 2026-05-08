@@ -323,7 +323,7 @@ const Navigation = ({ tenantSlug }) => {
               <Link
                 to="/platform"
                 className="flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all shadow-sm"
-                title="Franchise Command Centre"
+                title="Tenant Command Centre"
               >
                 <Building2 size={14} />
                 <span className="hidden sm:inline">Command Centre</span>
@@ -461,7 +461,7 @@ const Navigation = ({ tenantSlug }) => {
                   <Link
                     to="/platform"
                     className="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all shadow-sm"
-                    title="Franchise Command Centre"
+                    title="Tenant Command Centre"
                   >
                     <Building2 size={16} />
                     <span>Command Centre</span>

@@ -143,15 +143,15 @@ const AllCarsCalendar = ({ vehicles, bookings, onBookingCreated }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border overflow-hidden" data-testid="all-cars-calendar">
       {/* Header with Stats */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-4">
+      <div className="bg-white text-slate-900 px-4 py-4 border-b border-slate-100">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-lg flex items-center space-x-2">
-            <CalendarIcon size={20} />
+          <h2 className="font-bold text-lg flex items-center space-x-2 text-slate-900">
+            <CalendarIcon size={20} className="text-blue-600" />
             <span>All Cars Calendar</span>
           </h2>
           <button
             onClick={goToToday}
-            className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium"
+            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium"
           >
             Go to Today
           </button>
@@ -159,21 +159,21 @@ const AllCarsCalendar = ({ vehicles, bookings, onBookingCreated }) => {
         
         {/* Month Statistics */}
         <div className="grid grid-cols-4 gap-2 text-xs">
-          <div className="bg-white/10 rounded-lg p-2 text-center">
-            <p className="text-white/70">This Month</p>
-            <p className="text-xl font-bold">{monthStats.total}</p>
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 text-center">
+            <p className="text-blue-700 font-medium">This Month</p>
+            <p className="text-xl font-bold text-blue-900">{monthStats.total}</p>
           </div>
-          <div className="bg-red-500/30 rounded-lg p-2 text-center">
-            <p className="text-white/70">Confirmed</p>
-            <p className="text-xl font-bold">{monthStats.confirmed}</p>
+          <div className="bg-rose-50 border border-rose-100 rounded-lg p-2 text-center">
+            <p className="text-rose-700 font-medium">Confirmed</p>
+            <p className="text-xl font-bold text-rose-900">{monthStats.confirmed}</p>
           </div>
-          <div className="bg-amber-500/30 rounded-lg p-2 text-center">
-            <p className="text-white/70">Pending</p>
-            <p className="text-xl font-bold">{monthStats.pending}</p>
+          <div className="bg-amber-50 border border-amber-100 rounded-lg p-2 text-center">
+            <p className="text-amber-700 font-medium">Pending</p>
+            <p className="text-xl font-bold text-amber-900">{monthStats.pending}</p>
           </div>
-          <div className="bg-purple-500/30 rounded-lg p-2 text-center">
-            <p className="text-white/70">Recurring</p>
-            <p className="text-xl font-bold">{monthStats.recurring}</p>
+          <div className="bg-purple-50 border border-purple-100 rounded-lg p-2 text-center">
+            <p className="text-purple-700 font-medium">Recurring</p>
+            <p className="text-xl font-bold text-purple-900">{monthStats.recurring}</p>
           </div>
         </div>
       </div>

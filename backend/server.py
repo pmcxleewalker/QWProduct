@@ -1647,6 +1647,65 @@ async def impersonate_tenant(
     }
 
 
+@api_router.post("/platform/tenants/{tenant_id}/reset-master-admin-password")
+async def reset_master_admin_password(
+    tenant_id: str,
+    payload: dict,
+    context: TenantContext = Depends(require_platform_admin),
+    request: Request = None,
+):
+    """
+    Super/Master admin: reset the password of the tenant's master admin.
+
+    Body: {"new_password": "..."}
+    Used from the Platform Admin dashboard so super admins can hand the
+    customer fresh credentials when they lose them.
+    """
+    new_password = (payload or {}).get("new_password", "").strip()
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    master_email = tenant.get("master_admin_email")
+    if not master_email:
+        raise HTTPException(status_code=400, detail="Tenant has no master admin configured")
+
+    user = await db.users.find_one({"email": master_email}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Master admin user account not found")
+
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {
+            "password_hash": get_password_hash(new_password),
+            "require_password_change": False,
+        }},
+    )
+
+    try:
+        await audit_service.log(
+            actor_user_id=context.user_id,
+            actor_email=context.user_email,
+            action=AuditAction.USER_PASSWORD_RESET,
+            tenant_id=tenant_id,
+            resource_type="master_admin",
+            resource_id=user["id"],
+            ip_address=request.client.host if request and request.client else None,
+            meta={"tenant_name": tenant.get("name"), "master_email": master_email},
+        )
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "master_admin_email": master_email,
+        "message": "Master admin password updated",
+    }
+
+
 @api_router.post("/platform/stop-impersonation")
 async def stop_impersonation(
     context: TenantContext = Depends(get_tenant_context),

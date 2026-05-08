@@ -11,12 +11,39 @@ import {
   Receipt, Download, Send, Edit2, UserPlus, UserMinus,
   Globe, Copy, Layers, Star, Zap, ArrowRight, Instagram,
   BarChart3, Headphones as HeadphonesIcon, MessageSquare,
-  Database, HardDrive, CloudDownload, RotateCcw, AlertCircle, Scale
+  Database, HardDrive, CloudDownload, RotateCcw, AlertCircle, Scale,
+  LogIn, Mail, ExternalLink
 } from 'lucide-react';
 import ContentWorker from '../components/ContentWorker';
 import LegalRecordsSection from '../components/LegalRecordsSection';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+// Compact row showing a URL with copy + open buttons. Used on the dashboard
+// tenant cards.
+const UrlRow = ({ icon: Icon, label, url, onCopy, onOpen }) => (
+  <div className="flex items-center gap-2 group">
+    <Icon size={13} className="text-slate-400 flex-shrink-0" />
+    <div className="min-w-0 flex-1">
+      <div className="text-[10px] uppercase tracking-wider text-slate-500">{label}</div>
+      <div className="text-xs font-mono text-slate-700 truncate" title={url}>{url}</div>
+    </div>
+    <button
+      onClick={onCopy}
+      className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md flex-shrink-0"
+      title={`Copy ${label}`}
+    >
+      <Copy size={12} />
+    </button>
+    <button
+      onClick={onOpen}
+      className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md flex-shrink-0"
+      title={`Open ${label}`}
+    >
+      <ExternalLink size={12} />
+    </button>
+  </div>
+);
 
 // Helper to extract error message from various error formats
 const getErrorMessage = (err, defaultMsg = 'An error occurred') => {
@@ -504,6 +531,27 @@ const PlatformAdmin = () => {
     }
   };
 
+  const handleResetMasterAdmin = async (tenant) => {
+    const newPassword = window.prompt(
+      `Reset master admin password for ${tenant.name}?\n\n` +
+      `Master admin email: ${tenant.master_admin_email || `admin.${tenant.slug}@quickwing.com`}\n\n` +
+      `Enter new password (min 6 chars):`
+    );
+    if (!newPassword) return;
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    try {
+      await axios.post(`${API}/platform/tenants/${tenant.id}/reset-master-admin-password`, {
+        new_password: newPassword,
+      });
+      toast.success(`Password reset for ${tenant.name}'s master admin`);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to reset password');
+    }
+  };
+
   const fetchTenantDetails = async (tenantId) => {
     try {
       const response = await axios.get(`${API}/platform/tenants/${tenantId}`);
@@ -647,8 +695,6 @@ const PlatformAdmin = () => {
             {[
               { id: 'overview', label: 'Dashboard', sublabel: 'Platform Overview', icon: Activity, roles: ['super_admin', 'master_admin'] },
               { id: 'tenants', label: 'Clients', sublabel: 'Manage Clients', icon: Building2, roles: ['super_admin', 'master_admin', 'bot'] },
-              { id: 'content-worker', label: 'Content', sublabel: 'Social Media', icon: Instagram, roles: ['super_admin', 'master_admin', 'content_manager'] },
-              { id: 'plans', label: 'Subscriptions', sublabel: 'Plans & Features', icon: Layers, roles: ['super_admin', 'master_admin', 'content_manager'] },
               { id: 'reports', label: 'Finance', sublabel: 'Reports & Billing', icon: Receipt, roles: ['super_admin', 'master_admin'] },
               { id: 'audit', label: 'Activity', sublabel: 'Audit Log', icon: FileText, roles: ['super_admin', 'master_admin'] },
               { id: 'backup', label: 'Backup', sublabel: 'Disaster Recovery', icon: Database, roles: ['super_admin', 'master_admin'] },
@@ -698,119 +744,188 @@ const PlatformAdmin = () => {
         )}
 
         {/* Overview Tab */}
-        {activeTab === 'overview' && stats && (
-          <div className="space-y-6">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white rounded-xl p-6 shadow-sm border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Total Tenants</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats.tenants?.total || 0}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Building2 className="text-blue-600" size={24} />
-                  </div>
+        {activeTab === 'overview' && (
+          <div className="space-y-6" data-testid="dashboard-overview">
+            {/* Welcome strip */}
+            <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-6">
+              <div className="flex items-start justify-between flex-wrap gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-blue-300 mb-1">
+                    Franchise Command Centre
+                  </p>
+                  <h1 className="text-2xl font-bold">Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''}</h1>
+                  <p className="text-sm text-slate-300 mt-1">
+                    {tenants.length} client{tenants.length === 1 ? '' : 's'} · signed in as <span className="font-mono">{user?.email || 'super admin'}</span>
+                  </p>
                 </div>
-                <div className="mt-3 flex items-center text-sm">
-                  <span className="text-green-600 font-medium">{stats.tenants?.active || 0} active</span>
-                  {stats.tenants?.suspended > 0 && (
-                    <span className="text-red-600 ml-2">{stats.tenants.suspended} suspended</span>
-                  )}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { setActiveTab('tenants'); setShowCreateForm(true); }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-slate-900 text-sm font-semibold rounded-lg hover:bg-slate-100"
+                    data-testid="dashboard-new-client-btn"
+                  >
+                    <Plus size={15} />
+                    New Client
+                  </button>
+                  <button
+                    onClick={fetchData}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 border border-white/30 text-white text-sm rounded-lg hover:bg-white/10"
+                    title="Refresh"
+                  >
+                    <RefreshCw size={15} />
+                  </button>
                 </div>
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-sm border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Total Users</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats.users || 0}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Users className="text-purple-600" size={24} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-sm border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Total Vehicles</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats.vehicles || 0}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <Car className="text-green-600" size={24} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-sm border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Bookings This Month</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats.bookings?.this_month || 0}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="text-orange-600" size={24} />
-                  </div>
-                </div>
-                <p className="mt-3 text-sm text-gray-500">
-                  Total: {stats.bookings?.total || 0}
-                </p>
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border">
-              <h2 className="font-semibold text-gray-900 mb-4">Quick Actions</h2>
-              <div className="flex flex-wrap gap-3">
+            {/* Tenant cards grid */}
+            {tenants.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center">
+                <Building2 size={36} className="mx-auto text-slate-300 mb-3" />
+                <p className="text-slate-600 font-medium mb-1">No clients yet</p>
+                <p className="text-sm text-slate-500 mb-4">Create your first tenant to get started.</p>
                 <button
                   onClick={() => { setActiveTab('tenants'); setShowCreateForm(true); }}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700"
                 >
-                  <Plus size={18} />
-                  <span>New Client</span>
-                </button>
-                <button
-                  onClick={fetchData}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                >
-                  <RefreshCw size={18} />
-                  <span>Refresh Data</span>
+                  <Plus size={15} /> Add a client
                 </button>
               </div>
-            </div>
-
-            {/* Recent Clients */}
-            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-              <div className="p-4 border-b flex items-center justify-between">
-                <h2 className="font-semibold text-gray-900">Recent Clients</h2>
-                <button 
-                  onClick={() => setActiveTab('tenants')}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  View All →
-                </button>
-              </div>
-              <div className="divide-y">
-                {tenants.slice(0, 5).map(tenant => (
-                  <div key={tenant.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Building2 size={20} className="text-blue-600" />
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {tenants.map((tenant) => {
+                  const baseUrl = window.location.origin;
+                  const tenantUrl = `${baseUrl}/${tenant.slug}`;
+                  const loginUrl = `${baseUrl}/${tenant.slug}/login`;
+                  const masterEmail = tenant.master_admin_email || `admin.${tenant.slug}@quickwing.com`;
+                  const copy = (text, label) => {
+                    navigator.clipboard.writeText(text);
+                    toast.success(`${label} copied`);
+                  };
+                  return (
+                    <div
+                      key={tenant.id}
+                      className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-md transition-shadow"
+                      data-testid={`dashboard-tenant-card-${tenant.slug}`}
+                    >
+                      {/* Header */}
+                      <div className="px-5 py-4 border-b border-slate-100 flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex-shrink-0 flex items-center justify-center text-white font-bold text-lg">
+                            {(tenant.name || '?').charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-bold text-slate-900 truncate">{tenant.name}</h3>
+                              <span className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full ${getStatusColor(tenant.status)}`}>
+                                {tenant.status}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              <span className="font-mono">{tenant.slug}</span>
+                              {tenant.plan && <> · <span className="capitalize">{tenant.plan}</span> plan</>}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleImpersonate(tenant.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 flex-shrink-0"
+                          title="Sign in as super admin to this tenant"
+                          data-testid={`dashboard-signin-${tenant.slug}`}
+                        >
+                          <LogIn size={13} />
+                          Sign in
+                        </button>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{tenant.name}</p>
-                        <p className="text-sm text-gray-500">{tenant.slug}</p>
+
+                      {/* URLs section */}
+                      <div className="px-5 py-4 space-y-2">
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                          Tenant URLs
+                        </div>
+                        <UrlRow
+                          icon={Globe}
+                          label="Tenant home"
+                          url={tenantUrl}
+                          onCopy={() => copy(tenantUrl, 'Tenant URL')}
+                          onOpen={() => window.open(tenantUrl, '_blank')}
+                        />
+                        <UrlRow
+                          icon={LogIn}
+                          label="Login URL"
+                          url={loginUrl}
+                          onCopy={() => copy(loginUrl, 'Login URL')}
+                          onOpen={() => window.open(loginUrl, '_blank')}
+                        />
+                      </div>
+
+                      {/* Credentials section */}
+                      <div className="px-5 pb-4 space-y-3">
+                        {/* Super admin (you) */}
+                        <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-700">
+                              Your access (super admin)
+                            </span>
+                          </div>
+                          <p className="text-sm font-mono text-slate-800 truncate">
+                            {user?.email || 'superadmin@quickwing.com'}
+                          </p>
+                          <p className="text-xs text-blue-600 mt-0.5">
+                            Use the <strong>Sign in</strong> button above — your platform credentials work across every tenant.
+                          </p>
+                        </div>
+
+                        {/* Master admin */}
+                        <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">
+                              Master admin (client)
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-mono text-slate-800 truncate flex-1" title={masterEmail}>
+                              {masterEmail}
+                            </p>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <button
+                                onClick={() => copy(masterEmail, 'Master admin email')}
+                                className="p-1.5 text-amber-700 hover:bg-amber-100 rounded-md"
+                                title="Copy email"
+                              >
+                                <Copy size={13} />
+                              </button>
+                              <button
+                                onClick={() => handleResetMasterAdmin(tenant)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-600 text-white text-xs font-medium rounded-md hover:bg-amber-700"
+                                title="Reset master admin password"
+                                data-testid={`dashboard-reset-master-${tenant.slug}`}
+                              >
+                                <Key size={11} />
+                                Reset password
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="px-5 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span className="text-slate-500">
+                          Created {formatDate(tenant.created_at)}
+                        </span>
+                        <button
+                          onClick={() => { setActiveTab('tenants'); }}
+                          className="text-blue-700 hover:underline font-medium inline-flex items-center gap-1"
+                        >
+                          Manage <ArrowRight size={11} />
+                        </button>
                       </div>
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(tenant.status)}`}>
-                      {tenant.status}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-            </div>
+            )}
           </div>
         )}
 

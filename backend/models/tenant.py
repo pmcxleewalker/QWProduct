@@ -527,6 +527,7 @@ class AuditAction(str, Enum):
     USER_ROLE_CHANGED = "user_role_changed"
     USER_LOGIN = "user_login"
     USER_LOGOUT = "user_logout"
+    USER_PASSWORD_RESET = "user_password_reset"
     
     # Impersonation
     IMPERSONATION_START = "impersonation_start"

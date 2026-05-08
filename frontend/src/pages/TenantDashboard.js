@@ -24,6 +24,7 @@ import FleetReportsSection from '../components/FleetReportsSection';
 import IncidentReportsSection from '../components/IncidentReportsSection';
 import IncidentAlertBanner from '../components/IncidentAlertBanner';
 import CustomDocumentsAdmin from '../components/CustomDocumentsAdmin';
+import StaffAppQRCard from '../components/StaffAppQRCard';
 import EditVehicleModal from '../components/EditVehicleModal';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import AnnouncementsManager from '../components/AnnouncementsManager';
@@ -829,6 +830,14 @@ const TenantDashboard = () => {
                     vehicles={vehicles}
                     complianceSettings={complianceSettings}
                     onSettingsClick={() => setShowComplianceSettings(true)}
+                  />
+                )}
+
+                {/* Staff app QR — admin only, gives a scannable login link */}
+                {isAdmin && activeTenant?.tenant_slug && (
+                  <StaffAppQRCard
+                    tenantSlug={activeTenant.tenant_slug}
+                    tenantName={activeTenant.tenant_name}
                   />
                 )}
 

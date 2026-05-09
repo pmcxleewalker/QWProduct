@@ -5570,7 +5570,87 @@ async def create_booking(
     
     # Parse dates for recurring check
     start_time = datetime.fromisoformat(booking_data.start_time.replace('Z', '+00:00'))
-    
+    end_time = datetime.fromisoformat(booking_data.end_time.replace('Z', '+00:00'))
+
+    # ============ VEHICLE COMPLIANCE CHECK ============
+    # Block bookings for vehicles whose NCT or tax expires before the
+    # booking ends. Keeps non-roadworthy cars off the road.
+    booking_end_date = end_time.date()
+    compliance_failures = []
+    for field, label in [("nct_due_date", "NCT"), ("tax_due_date", "Tax")]:
+        raw = vehicle.get(field)
+        if not raw:
+            continue
+        try:
+            # Accept either YYYY-MM-DD or full ISO timestamps.
+            due_date = datetime.fromisoformat(str(raw).split("T")[0]).date()
+        except (ValueError, TypeError):
+            continue
+        if due_date < booking_end_date:
+            compliance_failures.append({
+                "field": field,
+                "label": label,
+                "expired_on": due_date.isoformat(),
+            })
+
+    if compliance_failures:
+        labels = ", ".join(f["label"] for f in compliance_failures)
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": (
+                    f"Cannot book this vehicle — {labels} "
+                    f"{'has' if len(compliance_failures) == 1 else 'have'} expired before the booking end date."
+                ),
+                "code": "compliance_expired",
+                "compliance_failures": compliance_failures,
+                "vehicle_registration": vehicle.get("registration"),
+            }
+        )
+    # =================================================
+
+    # ============ DRIVER DOUBLE-BOOKING CHECK ============
+    # Prevent the same person from being booked into two vehicles at the
+    # same time (whether as primary or secondary driver). They can't be
+    # in two cars at once.
+    driver_conflict_query = {
+        "tenant_id": context.tenant_id,
+        "start_time": {"$lt": booking_data.end_time},
+        "end_time": {"$gt": booking_data.start_time},
+        "status": {"$nin": ["rejected", "cancelled"]},
+        "$or": [
+            {"user_id": context.user_id},
+            {"secondary_user_id": context.user_id},
+        ],
+    }
+    existing_driver_booking = await db.bookings.find_one(driver_conflict_query, {"_id": 0})
+    if existing_driver_booking:
+        other_car_id = existing_driver_booking.get("car_id")
+        other_vehicle = await db.vehicles.find_one(
+            {"id": other_car_id, "tenant_id": context.tenant_id},
+            {"_id": 0, "name": 1, "registration": 1},
+        ) if other_car_id else None
+        other_label = (
+            f"{other_vehicle.get('name', 'another car')} ({other_vehicle.get('registration', '')})"
+            if other_vehicle else "another car"
+        )
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": (
+                    f"You are already booked into {other_label} during that time slot. "
+                    "A driver can only be in one vehicle at a time."
+                ),
+                "code": "driver_double_booking",
+                "existing_booking": {
+                    "car_id": other_car_id,
+                    "start_time": existing_driver_booking.get("start_time"),
+                    "end_time": existing_driver_booking.get("end_time"),
+                },
+            }
+        )
+    # =====================================================
+
     # ============ VEHICLE CONFLICT CHECK ============
     # Check if this vehicle is already booked during the requested time period
     vehicle_conflict_query = {

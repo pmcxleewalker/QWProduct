@@ -7,6 +7,9 @@ import {
   Power, PowerOff
 } from 'lucide-react';
 import FuelAnalyticsWidget from './FuelAnalyticsWidget';
+import EmptyState from './EmptyState';
+import { useConfirm } from './ConfirmDialog';
+import { useEscapeClose } from '../hooks/useEscapeClose';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const ICON_MAP = { FileText, Fuel, ClipboardList };
@@ -36,6 +39,7 @@ const slugifyKey = (label) =>
 
 // ============== Template Editor Modal ==============
 const TemplateEditorModal = ({ template, onClose, onSaved }) => {
+  useEscapeClose(true, onClose);
   const isEdit = Boolean(template?.id);
   const [name, setName] = useState(template?.name || '');
   const [description, setDescription] = useState(template?.description || '');
@@ -294,6 +298,7 @@ const TemplateEditorModal = ({ template, onClose, onSaved }) => {
 
 // ============== Submissions Drawer ==============
 const SubmissionsView = ({ template, onBack }) => {
+  const confirm = useConfirm();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -326,7 +331,12 @@ const SubmissionsView = ({ template, onBack }) => {
   });
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this submission?')) return;
+    if (!await confirm({
+      title: 'Delete submission?',
+      description: 'This permanently removes this entry. Cannot be undone.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    })) return;
     try {
       await axios.delete(`${API}/documents/submissions/${id}`, { headers: getAuthHeaders() });
       toast.success('Submission deleted');
@@ -360,7 +370,14 @@ const SubmissionsView = ({ template, onBack }) => {
         {loading ? (
           <div className="p-8 text-center text-sm text-slate-500"><Loader2 className="animate-spin inline mr-2" size={14} />Loading…</div>
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-sm text-slate-500">No submissions yet.</div>
+          <div className="p-8">
+            <EmptyState
+              compact
+              icon={Eye}
+              title="No submissions yet"
+              description="Submissions from staff using this template will appear here."
+            />
+          </div>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
@@ -401,7 +418,9 @@ const SubmissionsView = ({ template, onBack }) => {
   );
 };
 
-const SubmissionDetailModal = ({ submission, template, onClose, onDelete }) => (
+const SubmissionDetailModal = ({ submission, template, onClose, onDelete }) => {
+  useEscapeClose(true, onClose);
+  return (
   <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
     <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col" data-testid="submission-detail-modal">
       <div className="p-5 border-b border-slate-200 flex items-center justify-between">
@@ -457,7 +476,8 @@ const SubmissionDetailModal = ({ submission, template, onClose, onDelete }) => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
 // ============== Top-level Admin Component ==============
 const CustomDocumentsAdmin = () => {
@@ -483,7 +503,12 @@ const CustomDocumentsAdmin = () => {
   useEffect(() => { load(); }, []);
 
   const handleDelete = async (tpl) => {
-    if (!window.confirm(`Delete "${tpl.name}"? Existing submissions will be kept.`)) return;
+    if (!await confirm({
+      title: `Delete "${tpl.name}"?`,
+      description: 'Existing submissions for this template will be kept and remain visible.',
+      confirmLabel: 'Delete template',
+      tone: 'danger',
+    })) return;
     try {
       await axios.delete(`${API}/documents/templates/${tpl.id}`, { headers: getAuthHeaders() });
       toast.success('Template deleted');
@@ -529,10 +554,19 @@ const CustomDocumentsAdmin = () => {
       {loading ? (
         <div className="text-center py-10 text-sm text-slate-500"><Loader2 className="animate-spin inline mr-2" size={14} />Loading…</div>
       ) : templates.length === 0 ? (
-        <div className="text-center py-10 border border-dashed border-slate-300 rounded-xl">
-          <FileText className="mx-auto text-slate-400 mb-2" size={28} />
-          <p className="text-sm text-slate-500">No templates yet. Create your first one.</p>
-        </div>
+        <EmptyState
+          icon={FileText}
+          title="No templates yet"
+          description="Build a custom form for your staff (e.g. pre-trip check, mileage log) and it'll appear here."
+          action={
+            <button
+              onClick={() => setCreating(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              <Plus size={14} /> Create your first template
+            </button>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {templates.map((tpl) => {

@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Toaster } from 'sonner';
 import ProtectedRoute from './components/ProtectedRoute';
 import CookieConsent from './components/CookieConsent';
+import { ConfirmProvider } from './components/ConfirmDialog';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import TenantLogin from './pages/TenantLogin';
@@ -476,9 +477,11 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppContent />
-        <CookieConsent />
-        <Toaster position="top-right" richColors closeButton />
+        <ConfirmProvider>
+          <AppContent />
+          <CookieConsent />
+          <Toaster position="top-right" richColors closeButton />
+        </ConfirmProvider>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -25,6 +25,7 @@ import IncidentReportsSection from '../components/IncidentReportsSection';
 import IncidentAlertBanner from '../components/IncidentAlertBanner';
 import CustomDocumentsAdmin from '../components/CustomDocumentsAdmin';
 import StaffAppQRCard from '../components/StaffAppQRCard';
+import { useConfirm } from '../components/ConfirmDialog';
 import EditVehicleModal from '../components/EditVehicleModal';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import AnnouncementsManager from '../components/AnnouncementsManager';
@@ -114,6 +115,7 @@ const getErrorMessage = (err, defaultMsg = 'An error occurred') => {
 const TenantDashboard = () => {
   const navigate = useNavigate();
   const { user, activeTenant } = useAuth();
+  const confirm = useConfirm();
   
   // Determine if user is staff-only (limited access)
   // Include 'tenant_admin' for impersonation and all admin-level roles
@@ -378,7 +380,12 @@ const TenantDashboard = () => {
   };
 
   const handleDeleteVehicle = async (vehicleId) => {
-    if (!window.confirm('Are you sure you want to delete this vehicle?')) return;
+    if (!await confirm({
+      title: 'Delete vehicle?',
+      description: 'This will permanently remove the vehicle from your fleet. Existing bookings will not be affected.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    })) return;
     try {
       await axios.delete(`${API}/vehicles/${vehicleId}`);
       setSuccess('Vehicle deleted');
@@ -419,7 +426,12 @@ const TenantDashboard = () => {
   };
 
   const handleRemoveUser = async (userId) => {
-    if (!window.confirm('Remove this team member from the franchise?')) return;
+    if (!await confirm({
+      title: 'Remove team member?',
+      description: 'They will lose access to this tenant immediately. Their account is not deleted.',
+      confirmLabel: 'Remove',
+      tone: 'danger',
+    })) return;
     try {
       await axios.delete(`${API}/tenant/users/${userId}`);
       setSuccess('Team member removed');
@@ -449,7 +461,12 @@ const TenantDashboard = () => {
   };
 
   const handleDeleteBooking = async (bookingId) => {
-    if (!window.confirm('Are you sure you want to delete this booking?')) return;
+    if (!await confirm({
+      title: 'Delete booking?',
+      description: 'This action cannot be undone.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    })) return;
     try {
       await bookingAPI.delete(bookingId);
       toast.success('Booking deleted');
@@ -558,7 +575,12 @@ const TenantDashboard = () => {
   };
 
   const handleResendInvitation = async (userId, userName) => {
-    if (!window.confirm(`Re-send invitation email to ${userName}? Their password will reset to QuickWing123!`)) return;
+    if (!await confirm({
+      title: `Resend invitation to ${userName}?`,
+      description: `Their password will reset to "QuickWing123!" and they'll receive a fresh activation email.`,
+      confirmLabel: 'Resend invite',
+      tone: 'info',
+    })) return;
     try {
       const res = await axios.post(`${API}/tenant/users/${userId}/resend-invitation`);
       if (res.data?.email_sent) {

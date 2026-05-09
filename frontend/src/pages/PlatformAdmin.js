@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import ContentWorker from '../components/ContentWorker';
 import LegalRecordsSection from '../components/LegalRecordsSection';
+import { useConfirm } from '../components/ConfirmDialog';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -60,6 +61,7 @@ const getErrorMessage = (err, defaultMsg = 'An error occurred') => {
 
 const PlatformAdmin = () => {
   const { user, isPlatformAdmin, isSuperAdmin, impersonateTenant, isImpersonating, stopImpersonation, activeTenant, logout } = useAuth();
+  const confirm = useConfirm();
   
   const [activeTab, setActiveTab] = useState('overview');
   
@@ -509,7 +511,12 @@ const PlatformAdmin = () => {
   };
 
   const handleImpersonate = async (tenantId) => {
-    if (!window.confirm('You are about to impersonate this tenant. All actions will be logged.')) return;
+    if (!await confirm({
+      title: 'Sign in as this tenant?',
+      description: 'You will assume their admin role for the session. Every action you take is logged in the audit trail.',
+      confirmLabel: 'Sign in',
+      tone: 'info',
+    })) return;
     
     try {
       const tenant = await impersonateTenant(tenantId);

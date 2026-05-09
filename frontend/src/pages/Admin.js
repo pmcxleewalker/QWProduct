@@ -1559,7 +1559,7 @@ const Admin = () => {
               <form onSubmit={handleProviderSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Region *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">County *</label>
                     <select
                       data-testid="provider-region-select"
                       value={providerForm.region}
@@ -1567,8 +1567,42 @@ const Admin = () => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       required
                     >
-                      <option value="Kerry">Kerry</option>
-                      <option value="West Cork">West Cork</option>
+                      <optgroup label="Republic of Ireland">
+                        <option value="Carlow">Carlow</option>
+                        <option value="Cavan">Cavan</option>
+                        <option value="Clare">Clare</option>
+                        <option value="Cork">Cork</option>
+                        <option value="Donegal">Donegal</option>
+                        <option value="Dublin">Dublin</option>
+                        <option value="Galway">Galway</option>
+                        <option value="Kerry">Kerry</option>
+                        <option value="Kildare">Kildare</option>
+                        <option value="Kilkenny">Kilkenny</option>
+                        <option value="Laois">Laois</option>
+                        <option value="Leitrim">Leitrim</option>
+                        <option value="Limerick">Limerick</option>
+                        <option value="Longford">Longford</option>
+                        <option value="Louth">Louth</option>
+                        <option value="Mayo">Mayo</option>
+                        <option value="Meath">Meath</option>
+                        <option value="Monaghan">Monaghan</option>
+                        <option value="Offaly">Offaly</option>
+                        <option value="Roscommon">Roscommon</option>
+                        <option value="Sligo">Sligo</option>
+                        <option value="Tipperary">Tipperary</option>
+                        <option value="Waterford">Waterford</option>
+                        <option value="Westmeath">Westmeath</option>
+                        <option value="Wexford">Wexford</option>
+                        <option value="Wicklow">Wicklow</option>
+                      </optgroup>
+                      <optgroup label="Northern Ireland">
+                        <option value="Antrim">Antrim</option>
+                        <option value="Armagh">Armagh</option>
+                        <option value="Derry">Derry</option>
+                        <option value="Down">Down</option>
+                        <option value="Fermanagh">Fermanagh</option>
+                        <option value="Tyrone">Tyrone</option>
+                      </optgroup>
                     </select>
                   </div>
                   <div>

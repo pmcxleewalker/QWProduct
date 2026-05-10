@@ -984,7 +984,7 @@ const Admin = () => {
             onClick={() => setActiveTab('users')}
             data-testid="tab-users"
             className={`flex flex-col items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'users'
+              activeTab === 'users' || activeTab === 'credentials'
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
@@ -993,23 +993,7 @@ const Admin = () => {
               <Users size={16} />
               <span className="font-semibold">Team</span>
             </div>
-            <span className="text-xs text-gray-400">Staff</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('credentials')}
-            data-testid="tab-credentials"
-            className={`flex flex-col items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'credentials'
-                ? 'bg-white text-amber-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <div className="flex items-center space-x-1">
-              <Key size={16} />
-              <span className="font-semibold">Access</span>
-            </div>
-            <span className="text-xs text-gray-400">Logins</span>
+            <span className="text-xs text-gray-400">Staff &amp; Access</span>
           </button>
           
           {/* More dropdown for less used items */}
@@ -1706,6 +1690,38 @@ const Admin = () => {
 
 
       {/* Users Tab */}
+      {(activeTab === 'users' || activeTab === 'credentials') && (
+        <div>
+          {/* Sub-tab pill nav: Staff vs Access */}
+          <div className="mb-5 flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+            <button
+              onClick={() => setActiveTab('users')}
+              data-testid="team-subtab-staff"
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'users'
+                  ? 'bg-white text-blue-700 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Users size={14} />
+              Staff
+            </button>
+            <button
+              onClick={() => setActiveTab('credentials')}
+              data-testid="team-subtab-access"
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'credentials'
+                  ? 'bg-white text-amber-700 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Key size={14} />
+              Access
+            </button>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'users' && (
         <div>
           <div className="flex justify-between items-center mb-6">

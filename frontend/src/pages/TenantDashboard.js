@@ -836,23 +836,35 @@ const TenantDashboard = () => {
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
-                {/* Open incidents alert — admin-only, only renders when count > 0 */}
+                {/* === Action Required section — consolidates anything needing immediate attention === */}
                 {isAdmin && (
-                  <IncidentAlertBanner
-                    onView={() => {
-                      setActiveTab('reports');
-                      setActiveSubTab('incident-reports');
-                    }}
-                  />
-                )}
+                  <div data-testid="action-required-section">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Bell size={16} className="text-rose-600" />
+                      <h2 className="text-base font-semibold text-slate-900">Action Required</h2>
+                      <span className="text-xs text-slate-500">
+                        Compliance, incidents and anything needing immediate attention
+                      </span>
+                    </div>
+                    <div className="space-y-3">
+                      {/* Open incidents alert — only renders when count > 0 */}
+                      <IncidentAlertBanner
+                        onView={() => {
+                          setActiveTab('reports');
+                          setActiveSubTab('incident-reports');
+                        }}
+                      />
 
-                {/* Compliance Alerts - Enhanced Component */}
-                {isAdmin && vehicles.length > 0 && (
-                  <ComplianceAlerts 
-                    vehicles={vehicles}
-                    complianceSettings={complianceSettings}
-                    onSettingsClick={() => setShowComplianceSettings(true)}
-                  />
+                      {/* Compliance Alerts (NCT/Tax/insurance expiries) */}
+                      {vehicles.length > 0 && (
+                        <ComplianceAlerts
+                          vehicles={vehicles}
+                          complianceSettings={complianceSettings}
+                          onSettingsClick={() => setShowComplianceSettings(true)}
+                        />
+                      )}
+                    </div>
+                  </div>
                 )}
 
                 {/* Staff app QR — admin only, gives a scannable login link */}
@@ -925,97 +937,6 @@ const TenantDashboard = () => {
                       </button>
                     </div>
                   )}
-                </div>
-
-                {/* Quick Actions + Recent Activity */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Fleet Overview */}
-                  <div className="bg-white rounded-xl p-6 shadow-sm border">
-                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                      <Car size={20} className="mr-2 text-blue-600" />
-                      Fleet Overview
-                    </h3>
-                    {vehicles.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <Car size={40} className="mx-auto mb-3 opacity-50" />
-                        <p>No vehicles yet</p>
-                        {isAdmin && (
-                          <button
-                            onClick={() => setShowAddVehicle(true)}
-                            className="mt-3 text-blue-600 hover:underline"
-                          >
-                            Add your first vehicle
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {vehicles.slice(0, 5).map(vehicle => (
-                          <div 
-                            key={vehicle.id} 
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                          >
-                            <div>
-                              <p className="font-medium text-gray-900">{vehicle.name}</p>
-                              <p className="text-xs text-gray-500">{vehicle.registration}</p>
-                            </div>
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              vehicle.is_blocked 
-                                ? 'bg-red-100 text-red-700' 
-                                : 'bg-green-100 text-green-700'
-                            }`}>
-                              {vehicle.is_blocked ? 'Blocked' : 'Available'}
-                            </span>
-                          </div>
-                        ))}
-                        {vehicles.length > 5 && (
-                          <button
-                            onClick={() => setActiveTab('vehicles')}
-                            className="text-sm text-blue-600 hover:underline w-full text-center pt-2"
-                          >
-                            View all {vehicles.length} vehicles
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Recent Activity */}
-                  <div className="bg-white rounded-xl p-6 shadow-sm border">
-                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                      <Clock size={20} className="mr-2 text-green-600" />
-                      Recent Bookings
-                    </h3>
-                    {bookings.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <Calendar size={40} className="mx-auto mb-3 opacity-50" />
-                        <p>No bookings yet</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {bookings.slice(0, 5).map(booking => (
-                          <div 
-                            key={booking.id} 
-                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                          >
-                            <div>
-                              <p className="font-medium text-gray-900">{booking.user_name}</p>
-                              <p className="text-xs text-gray-500">{formatDate(booking.start_time)}</p>
-                            </div>
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              booking.status === 'approved' 
-                                ? 'bg-green-100 text-green-700' 
-                                : booking.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {booking.status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             )}

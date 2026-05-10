@@ -331,66 +331,6 @@ const FleetReportsSection = ({ onRefresh, vehicles = [], complianceSettings = {}
         </div>
       </div>
 
-      {/* Summary Stats Cards - Collapsible */}
-      <CollapsibleSection 
-        title="Summary Statistics" 
-        icon={BarChart3} 
-        iconColor="text-blue-600"
-        defaultOpen={true}
-      >
-        <div className="p-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-gray-50 rounded-xl p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Total Vehicles</p>
-                  <p className="text-3xl font-bold text-gray-900">{summary.total_vehicles}</p>
-                </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Car className="text-blue-600" size={24} />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 rounded-xl p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Total Bookings</p>
-                  <p className="text-3xl font-bold text-gray-900">{summary.total_bookings.toLocaleString()}</p>
-                </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Calendar className="text-green-600" size={24} />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 rounded-xl p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Pending Bookings</p>
-                  <p className="text-3xl font-bold text-orange-600">{summary.pending_bookings}</p>
-                </div>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <Clock className="text-orange-600" size={24} />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 rounded-xl p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Blocked Cars</p>
-                  <p className="text-3xl font-bold text-red-600">{summary.blocked_cars}</p>
-                </div>
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                  <Lock className="text-red-600" size={24} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </CollapsibleSection>
-
       {/* All Bookings List - NEW SECTION */}
       <CollapsibleSection 
         title="All Bookings List" 

@@ -5,6 +5,18 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 
 ## Recent Changes (Feb 2026)
 
+### Bug Fix - Mar 1, 2026 (P0 PRODUCTION BLOCKER)
+**Resend Invitation / Reset Password — "User is not a member of this tenant"**
+- ROOT CAUSE: `POST /api/tenant/users/{user_id}/resend-invitation` queried `db.tenant_users` (a dead/empty collection). All other tenant-user endpoints correctly use `db.memberships`. Cross-collection bug — would always 404.
+- FIX: 1-line change in `server.py` line 10365 — `db.tenant_users.find_one(...)` → `db.memberships.find_one(...)`.
+- ALSO FIXED in same patch (server.py linter F821 errors that would have caused 500s):
+  - Line 507 `uuid4()` → `uuid.uuid4()` (GDPR `delete_user_account`)
+  - Line 541 `uuid4()` → `uuid.uuid4()` (GDPR `record_consent`)
+  - Line 2174 `uuid4()` → `uuid.uuid4()` (platform `add_user_to_tenant`)
+  - Line 10119 lazy-import for `resend` module + `SENDER_EMAIL` (lead-capture email path was unimported, would crash on first lead)
+- TESTING: 10/10 pytest tests pass — happy path + 404 negative + cross-tenant isolation + GDPR endpoints (`/app/backend/tests/test_invite_resend_and_gdpr.py`).
+- UNBLOCKS: Bluebird Care + all future tenants — staff onboarding emails now reliably re-issuable from the admin UI.
+
 ### New Features - Feb 28, 2026
 **Incident Reports (per-tenant):**
 - New collection `incidents` + `incident_form_configs` in MongoDB

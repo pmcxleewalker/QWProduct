@@ -538,6 +538,29 @@ const PlatformAdmin = () => {
     }
   };
 
+  const handleRenameTenant = async (tenant) => {
+    const newName = window.prompt(
+      `Rename tenant "${tenant.name}"?\n\n` +
+      `Note: this only changes the display name. The URL slug (${tenant.slug}) and existing login URLs stay the same.\n\n` +
+      `Enter the new tenant name:`,
+      tenant.name
+    );
+    if (newName === null) return; // cancelled
+    const trimmed = newName.trim();
+    if (!trimmed) {
+      toast.error('Name cannot be empty');
+      return;
+    }
+    if (trimmed === tenant.name) return; // no change
+    try {
+      await axios.put(`${API}/platform/tenants/${tenant.id}`, { name: trimmed });
+      toast.success(`Renamed to "${trimmed}"`);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to rename tenant');
+    }
+  };
+
   const handleResetMasterAdmin = async (tenant) => {
     const newPassword = window.prompt(
       `Reset master admin password for ${tenant.name}?\n\n` +
@@ -824,6 +847,14 @@ const PlatformAdmin = () => {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="font-bold text-slate-900 truncate">{tenant.name}</h3>
+                              <button
+                                onClick={() => handleRenameTenant(tenant)}
+                                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors"
+                                title="Rename tenant"
+                                data-testid={`dashboard-rename-${tenant.slug}`}
+                              >
+                                <Edit2 size={12} />
+                              </button>
                               <span className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full ${getStatusColor(tenant.status)}`}>
                                 {tenant.status}
                               </span>

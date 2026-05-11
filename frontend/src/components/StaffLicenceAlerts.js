@@ -11,25 +11,49 @@ import { computeLicenceStatus } from './DriverLicenceCard';
  * amber = warning) so admins read both panels the same way.
  */
 const StaffLicenceAlerts = ({ teamMembers = [], onManageClick }) => {
-  const { expired, warning } = useMemo(() => {
+  const { expired, warning, missing } = useMemo(() => {
     const exp = [];
     const warn = [];
+    const miss = [];
     for (const m of teamMembers) {
-      if (!m.driver_licence_expiry) continue; // skip missing — surfaced in the team list, not as an alert
+      // Only chase staff and admins who *drive* — skip support / master_admin
+      // helper accounts that don't operate vehicles.
+      if (m.role !== 'staff' && m.role !== 'admin') continue;
+      if (!m.driver_licence_expiry) {
+        miss.push({ member: m, status: { state: 'missing', label: 'Not on file' } });
+        continue;
+      }
       const s = computeLicenceStatus(m.driver_licence_expiry);
       if (s.state === 'expired') exp.push({ member: m, status: s });
       else if (s.state === 'warning') warn.push({ member: m, status: s });
     }
-    // Sort each list by daysUntil ascending (most urgent first)
     exp.sort((a, b) => a.status.daysUntil - b.status.daysUntil);
     warn.sort((a, b) => a.status.daysUntil - b.status.daysUntil);
-    return { expired: exp, warning: warn };
+    miss.sort((a, b) => (a.member.name || '').localeCompare(b.member.name || ''));
+    return { expired: exp, warning: warn, missing: miss };
   }, [teamMembers]);
 
-  const total = expired.length + warning.length;
+  const total = expired.length + warning.length + missing.length;
   if (total === 0) return null;
 
   const isCritical = expired.length > 0;
+  // Headline subtitle — pick the most urgent line
+  let subtitle;
+  if (expired.length > 0 && warning.length > 0 && missing.length > 0) {
+    subtitle = `${expired.length} expired · ${warning.length} due within 30 days · ${missing.length} not on file`;
+  } else if (expired.length > 0 && warning.length > 0) {
+    subtitle = `${expired.length} expired · ${warning.length} due within 30 days`;
+  } else if (expired.length > 0 && missing.length > 0) {
+    subtitle = `${expired.length} expired · ${missing.length} not on file`;
+  } else if (warning.length > 0 && missing.length > 0) {
+    subtitle = `${warning.length} due within 30 days · ${missing.length} not on file`;
+  } else if (expired.length > 0) {
+    subtitle = `${expired.length} expired`;
+  } else if (warning.length > 0) {
+    subtitle = `${warning.length} due within 30 days`;
+  } else {
+    subtitle = `${missing.length} not on file — chase staff to record their licence`;
+  }
 
   return (
     <div
@@ -68,9 +92,7 @@ const StaffLicenceAlerts = ({ teamMembers = [], onManageClick }) => {
                   isCritical ? 'text-red-700' : 'text-amber-700'
                 }`}
               >
-                {expired.length > 0
-                  ? `${expired.length} expired, ${warning.length} due within 30 days`
-                  : `${warning.length} due within 30 days`}
+                {subtitle}
               </p>
             </div>
           </div>
@@ -126,6 +148,26 @@ const StaffLicenceAlerts = ({ teamMembers = [], onManageClick }) => {
               </div>
             </div>
             <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-full flex-shrink-0">
+              {status.label}
+            </span>
+          </div>
+        ))}
+        {missing.map(({ member, status }) => (
+          <div
+            key={member.id}
+            className="flex items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-lg"
+            data-testid={`licence-missing-${member.id}`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <IdCard size={16} className="text-slate-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900 truncate">
+                  {member.name}
+                </p>
+                <p className="text-xs text-slate-500 truncate">{member.email}</p>
+              </div>
+            </div>
+            <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded-full flex-shrink-0">
               {status.label}
             </span>
           </div>

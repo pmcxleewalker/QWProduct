@@ -1837,6 +1837,145 @@ class DeleteTenantRequest(BaseModel):
     password: str
     confirm: bool = False
 
+
+class ResetTenantDataRequest(BaseModel):
+    """Body for the per-tenant "reset to blank slate" endpoint."""
+    password: str
+    confirm: bool = False
+
+
+# Names of every operational collection that stores per-tenant data and should
+# be wiped on a "reset client" action. Anything NOT in this list is preserved
+# (tenant doc itself, plan config, branding settings, master admin, etc.).
+TENANT_DATA_COLLECTIONS = [
+    "vehicles",
+    "bookings",
+    "car_statuses",
+    "incidents",
+    "incident_form_configs",
+    "mileage_logs",
+    "lift_requests",
+    "todos",
+    "messages",
+    "providers",
+    "locations",
+    "document_templates",
+    "document_submissions",
+    "activation_tokens",
+    "announcements",
+    "notifications",
+    "audit_logs",
+]
+
+
+@api_router.post("/platform/tenants/{tenant_id}/reset-data")
+async def reset_tenant_data(
+    tenant_id: str,
+    reset_request: ResetTenantDataRequest,
+    context: TenantContext = Depends(require_super_admin),
+    request: Request = None,
+):
+    """
+    Reset a tenant to a blank slate WITHOUT deleting the tenant itself.
+
+    Wipes all operational data (vehicles, bookings, incidents, custom docs,
+    etc.) plus every staff / admin membership. Preserves:
+      - the tenant record (name, slug, plan, branding)
+      - the master_admin membership(s) so the client can still log in
+      - global super_admin / support_admin memberships for remote help
+
+    Use this when handing a tenant over after a trial.
+    """
+    user = await db.users.find_one({"id": context.user_id}, {"_id": 0})
+    if not user or not verify_password(reset_request.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid password")
+
+    if not reset_request.confirm:
+        raise HTTPException(status_code=400, detail="Please confirm reset (confirm=true)")
+
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    # 1) Wipe operational data
+    counts: dict = {}
+    for coll in TENANT_DATA_COLLECTIONS:
+        res = await db[coll].delete_many({"tenant_id": tenant_id})
+        counts[coll] = res.deleted_count
+
+    # 2) Decide which memberships to keep
+    SAFE_EMAILS = {SUPPORT_ADMIN_EMAIL.lower(), "superadmin@quickwing.com"}
+    memberships = await db.memberships.find(
+        {"tenant_id": tenant_id}, {"_id": 0}
+    ).to_list(2000)
+
+    members_to_remove = []
+    users_to_check_orphan = []
+    for m in memberships:
+        if m.get("role") == "master_admin":
+            continue
+        u = await db.users.find_one(
+            {"id": m["user_id"]}, {"_id": 0, "email": 1, "role": 1}
+        )
+        if u and (u.get("email") or "").lower() in SAFE_EMAILS:
+            continue
+        if u and u.get("role") in {"super_admin", "master_admin"}:
+            continue
+        members_to_remove.append(m)
+        users_to_check_orphan.append(m["user_id"])
+
+    removed_membership_count = 0
+    for m in members_to_remove:
+        await db.memberships.delete_one(
+            {"user_id": m["user_id"], "tenant_id": tenant_id}
+        )
+        removed_membership_count += 1
+
+    # 3) Delete user records that no longer belong to ANY tenant
+    deleted_user_count = 0
+    for uid in users_to_check_orphan:
+        other = await db.memberships.count_documents({"user_id": uid})
+        u = await db.users.find_one({"id": uid}, {"_id": 0, "role": 1, "email": 1})
+        if not u:
+            continue
+        if u.get("role") in {"super_admin", "master_admin"}:
+            continue
+        if (u.get("email") or "").lower() in SAFE_EMAILS:
+            continue
+        if other == 0:
+            await db.users.delete_one({"id": uid})
+            deleted_user_count += 1
+
+    # 4) Audit
+    try:
+        await audit_service.log_tenant_action(
+            actor_user_id=context.user_id,
+            actor_email=context.user_email,
+            action=AuditAction.TENANT_UPDATED,
+            tenant_id=tenant_id,
+            meta={
+                "action": "reset_tenant_data",
+                "tenant_name": tenant.get("name"),
+                "data_counts": counts,
+                "memberships_removed": removed_membership_count,
+                "users_deleted": deleted_user_count,
+            },
+            ip_address=request.client.host if request and request.client else None,
+        )
+    except Exception:
+        pass
+
+    return {
+        "message": (
+            f"Tenant '{tenant.get('name')}' reset to a blank slate. "
+            "Master admin and super-admin support access preserved."
+        ),
+        "data_counts": counts,
+        "memberships_removed": removed_membership_count,
+        "users_deleted": deleted_user_count,
+    }
+
+
 @api_router.delete("/platform/tenants/{tenant_id}")
 async def delete_tenant(
     tenant_id: str,

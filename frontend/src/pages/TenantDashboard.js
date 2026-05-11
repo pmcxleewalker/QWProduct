@@ -844,18 +844,21 @@ const TenantDashboard = () => {
                       setActiveSubTab(null);
                     }
                   }}
-                  className={`relative flex items-center space-x-2 px-4 py-3 whitespace-nowrap font-medium text-sm transition-all duration-200 ${
+                  className={`relative flex items-center space-x-2 px-4 py-3 whitespace-nowrap font-semibold text-sm transition-all duration-200 ${
                     isActive
                       ? 'text-white'
-                      : 'text-white/55 hover:text-white/90'
+                      : 'text-white/80 hover:text-white'
                   }`}
                   style={
                     isActive
                       ? {
                           background:
-                            'linear-gradient(180deg, rgba(168,85,247,0.25) 0%, rgba(168,85,247,0.06) 100%)',
+                            'linear-gradient(180deg, rgba(168,85,247,0.35) 0%, rgba(168,85,247,0.10) 100%)',
+                          border: '1px solid rgba(216,180,254,0.85)',
+                          borderRadius: '12px',
+                          margin: '6px 2px 0 2px',
                           boxShadow:
-                            'inset 0 -2px 0 0 #d8b4fe, 0 0 24px rgba(168,85,247,0.45)',
+                            '0 0 0 2px rgba(216,180,254,0.35), 0 0 28px rgba(168,85,247,0.7), inset 0 0 18px rgba(216,180,254,0.18)',
                         }
                       : undefined
                   }
@@ -863,9 +866,12 @@ const TenantDashboard = () => {
                 >
                   <tab.icon
                     size={18}
-                    className={isActive ? 'drop-shadow-[0_0_6px_rgba(216,180,254,0.9)]' : 'opacity-80'}
+                    className={isActive ? 'drop-shadow-[0_0_8px_rgba(216,180,254,1)]' : 'opacity-90'}
                   />
-                  <span className={isActive ? 'drop-shadow-[0_0_4px_rgba(216,180,254,0.6)]' : ''}>
+                  <span
+                    className={isActive ? 'drop-shadow-[0_0_6px_rgba(216,180,254,0.85)] text-white' : ''}
+                    style={isActive ? { textShadow: '0 0 6px rgba(255,255,255,0.6)' } : undefined}
+                  >
                     {tab.label}
                   </span>
                   {tab.badge > 0 && (
@@ -879,18 +885,6 @@ const TenantDashboard = () => {
                     >
                       {tab.badge}
                     </span>
-                  )}
-                  {/* Bottom glow underline only for the active tab */}
-                  {isActive && (
-                    <span
-                      aria-hidden
-                      className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full"
-                      style={{
-                        background:
-                          'linear-gradient(90deg, transparent, #d8b4fe 50%, transparent)',
-                        boxShadow: '0 0 8px #d8b4fe',
-                      }}
-                    />
                   )}
                 </button>
               );

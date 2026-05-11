@@ -561,6 +561,36 @@ const PlatformAdmin = () => {
     }
   };
 
+  const handleResetTenantData = async (tenant) => {
+    // Hard guard: typed-name + password confirm so this can't fire by accident.
+    const typed = window.prompt(
+      `\u26A0\uFE0F  Reset ALL data for "${tenant.name}"?\n\n` +
+      `This will permanently delete:\n` +
+      `  \u2022 every vehicle, booking and incident\n` +
+      `  \u2022 every staff and admin account (master admin kept)\n` +
+      `  \u2022 every custom document, mileage log, lift request and todo\n\n` +
+      `The tenant, plan and branding are preserved so the client can log in to a blank slate.\n\n` +
+      `To confirm, type the tenant name exactly:`
+    );
+    if (typed === null) return;
+    if (typed.trim() !== tenant.name) {
+      toast.error('Tenant name did not match \u2014 reset cancelled');
+      return;
+    }
+    const password = window.prompt('Enter your super-admin password to proceed:');
+    if (!password) return;
+    try {
+      const res = await axios.post(
+        `${API}/platform/tenants/${tenant.id}/reset-data`,
+        { password, confirm: true }
+      );
+      toast.success(res.data?.message || `${tenant.name} reset to blank slate`);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to reset tenant data');
+    }
+  };
+
   const handleResetMasterAdmin = async (tenant) => {
     const newPassword = window.prompt(
       `Reset master admin password for ${tenant.name}?\n\n` +
@@ -945,6 +975,19 @@ const PlatformAdmin = () => {
                             </div>
                           </div>
                         </div>
+                      </div>
+
+                      {/* Danger zone — reset to blank slate */}
+                      <div className="px-5 pb-4">
+                        <button
+                          onClick={() => handleResetTenantData(tenant)}
+                          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-700 text-xs font-semibold rounded-lg border border-rose-200 hover:bg-rose-100"
+                          title="Wipe all data for this client (cars, staff, bookings) and reset to a blank slate. Master admin is preserved."
+                          data-testid={`dashboard-reset-data-${tenant.slug}`}
+                        >
+                          <RotateCcw size={12} />
+                          Reset client data
+                        </button>
                       </div>
 
                       {/* Footer */}

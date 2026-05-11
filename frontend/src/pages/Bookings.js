@@ -1,13 +1,10 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { bookingAPI, carAPI } from '../api/api';
-import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp, Minus, AlertTriangle, Users, Map, CheckCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp, Minus, AlertTriangle, Users, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import EditBookingModal from '../components/EditBookingModal';
 import CarAvailabilityCard from '../components/CarAvailabilityCard';
-
-// Lazy load the map component
-const BookingLocationsMap = lazy(() => import('../components/BookingLocationsMap'));
 
 const Bookings = () => {
   const { user } = useAuth();
@@ -35,7 +32,6 @@ const Bookings = () => {
   const [viewMode, setViewMode] = useState('all'); // 'all' or 'my' bookings
   const [conflictWarning, setConflictWarning] = useState(null); // Booking conflict alert
   const [checkingConflicts, setCheckingConflicts] = useState(false); // Loading state for conflict check
-  const [showMap, setShowMap] = useState(false); // Toggle map view
   
   const [formData, setFormData] = useState({
     car_id: carFromQR || '',
@@ -882,42 +878,7 @@ const Bookings = () => {
             )}
           </button>
         </div>
-
-        {/* Map Toggle Button */}
-        <button
-          onClick={() => setShowMap(!showMap)}
-          data-testid="map-toggle-button"
-          className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            showMap
-              ? 'bg-emerald-600 text-white'
-              : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-          }`}
-        >
-          <Map size={16} />
-          <span>{showMap ? 'Hide Map' : 'Show Map'}</span>
-        </button>
       </div>
-
-      {/* Booking Locations Map */}
-      {showMap && (
-        <div className="mb-6">
-          <Suspense fallback={
-            <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600 mx-auto mb-3"></div>
-                <p className="text-gray-600 text-sm">Loading map...</p>
-              </div>
-            </div>
-          }>
-            <BookingLocationsMap 
-              carId={selectedCar !== 'all' ? selectedCar : null}
-              selectedDate={currentDate.toISOString().split('T')[0]}
-              height="350px"
-              showDatePicker={false}
-            />
-          </Suspense>
-        </div>
-      )}
 
       {/* Success/Error Messages */}
       {success && (

@@ -34,6 +34,8 @@ import NotificationBell from '../components/NotificationBell';
 import GDPRSettings from '../components/GDPRSettings';
 import UserProfileMenu from '../components/UserProfileMenu';
 import ComplianceAlerts, { ComplianceSettingsModal } from '../components/ComplianceAlerts';
+import { computeLicenceStatus } from '../components/DriverLicenceCard';
+import StaffLicenceAlerts from '../components/StaffLicenceAlerts';
 import CostAnalyticsDashboard from '../components/CostAnalyticsDashboard';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -153,7 +155,11 @@ const TenantDashboard = () => {
   
   // Plan data for tier-based styling
   const [planData, setPlanData] = useState(null);
-  const tierStyle = planData?.plan?.id ? TIER_STYLES[planData.plan.id] : TIER_STYLES.standard;
+  // Falls back to standard styling for plan IDs (e.g. "custom") that don't
+  // have a dedicated theme — prevents undefined-property crashes downstream.
+  const tierStyle =
+    (planData?.plan?.id && TIER_STYLES[planData.plan.id]) ||
+    TIER_STYLES.standard;
 
   // Modal states
   const [showAddVehicle, setShowAddVehicle] = useState(false);
@@ -863,6 +869,12 @@ const TenantDashboard = () => {
                           onSettingsClick={() => setShowComplianceSettings(true)}
                         />
                       )}
+
+                      {/* Driver's Licence expiry alerts — 30-day rolling window */}
+                      <StaffLicenceAlerts
+                        teamMembers={teamMembers}
+                        onManageClick={() => setActiveTab('users')}
+                      />
                     </div>
                   </div>
                 )}
@@ -1565,17 +1577,38 @@ const TenantDashboard = () => {
                           <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-blue-700 uppercase">Name</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-blue-700 uppercase">Email</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-blue-700 uppercase">Licence</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-blue-700 uppercase">Status</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-blue-700 uppercase">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y">
-                          {teamMembers.filter(m => m.role === 'staff').map(member => (
+                          {teamMembers.filter(m => m.role === 'staff').map(member => {
+                            const lic = computeLicenceStatus(member.driver_licence_expiry);
+                            const licBadge = {
+                              valid:   'bg-emerald-100 text-emerald-700 border-emerald-200',
+                              warning: 'bg-amber-100 text-amber-700 border-amber-200',
+                              expired: 'bg-red-100 text-red-700 border-red-200',
+                              missing: 'bg-slate-100 text-slate-600 border-slate-200',
+                            }[lic.state];
+                            const licDate = member.driver_licence_expiry
+                              ? new Date(member.driver_licence_expiry).toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: 'numeric' })
+                              : '—';
+                            return (
                             <tr key={member.id} className="hover:bg-blue-50/50">
                               <td className="px-4 py-3">
                                 <p className="font-medium text-gray-900">{member.name}</p>
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-600">{member.email}</td>
+                              <td className="px-4 py-3">
+                                <span
+                                  className={`inline-block text-[11px] font-semibold px-2 py-1 rounded-full border ${licBadge}`}
+                                  title={`Expiry: ${licDate}`}
+                                  data-testid={`licence-status-${member.id}`}
+                                >
+                                  {lic.state === 'missing' ? 'Not on file' : lic.label}
+                                </span>
+                              </td>
                               <td className="px-4 py-3">
                                 <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
                                   Active
@@ -1608,10 +1641,10 @@ const TenantDashboard = () => {
                                 </div>
                               </td>
                             </tr>
-                          ))}
+                          );})}
                           {teamMembers.filter(m => m.role === 'staff').length === 0 && (
                             <tr>
-                              <td colSpan={4} className="px-4 py-6 text-center text-gray-500 text-sm">
+                              <td colSpan={5} className="px-4 py-6 text-center text-gray-500 text-sm">
                                 No staff members yet. Click "Add Member" to add staff.
                               </td>
                             </tr>

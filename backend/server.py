@@ -391,6 +391,87 @@ async def change_password(
     return {"message": "Password changed successfully"}
 
 
+# ==================== USER PROFILE (self-service) ====================
+
+class ProfileUpdateRequest(BaseModel):
+    """Fields a user can edit on their own profile.
+    Currently only the driver's licence expiry — we may extend this later
+    (e.g. phone number, emergency contact). Keep it minimal so we don't
+    accidentally expose internal flags like is_active or require_password_change.
+    """
+    driver_licence_expiry: Optional[str] = None  # YYYY-MM-DD or "" to clear
+    driver_licence_number: Optional[str] = None  # free-form, optional
+
+
+def _validate_iso_date_or_none(value: Optional[str]) -> Optional[str]:
+    """Accept '' / None to clear the field. Otherwise require YYYY-MM-DD."""
+    if value is None or value == "":
+        return None
+    try:
+        # datetime.fromisoformat handles YYYY-MM-DD just fine
+        datetime.fromisoformat(value)
+        return value
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid date format: {value!r}. Expected YYYY-MM-DD.",
+        )
+
+
+@api_router.patch("/users/me/profile")
+async def update_my_profile(
+    payload: ProfileUpdateRequest,
+    context: TenantContext = Depends(get_tenant_context),
+    request: Request = None,
+):
+    """Let any logged-in user update their own profile fields.
+    Staff use this to record their driver's licence expiry so admins can
+    surface a 30-day renewal reminder."""
+    update_fields: dict = {}
+
+    # Driver's licence expiry: allow set + clear
+    if payload.driver_licence_expiry is not None:
+        update_fields["driver_licence_expiry"] = _validate_iso_date_or_none(
+            payload.driver_licence_expiry
+        )
+    if payload.driver_licence_number is not None:
+        # Empty string clears it
+        update_fields["driver_licence_number"] = (
+            payload.driver_licence_number.strip() or None
+        )
+
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No profile fields supplied")
+
+    update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+    await db.users.update_one(
+        {"id": context.user_id},
+        {"$set": update_fields},
+    )
+
+    # Light-touch audit log — useful for licence-expiry disputes later
+    try:
+        await audit_service.log(
+            actor_user_id=context.user_id,
+            actor_email=context.user_email,
+            action=AuditAction.USER_UPDATED,
+            tenant_id=context.tenant_id,
+            resource_type="user_profile",
+            resource_id=context.user_id,
+            meta={"fields": list(update_fields.keys())},
+            ip_address=request.client.host if request and request.client else None,
+        )
+    except Exception:
+        pass
+
+    updated = await db.users.find_one(
+        {"id": context.user_id},
+        {"_id": 0, "password_hash": 0},
+    )
+    return {"message": "Profile updated", "user": updated}
+
+
 # ==================== GDPR DATA RIGHTS ENDPOINTS ====================
 
 @api_router.get("/users/me/data-export")

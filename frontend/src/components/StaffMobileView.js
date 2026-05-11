@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { liftRequestAPI } from '../api/api';
 import CustomDocumentsStaff from './CustomDocumentsStaff';
+import DriverLicenceCard from './DriverLicenceCard';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -17,6 +18,9 @@ const StaffMobileView = ({ tenantSlug }) => {
   const [activeTab, setActiveTab] = useState('home');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Self profile (carries driver_licence_expiry — refreshed after edits)
+  const [profile, setProfile] = useState(user || null);
   
   // Data states
   const [vehicles, setVehicles] = useState([]);
@@ -105,6 +109,23 @@ const StaffMobileView = ({ tenantSlug }) => {
     const interval = setInterval(() => fetchData(true), 15000);
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  // Fetch latest /auth/me so we always have the freshest driver_licence_expiry
+  const refreshProfile = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const res = await axios.get(`${API}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.user) setProfile(res.data.user);
+    } catch (err) {
+      // Non-fatal — staff can still use the app without licence info
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshProfile();
+  }, [refreshProfile]);
 
   useEffect(() => {
     if (user?.name) {
@@ -306,6 +327,11 @@ const StaffMobileView = ({ tenantSlug }) => {
                   <span className="stat-label">In Use</span>
                 </div>
               </div>
+            </div>
+
+            {/* Driver's Licence — self-service expiry tracking */}
+            <div style={{ marginTop: 16 }}>
+              <DriverLicenceCard user={profile} onUpdated={refreshProfile} />
             </div>
 
             {/* Refresh Button */}

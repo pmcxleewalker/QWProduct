@@ -1,0 +1,70 @@
+{
+  "summary": "Regression-tested the invite/reset-password production bug fix (memberships vs. legacy tenant_users collection) and the GDPR uuid4 NameError fixes. New pytest file with 10 tests — all pass (10/10, 100%). Coverage: create staff (writes to db.memberships), resend invitation (200 happy path + 404 bogus user-id + 404 cross-tenant), reset password (round-trip login + 401 wrong admin password + 404 cross-tenant), and the three previously-crashing GDPR endpoints (data-export, consent, delete-account). Tenant isolation explicitly exercised by creating a 2nd tenant on the fly and confirming it CANNOT see / re-invite / reset the user owned by tenant A.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "TestTenantUserManagement::test_create_staff_writes_to_memberships — POST /api/tenant/users returns user_id; user shows up in GET /api/tenant/users (i.e. row is in db.memberships, not the dead db.tenant_users collection).",
+    "TestTenantUserManagement::test_resend_invitation_returns_200 — PRIMARY BUG FIX. POST /api/tenant/users/{user_id}/resend-invitation returns 200 with message + email_sent flag + temporary_password='QuickWing123!'.",
+    "TestTenantUserManagement::test_resend_invitation_for_bogus_user_returns_404 — random uuid returns 404 'User is not a member of this tenant'.",
+    "TestTenantUserManagement::test_reset_password_round_trip — admin resets staff pw; staff can immediately log in with the new password.",
+    "TestTenantUserManagement::test_reset_password_wrong_admin_password_returns_401 — admin_password verification is enforced.",
+    "TestTenantIsolation::test_resend_invitation_from_different_tenant_returns_404 — created a 2nd tenant via POST /api/platform/tenants; tenant B's admin token gets 404 when targeting tenant A's user_id. Cross-tenant invite is impossible.",
+    "TestTenantIsolation::test_reset_password_from_different_tenant_returns_404 — same isolation guarantee for password reset.",
+    "TestGDPREndpoints::test_data_export — GET /api/users/me/data-export returns 200 with user_profile.email matching and memberships/bookings arrays present.",
+    "TestGDPREndpoints::test_record_consent — POST /api/users/me/consent returns 200 + consent_id (no uuid4 NameError).",
+    "TestGDPREndpoints::test_delete_account — DELETE /api/users/me returns 200; subsequent login with old credentials is rejected (account erased, memberships removed, audit log written)."
+  ],
+
+  "not_tested_due_to_time_or_blocker": [
+    "Frontend explicitly skipped per testing_type='backend only'.",
+    "Resend (DKIM/email-delivery) success path not asserted — body.email_sent can be true OR false depending on Resend deliverability of test@example.com; the endpoint correctly returns 200 either way."
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_invite_resend_and_gdpr.py",
+    "/app/test_reports/pytest/test_invite_resend_and_gdpr.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "RCA confirmed: server.py line 10371 now queries db.memberships (the live collection used by create_tenant_user at line 3216 / reset_tenant_user_password at line 3438). The old buggy query against db.tenant_users would have always 404'd because that collection is never written to anywhere in the codebase (verified via grep — no insert_one/update_one targets db.tenant_users).",
+    "Tenant isolation correctly enforced — both resend-invitation and reset-password scope by {tenant_id: context.tenant_id, user_id: <param>}, so a user from tenant A cannot be touched from tenant B's admin token (returns 404).",
+    "uuid.uuid4() now used consistently for delete_user_account (line 507), record_consent (line 541), and add_user_to_tenant (line 2174) — no more F821 / NameError under those code paths.",
+    "Minor observation (not a regression): /api/tenant/users/{user_id}/resend-invitation force-resets the password to 'QuickWing123!' and sets require_password_change=True on every call. This is intended so the email's temp password works, but could be surprising if an admin uses 'Resend' just to retry email delivery — consider documenting this side-effect in the admin UI tooltip.",
+    "Test data hygiene: the 2nd disposable tenant created by the isolation fixture is left in db.tenants (no teardown). It's prefixed 'test-iso-<hex>' and uses the standard plan — easy to clean up but worth a periodic sweep."
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_invite_resend_and_gdpr.py (new — 10 tests)"
+  ],
+
+  "success_rate": {
+    "backend": "100% (10/10 pytest tests passed)",
+    "frontend": "n/a — backend-only run per request"
+  },
+
+  "test_credentials": {
+    "super_admin": {"email": "superadmin@quickwing.com", "password": "Super123"},
+    "tenant_used": "test-fleet (primary). Second tenant auto-created with slug test-iso-<hex>."
+  },
+
+  "seed_data_creation": "A disposable second tenant (slug=test-iso-<hex>, plan=standard) is created on every full test run by the tenant_b fixture and never cleaned up. Also creates 1 TEST_staff_* user per main flow + 3 TEST_gdpr_* users per GDPR sub-test in the test-fleet tenant. The delete-account test self-cleans its user; the others remain.",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Use /app/backend/tests/test_invite_resend_and_gdpr.py as a regression suite for the tenant-user CRUD + invitation + reset + GDPR endpoints. It auto-bootstraps a 2nd tenant if only one exists in the env. All 10 tests pass on the live preview backend. Primary production bug (resend-invitation 404'ing for every user) is fully resolved by switching the membership lookup from db.tenant_users to db.memberships.",
+
+  "rca_of_the_issue": "Original production bug: resend-invitation was querying db.tenant_users which is an empty/unused collection — every user check returned None -> 404 'User is not a member of this tenant'. The actual membership records live in db.memberships (written by create_tenant_user at server.py:3239-3246 and consulted by reset_tenant_user_password at server.py:3438-3441). The fix at line 10371 aligns the resend handler with the other two endpoints. Verified by: (1) creating a fresh staff user, (2) confirming the resend endpoint now returns 200, (3) confirming a random uuid still 404s, (4) confirming a different tenant's admin still 404s — i.e. the 404 path remains correct only when the user truly is not a member."
+}

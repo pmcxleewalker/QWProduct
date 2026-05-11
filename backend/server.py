@@ -504,7 +504,7 @@ async def delete_user_account(
     
     # Log deletion before deleting audit logs
     deletion_log = {
-        "id": str(uuid4()),
+        "id": str(uuid.uuid4()),
         "action": "gdpr_account_deletion",
         "deleted_user_id": user_id,
         "deleted_user_email": user.get("email"),
@@ -538,7 +538,7 @@ async def record_consent(
     Record user consent for GDPR compliance
     """
     consent_doc = {
-        "id": str(uuid4()),
+        "id": str(uuid.uuid4()),
         "user_id": context.user_id,
         "user_email": context.user_email,
         "consent_type": consent.consent_type,
@@ -2171,7 +2171,7 @@ async def add_user_to_tenant(
     
     # Create membership
     membership = {
-        "id": str(uuid4()),
+        "id": str(uuid.uuid4()),
         "user_id": user_id,
         "tenant_id": add_request.tenant_id,
         "role": add_request.role,
@@ -10115,8 +10115,14 @@ async def capture_lead(lead_info: LeadInfo):
             }
         )
         
-        # Send notification email with full transcript
-        if resend.api_key and LEAD_NOTIFICATION_EMAIL:
+        # Send notification email with full transcript (via Resend)
+        try:
+            import resend  # noqa: WPS433 (lazy import — optional dep)
+            from services.email_service import SENDER_EMAIL  # noqa: WPS433
+        except Exception:
+            resend = None
+            SENDER_EMAIL = None
+        if resend and getattr(resend, "api_key", None) and LEAD_NOTIFICATION_EMAIL:
             html_content = f"""
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 20px; border-radius: 8px 8px 0 0;">
@@ -10362,7 +10368,7 @@ async def resend_user_invitation(
     context: TenantContext = Depends(require_admin),
 ):
     """Re-issue the staff invitation email for an existing tenant user."""
-    membership = await db.tenant_users.find_one(
+    membership = await db.memberships.find_one(
         {"tenant_id": context.tenant_id, "user_id": user_id},
         {"_id": 0},
     )

@@ -673,19 +673,87 @@ const TenantDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50" data-testid="tenant-dashboard">
-      {/* Tier-styled Header */}
-      <div className={`bg-gradient-to-r ${tierStyle.headerGradient} text-white shadow-lg`}>
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      {/* Futuristic AI-themed header — locked purple gradient regardless of tier.
+          Removed per-plan emoji (was ♛ for Pro), replaced with a subtle Sparkles
+          mark so it reads "AI-powered fleet OS". The gradient is animated for
+          a vibrant, alive feel. */}
+      <div
+        className="relative overflow-hidden text-white shadow-2xl"
+        style={{
+          background:
+            'linear-gradient(115deg, #1e0a3c 0%, #4c1d95 35%, #7c3aed 60%, #a855f7 100%)',
+        }}
+      >
+        {/* Ambient radial glow accents */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-24 -left-20 w-96 h-96 rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(168,85,247,0.45) 0%, rgba(168,85,247,0) 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-24 -right-20 w-[28rem] h-[28rem] rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(236,72,153,0.35) 0%, rgba(236,72,153,0) 70%)',
+            filter: 'blur(50px)',
+          }}
+        />
+        {/* Faint grid overlay */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.08]"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
+          }}
+        />
+
+        <div className="relative max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              {/* Tier Badge */}
-              <div className="text-4xl">{tierStyle.icon}</div>
+              {/* AI-mark */}
+              <div className="relative">
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                  style={{
+                    background:
+                      'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 100%)',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    boxShadow:
+                      '0 0 20px rgba(168,85,247,0.6), inset 0 0 16px rgba(255,255,255,0.08)',
+                  }}
+                >
+                  <Sparkles size={22} className="text-white" />
+                </div>
+                <span
+                  aria-hidden
+                  className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-fuchsia-300 animate-pulse"
+                  style={{ boxShadow: '0 0 10px rgba(236,72,153,0.9)' }}
+                />
+              </div>
               <div>
                 <div className="flex items-center space-x-3">
-                  <h1 className="text-2xl font-bold text-white" data-testid="dashboard-title">
+                  <h1
+                    className="text-2xl font-bold text-white tracking-tight"
+                    data-testid="dashboard-title"
+                  >
                     {activeTenant?.tenant_name || 'Dashboard'}
                   </h1>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${tierStyle.badge} shadow-md`}>
+                  <span
+                    className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white"
+                    style={{
+                      background:
+                        'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06))',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      boxShadow: '0 0 12px rgba(168,85,247,0.5)',
+                    }}
+                  >
                     {tierStyle.name}
                   </span>
                 </div>
@@ -751,37 +819,82 @@ const TenantDashboard = () => {
         </div>
       </div>
 
-      {/* Tabs - with tier accent color */}
-      <div className="bg-white border-b shadow-sm">
+      {/* Tab bar — futuristic, glowing active state. The active tab pulses
+          with a purple glow to feel alive; inactive tabs sit muted to draw
+          the eye to the current page. */}
+      <div
+        className="border-b shadow-sm"
+        style={{
+          background:
+            'linear-gradient(180deg, #0f0721 0%, #1a0f3a 100%)',
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex space-x-1 overflow-x-auto">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  if (tab.subTabs) {
-                    setActiveSubTab(tab.subTabs[0].id);
-                  } else {
-                    setActiveSubTab(null);
+            {tabs.map(tab => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if (tab.subTabs) {
+                      setActiveSubTab(tab.subTabs[0].id);
+                    } else {
+                      setActiveSubTab(null);
+                    }
+                  }}
+                  className={`relative flex items-center space-x-2 px-4 py-3 whitespace-nowrap font-medium text-sm transition-all duration-200 ${
+                    isActive
+                      ? 'text-white'
+                      : 'text-white/55 hover:text-white/90'
+                  }`}
+                  style={
+                    isActive
+                      ? {
+                          background:
+                            'linear-gradient(180deg, rgba(168,85,247,0.25) 0%, rgba(168,85,247,0.06) 100%)',
+                          boxShadow:
+                            'inset 0 -2px 0 0 #d8b4fe, 0 0 24px rgba(168,85,247,0.45)',
+                        }
+                      : undefined
                   }
-                }}
-                className={`flex items-center space-x-2 px-4 py-3 border-b-2 whitespace-nowrap transition-all font-medium ${
-                  activeTab === tab.id
-                    ? `${tierStyle.tabActiveClass} border-current`
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-                data-testid={`tab-${tab.id}`}
-              >
-                <tab.icon size={18} className={activeTab === tab.id ? '' : 'opacity-70'} />
-                <span>{tab.label}</span>
-                {tab.badge > 0 && (
-                  <span className={`ml-1 px-1.5 py-0.5 text-xs text-white rounded-full ${tierStyle.primary}`}>
-                    {tab.badge}
+                  data-testid={`tab-${tab.id}`}
+                >
+                  <tab.icon
+                    size={18}
+                    className={isActive ? 'drop-shadow-[0_0_6px_rgba(216,180,254,0.9)]' : 'opacity-80'}
+                  />
+                  <span className={isActive ? 'drop-shadow-[0_0_4px_rgba(216,180,254,0.6)]' : ''}>
+                    {tab.label}
                   </span>
-                )}
-              </button>
-            ))}
+                  {tab.badge > 0 && (
+                    <span
+                      className="ml-1 px-1.5 py-0.5 text-[10px] font-bold text-white rounded-full"
+                      style={{
+                        background:
+                          'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
+                        boxShadow: '0 0 8px rgba(168,85,247,0.7)',
+                      }}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
+                  {/* Bottom glow underline only for the active tab */}
+                  {isActive && (
+                    <span
+                      aria-hidden
+                      className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full"
+                      style={{
+                        background:
+                          'linear-gradient(90deg, transparent, #d8b4fe 50%, transparent)',
+                        boxShadow: '0 0 8px #d8b4fe',
+                      }}
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

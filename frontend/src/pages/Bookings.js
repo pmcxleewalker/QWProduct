@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { bookingAPI, carAPI } from '../api/api';
 import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp, Minus, AlertTriangle, Users, Map, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,6 +12,7 @@ const BookingLocationsMap = lazy(() => import('../components/BookingLocationsMap
 const Bookings = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const carFromQR = searchParams.get('car'); // Get car ID from QR code URL
   
   const [bookings, setBookings] = useState([]);
@@ -73,6 +74,40 @@ const Bookings = () => {
       }
     }
   }, [carFromQR, cars]);
+
+  // Handle navigation state from dashboard yellow-car-calendar slot clicks
+  // (e.g. user clicks 11:00 on the Ford Transit card → we open this page
+  // with car + start/end pre-filled in the new-booking form).
+  useEffect(() => {
+    const navState = location.state;
+    if (!navState?.selectedCarId || cars.length === 0) return;
+    const car = cars.find(c => c.id === navState.selectedCarId);
+    if (!car) return;
+
+    // Convert ISO timestamps into the YYYY-MM-DDTHH:mm format expected by
+    // <input type="datetime-local">.
+    const toLocalInput = (iso) => {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    setSelectedCar(navState.selectedCarId);
+    setFormData(prev => ({
+      ...prev,
+      car_id: navState.selectedCarId,
+      start_time: toLocalInput(navState.selectedStartTime),
+      end_time: toLocalInput(navState.selectedEndTime),
+    }));
+    setShowForm(true);
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+
+    // Clear the state so refresh/back doesn't re-open the form unexpectedly.
+    window.history.replaceState({}, document.title);
+  }, [location.state, cars]);
 
   const fetchData = async () => {
     try {

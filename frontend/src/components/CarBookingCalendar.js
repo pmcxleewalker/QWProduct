@@ -82,26 +82,43 @@ const CarBookingCalendar = ({ vehicle, bookings, onBookingCreated, isAdmin, tena
   // Handle slot click
   const handleSlotClick = (timeSlot) => {
     const slotStatus = getSlotStatus(selectedDate, timeSlot);
-    if (slotStatus.status === 'free') {
-      const [hours] = timeSlot.split(':').map(Number);
-      const startDate = new Date(selectedDate);
-      startDate.setHours(hours, 0, 0, 0);
-      const endDate = new Date(startDate);
-      endDate.setHours(hours + 1, 0, 0, 0);
-      
-      setSelectedSlot(timeSlot);
-      setBookingForm({
-        user_name: '',
-        start_time: startDate.toISOString(),
-        end_time: endDate.toISOString(),
-        notes: '',
-        is_recurring: false,
-        is_double_up_call: false,
-        secondary_user_id: '',
-        secondary_user_name: ''
+    if (slotStatus.status !== 'free') return;
+
+    const [hours] = timeSlot.split(':').map(Number);
+    const startDate = new Date(selectedDate);
+    startDate.setHours(hours, 0, 0, 0);
+    const endDate = new Date(startDate);
+    endDate.setHours(hours + 1, 0, 0, 0);
+
+    // If parent asked us to redirect, go to the full Bookings page with the
+    // car + time-slot pre-selected. This is the path staff hit from the
+    // Live Fleet Status dashboard — keeps slot-click and Book-button behaviour
+    // consistent, and avoids surfacing the inline modal in contexts that
+    // expect the full booking form.
+    if (redirectToBookings) {
+      const bookingsPath = tenantSlug ? `/${tenantSlug}/bookings` : '/bookings';
+      navigate(bookingsPath, {
+        state: {
+          selectedCarId: vehicle.id,
+          selectedStartTime: startDate.toISOString(),
+          selectedEndTime: endDate.toISOString(),
+        },
       });
-      setShowBookingModal(true);
+      return;
     }
+
+    setSelectedSlot(timeSlot);
+    setBookingForm({
+      user_name: '',
+      start_time: startDate.toISOString(),
+      end_time: endDate.toISOString(),
+      notes: '',
+      is_recurring: false,
+      is_double_up_call: false,
+      secondary_user_id: '',
+      secondary_user_name: ''
+    });
+    setShowBookingModal(true);
   };
 
   // Submit booking

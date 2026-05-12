@@ -1721,6 +1721,31 @@ const TenantDashboard = () => {
                                       Change Password
                                     </button>
                                   )}
+                                  {/* Admins can reset another admin's password
+                                      (but never the workspace owner / themselves) */}
+                                  {member.id !== user?.id && member.role !== 'master_admin' && (
+                                    <button
+                                      onClick={() => handleResetPassword(member.id, member.name)}
+                                      className="px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded hover:bg-amber-200"
+                                      title={`Reset password for ${member.name}`}
+                                      data-testid={`reset-admin-pw-${member.id}`}
+                                    >
+                                      Reset Password
+                                    </button>
+                                  )}
+                                  {/* Delete — never self, never the workspace
+                                      owner (master_admin removal is reserved
+                                      for the Quick Wing platform admin). */}
+                                  {member.id !== user?.id && member.role !== 'master_admin' && (
+                                    <button
+                                      onClick={() => handleRemoveUser(member.id)}
+                                      className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                                      title={`Remove ${member.name} from this tenant`}
+                                      data-testid={`delete-admin-${member.id}`}
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             </tr>

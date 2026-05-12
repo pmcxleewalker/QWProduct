@@ -302,8 +302,12 @@ const StaffMobileView = ({ tenantSlug }) => {
           <div className="tab-page" data-testid="home-tab">
             <div className="page-header">
               <div>
-                <Greeting user={profile || user} className="page-title" testid="staff-greeting" />
-                <p className="page-subtitle">Here&rsquo;s your fleet today.</p>
+                <Greeting
+                  user={profile || user}
+                  className="page-title"
+                  subtitleClassName="page-subtitle"
+                  testid="staff-greeting"
+                />
               </div>
               <p className="current-time">
                 <Clock size={14} />

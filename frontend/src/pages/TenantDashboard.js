@@ -758,12 +758,15 @@ const TenantDashboard = () => {
                     {tierStyle.name}
                   </span>
                 </div>
-                <Greeting
-                  user={user}
-                  as="p"
-                  className="text-sm text-white/85 mt-1 font-medium"
-                  testid="admin-greeting"
-                />
+                <div>
+                  <Greeting
+                    user={user}
+                    as="p"
+                    className="text-sm text-white/90 font-semibold leading-tight"
+                    subtitleClassName="block text-xs text-white/65 mt-0.5"
+                    testid="admin-greeting"
+                  />
+                </div>
               </div>
             </div>
             <div className="flex items-center space-x-3">

@@ -143,10 +143,12 @@ const PlatformAdmin = () => {
   const [replaceOwnerForm, setReplaceOwnerForm] = useState({
     email: '',
     name: '',
+    displayName: '',
     password: 'QuickWing123!',
     adminPassword: '',
     sendWelcomeEmail: true,
     deleteOldOwnerUser: true,
+    forcePasswordChange: true,
   });
   const [replaceOwnerSubmitting, setReplaceOwnerSubmitting] = useState(false);
 
@@ -578,10 +580,12 @@ const PlatformAdmin = () => {
     setReplaceOwnerForm({
       email: '',
       name: '',
+      displayName: '',
       password: 'QuickWing123!',
       adminPassword: '',
       sendWelcomeEmail: true,
       deleteOldOwnerUser: true,
+      forcePasswordChange: true,
     });
   };
 
@@ -589,8 +593,8 @@ const PlatformAdmin = () => {
     const tenant = replaceOwnerTenant;
     if (!tenant) return;
     const {
-      email, name, password, adminPassword,
-      sendWelcomeEmail, deleteOldOwnerUser,
+      email, name, displayName, password, adminPassword,
+      sendWelcomeEmail, deleteOldOwnerUser, forcePasswordChange,
     } = replaceOwnerForm;
     const trimmedEmail = (email || '').trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
@@ -612,9 +616,11 @@ const PlatformAdmin = () => {
         {
           email: trimmedEmail,
           name: name?.trim() || undefined,
+          display_name: (displayName || '').trim() || undefined,
           password,
           delete_old_owner_user: deleteOldOwnerUser,
           send_welcome_email: sendWelcomeEmail,
+          force_password_change: forcePasswordChange,
           admin_password: adminPassword,
         }
       );
@@ -4141,6 +4147,23 @@ const PlatformAdmin = () => {
                 />
               </div>
               <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Greeting nickname <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={replaceOwnerForm.displayName}
+                  onChange={(e) => setReplaceOwnerForm({ ...replaceOwnerForm, displayName: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                  placeholder='e.g. "K"'
+                  maxLength={30}
+                  data-testid="replace-owner-display-name"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Shown in greetings on their dashboard (&ldquo;Good morning, K&rdquo;). Leave blank to use first name.
+                </p>
+              </div>
+              <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Temporary password</label>
                 <input
                   type="text"
@@ -4165,6 +4188,22 @@ const PlatformAdmin = () => {
                   <div className="text-[11px] text-slate-500 leading-tight">
                     Email the new owner their credentials and login URL via Resend.
                     Uncheck if you've already emailed them manually.
+                  </div>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-2.5 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={replaceOwnerForm.forcePasswordChange}
+                  onChange={(e) => setReplaceOwnerForm({ ...replaceOwnerForm, forcePasswordChange: e.target.checked })}
+                  className="mt-0.5 w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                  data-testid="replace-owner-force-pw"
+                />
+                <div className="text-sm">
+                  <div className="font-medium text-slate-900">Force password change on first login</div>
+                  <div className="text-[11px] text-slate-500 leading-tight">
+                    Recommended. The new owner will be prompted to set their own password on first login.
                   </div>
                 </div>
               </label>

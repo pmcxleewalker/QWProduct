@@ -36,6 +36,7 @@ import UserProfileMenu from '../components/UserProfileMenu';
 import ComplianceAlerts, { ComplianceSettingsModal } from '../components/ComplianceAlerts';
 import { computeLicenceStatus } from '../components/DriverLicenceCard';
 import StaffLicenceAlerts from '../components/StaffLicenceAlerts';
+import Greeting from '../components/Greeting';
 import CostAnalyticsDashboard from '../components/CostAnalyticsDashboard';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -757,7 +758,12 @@ const TenantDashboard = () => {
                     {tierStyle.name}
                   </span>
                 </div>
-                <p className="text-sm text-white/80 mt-1">{tierStyle.tagline}</p>
+                <Greeting
+                  user={user}
+                  as="p"
+                  className="text-sm text-white/85 mt-1 font-medium"
+                  testid="admin-greeting"
+                />
               </div>
             </div>
             <div className="flex items-center space-x-3">

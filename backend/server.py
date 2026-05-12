@@ -401,6 +401,7 @@ class ProfileUpdateRequest(BaseModel):
     """
     driver_licence_expiry: Optional[str] = None  # YYYY-MM-DD or "" to clear
     driver_licence_number: Optional[str] = None  # free-form, optional
+    display_name: Optional[str] = None  # short nickname used in greetings ("K")
 
 
 def _validate_iso_date_or_none(value: Optional[str]) -> Optional[str]:
@@ -439,6 +440,12 @@ async def update_my_profile(
         update_fields["driver_licence_number"] = (
             payload.driver_licence_number.strip() or None
         )
+    if payload.display_name is not None:
+        # Short nickname used in greetings — None / empty clears it.
+        trimmed = payload.display_name.strip()
+        if len(trimmed) > 30:
+            raise HTTPException(status_code=400, detail="Display name must be 30 characters or fewer")
+        update_fields["display_name"] = trimmed or None
 
     if not update_fields:
         raise HTTPException(status_code=400, detail="No profile fields supplied")
@@ -1738,9 +1745,11 @@ class ReplaceMasterAdminRequest(BaseModel):
     """
     email: EmailStr
     name: Optional[str] = None
+    display_name: Optional[str] = None  # short greeting nickname (e.g. "K")
     password: Optional[str] = None  # if absent, a default is generated
     delete_old_owner_user: bool = True  # also delete Eddie's user record if orphaned
     send_welcome_email: bool = True  # email new owner their credentials via Resend
+    force_password_change: bool = True  # require new owner to change pw on first login
     admin_password: str  # super admin's own password for confirmation
 
 
@@ -1763,6 +1772,7 @@ async def replace_master_admin(
 
     new_email = payload.email.strip().lower()
     new_name = (payload.name or new_email.split("@")[0]).strip()
+    new_display_name = (payload.display_name or "").strip() or None
     new_password = payload.password or "QuickWing123!"
     if len(new_password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
@@ -1811,29 +1821,35 @@ async def replace_master_admin(
     new_user = await db.users.find_one({"email": new_email}, {"_id": 0})
     if new_user:
         # Reuse the existing account but reset password + ensure active
+        update_doc = {
+            "password_hash": get_password_hash(new_password),
+            "name": new_name or new_user.get("name") or new_email,
+            "is_active": True,
+            "require_password_change": bool(payload.force_password_change),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if new_display_name is not None:
+            update_doc["display_name"] = new_display_name
         await db.users.update_one(
             {"id": new_user["id"]},
-            {"$set": {
-                "password_hash": get_password_hash(new_password),
-                "name": new_name or new_user.get("name") or new_email,
-                "is_active": True,
-                "require_password_change": False,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            }},
+            {"$set": update_doc},
         )
         new_user_id = new_user["id"]
         created_new_user = False
     else:
         new_user_id = str(uuid.uuid4())
-        await db.users.insert_one({
+        insert_doc = {
             "id": new_user_id,
             "email": new_email,
             "name": new_name,
             "password_hash": get_password_hash(new_password),
             "is_active": True,
-            "require_password_change": False,
+            "require_password_change": bool(payload.force_password_change),
             "created_at": datetime.now(timezone.utc).isoformat(),
-        })
+        }
+        if new_display_name:
+            insert_doc["display_name"] = new_display_name
+        await db.users.insert_one(insert_doc)
         created_new_user = True
 
     # === 4) Ensure exactly one master_admin membership for the new user ===

@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { liftRequestAPI } from '../api/api';
 import CustomDocumentsStaff from './CustomDocumentsStaff';
 import DriverLicenceCard from './DriverLicenceCard';
+import Greeting from './Greeting';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -300,7 +301,10 @@ const StaffMobileView = ({ tenantSlug }) => {
         {activeTab === 'home' && (
           <div className="tab-page" data-testid="home-tab">
             <div className="page-header">
-              <h1 className="page-title">Dashboard</h1>
+              <div>
+                <Greeting user={profile || user} className="page-title" testid="staff-greeting" />
+                <p className="page-subtitle">Here&rsquo;s your fleet today.</p>
+              </div>
               <p className="current-time">
                 <Clock size={14} />
                 {new Date().toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}

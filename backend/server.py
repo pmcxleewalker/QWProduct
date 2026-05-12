@@ -3809,6 +3809,71 @@ async def update_user_role(
     return {"message": "User role updated"}
 
 
+class TenantUserProfileUpdate(BaseModel):
+    """Admin-side updates to a tenant user's profile.
+
+    Lets a master_admin / admin edit a colleague's name and greeting nickname
+    so the dashboard reads correctly ("Good morning, K"). Email is intentionally
+    locked here — changing email is a sensitive account action and stays at
+    platform-admin level.
+    """
+    name: Optional[str] = None
+    display_name: Optional[str] = None
+
+
+@api_router.patch("/tenant/users/{user_id}")
+async def update_tenant_user_profile(
+    user_id: str,
+    payload: TenantUserProfileUpdate,
+    context: TenantContext = Depends(require_admin),
+    request: Request = None,
+):
+    """Update a tenant user's display fields (name + greeting nickname)."""
+    membership = await db.memberships.find_one(
+        {"user_id": user_id, "tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    if not membership:
+        raise HTTPException(status_code=404, detail="User not found in tenant")
+
+    update_fields: dict = {}
+    if payload.name is not None:
+        cleaned = payload.name.strip()
+        if not cleaned:
+            raise HTTPException(status_code=400, detail="Name cannot be empty")
+        if len(cleaned) > 100:
+            raise HTTPException(status_code=400, detail="Name is too long")
+        update_fields["name"] = cleaned
+    if payload.display_name is not None:
+        nick = payload.display_name.strip()
+        if len(nick) > 30:
+            raise HTTPException(status_code=400, detail="Greeting nickname must be 30 characters or fewer")
+        update_fields["display_name"] = nick or None
+
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No profile fields supplied")
+
+    update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.users.update_one({"id": user_id}, {"$set": update_fields})
+
+    try:
+        await audit_service.log_user_action(
+            actor_user_id=context.user_id,
+            actor_email=context.user_email,
+            action=AuditAction.USER_UPDATED,
+            target_user_id=user_id,
+            tenant_id=context.tenant_id,
+            meta={"fields": list(update_fields.keys())},
+            ip_address=request.client.host if request and request.client else None,
+        )
+    except Exception:
+        pass
+
+    updated = await db.users.find_one(
+        {"id": user_id}, {"_id": 0, "password_hash": 0}
+    )
+    return {"message": "User profile updated", "user": updated}
+
+
 @api_router.delete("/tenant/users/{user_id}")
 async def remove_user_from_tenant(
     user_id: str,

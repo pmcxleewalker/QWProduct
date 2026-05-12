@@ -432,6 +432,54 @@ const TenantDashboard = () => {
     }
   };
 
+  // Edit-member modal state (admin can change a colleague's name, greeting
+  // nickname, and role within this tenant).
+  const [editMember, setEditMember] = useState(null);
+  const [editMemberForm, setEditMemberForm] = useState({ name: '', display_name: '', role: 'staff' });
+  const [editMemberSaving, setEditMemberSaving] = useState(false);
+
+  const openEditMember = (member) => {
+    setEditMember(member);
+    setEditMemberForm({
+      name: member.name || '',
+      display_name: member.display_name || '',
+      role: member.role || 'staff',
+    });
+  };
+  const closeEditMember = () => setEditMember(null);
+
+  const submitEditMember = async () => {
+    if (!editMember) return;
+    const trimmedName = (editMemberForm.name || '').trim();
+    if (!trimmedName) {
+      toast.error('Name cannot be empty');
+      return;
+    }
+    setEditMemberSaving(true);
+    try {
+      // 1) Profile (name + nickname) — only fire if changed
+      const profilePayload = {};
+      if (trimmedName !== (editMember.name || '')) profilePayload.name = trimmedName;
+      if ((editMemberForm.display_name || '') !== (editMember.display_name || '')) {
+        profilePayload.display_name = editMemberForm.display_name || '';
+      }
+      if (Object.keys(profilePayload).length > 0) {
+        await axios.patch(`${API}/tenant/users/${editMember.id}`, profilePayload);
+      }
+      // 2) Role — only fire if changed
+      if (editMemberForm.role !== editMember.role) {
+        await axios.put(`${API}/tenant/users/${editMember.id}/role?role=${editMemberForm.role}`);
+      }
+      toast.success(`${trimmedName} updated`);
+      closeEditMember();
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to update member');
+    } finally {
+      setEditMemberSaving(false);
+    }
+  };
+
   const handleRemoveUser = async (userId) => {
     if (!await confirm({
       title: 'Remove team member?',
@@ -1654,6 +1702,15 @@ const TenantDashboard = () => {
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex items-center space-x-2">
+                                  <button
+                                    onClick={() => openEditMember(member)}
+                                    className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 inline-flex items-center gap-1"
+                                    title="Edit name, greeting nickname and role"
+                                    data-testid={`edit-admin-${member.id}`}
+                                  >
+                                    <Edit2 size={11} />
+                                    Edit
+                                  </button>
                                   {/* Admins can change their own password */}
                                   {member.id === user?.id && (
                                     <button
@@ -1732,6 +1789,15 @@ const TenantDashboard = () => {
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex items-center space-x-2">
+                                  <button
+                                    onClick={() => openEditMember(member)}
+                                    className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 inline-flex items-center gap-1"
+                                    title="Edit name, greeting nickname and role"
+                                    data-testid={`edit-staff-${member.id}`}
+                                  >
+                                    <Edit2 size={11} />
+                                    Edit
+                                  </button>
                                   <button
                                     onClick={() => handleResendInvitation(member.id, member.name)}
                                     className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
@@ -2958,6 +3024,113 @@ const TenantDashboard = () => {
                   <span>Save Settings</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit team-member modal — name, greeting nickname, role */}
+      {editMember && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !editMemberSaving) closeEditMember();
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full shadow-2xl"
+            data-testid="edit-member-modal"
+          >
+            <div className="px-6 py-5 border-b border-slate-200 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-purple-100">
+                    Edit team member
+                  </div>
+                  <h2 className="text-lg font-bold mt-0.5">{editMember.email}</h2>
+                </div>
+                <button
+                  onClick={closeEditMember}
+                  disabled={editMemberSaving}
+                  className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
+                  title="Close"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Full name</label>
+                <input
+                  type="text"
+                  value={editMemberForm.name}
+                  onChange={(e) => setEditMemberForm({ ...editMemberForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                  data-testid="edit-member-name"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Greeting nickname <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={editMemberForm.display_name}
+                  onChange={(e) => setEditMemberForm({ ...editMemberForm, display_name: e.target.value })}
+                  maxLength={30}
+                  placeholder='e.g. "K"'
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                  data-testid="edit-member-nickname"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Shown in greetings on their dashboard (&ldquo;Good morning, K&rdquo;).
+                </p>
+              </div>
+
+              {editMember.role !== 'master_admin' && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Role</label>
+                  <select
+                    value={editMemberForm.role}
+                    onChange={(e) => setEditMemberForm({ ...editMemberForm, role: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white"
+                    data-testid="edit-member-role"
+                  >
+                    <option value="staff">Staff</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Admins can manage vehicles and other team members.
+                  </p>
+                </div>
+              )}
+              {editMember.role === 'master_admin' && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                  This is the workspace owner (master admin). Their role can only be changed from the Quick Wing platform admin.
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 rounded-b-2xl flex gap-3">
+              <button
+                onClick={closeEditMember}
+                disabled={editMemberSaving}
+                className="flex-1 px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitEditMember}
+                disabled={editMemberSaving || !(editMemberForm.name || '').trim()}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                data-testid="edit-member-save"
+              >
+                {editMemberSaving ? 'Saving...' : 'Save changes'}
+              </button>
             </div>
           </div>
         </div>

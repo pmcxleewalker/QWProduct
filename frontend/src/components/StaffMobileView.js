@@ -11,6 +11,7 @@ import { liftRequestAPI } from '../api/api';
 import CustomDocumentsStaff from './CustomDocumentsStaff';
 import DriverLicenceCard from './DriverLicenceCard';
 import Greeting from './Greeting';
+import PushNotificationPrompt from './PushNotificationPrompt';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -279,6 +280,11 @@ const StaffMobileView = ({ tenantSlug }) => {
 
   return (
     <div className="staff-app" data-testid="staff-mobile-view">
+      {/* First-login push permission prompt — encourages staff to enable
+          notifications for announcements + lift requests. Self-throttles
+          (14-day cooldown after "Not now"). */}
+      <PushNotificationPrompt user={profile || user} />
+
       {/* Header */}
       <header className="app-header">
         <div className="header-brand">

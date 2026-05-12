@@ -435,7 +435,7 @@ const TenantDashboard = () => {
   // Edit-member modal state (admin can change a colleague's name, greeting
   // nickname, and role within this tenant).
   const [editMember, setEditMember] = useState(null);
-  const [editMemberForm, setEditMemberForm] = useState({ name: '', display_name: '', role: 'staff' });
+  const [editMemberForm, setEditMemberForm] = useState({ name: '', display_name: '', role: 'staff', driver_licence_expiry: '' });
   const [editMemberSaving, setEditMemberSaving] = useState(false);
 
   const openEditMember = (member) => {
@@ -444,6 +444,7 @@ const TenantDashboard = () => {
       name: member.name || '',
       display_name: member.display_name || '',
       role: member.role || 'staff',
+      driver_licence_expiry: member.driver_licence_expiry || '',
     });
   };
   const closeEditMember = () => setEditMember(null);
@@ -457,11 +458,14 @@ const TenantDashboard = () => {
     }
     setEditMemberSaving(true);
     try {
-      // 1) Profile (name + nickname) — only fire if changed
+      // 1) Profile (name + nickname + licence) — only fire if changed
       const profilePayload = {};
       if (trimmedName !== (editMember.name || '')) profilePayload.name = trimmedName;
       if ((editMemberForm.display_name || '') !== (editMember.display_name || '')) {
         profilePayload.display_name = editMemberForm.display_name || '';
+      }
+      if ((editMemberForm.driver_licence_expiry || '') !== (editMember.driver_licence_expiry || '')) {
+        profilePayload.driver_licence_expiry = editMemberForm.driver_licence_expiry || '';
       }
       if (Object.keys(profilePayload).length > 0) {
         await axios.patch(`${API}/tenant/users/${editMember.id}`, profilePayload);
@@ -1037,7 +1041,7 @@ const TenantDashboard = () => {
                       {/* Driver's Licence expiry alerts — 30-day rolling window */}
                       <StaffLicenceAlerts
                         teamMembers={teamMembers}
-                        onManageClick={() => setActiveTab('users')}
+                        onManageClick={() => { setActiveTab('team'); setActiveSubTab(null); }}
                       />
                     </div>
                   </div>
@@ -3138,6 +3142,22 @@ const TenantDashboard = () => {
                   This is the workspace owner (master admin). Their role can only be changed from the Quick Wing platform admin.
                 </div>
               )}
+
+              <div className="pt-3 border-t border-slate-200">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Driver&rsquo;s licence expiry <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="date"
+                  value={editMemberForm.driver_licence_expiry}
+                  onChange={(e) => setEditMemberForm({ ...editMemberForm, driver_licence_expiry: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                  data-testid="edit-member-licence"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Staff can also enter this themselves from their phone. Clearing the field removes it.
+                </p>
+              </div>
             </div>
 
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 rounded-b-2xl flex gap-3">

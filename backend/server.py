@@ -3812,13 +3812,16 @@ async def update_user_role(
 class TenantUserProfileUpdate(BaseModel):
     """Admin-side updates to a tenant user's profile.
 
-    Lets a master_admin / admin edit a colleague's name and greeting nickname
-    so the dashboard reads correctly ("Good morning, K"). Email is intentionally
-    locked here — changing email is a sensitive account action and stays at
-    platform-admin level.
+    Lets a master_admin / admin edit a colleague's name, greeting nickname
+    and driver's-licence expiry so the dashboard reads correctly and
+    compliance alerts fire on time. Email is intentionally locked here —
+    changing email is a sensitive account action and stays at platform-admin
+    level.
     """
     name: Optional[str] = None
     display_name: Optional[str] = None
+    driver_licence_expiry: Optional[str] = None  # YYYY-MM-DD, "" to clear
+    driver_licence_number: Optional[str] = None  # free-form
 
 
 @api_router.patch("/tenant/users/{user_id}")
@@ -3848,6 +3851,14 @@ async def update_tenant_user_profile(
         if len(nick) > 30:
             raise HTTPException(status_code=400, detail="Greeting nickname must be 30 characters or fewer")
         update_fields["display_name"] = nick or None
+    if payload.driver_licence_expiry is not None:
+        update_fields["driver_licence_expiry"] = _validate_iso_date_or_none(
+            payload.driver_licence_expiry
+        )
+    if payload.driver_licence_number is not None:
+        update_fields["driver_licence_number"] = (
+            payload.driver_licence_number.strip() or None
+        )
 
     if not update_fields:
         raise HTTPException(status_code=400, detail="No profile fields supplied")

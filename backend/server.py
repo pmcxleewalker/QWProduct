@@ -1728,12 +1728,185 @@ async def impersonate_tenant(
     }
 
 
+class ReplaceMasterAdminRequest(BaseModel):
+    """Atomically replace the master_admin of a tenant.
+
+    Strips ALL existing master_admin memberships (so an old owner like Eddie
+    is fully detached), then sets the supplied user as the sole master_admin.
+    If the new user doesn't exist yet, we create one.  Designed for the
+    'hand-over to a real client' onboarding step.
+    """
+    email: EmailStr
+    name: Optional[str] = None
+    password: Optional[str] = None  # if absent, a default is generated
+    delete_old_owner_user: bool = True  # also delete Eddie's user record if orphaned
+    admin_password: str  # super admin's own password for confirmation
+
+
+@api_router.post("/platform/tenants/{tenant_id}/replace-master-admin")
+async def replace_master_admin(
+    tenant_id: str,
+    payload: ReplaceMasterAdminRequest,
+    context: TenantContext = Depends(require_super_admin),
+    request: Request = None,
+):
+    """Replace the master admin of a tenant in one atomic flow."""
+    # Verify acting super admin's password
+    acting = await db.users.find_one({"id": context.user_id}, {"_id": 0})
+    if not acting or not verify_password(payload.admin_password, acting["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid super-admin password")
+
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    new_email = payload.email.strip().lower()
+    new_name = (payload.name or new_email.split("@")[0]).strip()
+    new_password = payload.password or "QuickWing123!"
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    # === 1) Detach existing master_admin memberships ===
+    old_memberships = await db.memberships.find(
+        {"tenant_id": tenant_id, "role": "master_admin"},
+        {"_id": 0},
+    ).to_list(50)
+
+    SAFE_EMAILS = {SUPPORT_ADMIN_EMAIL.lower(), "superadmin@quickwing.com"}
+    old_owner_ids: list[str] = []
+    for m in old_memberships:
+        u = await db.users.find_one({"id": m["user_id"]}, {"_id": 0, "email": 1, "role": 1})
+        if not u:
+            continue
+        email_lower = (u.get("email") or "").lower()
+        # Skip our own helper accounts so support keeps cross-tenant master_admin
+        if email_lower in SAFE_EMAILS:
+            continue
+        # Skip the new email — if Karen already has master_admin we'll leave her be
+        if email_lower == new_email:
+            continue
+        old_owner_ids.append(m["user_id"])
+        await db.memberships.delete_one(
+            {"user_id": m["user_id"], "tenant_id": tenant_id}
+        )
+
+    # === 2) Optionally delete orphan old-owner user records ===
+    deleted_user_emails: list[str] = []
+    if payload.delete_old_owner_user:
+        for uid in old_owner_ids:
+            other = await db.memberships.count_documents({"user_id": uid})
+            if other == 0:
+                u = await db.users.find_one({"id": uid}, {"_id": 0, "email": 1, "role": 1})
+                if not u:
+                    continue
+                if u.get("role") in {"super_admin", "master_admin"}:
+                    continue  # platform-level account — leave alone
+                if (u.get("email") or "").lower() in SAFE_EMAILS:
+                    continue
+                await db.users.delete_one({"id": uid})
+                deleted_user_emails.append(u.get("email"))
+
+    # === 3) Create or update the new master admin user ===
+    new_user = await db.users.find_one({"email": new_email}, {"_id": 0})
+    if new_user:
+        # Reuse the existing account but reset password + ensure active
+        await db.users.update_one(
+            {"id": new_user["id"]},
+            {"$set": {
+                "password_hash": get_password_hash(new_password),
+                "name": new_name or new_user.get("name") or new_email,
+                "is_active": True,
+                "require_password_change": False,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }},
+        )
+        new_user_id = new_user["id"]
+        created_new_user = False
+    else:
+        new_user_id = str(uuid.uuid4())
+        await db.users.insert_one({
+            "id": new_user_id,
+            "email": new_email,
+            "name": new_name,
+            "password_hash": get_password_hash(new_password),
+            "is_active": True,
+            "require_password_change": False,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        created_new_user = True
+
+    # === 4) Ensure exactly one master_admin membership for the new user ===
+    existing = await db.memberships.find_one(
+        {"user_id": new_user_id, "tenant_id": tenant_id}, {"_id": 0}
+    )
+    if existing:
+        if existing.get("role") != "master_admin":
+            await db.memberships.update_one(
+                {"user_id": new_user_id, "tenant_id": tenant_id},
+                {"$set": {"role": "master_admin"}},
+            )
+    else:
+        await db.memberships.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": new_user_id,
+            "tenant_id": tenant_id,
+            "role": "master_admin",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+
+    # === 5) Mirror new owner on the tenant doc (used by some UI flows) ===
+    await db.tenants.update_one(
+        {"id": tenant_id},
+        {"$set": {
+            "master_admin_email": new_email,
+            "master_admin_name": new_name,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }},
+    )
+
+    # === 6) Audit ===
+    try:
+        await audit_service.log_tenant_action(
+            actor_user_id=context.user_id,
+            actor_email=context.user_email,
+            action=AuditAction.TENANT_UPDATED,
+            tenant_id=tenant_id,
+            meta={
+                "action": "replace_master_admin",
+                "old_owner_user_ids": old_owner_ids,
+                "deleted_user_emails": deleted_user_emails,
+                "new_owner_email": new_email,
+                "created_new_user": created_new_user,
+            },
+            ip_address=request.client.host if request and request.client else None,
+        )
+    except Exception:
+        pass
+
+    base_url = get_public_url()
+    return {
+        "message": f"Master admin replaced for '{tenant.get('name')}'",
+        "tenant_id": tenant_id,
+        "new_owner": {
+            "user_id": new_user_id,
+            "email": new_email,
+            "name": new_name,
+            "password": new_password,
+            "is_new_user": created_new_user,
+            "login_url": f"{base_url}/{tenant.get('slug')}/login",
+        },
+        "removed": {
+            "old_owner_memberships": len(old_owner_ids),
+            "deleted_user_emails": deleted_user_emails,
+        },
+    }
+
+
 @api_router.post("/platform/tenants/{tenant_id}/reset-master-admin-password")
 async def reset_master_admin_password(
     tenant_id: str,
     payload: dict,
-    context: TenantContext = Depends(require_platform_admin),
-    request: Request = None,
+    context: TenantContext = Depends(require_platform_admin),    request: Request = None,
 ):
     """
     Super/Master admin: reset the password of the tenant's master admin.

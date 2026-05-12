@@ -561,6 +561,67 @@ const PlatformAdmin = () => {
     }
   };
 
+  const handleReplaceOwner = async (tenant) => {
+    // Multi-step prompts to keep this destructive flow explicit.
+    const email = window.prompt(
+      `Replace the master admin (owner) for "${tenant.name}".\n\n` +
+      `This will:\n` +
+      `  \u2022 detach the current owner (${tenant.master_admin_email || 'unknown'}) from this client\n` +
+      `  \u2022 delete their user record if they belong to no other tenant\n` +
+      `  \u2022 create a new master_admin account with the email below\n\n` +
+      `Enter the new owner's email:`
+    );
+    if (!email) return;
+    const trimmedEmail = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      toast.error('Please enter a valid email');
+      return;
+    }
+    const name = window.prompt(
+      `New owner email: ${trimmedEmail}\n\nEnter their full name:`,
+      trimmedEmail.split('@')[0]
+    );
+    if (name === null) return;
+    const password = window.prompt(
+      `New owner: ${name || trimmedEmail}\n\nEnter a temporary password (min 6 chars). They can change it after login.`,
+      'QuickWing123!'
+    );
+    if (!password) return;
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    const adminPassword = window.prompt('Confirm your super-admin password:');
+    if (!adminPassword) return;
+    try {
+      const res = await axios.post(
+        `${API}/platform/tenants/${tenant.id}/replace-master-admin`,
+        {
+          email: trimmedEmail,
+          name: name || undefined,
+          password,
+          delete_old_owner_user: true,
+          admin_password: adminPassword,
+        }
+      );
+      const o = res.data?.new_owner;
+      const removed = res.data?.removed?.deleted_user_emails || [];
+      toast.success(`Owner replaced \u2014 share login with ${o?.email}`);
+      window.alert(
+        `\u2705 New owner ready for ${tenant.name}\n\n` +
+        `Email: ${o?.email}\n` +
+        `Password: ${o?.password}\n` +
+        `Login URL: ${o?.login_url}\n\n` +
+        (removed.length
+          ? `Old owner removed: ${removed.join(', ')}`
+          : 'Old owner detached from this tenant.')
+      );
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to replace owner');
+    }
+  };
+
   const handleResetTenantData = async (tenant) => {
     // Hard guard: typed-name + password confirm so this can't fire by accident.
     const typed = window.prompt(
@@ -971,6 +1032,15 @@ const PlatformAdmin = () => {
                               >
                                 <Key size={11} />
                                 Reset password
+                              </button>
+                              <button
+                                onClick={() => handleReplaceOwner(tenant)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-600 text-white text-xs font-medium rounded-md hover:bg-purple-700"
+                                title="Replace the master admin (owner) of this client"
+                                data-testid={`dashboard-replace-owner-${tenant.slug}`}
+                              >
+                                <UserPlus size={11} />
+                                Replace owner
                               </button>
                             </div>
                           </div>

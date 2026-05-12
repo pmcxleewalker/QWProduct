@@ -601,17 +601,25 @@ const PlatformAdmin = () => {
           name: name || undefined,
           password,
           delete_old_owner_user: true,
+          send_welcome_email: true,
           admin_password: adminPassword,
         }
       );
       const o = res.data?.new_owner;
       const removed = res.data?.removed?.deleted_user_emails || [];
-      toast.success(`Owner replaced \u2014 share login with ${o?.email}`);
+      const email = res.data?.email || {};
+      const emailLine = email.sent
+        ? `\u2709\uFE0F  Welcome email sent to ${o?.email}`
+        : email.error
+          ? `\u26A0\uFE0F  Welcome email failed: ${email.error}`
+          : '\u2139\uFE0F  Welcome email skipped';
+      toast.success(`Owner replaced \u2014 ${email.sent ? 'email sent' : 'share login manually'}`);
       window.alert(
         `\u2705 New owner ready for ${tenant.name}\n\n` +
         `Email: ${o?.email}\n` +
         `Password: ${o?.password}\n` +
         `Login URL: ${o?.login_url}\n\n` +
+        `${emailLine}\n` +
         (removed.length
           ? `Old owner removed: ${removed.join(', ')}`
           : 'Old owner detached from this tenant.')

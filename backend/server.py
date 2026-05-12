@@ -65,7 +65,7 @@ from middleware.tenant import (
     validate_resource_tenant, TenantQueryBuilder
 )
 from services.audit import AuditService
-from services.email_service import send_staff_invitation_email
+from services.email_service import send_staff_invitation_email, send_owner_welcome_email
 from services.documents import (
     TemplateCreate as DocTemplateCreate,
     TemplateUpdate as DocTemplateUpdate,
@@ -1740,6 +1740,7 @@ class ReplaceMasterAdminRequest(BaseModel):
     name: Optional[str] = None
     password: Optional[str] = None  # if absent, a default is generated
     delete_old_owner_user: bool = True  # also delete Eddie's user record if orphaned
+    send_welcome_email: bool = True  # email new owner their credentials via Resend
     admin_password: str  # super admin's own password for confirmation
 
 
@@ -1884,6 +1885,24 @@ async def replace_master_admin(
         pass
 
     base_url = get_public_url()
+    login_url = f"{base_url}/{tenant.get('slug')}/login"
+
+    # === 7) Optionally email the new owner their credentials ===
+    email_status = {"sent": False, "skipped": True, "error": None}
+    if payload.send_welcome_email:
+        email_result = await send_owner_welcome_email(
+            recipient_email=new_email,
+            owner_name=new_name,
+            tenant_name=tenant.get("name", "your fleet"),
+            login_url=login_url,
+            temporary_password=new_password,
+        )
+        email_status = {
+            "sent": email_result.get("success", False),
+            "skipped": False,
+            "error": email_result.get("error"),
+        }
+
     return {
         "message": f"Master admin replaced for '{tenant.get('name')}'",
         "tenant_id": tenant_id,
@@ -1893,12 +1912,13 @@ async def replace_master_admin(
             "name": new_name,
             "password": new_password,
             "is_new_user": created_new_user,
-            "login_url": f"{base_url}/{tenant.get('slug')}/login",
+            "login_url": login_url,
         },
         "removed": {
             "old_owner_memberships": len(old_owner_ids),
             "deleted_user_emails": deleted_user_emails,
         },
+        "email": email_status,
     }
 
 

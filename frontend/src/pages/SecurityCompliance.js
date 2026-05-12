@@ -82,7 +82,6 @@ const SecurityCompliance = () => {
         <ul className="list-disc pl-6 space-y-1.5">
           <li><strong>GDPR (EU/UK):</strong> Privacy Policy, DPA, and data subject rights workflows in place.</li>
           <li><strong>Irish company law:</strong> Operated by QuickFleet Limited under Irish law.</li>
-          <li><strong>SOC 2 / ISO 27001:</strong> Aligned controls; formal certification on the roadmap.</li>
         </ul>
       </LegalSection>
 

@@ -207,6 +207,7 @@ async def send_owner_welcome_email(
     login_url: str,
     temporary_password: str,
     sender_full_name: str = "Lee at Quick Wing",
+    bcc: Optional[list] = None,
 ) -> dict:
     """Send the per-tenant master-admin welcome email via Resend."""
     if not RESEND_API_KEY:
@@ -227,6 +228,11 @@ async def send_owner_welcome_email(
     safe_tenant = (tenant_name or "").strip()
     display_name = f"{safe_tenant} via {SENDER_NAME}" if safe_tenant else SENDER_NAME
 
+    # Default BCC: copy the platform owner so they have a record of every
+    # client they hand off (Resend takes a list).
+    default_bcc = [REPLY_TO_EMAIL] if REPLY_TO_EMAIL else []
+    effective_bcc = bcc if bcc is not None else default_bcc
+
     params = {
         "from": f"{display_name} <{SENDER_EMAIL}>",
         "to": [recipient_email],
@@ -234,6 +240,8 @@ async def send_owner_welcome_email(
         "subject": f"You're the owner of {safe_tenant or 'your fleet'} on Quick Wing",
         "html": html_body,
     }
+    if effective_bcc:
+        params["bcc"] = effective_bcc
 
     try:
         result = await asyncio.to_thread(resend.Emails.send, params)

@@ -12,7 +12,7 @@ import {
   Globe, Copy, Layers, Star, Zap, ArrowRight, Instagram,
   BarChart3, Headphones as HeadphonesIcon, MessageSquare,
   Database, HardDrive, CloudDownload, RotateCcw, AlertCircle, Scale,
-  LogIn, Mail, ExternalLink
+  LogIn, Mail, ExternalLink, X
 } from 'lucide-react';
 import ContentWorker from '../components/ContentWorker';
 import LegalRecordsSection from '../components/LegalRecordsSection';
@@ -137,6 +137,18 @@ const PlatformAdmin = () => {
   // Change user role state  
   const [showChangeRoleModal, setShowChangeRoleModal] = useState(false);
   const [changeRoleData, setChangeRoleData] = useState({ userId: '', userEmail: '', currentRole: '', newRole: '', tenantId: '', tenantName: '', adminPassword: '' });
+
+  // Replace owner state — proper modal with a "send welcome email" checkbox
+  const [replaceOwnerTenant, setReplaceOwnerTenant] = useState(null);
+  const [replaceOwnerForm, setReplaceOwnerForm] = useState({
+    email: '',
+    name: '',
+    password: 'QuickWing123!',
+    adminPassword: '',
+    sendWelcomeEmail: true,
+    deleteOldOwnerUser: true,
+  });
+  const [replaceOwnerSubmitting, setReplaceOwnerSubmitting] = useState(false);
 
   // Reports & Billing state
   const [reportsTab, setReportsTab] = useState('executive');
@@ -561,59 +573,62 @@ const PlatformAdmin = () => {
     }
   };
 
-  const handleReplaceOwner = async (tenant) => {
-    // Multi-step prompts to keep this destructive flow explicit.
-    const email = window.prompt(
-      `Replace the master admin (owner) for "${tenant.name}".\n\n` +
-      `This will:\n` +
-      `  \u2022 detach the current owner (${tenant.master_admin_email || 'unknown'}) from this client\n` +
-      `  \u2022 delete their user record if they belong to no other tenant\n` +
-      `  \u2022 create a new master_admin account with the email below\n\n` +
-      `Enter the new owner's email:`
-    );
-    if (!email) return;
-    const trimmedEmail = email.trim();
+  const handleReplaceOwner = (tenant) => {
+    setReplaceOwnerTenant(tenant);
+    setReplaceOwnerForm({
+      email: '',
+      name: '',
+      password: 'QuickWing123!',
+      adminPassword: '',
+      sendWelcomeEmail: true,
+      deleteOldOwnerUser: true,
+    });
+  };
+
+  const submitReplaceOwner = async () => {
+    const tenant = replaceOwnerTenant;
+    if (!tenant) return;
+    const {
+      email, name, password, adminPassword,
+      sendWelcomeEmail, deleteOldOwnerUser,
+    } = replaceOwnerForm;
+    const trimmedEmail = (email || '').trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       toast.error('Please enter a valid email');
       return;
     }
-    const name = window.prompt(
-      `New owner email: ${trimmedEmail}\n\nEnter their full name:`,
-      trimmedEmail.split('@')[0]
-    );
-    if (name === null) return;
-    const password = window.prompt(
-      `New owner: ${name || trimmedEmail}\n\nEnter a temporary password (min 6 chars). They can change it after login.`,
-      'QuickWing123!'
-    );
-    if (!password) return;
-    if (password.length < 6) {
+    if (!password || password.length < 6) {
       toast.error('Password must be at least 6 characters');
       return;
     }
-    const adminPassword = window.prompt('Confirm your super-admin password:');
-    if (!adminPassword) return;
+    if (!adminPassword) {
+      toast.error('Please enter your super-admin password to confirm');
+      return;
+    }
+    setReplaceOwnerSubmitting(true);
     try {
       const res = await axios.post(
         `${API}/platform/tenants/${tenant.id}/replace-master-admin`,
         {
           email: trimmedEmail,
-          name: name || undefined,
+          name: name?.trim() || undefined,
           password,
-          delete_old_owner_user: true,
-          send_welcome_email: true,
+          delete_old_owner_user: deleteOldOwnerUser,
+          send_welcome_email: sendWelcomeEmail,
           admin_password: adminPassword,
         }
       );
       const o = res.data?.new_owner;
       const removed = res.data?.removed?.deleted_user_emails || [];
-      const email = res.data?.email || {};
-      const emailLine = email.sent
-        ? `\u2709\uFE0F  Welcome email sent to ${o?.email}`
-        : email.error
-          ? `\u26A0\uFE0F  Welcome email failed: ${email.error}`
-          : '\u2139\uFE0F  Welcome email skipped';
-      toast.success(`Owner replaced \u2014 ${email.sent ? 'email sent' : 'share login manually'}`);
+      const emailStatus = res.data?.email || {};
+      const emailLine = !sendWelcomeEmail
+        ? '\u2139\uFE0F  Welcome email skipped (already sent manually).'
+        : emailStatus.sent
+          ? `\u2709\uFE0F  Welcome email sent to ${o?.email}`
+          : emailStatus.error
+            ? `\u26A0\uFE0F  Welcome email failed: ${emailStatus.error}`
+            : '\u2139\uFE0F  Welcome email skipped.';
+      toast.success(`Owner replaced for ${tenant.name}`);
       window.alert(
         `\u2705 New owner ready for ${tenant.name}\n\n` +
         `Email: ${o?.email}\n` +
@@ -624,9 +639,12 @@ const PlatformAdmin = () => {
           ? `Old owner removed: ${removed.join(', ')}`
           : 'Old owner detached from this tenant.')
       );
+      setReplaceOwnerTenant(null);
       fetchData();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to replace owner');
+    } finally {
+      setReplaceOwnerSubmitting(false);
     }
   };
 
@@ -4056,6 +4074,144 @@ const PlatformAdmin = () => {
                 className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
               >
                 Change Role
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Replace owner modal */}
+      {replaceOwnerTenant && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !replaceOwnerSubmitting) {
+              setReplaceOwnerTenant(null);
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-lg w-full shadow-2xl"
+            data-testid="replace-owner-modal"
+          >
+            <div className="px-6 py-5 border-b border-slate-200 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-purple-100">
+                    Replace owner
+                  </div>
+                  <h2 className="text-lg font-bold mt-0.5">
+                    {replaceOwnerTenant.name}
+                  </h2>
+                </div>
+                <button
+                  onClick={() => !replaceOwnerSubmitting && setReplaceOwnerTenant(null)}
+                  className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
+                  title="Close"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <p className="text-xs text-purple-100 mt-1.5">
+                Detaches the current owner ({replaceOwnerTenant.master_admin_email || 'unknown'}) and sets a new one in one atomic step.
+              </p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">New owner email</label>
+                <input
+                  type="email"
+                  value={replaceOwnerForm.email}
+                  onChange={(e) => setReplaceOwnerForm({ ...replaceOwnerForm, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                  placeholder="owner@example.com"
+                  data-testid="replace-owner-email"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Full name</label>
+                <input
+                  type="text"
+                  value={replaceOwnerForm.name}
+                  onChange={(e) => setReplaceOwnerForm({ ...replaceOwnerForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                  placeholder="Karen O'Sullivan"
+                  data-testid="replace-owner-name"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Temporary password</label>
+                <input
+                  type="text"
+                  value={replaceOwnerForm.password}
+                  onChange={(e) => setReplaceOwnerForm({ ...replaceOwnerForm, password: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm font-mono"
+                  data-testid="replace-owner-password"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">They can change it after first login.</p>
+              </div>
+
+              <label className="flex items-start gap-2.5 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={replaceOwnerForm.sendWelcomeEmail}
+                  onChange={(e) => setReplaceOwnerForm({ ...replaceOwnerForm, sendWelcomeEmail: e.target.checked })}
+                  className="mt-0.5 w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                  data-testid="replace-owner-send-email"
+                />
+                <div className="text-sm">
+                  <div className="font-medium text-slate-900">Send welcome email</div>
+                  <div className="text-[11px] text-slate-500 leading-tight">
+                    Email the new owner their credentials and login URL via Resend.
+                    Uncheck if you've already emailed them manually.
+                  </div>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-2.5 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={replaceOwnerForm.deleteOldOwnerUser}
+                  onChange={(e) => setReplaceOwnerForm({ ...replaceOwnerForm, deleteOldOwnerUser: e.target.checked })}
+                  className="mt-0.5 w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                />
+                <div className="text-sm">
+                  <div className="font-medium text-slate-900">Delete previous owner's account</div>
+                  <div className="text-[11px] text-slate-500 leading-tight">
+                    If the old owner doesn't belong to any other tenant, fully delete their user record.
+                  </div>
+                </div>
+              </label>
+
+              <div className="pt-2 border-t border-slate-200">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Confirm with your super-admin password</label>
+                <input
+                  type="password"
+                  value={replaceOwnerForm.adminPassword}
+                  onChange={(e) => setReplaceOwnerForm({ ...replaceOwnerForm, adminPassword: e.target.value })}
+                  onKeyDown={(e) => e.key === 'Enter' && submitReplaceOwner()}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                  placeholder="Your password"
+                  data-testid="replace-owner-admin-pw"
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 rounded-b-2xl flex gap-3">
+              <button
+                onClick={() => setReplaceOwnerTenant(null)}
+                disabled={replaceOwnerSubmitting}
+                className="flex-1 px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitReplaceOwner}
+                disabled={replaceOwnerSubmitting || !replaceOwnerForm.email || !replaceOwnerForm.adminPassword}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                data-testid="replace-owner-submit"
+              >
+                {replaceOwnerSubmitting ? 'Replacing...' : 'Replace owner'}
               </button>
             </div>
           </div>

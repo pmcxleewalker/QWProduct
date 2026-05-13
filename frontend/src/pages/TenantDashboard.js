@@ -11,7 +11,7 @@ import {
   ArrowRight, MoreVertical, BookOpen, HelpCircle, PieChart,
   Activity, TrendingDown, CalendarDays, QrCode, Camera, Gauge,
   ClipboardList, Bell, Megaphone, Crown, Star, Zap, Palette, DollarSign,
-  Save, X, Sparkles
+  Save, X, Sparkles, Search
 } from 'lucide-react';
 import AdminTraining from '../components/AdminTraining';
 import CarBookingCalendar from '../components/CarBookingCalendar';
@@ -153,6 +153,7 @@ const TenantDashboard = () => {
   const [serviceAlert, setServiceAlert] = useState(null);
   const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0);
   const [activeSubTab, setActiveSubTab] = useState(null); // For nested tabs
+  const [vehicleSearch, setVehicleSearch] = useState(''); // Fleet list filter
   
   // Plan data for tier-based styling
   const [planData, setPlanData] = useState(null);
@@ -1203,8 +1204,50 @@ const TenantDashboard = () => {
                     <p className="text-lg font-medium">No vehicles available</p>
                   </div>
                 ) : (
+                  <>
+                    {/* Search bar */}
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="relative flex-1 max-w-md">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={vehicleSearch}
+                          onChange={(e) => setVehicleSearch(e.target.value)}
+                          placeholder="Search by name, reg, status or location..."
+                          className="w-full pl-9 pr-9 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white"
+                          data-testid="fleet-search-input"
+                        />
+                        {vehicleSearch && (
+                          <button
+                            onClick={() => setVehicleSearch('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
+                            title="Clear search"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {(() => {
+                      const q = vehicleSearch.trim().toLowerCase();
+                      const filteredVehicles = q
+                        ? vehicles.filter(v =>
+                            (v.name || '').toLowerCase().includes(q) ||
+                            (v.registration || '').toLowerCase().includes(q) ||
+                            (v.current_status || '').toLowerCase().includes(q) ||
+                            (v.base_location || '').toLowerCase().includes(q)
+                          )
+                        : vehicles;
+                      if (q && filteredVehicles.length === 0) {
+                        return (
+                          <div className="bg-white border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500 text-sm" data-testid="fleet-search-empty">
+                            No vehicles match &ldquo;<span className="font-semibold">{vehicleSearch}</span>&rdquo;.
+                          </div>
+                        );
+                      }
+                      return (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {vehicles.map(vehicle => {
+                    {filteredVehicles.map(vehicle => {
                       const currentBooking = bookings.find(b => 
                         b.car_id === vehicle.id && 
                         new Date(b.start_time) <= new Date() && 
@@ -1304,6 +1347,9 @@ const TenantDashboard = () => {
                       );
                     })}
                   </div>
+                      );
+                    })()}
+                  </>
                 )}
               </div>
             )}

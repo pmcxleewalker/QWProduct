@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { carAPI, assistanceAPI, userAPI, bookingAPI, messageAPI, todoAPI, reportsAPI, planAPI } from '../api/api';
 import { toast } from 'sonner';
-import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlock, Clock, Check, X, MessageSquare, ListTodo, Settings, Key, BarChart3, Download, TrendingUp, TrendingDown, Calendar as CalendarIcon, PieChart, List, MapPin, AlertCircle, Crown, ShieldAlert, ChevronDown, ChevronUp, Activity, Map, BookOpen, HelpCircle, Upload } from 'lucide-react';
+import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlock, Clock, Check, X, MessageSquare, ListTodo, Settings, Key, BarChart3, Download, TrendingUp, TrendingDown, Calendar as CalendarIcon, PieChart, List, MapPin, AlertCircle, Crown, ShieldAlert, ChevronDown, ChevronUp, Activity, Map, BookOpen, HelpCircle, Upload, Search } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AdminTraining from '../components/AdminTraining';
 import BulkImportVehiclesModal from '../components/BulkImportVehiclesModal';
@@ -30,6 +30,7 @@ const Admin = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCarForm, setShowCarForm] = useState(false);
+  const [carSearch, setCarSearch] = useState('');
   const [showProviderForm, setShowProviderForm] = useState(false);
   const [showMessageForm, setShowMessageForm] = useState(false);
   const [editingCar, setEditingCar] = useState(null);
@@ -1322,9 +1323,64 @@ const Admin = () => {
             </div>
           )}
 
+          {/* Search bar */}
+          <div className="mb-4 flex items-center gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                value={carSearch}
+                onChange={(e) => setCarSearch(e.target.value)}
+                placeholder="Search by name, reg, status or location..."
+                className="w-full pl-9 pr-9 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                data-testid="car-search-input"
+              />
+              {carSearch && (
+                <button
+                  onClick={() => setCarSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
+                  title="Clear search"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            {carSearch && (
+              <span className="text-xs text-slate-500" data-testid="car-search-count">
+                {(() => {
+                  const q = carSearch.trim().toLowerCase();
+                  const n = cars.filter(c =>
+                    (c.name || '').toLowerCase().includes(q) ||
+                    (c.registration || '').toLowerCase().includes(q) ||
+                    (c.current_status || '').toLowerCase().includes(q) ||
+                    (c.base_location || '').toLowerCase().includes(q)
+                  ).length;
+                  return `${n} of ${cars.length} match`;
+                })()}
+              </span>
+            )}
+          </div>
+
           {/* Cars List */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {cars.map((car) => (
+            {(() => {
+              const q = carSearch.trim().toLowerCase();
+              const filtered = q
+                ? cars.filter(c =>
+                    (c.name || '').toLowerCase().includes(q) ||
+                    (c.registration || '').toLowerCase().includes(q) ||
+                    (c.current_status || '').toLowerCase().includes(q) ||
+                    (c.base_location || '').toLowerCase().includes(q)
+                  )
+                : cars;
+              if (q && filtered.length === 0) {
+                return (
+                  <div className="col-span-full p-8 text-center text-slate-500 text-sm bg-white border border-dashed border-slate-300 rounded-lg">
+                    No vehicles match &ldquo;<span className="font-semibold">{carSearch}</span>&rdquo;.
+                  </div>
+                );
+              }
+              return filtered.map((car) => (
               <div
                 key={car.id}
                 data-testid={`admin-car-card-${car.id}`}
@@ -1452,7 +1508,8 @@ const Admin = () => {
                   )}
                 </div>
               </div>
-            ))}
+            ));
+            })()}
           </div>
 
           {/* Block Modal */}

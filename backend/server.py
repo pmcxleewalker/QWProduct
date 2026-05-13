@@ -4509,24 +4509,28 @@ async def bulk_import_vehicles(
     request: Request = None
 ):
     """
-    Bulk import vehicles from a CSV file into the current tenant.
-    
-    Expected CSV columns (header row required):
+    Bulk import vehicles from a CSV or Excel file into the current tenant.
+
+    Accepts: .csv, .xlsx, .xls (first sheet only).
+
+    Expected columns (header row required):
       name, registration, current_status, tax_due_date, nct_due_date,
-      current_mileage, service_due_mileage, base_location
-    
+      current_mileage, service_due_mileage, service_due_date, base_location
+
     Required: name, registration
-    Optional: all others (use blank cells to skip)
-    
+    Service due: provide EITHER service_due_mileage (km) OR service_due_date
+    (YYYY-MM-DD). Both are optional; only one is needed.
+
     Returns a per-row summary so the client can show which rows succeeded/failed.
     """
     import csv as _csv
-    from io import StringIO as _StringIO
+    from io import StringIO as _StringIO, BytesIO as _BytesIO
 
-    # Validate file
     filename = (file.filename or "").lower()
-    if not filename.endswith(".csv"):
-        raise HTTPException(status_code=400, detail="File must be a .csv file")
+    is_excel = filename.endswith(".xlsx") or filename.endswith(".xls")
+    is_csv = filename.endswith(".csv")
+    if not (is_excel or is_csv):
+        raise HTTPException(status_code=400, detail="File must be .csv, .xlsx or .xls")
 
     raw = await file.read()
     if not raw:
@@ -4534,25 +4538,66 @@ async def bulk_import_vehicles(
     if len(raw) > 5 * 1024 * 1024:  # 5 MB hard cap
         raise HTTPException(status_code=400, detail="File too large (max 5 MB)")
 
-    # Decode (try utf-8, fallback to latin-1)
-    try:
-        text = raw.decode("utf-8-sig")
-    except UnicodeDecodeError:
-        text = raw.decode("latin-1", errors="replace")
+    # === Parse rows into a uniform list[dict] regardless of format ===
+    rows_iter: list = []
+    if is_excel:
+        try:
+            from openpyxl import load_workbook
+            wb = load_workbook(_BytesIO(raw), data_only=True, read_only=True)
+            ws = wb.worksheets[0]
+            it = ws.iter_rows(values_only=True)
+            try:
+                header = next(it)
+            except StopIteration:
+                raise HTTPException(status_code=400, detail="Excel file has no rows")
+            headers = [(str(h).strip().lower() if h is not None else "") for h in header]
+            for raw_row in it:
+                # Skip fully-empty rows (openpyxl pads short rows with None)
+                if not any(c is not None and str(c).strip() != "" for c in raw_row):
+                    continue
+                row = {}
+                for idx, val in enumerate(raw_row):
+                    if idx >= len(headers):
+                        break
+                    key = headers[idx]
+                    if not key:
+                        continue
+                    if isinstance(val, datetime):
+                        row[key] = val.date().isoformat()
+                    elif val is None:
+                        row[key] = ""
+                    else:
+                        row[key] = str(val).strip()
+                rows_iter.append(row)
+            fieldnames = headers
+        except HTTPException:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Excel parse failed: %s", exc)
+            raise HTTPException(status_code=400, detail=f"Could not read Excel file: {exc}")
+    else:
+        # CSV path — try utf-8 then latin-1
+        try:
+            text = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            text = raw.decode("latin-1", errors="replace")
+        reader = _csv.DictReader(_StringIO(text))
+        if not reader.fieldnames:
+            raise HTTPException(status_code=400, detail="CSV has no header row")
+        fieldnames = [(fn or "").strip().lower() for fn in reader.fieldnames]
+        for raw_row in reader:
+            rows_iter.append(
+                {(k or "").strip().lower(): (v.strip() if isinstance(v, str) else v) for k, v in raw_row.items()}
+            )
 
-    reader = _csv.DictReader(_StringIO(text))
-    if not reader.fieldnames:
-        raise HTTPException(status_code=400, detail="CSV has no header row")
-
-    # Normalise field names (strip + lowercase)
-    norm_fieldnames = [(fn or "").strip().lower() for fn in reader.fieldnames]
+    norm_fieldnames = [f for f in fieldnames if f]
 
     required = {"name", "registration"}
     missing_required = required - set(norm_fieldnames)
     if missing_required:
         raise HTTPException(
             status_code=400,
-            detail=f"CSV missing required columns: {', '.join(sorted(missing_required))}"
+            detail=f"File missing required columns: {', '.join(sorted(missing_required))}"
         )
 
     # Plan limit check
@@ -4570,10 +4615,6 @@ async def bulk_import_vehicles(
     succeeded = []
     errors = []
     created_in_batch_regs = set()
-
-    def _norm_row(raw_row):
-        """Lowercase keys + strip values."""
-        return {(k or "").strip().lower(): (v.strip() if isinstance(v, str) else v) for k, v in raw_row.items()}
 
     def _parse_date(s):
         """Validate YYYY-MM-DD; return string or raise."""
@@ -4594,10 +4635,11 @@ async def bulk_import_vehicles(
             raise ValueError(f"Invalid integer '{s}'")
 
     row_num = 1  # header is row 1; first data row is 2
-    for raw_row in reader:
+    for raw_row in rows_iter:
         row_num += 1
         try:
-            row = _norm_row(raw_row)
+            # rows_iter already has lowercase keys / stripped values
+            row = raw_row
             name = (row.get("name") or "").strip()
             reg = (row.get("registration") or "").strip()
 
@@ -4610,7 +4652,7 @@ async def bulk_import_vehicles(
             if reg_upper in existing_regs:
                 raise ValueError(f"Duplicate registration '{reg}' (already exists in tenant)")
             if reg_upper in created_in_batch_regs:
-                raise ValueError(f"Duplicate registration '{reg}' appears twice in CSV")
+                raise ValueError(f"Duplicate registration '{reg}' appears twice in file")
 
             # Plan limit
             if (current_count + len(succeeded)) >= max_vehicles:
@@ -4625,7 +4667,10 @@ async def bulk_import_vehicles(
                 "tax_due_date": _parse_date(row.get("tax_due_date") or ""),
                 "nct_due_date": _parse_date(row.get("nct_due_date") or ""),
                 "current_mileage": _parse_int(row.get("current_mileage") or ""),
+                # Service-due — admins can set either a target mileage OR a
+                # target date. Both columns are accepted; both may be empty.
                 "service_due_mileage": _parse_int(row.get("service_due_mileage") or ""),
+                "service_due_date": _parse_date(row.get("service_due_date") or ""),
                 "base_location": (row.get("base_location") or "").strip() or None,
                 "is_blocked": False,
                 "created_at": datetime.now(timezone.utc).isoformat(),
@@ -4643,8 +4688,8 @@ async def bulk_import_vehicles(
         except Exception as e:
             errors.append({
                 "row": row_num,
-                "registration": (raw_row.get("registration") or raw_row.get("Registration") or "").strip(),
-                "name": (raw_row.get("name") or raw_row.get("Name") or "").strip(),
+                "registration": (raw_row.get("registration") or "").strip(),
+                "name": (raw_row.get("name") or "").strip(),
                 "error": str(e),
             })
 

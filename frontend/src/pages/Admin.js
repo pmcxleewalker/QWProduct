@@ -69,6 +69,7 @@ const Admin = () => {
     tax_due_date: '',
     nct_due_date: '',
     service_due_mileage: '',
+    service_due_date: '',
     base_location: '',
   });
 
@@ -593,6 +594,7 @@ const Admin = () => {
         tax_due_date: carForm.tax_due_date || null,
         nct_due_date: carForm.nct_due_date || null,
         service_due_mileage: carForm.service_due_mileage ? parseInt(carForm.service_due_mileage) : null,
+        service_due_date: carForm.service_due_date || null,
         base_location: carForm.base_location || null,
       };
 
@@ -605,7 +607,7 @@ const Admin = () => {
       }
       setShowCarForm(false);
       setEditingCar(null);
-      setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_mileage: '', base_location: '' });
+      setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_mileage: '', service_due_date: '', base_location: '' });
       fetchData();
     } catch (err) {
       // Handle plan limit errors (403)
@@ -649,6 +651,7 @@ const Admin = () => {
       tax_due_date: car.tax_due_date || '',
       nct_due_date: car.nct_due_date || '',
       service_due_mileage: car.service_due_mileage || '',
+      service_due_date: car.service_due_date || '',
       base_location: car.base_location || '',
     });
     setShowCarForm(true);
@@ -1225,6 +1228,18 @@ const Admin = () => {
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                         min="0"
                       />
+                      <p className="text-[11px] text-slate-500 mt-1">Or use the service due date below \u2014 whichever comes first.</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Service Due By (date)</label>
+                      <input
+                        type="date"
+                        data-testid="car-service-date-input"
+                        value={carForm.service_due_date || ''}
+                        onChange={(e) => setCarForm({ ...carForm, service_due_date: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-[11px] text-slate-500 mt-1">Alternative to mileage \u2014 e.g. annual service.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Base Location</label>

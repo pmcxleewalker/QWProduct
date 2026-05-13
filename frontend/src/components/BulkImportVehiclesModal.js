@@ -20,17 +20,19 @@ const TABS = {
     errorReportName: 'quick-wing-vehicle-errors.csv',
     successKey: 'created_vehicles',
     title: 'Bulk Import Vehicles',
-    subtitle: 'Upload a CSV to onboard a fleet in seconds',
-    columns: ['name', 'registration', 'current_status', 'tax_due_date', 'nct_due_date', 'current_mileage', 'service_due_mileage', 'base_location'],
+    subtitle: 'Upload a CSV or Excel file to onboard a fleet in seconds',
+    columns: ['name', 'registration', 'current_status', 'tax_due_date', 'nct_due_date', 'current_mileage', 'service_due_mileage', 'service_due_date', 'base_location'],
     sampleRows: [
-      ['Ford Transit Van 2022', '12-D-12345', 'Free', '2026-12-01', '2026-08-15', '15000', '30000', 'Dublin North'],
-      ['VW Caddy', '13-D-67890', 'Free', '2026-09-30', '', '8500', '20000', 'Dublin Central'],
+      ['Ford Transit Van 2022', '12-D-12345', 'Free', '2026-12-01', '2026-08-15', '15000', '30000', '', 'Dublin North'],
+      ['VW Caddy', '13-D-67890', 'Free', '2026-09-30', '', '8500', '', '2026-10-01', 'Dublin Central'],
     ],
     requiredHint: (
       <>
         Required: <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">name</code>,{' '}
         <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">registration</code>. Dates use{' '}
-        <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">YYYY-MM-DD</code>.
+        <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">YYYY-MM-DD</code>. Service due:
+        provide either <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">service_due_mileage</code>
+        {' '}(km) or <code className="bg-white px-1.5 py-0.5 rounded text-slate-800">service_due_date</code>.
       </>
     ),
     successWord: (n) => `${n} vehicle${n === 1 ? '' : 's'} added to the fleet.`,
@@ -161,8 +163,12 @@ const BulkImportModal = ({ isOpen, onClose, onImported, defaultTab = 'vehicles' 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (!f.name.toLowerCase().endsWith('.csv')) {
-      toast.error('Please select a .csv file');
+    const lower = f.name.toLowerCase();
+    // Vehicles tab accepts CSV + Excel; Staff tab is CSV-only for now.
+    const allowExcel = activeTab === 'vehicles';
+    const ok = lower.endsWith('.csv') || (allowExcel && (lower.endsWith('.xlsx') || lower.endsWith('.xls')));
+    if (!ok) {
+      toast.error(allowExcel ? 'Please select a .csv, .xlsx or .xls file' : 'Please select a .csv file');
       return;
     }
     setFile(f);
@@ -171,7 +177,7 @@ const BulkImportModal = ({ isOpen, onClose, onImported, defaultTab = 'vehicles' 
 
   const handleUpload = async () => {
     if (!file) {
-      toast.error('Please choose a CSV file first');
+      toast.error(activeTab === 'vehicles' ? 'Please choose a CSV or Excel file first' : 'Please choose a CSV file first');
       return;
     }
     setUploading(true);
@@ -300,16 +306,16 @@ const BulkImportModal = ({ isOpen, onClose, onImported, defaultTab = 'vehicles' 
                     >
                       <Upload className="mx-auto text-slate-400 mb-2" size={28} />
                       <p className="text-sm font-medium text-slate-700">
-                        {file ? file.name : 'Click to choose a CSV file'}
+                        {file ? file.name : (activeTab === 'vehicles' ? 'Click to choose a CSV or Excel file' : 'Click to choose a CSV file')}
                       </p>
                       <p className="text-xs text-slate-500 mt-1">
-                        {file ? `${(file.size / 1024).toFixed(1)} KB` : 'Max 5 MB'}
+                        {file ? `${(file.size / 1024).toFixed(1)} KB` : (activeTab === 'vehicles' ? 'CSV, XLSX or XLS \u2014 max 5 MB' : 'Max 5 MB')}
                       </p>
                       <input
                         id="bulk-import-file"
                         ref={fileInputRef}
                         type="file"
-                        accept=".csv,text/csv"
+                        accept={activeTab === 'vehicles' ? '.csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel' : '.csv,text/csv'}
                         onChange={handleFileChange}
                         className="hidden"
                         data-testid="bulk-import-file-input"

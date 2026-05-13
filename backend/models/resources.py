@@ -17,6 +17,7 @@ class VehicleBase(BaseModel):
     tax_due_date: Optional[str] = None
     nct_due_date: Optional[str] = None
     service_due_mileage: Optional[int] = None
+    service_due_date: Optional[str] = None  # YYYY-MM-DD — alternative to mileage
     current_mileage: Optional[int] = None
     base_location: Optional[str] = None
 
@@ -32,6 +33,7 @@ class VehicleUpdate(BaseModel):
     tax_due_date: Optional[str] = None
     nct_due_date: Optional[str] = None
     service_due_mileage: Optional[int] = None
+    service_due_date: Optional[str] = None
     current_mileage: Optional[int] = None
     base_location: Optional[str] = None
     is_blocked: Optional[bool] = None

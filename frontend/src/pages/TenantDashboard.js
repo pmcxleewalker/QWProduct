@@ -1693,7 +1693,25 @@ const TenantDashboard = () => {
                           {teamMembers.filter(m => m.role === 'admin' || m.role === 'master_admin').map(member => (
                             <tr key={member.id} className="hover:bg-purple-50/50">
                               <td className="px-4 py-3">
-                                <p className="font-medium text-gray-900">{member.name}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-gray-900">{member.name}</p>
+                                  {member.last_login_at ? (
+                                    <span
+                                      title={`Activated \u2014 last signed in ${new Date(member.last_login_at).toLocaleString('en-IE', { dateStyle: 'medium', timeStyle: 'short' })}`}
+                                      data-testid={`activated-${member.id}`}
+                                      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white flex-shrink-0"
+                                    >
+                                      <CheckCircle size={13} strokeWidth={3} />
+                                    </span>
+                                  ) : (
+                                    <span
+                                      title="Invited \u2014 has not signed in yet"
+                                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200"
+                                    >
+                                      Invited
+                                    </span>
+                                  )}
+                                </div>
                                 {member.id === user?.id && (
                                   <span className="text-xs text-blue-600">(You)</span>
                                 )}
@@ -1799,7 +1817,26 @@ const TenantDashboard = () => {
                             return (
                             <tr key={member.id} className="hover:bg-blue-50/50">
                               <td className="px-4 py-3">
-                                <p className="font-medium text-gray-900">{member.name}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-gray-900">{member.name}</p>
+                                  {member.last_login_at && (
+                                    <span
+                                      title={`Activated \u2014 last signed in ${new Date(member.last_login_at).toLocaleString('en-IE', { dateStyle: 'medium', timeStyle: 'short' })}`}
+                                      data-testid={`activated-${member.id}`}
+                                      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white flex-shrink-0"
+                                    >
+                                      <CheckCircle size={13} strokeWidth={3} />
+                                    </span>
+                                  )}
+                                  {!member.last_login_at && (
+                                    <span
+                                      title="Invited \u2014 has not signed in yet"
+                                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200"
+                                    >
+                                      Invited
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-600">{member.email}</td>
                               <td className="px-4 py-3">

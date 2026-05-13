@@ -233,6 +233,17 @@ async def login(credentials: UserLogin, request: Request):
         tenant_id=default_tenant_id,
         ip_address=request.client.host if request.client else None
     )
+
+    # Stamp last_login_at so admins can see who's actually logged in.
+    # Fire-and-forget — never block the login flow on this update.
+    try:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$set": {"last_login_at": now_iso}},
+        )
+    except Exception:
+        pass
     
     return {
         "access_token": access_token,

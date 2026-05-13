@@ -1501,6 +1501,58 @@ const TenantDashboard = () => {
                   )}
                 </div>
 
+                {/* Search bar + brand chips */}
+                {vehicles.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1 max-w-md">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={vehicleSearch}
+                          onChange={(e) => setVehicleSearch(e.target.value)}
+                          placeholder="Search by name, reg, status or location..."
+                          className="w-full pl-9 pr-9 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                          data-testid="manage-fleet-search-input"
+                        />
+                        {vehicleSearch && (
+                          <button
+                            onClick={() => setVehicleSearch('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
+                            title="Clear search"
+                            data-testid="manage-fleet-search-clear"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                      {(vehicleSearch || brandFilter) && (
+                        <span className="text-xs text-slate-500" data-testid="manage-fleet-search-count">
+                          {(() => {
+                            const q = vehicleSearch.trim().toLowerCase();
+                            const afterBrand = filterByBrand(vehicles, brandFilter);
+                            const n = q
+                              ? afterBrand.filter(v =>
+                                  (v.name || '').toLowerCase().includes(q) ||
+                                  (v.registration || '').toLowerCase().includes(q) ||
+                                  (v.current_status || '').toLowerCase().includes(q) ||
+                                  (v.base_location || '').toLowerCase().includes(q)
+                                ).length
+                              : afterBrand.length;
+                            return `${n} of ${vehicles.length} match`;
+                          })()}
+                        </span>
+                      )}
+                    </div>
+                    <BrandChips
+                      vehicles={vehicles}
+                      selected={brandFilter}
+                      onSelect={setBrandFilter}
+                      testid="manage-fleet-brand-chips"
+                    />
+                  </div>
+                )}
+
                 <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
                   {vehicles.length === 0 ? (
                     <div className="p-12 text-center text-gray-500">
@@ -1508,27 +1560,48 @@ const TenantDashboard = () => {
                       <p className="text-lg font-medium">No vehicles in fleet</p>
                       <p className="text-sm mt-1">Add your first vehicle to get started</p>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
-                      {vehicles.map(vehicle => (
-                        <FleetVehicleCard
-                          key={vehicle.id}
-                          vehicle={vehicle}
-                          isAdmin={isAdmin}
-                          onQRClick={(v) => {
-                            setSelectedVehicleForQR(v);
-                            setShowQRCode(true);
-                          }}
-                          onEditClick={(v) => {
-                            setSelectedVehicleForEdit(v);
-                            setShowEditVehicle(true);
-                          }}
-                          onDeleteClick={(v) => handleDeleteVehicle(v.id)}
-                          onRefresh={() => fetchData()}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  ) : (() => {
+                    const q = vehicleSearch.trim().toLowerCase();
+                    const afterBrand = filterByBrand(vehicles, brandFilter);
+                    const filtered = q
+                      ? afterBrand.filter(v =>
+                          (v.name || '').toLowerCase().includes(q) ||
+                          (v.registration || '').toLowerCase().includes(q) ||
+                          (v.current_status || '').toLowerCase().includes(q) ||
+                          (v.base_location || '').toLowerCase().includes(q)
+                        )
+                      : afterBrand;
+                    if ((q || brandFilter) && filtered.length === 0) {
+                      return (
+                        <div className="p-10 text-center text-slate-500 text-sm" data-testid="manage-fleet-search-empty">
+                          {q
+                            ? <>No {brandFilter ? `${brandFilter} ` : ''}vehicles match &ldquo;<span className="font-semibold">{vehicleSearch}</span>&rdquo;.</>
+                            : <>No {brandFilter} vehicles in your fleet.</>}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
+                        {filtered.map(vehicle => (
+                          <FleetVehicleCard
+                            key={vehicle.id}
+                            vehicle={vehicle}
+                            isAdmin={isAdmin}
+                            onQRClick={(v) => {
+                              setSelectedVehicleForQR(v);
+                              setShowQRCode(true);
+                            }}
+                            onEditClick={(v) => {
+                              setSelectedVehicleForEdit(v);
+                              setShowEditVehicle(true);
+                            }}
+                            onDeleteClick={(v) => handleDeleteVehicle(v.id)}
+                            onRefresh={() => fetchData()}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}

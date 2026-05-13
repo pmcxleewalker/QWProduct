@@ -1882,9 +1882,11 @@ const PlatformAdmin = () => {
                       </select>
                     </div>
                   </div>
-                  {(newUser.role === 'staff' || newUser.role === 'admin') && (
+                  {(newUser.role === 'staff' || newUser.role === 'admin' || newUser.role === 'master_admin') && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Tenant</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tenant {newUser.role === 'master_admin' && <span className="text-xs text-purple-600 font-normal">(owner of this client)</span>}
+                      </label>
                       <select
                         value={newUser.tenant_id}
                         onChange={(e) => setNewUser({ ...newUser, tenant_id: e.target.value })}
@@ -1896,6 +1898,11 @@ const PlatformAdmin = () => {
                           <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
                         ))}
                       </select>
+                      {newUser.role === 'master_admin' && (
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          The new master admin will be the workspace owner for the selected client.
+                        </p>
+                      )}
                     </div>
                   )}
                   <div className="flex space-x-3">

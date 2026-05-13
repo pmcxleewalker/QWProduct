@@ -37,6 +37,7 @@ import ComplianceAlerts, { ComplianceSettingsModal } from '../components/Complia
 import { computeLicenceStatus } from '../components/DriverLicenceCard';
 import StaffLicenceAlerts from '../components/StaffLicenceAlerts';
 import Greeting from '../components/Greeting';
+import BrandChips, { filterByBrand } from '../components/BrandChips';
 import CostAnalyticsDashboard from '../components/CostAnalyticsDashboard';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -154,6 +155,7 @@ const TenantDashboard = () => {
   const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0);
   const [activeSubTab, setActiveSubTab] = useState(null); // For nested tabs
   const [vehicleSearch, setVehicleSearch] = useState(''); // Fleet list filter
+  const [brandFilter, setBrandFilter] = useState(null); // Click-to-filter brand chip
   
   // Plan data for tier-based styling
   const [planData, setPlanData] = useState(null);
@@ -1205,43 +1207,55 @@ const TenantDashboard = () => {
                   </div>
                 ) : (
                   <>
-                    {/* Search bar */}
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="relative flex-1 max-w-md">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                        <input
-                          type="text"
-                          value={vehicleSearch}
-                          onChange={(e) => setVehicleSearch(e.target.value)}
-                          placeholder="Search by name, reg, status or location..."
-                          className="w-full pl-9 pr-9 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white"
-                          data-testid="fleet-search-input"
-                        />
-                        {vehicleSearch && (
-                          <button
-                            onClick={() => setVehicleSearch('')}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
-                            title="Clear search"
-                          >
-                            <X size={14} />
-                          </button>
-                        )}
+                    {/* Search bar + brand chips */}
+                    <div className="mb-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="relative flex-1 max-w-md">
+                          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                          <input
+                            type="text"
+                            value={vehicleSearch}
+                            onChange={(e) => setVehicleSearch(e.target.value)}
+                            placeholder="Search by name, reg, status or location..."
+                            className="w-full pl-9 pr-9 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white"
+                            data-testid="fleet-search-input"
+                          />
+                          {vehicleSearch && (
+                            <button
+                              onClick={() => setVehicleSearch('')}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
+                              title="Clear search"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
                       </div>
+                      {/* Auto-derived brand chips with counts */}
+                      <BrandChips
+                        vehicles={vehicles}
+                        selected={brandFilter}
+                        onSelect={setBrandFilter}
+                        testid="fleet-brand-chips"
+                      />
                     </div>
                     {(() => {
                       const q = vehicleSearch.trim().toLowerCase();
+                      const afterBrand = filterByBrand(vehicles, brandFilter);
                       const filteredVehicles = q
-                        ? vehicles.filter(v =>
+                        ? afterBrand.filter(v =>
                             (v.name || '').toLowerCase().includes(q) ||
                             (v.registration || '').toLowerCase().includes(q) ||
                             (v.current_status || '').toLowerCase().includes(q) ||
                             (v.base_location || '').toLowerCase().includes(q)
                           )
-                        : vehicles;
-                      if (q && filteredVehicles.length === 0) {
+                        : afterBrand;
+                      if (filteredVehicles.length === 0) {
                         return (
                           <div className="bg-white border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500 text-sm" data-testid="fleet-search-empty">
-                            No vehicles match &ldquo;<span className="font-semibold">{vehicleSearch}</span>&rdquo;.
+                            {q
+                              ? <>No {brandFilter ? `${brandFilter} ` : ''}vehicles match &ldquo;<span className="font-semibold">{vehicleSearch}</span>&rdquo;.</>
+                              : <>No {brandFilter} vehicles in your fleet.</>}
                           </div>
                         );
                       }

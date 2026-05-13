@@ -7,6 +7,7 @@ import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlo
 import { useAuth } from '../contexts/AuthContext';
 import AdminTraining from '../components/AdminTraining';
 import BulkImportVehiclesModal from '../components/BulkImportVehiclesModal';
+import BrandChips, { filterByBrand } from '../components/BrandChips';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -31,6 +32,7 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [showCarForm, setShowCarForm] = useState(false);
   const [carSearch, setCarSearch] = useState('');
+  const [carBrandFilter, setCarBrandFilter] = useState(null);
   const [showProviderForm, setShowProviderForm] = useState(false);
   const [showMessageForm, setShowMessageForm] = useState(false);
   const [editingCar, setEditingCar] = useState(null);
@@ -1323,60 +1325,74 @@ const Admin = () => {
             </div>
           )}
 
-          {/* Search bar */}
-          <div className="mb-4 flex items-center gap-3">
-            <div className="relative flex-1 max-w-md">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <input
-                type="text"
-                value={carSearch}
-                onChange={(e) => setCarSearch(e.target.value)}
-                placeholder="Search by name, reg, status or location..."
-                className="w-full pl-9 pr-9 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
-                data-testid="car-search-input"
-              />
-              {carSearch && (
-                <button
-                  onClick={() => setCarSearch('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
-                  title="Clear search"
-                >
-                  <X size={14} />
-                </button>
+          {/* Search bar + brand chips */}
+          <div className="mb-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 max-w-md">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={carSearch}
+                  onChange={(e) => setCarSearch(e.target.value)}
+                  placeholder="Search by name, reg, status or location..."
+                  className="w-full pl-9 pr-9 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                  data-testid="car-search-input"
+                />
+                {carSearch && (
+                  <button
+                    onClick={() => setCarSearch('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
+                    title="Clear search"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              {(carSearch || carBrandFilter) && (
+                <span className="text-xs text-slate-500" data-testid="car-search-count">
+                  {(() => {
+                    const q = carSearch.trim().toLowerCase();
+                    const afterBrand = filterByBrand(cars, carBrandFilter);
+                    const n = q
+                      ? afterBrand.filter(c =>
+                          (c.name || '').toLowerCase().includes(q) ||
+                          (c.registration || '').toLowerCase().includes(q) ||
+                          (c.current_status || '').toLowerCase().includes(q) ||
+                          (c.base_location || '').toLowerCase().includes(q)
+                        ).length
+                      : afterBrand.length;
+                    return `${n} of ${cars.length} match`;
+                  })()}
+                </span>
               )}
             </div>
-            {carSearch && (
-              <span className="text-xs text-slate-500" data-testid="car-search-count">
-                {(() => {
-                  const q = carSearch.trim().toLowerCase();
-                  const n = cars.filter(c =>
-                    (c.name || '').toLowerCase().includes(q) ||
-                    (c.registration || '').toLowerCase().includes(q) ||
-                    (c.current_status || '').toLowerCase().includes(q) ||
-                    (c.base_location || '').toLowerCase().includes(q)
-                  ).length;
-                  return `${n} of ${cars.length} match`;
-                })()}
-              </span>
-            )}
+            <BrandChips
+              vehicles={cars}
+              selected={carBrandFilter}
+              onSelect={setCarBrandFilter}
+              testid="car-brand-chips"
+            />
           </div>
 
           {/* Cars List */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {(() => {
               const q = carSearch.trim().toLowerCase();
+              const afterBrand = filterByBrand(cars, carBrandFilter);
               const filtered = q
-                ? cars.filter(c =>
+                ? afterBrand.filter(c =>
                     (c.name || '').toLowerCase().includes(q) ||
                     (c.registration || '').toLowerCase().includes(q) ||
                     (c.current_status || '').toLowerCase().includes(q) ||
                     (c.base_location || '').toLowerCase().includes(q)
                   )
-                : cars;
-              if (q && filtered.length === 0) {
+                : afterBrand;
+              if ((q || carBrandFilter) && filtered.length === 0) {
                 return (
                   <div className="col-span-full p-8 text-center text-slate-500 text-sm bg-white border border-dashed border-slate-300 rounded-lg">
-                    No vehicles match &ldquo;<span className="font-semibold">{carSearch}</span>&rdquo;.
+                    {q
+                      ? <>No {carBrandFilter ? `${carBrandFilter} ` : ''}vehicles match &ldquo;<span className="font-semibold">{carSearch}</span>&rdquo;.</>
+                      : <>No {carBrandFilter} vehicles yet.</>}
                   </div>
                 );
               }

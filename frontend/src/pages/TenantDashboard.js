@@ -1423,27 +1423,83 @@ const TenantDashboard = () => {
                   </div>
                 </div>
 
+                {/* Search bar + brand chips */}
+                {vehicles.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1 max-w-md">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={vehicleSearch}
+                          onChange={(e) => setVehicleSearch(e.target.value)}
+                          placeholder="Search by name, reg, status or location..."
+                          className="w-full pl-9 pr-9 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                          data-testid="car-calendars-search-input"
+                        />
+                        {vehicleSearch && (
+                          <button
+                            onClick={() => setVehicleSearch('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
+                            title="Clear search"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <BrandChips
+                      vehicles={vehicles}
+                      selected={brandFilter}
+                      onSelect={setBrandFilter}
+                      testid="car-calendars-brand-chips"
+                    />
+                  </div>
+                )}
+
                 {vehicles.length === 0 ? (
                   <div className="bg-white rounded-xl p-12 text-center text-gray-500">
                     <Car size={48} className="mx-auto mb-4 opacity-50" />
                     <p className="text-lg font-medium">No vehicles in fleet</p>
                     <p className="text-sm mt-1">Add vehicles to start booking</p>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {(showAllCars ? vehicles : vehicles.slice(0, 6)).map(vehicle => (
-                      <CarBookingCalendar
-                        key={vehicle.id}
-                        vehicle={vehicle}
-                        bookings={bookings}
-                        onBookingCreated={() => fetchData()}
-                        isAdmin={isAdmin}
-                        tenantSlug={activeTenant?.tenant_slug}
-                        redirectToBookings={true}
-                      />
-                    ))}
-                  </div>
-                )}
+                ) : (() => {
+                  const q = vehicleSearch.trim().toLowerCase();
+                  const afterBrand = filterByBrand(vehicles, brandFilter);
+                  const filtered = q
+                    ? afterBrand.filter(v =>
+                        (v.name || '').toLowerCase().includes(q) ||
+                        (v.registration || '').toLowerCase().includes(q) ||
+                        (v.current_status || '').toLowerCase().includes(q) ||
+                        (v.base_location || '').toLowerCase().includes(q)
+                      )
+                    : afterBrand;
+                  if ((q || brandFilter) && filtered.length === 0) {
+                    return (
+                      <div className="bg-white border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500 text-sm" data-testid="car-calendars-search-empty">
+                        {q
+                          ? <>No {brandFilter ? `${brandFilter} ` : ''}vehicles match &ldquo;<span className="font-semibold">{vehicleSearch}</span>&rdquo;.</>
+                          : <>No {brandFilter} vehicles in your fleet.</>}
+                      </div>
+                    );
+                  }
+                  const visible = showAllCars ? filtered : filtered.slice(0, 6);
+                  return (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {visible.map(vehicle => (
+                        <CarBookingCalendar
+                          key={vehicle.id}
+                          vehicle={vehicle}
+                          bookings={bookings}
+                          onBookingCreated={() => fetchData()}
+                          isAdmin={isAdmin}
+                          tenantSlug={activeTenant?.tenant_slug}
+                          redirectToBookings={true}
+                        />
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -1464,11 +1520,68 @@ const TenantDashboard = () => {
                   </button>
                 </div>
 
-                <AllCarsCalendar
-                  vehicles={vehicles}
-                  bookings={bookings}
-                  onBookingCreated={() => fetchData()}
-                />
+                {/* Search bar + brand chips */}
+                {vehicles.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1 max-w-md">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={vehicleSearch}
+                          onChange={(e) => setVehicleSearch(e.target.value)}
+                          placeholder="Search by name, reg, status or location..."
+                          className="w-full pl-9 pr-9 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+                          data-testid="all-cars-search-input"
+                        />
+                        {vehicleSearch && (
+                          <button
+                            onClick={() => setVehicleSearch('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
+                            title="Clear search"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <BrandChips
+                      vehicles={vehicles}
+                      selected={brandFilter}
+                      onSelect={setBrandFilter}
+                      testid="all-cars-brand-chips"
+                    />
+                  </div>
+                )}
+
+                {(() => {
+                  const q = vehicleSearch.trim().toLowerCase();
+                  const afterBrand = filterByBrand(vehicles, brandFilter);
+                  const filtered = q
+                    ? afterBrand.filter(v =>
+                        (v.name || '').toLowerCase().includes(q) ||
+                        (v.registration || '').toLowerCase().includes(q) ||
+                        (v.current_status || '').toLowerCase().includes(q) ||
+                        (v.base_location || '').toLowerCase().includes(q)
+                      )
+                    : afterBrand;
+                  if ((q || brandFilter) && filtered.length === 0) {
+                    return (
+                      <div className="bg-white border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500 text-sm" data-testid="all-cars-search-empty">
+                        {q
+                          ? <>No {brandFilter ? `${brandFilter} ` : ''}vehicles match &ldquo;<span className="font-semibold">{vehicleSearch}</span>&rdquo;.</>
+                          : <>No {brandFilter} vehicles in your fleet.</>}
+                      </div>
+                    );
+                  }
+                  return (
+                    <AllCarsCalendar
+                      vehicles={filtered}
+                      bookings={bookings}
+                      onBookingCreated={() => fetchData()}
+                    />
+                  );
+                })()}
               </div>
             )}
 

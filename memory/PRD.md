@@ -3,6 +3,16 @@
 ## Product Overview
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
+
+### Feature - May 13, 2026
+**Fleet tab search & brand-chip filters extended to all sub-views (Admin Panel parity):**
+- Added search bar + `BrandChips` to **Fleet > Car Calendars** sub-tab in `TenantDashboard.js` (filters `CarBookingCalendar` grid live)
+- Added search bar + `BrandChips` to **Fleet > All Cars Calendar** sub-tab (filtered vehicle list passed to `AllCarsCalendar` component)
+- Added search bar + `BrandChips` to the secondary "Fleet Vehicles" management view (`activeTab === 'vehicles'`) for defensive coverage
+- All three reuse the existing `vehicleSearch` / `brandFilter` state — filter persists when switching between Live Status / Car Calendars / All Cars Calendar for consistent UX
+- Test IDs: `car-calendars-search-input`, `car-calendars-brand-chips`, `all-cars-search-input`, `all-cars-brand-chips`, `manage-fleet-search-input`, `manage-fleet-brand-chips`
+- Verified live on preview env (`/test-fleet`) — Ford filter narrows 6 vehicles to 2, brand chips render with counts (`Ford 2`, `Hyundai 2`, `Toyota 2`)
+
 ## Recent Changes (Feb 2026)
 
 ### Bug Fix - Mar 1, 2026 (P0 PRODUCTION BLOCKER)

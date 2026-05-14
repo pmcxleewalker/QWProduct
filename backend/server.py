@@ -6526,17 +6526,23 @@ async def list_bookings(
     user_id: Optional[str] = None,
     include_secondary: bool = True,
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 2000,
     context: TenantContext = Depends(require_tenant_context)
 ):
-    """List bookings in the current tenant"""
+    """List bookings in the current tenant.
+
+    Default limit raised to 2000 so multi-month calendar views and active
+    recurring schedules render the same data set across the Bookings page,
+    the Fleet > All Cars Calendar, and the Car Calendars grid. Clients can
+    pass a smaller `limit` query param if needed.
+    """
     query = {"tenant_id": context.tenant_id}
-    
+
     if status:
         query["status"] = status
     if car_id:
         query["car_id"] = car_id
-    
+
     # If user_id is specified, include bookings where they are primary OR secondary user
     if user_id and include_secondary:
         query["$or"] = [
@@ -6545,7 +6551,7 @@ async def list_bookings(
         ]
     elif user_id:
         query["created_by_user_id"] = user_id
-    
+
     bookings = await db.bookings.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     return bookings
 

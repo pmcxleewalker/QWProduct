@@ -4,6 +4,19 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Bug Fix - May 14, 2026 (P0 customer-reported)
+**All Cars Calendar disagreed with /bookings page for the same tenant.**
+- ROOT CAUSE 1 — `AllCarsCalendar.js` matched bookings only on `start_time === day` instead of doing a date-range overlap. Multi-day bookings (and single records that hold a recurring series with start=day1 end=dayN) appeared on day 1 only, while the Bookings page used range overlap and showed them across every day. With 36-vehicle Bluebird fleet running many recurring schedules, the Fleet view showed 2 events while Bookings showed 16+ for the exact same data.
+- ROOT CAUSE 2 — `GET /api/bookings` capped at 100 records. Large active tenants would silently truncate; raised default to 2000 (clients can still narrow with `limit`).
+- FIX:
+  - `getBookingsForDay(date)` in `AllCarsCalendar.js` now uses `bookingStart <= dayEnd && bookingEnd >= dayStart` (overlap), mirroring `Bookings.js:getBookingsForDate`.
+  - `monthStats` switched to overlap-with-month-range so multi-day bookings starting in a prior month still count toward "This Month".
+  - Recurring detection now checks `is_recurring === true || recurring_group_id` (matches Bookings.js).
+  - `list_bookings` default `limit` raised from 100 to 2000.
+- VERIFIED on preview: created a May 18–25 multi-day booking, All Cars Calendar now renders "07:00 Ford Focus" on all 8 days (previously only May 18).
+
+
+
 ### Feature - May 14, 2026
 **Compliance Alert Acknowledgments + Insurance Renewal Tracking:**
 - New collection `compliance_acks` storing per-vehicle per-issue admin actions

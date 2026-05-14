@@ -21,20 +21,29 @@ const AllCarsCalendar = ({ vehicles, bookings, onBookingCreated }) => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const monthStart = new Date(year, month, 1);
-    const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
-    
+    monthStart.setHours(0, 0, 0, 0);
+    const monthEnd = new Date(year, month + 1, 0);
+    monthEnd.setHours(23, 59, 59, 999);
+
+    // Include any booking that OVERLAPS the current month, not just those whose
+    // start_time falls in the month. Multi-day bookings stored as a single
+    // record (e.g. recurring series with start=day1 end=dayN) would otherwise
+    // be missed once the month tipped past day 1 — which caused the All Cars
+    // Calendar to show fewer events than the Bookings page for the same tenant.
     const monthBookings = filteredBookings.filter(booking => {
+      if (!booking.start_time) return false;
       const bookingStart = new Date(booking.start_time);
-      return bookingStart >= monthStart && bookingStart <= monthEnd;
+      const bookingEnd = booking.end_time ? new Date(booking.end_time) : bookingStart;
+      return bookingStart <= monthEnd && bookingEnd >= monthStart;
     });
-    
-    const recurringCount = monthBookings.filter(b => b.is_recurring).length;
+
+    const recurringCount = monthBookings.filter(b => b.is_recurring || b.recurring_group_id).length;
     const pendingCount = monthBookings.filter(b => b.status === 'pending').length;
     const confirmedCount = monthBookings.length - pendingCount;
-    
+
     // Get unique vehicles used this month
     const vehiclesUsed = new Set(monthBookings.map(b => b.car_id)).size;
-    
+
     return {
       total: monthBookings.length,
       confirmed: confirmedCount,
@@ -76,16 +85,26 @@ const AllCarsCalendar = ({ vehicles, bookings, onBookingCreated }) => {
     return days;
   }, [currentDate]);
 
-  // Get bookings for a specific day (using filtered bookings)
+  // Get bookings that touch a specific day.
+  //
+  // CRITICAL: a booking with start_time on day A and end_time on day B must
+  // appear on every day from A through B (same logic used by the dedicated
+  // Bookings page). The previous implementation matched only the booking's
+  // start day, so multi-day / recurring-series records appeared on day 1 only
+  // and the All Cars Calendar disagreed with /bookings for the same tenant.
   const getBookingsForDay = (date) => {
     const dayStart = new Date(date);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(date);
     dayEnd.setHours(23, 59, 59, 999);
-    
+
     return filteredBookings.filter(booking => {
+      if (!booking.start_time) return false;
       const bookingStart = new Date(booking.start_time);
-      return bookingStart >= dayStart && bookingStart <= dayEnd;
+      const bookingEnd = booking.end_time ? new Date(booking.end_time) : bookingStart;
+      if (isNaN(bookingStart.getTime())) return false;
+      // Range overlap: [bookingStart..bookingEnd] ∩ [dayStart..dayEnd] non-empty
+      return bookingStart <= dayEnd && bookingEnd >= dayStart;
     });
   };
 
@@ -278,21 +297,24 @@ const AllCarsCalendar = ({ vehicles, bookings, onBookingCreated }) => {
               
               {/* Booking Pills - Standardized: Red=Booked, Purple=Recurring, Amber=Pending */}
               <div className="space-y-1">
-                {displayBookings.map((booking, idx) => (
-                  <div
-                    key={booking.id || idx}
-                    className={`text-[10px] px-1.5 py-0.5 rounded truncate ${
-                      booking.is_recurring 
-                        ? 'bg-purple-100 text-purple-800' 
-                        : booking.status === 'pending'
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-red-100 text-red-800'
-                    }`}
-                    title={`${formatTime(booking.start_time)} - ${getVehicleName(booking.car_id)}`}
-                  >
-                    {formatTime(booking.start_time)} {getVehicleName(booking.car_id).split(' ')[0]}
-                  </div>
-                ))}
+                {displayBookings.map((booking, idx) => {
+                  const isRecurring = booking.is_recurring === true || !!booking.recurring_group_id;
+                  return (
+                    <div
+                      key={booking.id || idx}
+                      className={`text-[10px] px-1.5 py-0.5 rounded truncate ${
+                        isRecurring
+                          ? 'bg-purple-100 text-purple-800'
+                          : booking.status === 'pending'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                      title={`${formatTime(booking.start_time)} - ${getVehicleName(booking.car_id)}`}
+                    >
+                      {formatTime(booking.start_time)} {getVehicleName(booking.car_id).split(' ')[0]}
+                    </div>
+                  );
+                })}
                 {moreCount > 0 && (
                   <div className="text-[10px] text-blue-600 font-medium pl-1">
                     +{moreCount} more

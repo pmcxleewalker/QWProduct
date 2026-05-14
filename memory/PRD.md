@@ -4,6 +4,24 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - May 14, 2026
+**Compliance Alert Acknowledgments + Insurance Renewal Tracking:**
+- New collection `compliance_acks` storing per-vehicle per-issue admin actions
+- Backend endpoints:
+  - `GET /api/compliance/acknowledgments` — list active acks for tenant
+  - `POST /api/compliance/acknowledgments` — upsert ack `{vehicle_id, type, action, ref, note?}` (action ∈ `actioned`/`dismissed`, type ∈ `tax`/`nct`/`insurance`/`service`/`driver_licence`)
+  - `DELETE /api/compliance/acknowledgments/{id}` — restore (re-show alert)
+- Each ack keyed by current `due_date` (or mileage for service) — when the vehicle is renewed (date changes) the ack becomes stale and the alert resurfaces automatically. No manual reset required.
+- New vehicle field `insurance_due_date` (resources.py + Mongo + bulk-import CSV/Excel + EditVehicleModal + Admin.js Add Car form)
+- New compliance settings: `enable_insurance_alerts` (default true), `insurance_warning_days` (default 60)
+- `ComplianceAlerts.js` rewritten to compute issues across **tax + NCT + insurance + service**, hide acknowledged items, render expandable "Cleared by admin" section with actor + date + Restore button per cleared item
+- Each unacknowledged issue card now shows **Actioned** / **Dismiss** buttons; "leave as alert" = no action
+- ComplianceSettingsModal adds Insurance Renewal toggle + warning days input
+- Admin "Manage Cars" page now shows insurance date alongside tax/NCT
+- Verified end-to-end on preview: 4→3→2 issue count, toasts, cleared list, restore flow, actor name capture, insurance critical/warning bands all working
+
+
+
 ### Feature - May 13, 2026
 **Fleet tab search & brand-chip filters extended to all sub-views (Admin Panel parity):**
 - Added search bar + `BrandChips` to **Fleet > Car Calendars** sub-tab in `TenantDashboard.js` (filters `CarBookingCalendar` grid live)

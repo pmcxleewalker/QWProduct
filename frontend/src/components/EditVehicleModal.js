@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Car, Calendar, Gauge, MapPin, Wrench, CheckCircle } from 'lucide-react';
+import { X, Car, Calendar, Gauge, MapPin, Wrench, CheckCircle, FileText } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -13,6 +13,7 @@ const EditVehicleModal = ({ vehicle, isOpen, onClose, onSaved }) => {
     service_due_mileage: '',
     tax_due_date: '',
     nct_due_date: '',
+    insurance_due_date: '',
     base_location: ''
   });
   const [loading, setLoading] = useState(false);
@@ -35,6 +36,7 @@ const EditVehicleModal = ({ vehicle, isOpen, onClose, onSaved }) => {
         service_due_mileage: vehicle.service_due_mileage?.toString() || '',
         tax_due_date: vehicle.tax_due_date ? vehicle.tax_due_date.split('T')[0] : '',
         nct_due_date: vehicle.nct_due_date ? vehicle.nct_due_date.split('T')[0] : '',
+        insurance_due_date: vehicle.insurance_due_date ? vehicle.insurance_due_date.split('T')[0] : '',
         base_location: vehicle.base_location || ''
       });
     }
@@ -66,6 +68,7 @@ const EditVehicleModal = ({ vehicle, isOpen, onClose, onSaved }) => {
         service_due_mileage: form.service_due_mileage ? parseInt(form.service_due_mileage) : null,
         tax_due_date: form.tax_due_date || null,
         nct_due_date: form.nct_due_date || null,
+        insurance_due_date: form.insurance_due_date || null,
         base_location: form.base_location || null
       };
 
@@ -226,6 +229,24 @@ const EditVehicleModal = ({ vehicle, isOpen, onClose, onSaved }) => {
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
+          </div>
+
+          {/* Insurance Row */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="flex items-center space-x-1">
+                <FileText size={14} />
+                <span>Insurance Renewal Date</span>
+              </div>
+            </label>
+            <input
+              type="date"
+              value={form.insurance_due_date}
+              onChange={(e) => setForm({ ...form, insurance_due_date: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              data-testid="vehicle-insurance-due-date"
+            />
+            <p className="text-xs text-gray-500 mt-1">Annual policy renewal — alerts surface as the date approaches</p>
           </div>
 
           {/* Base Location */}

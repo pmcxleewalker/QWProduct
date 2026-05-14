@@ -21,7 +21,7 @@ const TABS = {
     successKey: 'created_vehicles',
     title: 'Bulk Import Vehicles',
     subtitle: 'Upload a CSV or Excel file to onboard a fleet in seconds',
-    columns: ['name', 'registration', 'current_status', 'tax_due_date', 'nct_due_date', 'current_mileage', 'service_due_mileage', 'service_due_date', 'base_location'],
+    columns: ['name', 'registration', 'current_status', 'tax_due_date', 'nct_due_date', 'insurance_due_date', 'current_mileage', 'service_due_mileage', 'service_due_date', 'base_location'],
     sampleRows: [
       ['Ford Transit Van 2022', '12-D-12345', 'Free', '2026-12-01', '2026-08-15', '15000', '30000', '', 'Dublin North'],
       ['VW Caddy', '13-D-67890', 'Free', '2026-09-30', '', '8500', '', '2026-10-01', 'Dublin Central'],

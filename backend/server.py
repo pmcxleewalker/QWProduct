@@ -1375,9 +1375,11 @@ class ComplianceSettingsUpdate(BaseModel):
     """Update compliance reminder settings"""
     tax_warning_days: Optional[int] = None  # Days before tax due to alert (default 60)
     nct_warning_days: Optional[int] = None  # Days before NCT due to alert (default 60)
+    insurance_warning_days: Optional[int] = None  # Days before insurance renewal to alert (default 60)
     service_warning_km: Optional[int] = None  # KM before service due to alert (default 10)
     enable_tax_alerts: Optional[bool] = None
     enable_nct_alerts: Optional[bool] = None
+    enable_insurance_alerts: Optional[bool] = None
     enable_service_alerts: Optional[bool] = None
 
 
@@ -1424,9 +1426,11 @@ async def get_tenant_settings(context: TenantContext = Depends(require_tenant_co
         "compliance": {
             "tax_warning_days": compliance_settings.get("tax_warning_days", 60),
             "nct_warning_days": compliance_settings.get("nct_warning_days", 60),
+            "insurance_warning_days": compliance_settings.get("insurance_warning_days", 60),
             "service_warning_km": compliance_settings.get("service_warning_km", 10),
             "enable_tax_alerts": compliance_settings.get("enable_tax_alerts", True),
             "enable_nct_alerts": compliance_settings.get("enable_nct_alerts", True),
+            "enable_insurance_alerts": compliance_settings.get("enable_insurance_alerts", True),
             "enable_service_alerts": compliance_settings.get("enable_service_alerts", True)
         }
     }
@@ -1522,12 +1526,16 @@ async def update_compliance_settings(
         update_fields["settings.compliance.tax_warning_days"] = settings_data.tax_warning_days
     if settings_data.nct_warning_days is not None:
         update_fields["settings.compliance.nct_warning_days"] = settings_data.nct_warning_days
+    if settings_data.insurance_warning_days is not None:
+        update_fields["settings.compliance.insurance_warning_days"] = settings_data.insurance_warning_days
     if settings_data.service_warning_km is not None:
         update_fields["settings.compliance.service_warning_km"] = settings_data.service_warning_km
     if settings_data.enable_tax_alerts is not None:
         update_fields["settings.compliance.enable_tax_alerts"] = settings_data.enable_tax_alerts
     if settings_data.enable_nct_alerts is not None:
         update_fields["settings.compliance.enable_nct_alerts"] = settings_data.enable_nct_alerts
+    if settings_data.enable_insurance_alerts is not None:
+        update_fields["settings.compliance.enable_insurance_alerts"] = settings_data.enable_insurance_alerts
     if settings_data.enable_service_alerts is not None:
         update_fields["settings.compliance.enable_service_alerts"] = settings_data.enable_service_alerts
     
@@ -1544,12 +1552,115 @@ async def update_compliance_settings(
         "compliance": {
             "tax_warning_days": compliance_settings.get("tax_warning_days", 60),
             "nct_warning_days": compliance_settings.get("nct_warning_days", 60),
+            "insurance_warning_days": compliance_settings.get("insurance_warning_days", 60),
             "service_warning_km": compliance_settings.get("service_warning_km", 10),
             "enable_tax_alerts": compliance_settings.get("enable_tax_alerts", True),
             "enable_nct_alerts": compliance_settings.get("enable_nct_alerts", True),
+            "enable_insurance_alerts": compliance_settings.get("enable_insurance_alerts", True),
             "enable_service_alerts": compliance_settings.get("enable_service_alerts", True)
         }
     }
+
+
+# ==================== COMPLIANCE ACKNOWLEDGMENTS ====================
+# Admins can mark a per-vehicle compliance issue (tax/NCT/insurance/service)
+# as "actioned" or "dismissed" so it disappears from the dashboard. The
+# acknowledgment is keyed to the underlying due-date/mileage value, so when
+# the vehicle is renewed (a new date entered) the ack becomes stale and the
+# alert re-emerges automatically — no manual reset needed.
+
+class ComplianceAckCreate(BaseModel):
+    vehicle_id: str
+    type: str  # 'tax' | 'nct' | 'insurance' | 'service' | 'driver_licence'
+    action: str  # 'actioned' | 'dismissed'
+    ref: str  # date string (YYYY-MM-DD) or mileage value at time of action
+    note: Optional[str] = None
+
+
+@api_router.get("/compliance/acknowledgments")
+async def list_compliance_acks(context: TenantContext = Depends(require_tenant_context)):
+    """Return all active compliance acknowledgments for the tenant.
+
+    Frontend uses these to hide alert cards the admin has already cleared.
+    Returns a list, no _id.
+    """
+    acks = await db.compliance_acks.find(
+        {"tenant_id": context.tenant_id}, {"_id": 0}
+    ).to_list(length=2000)
+    return {"acknowledgments": acks}
+
+
+@api_router.post("/compliance/acknowledgments")
+async def create_compliance_ack(
+    payload: ComplianceAckCreate,
+    context: TenantContext = Depends(require_admin),
+):
+    """Create or replace an acknowledgment for a compliance issue.
+
+    Idempotent: a unique (tenant_id, vehicle_id, type, ref) tuple is upserted,
+    so re-acknowledging the same issue just updates the action/note/actor.
+    """
+    if payload.action not in ("actioned", "dismissed"):
+        raise HTTPException(status_code=400, detail="action must be 'actioned' or 'dismissed'")
+    if payload.type not in ("tax", "nct", "insurance", "service", "driver_licence"):
+        raise HTTPException(status_code=400, detail="invalid compliance type")
+
+    # Confirm the vehicle exists for this tenant
+    vehicle = await db.vehicles.find_one(
+        {"id": payload.vehicle_id, "tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    if not vehicle and payload.type != "driver_licence":
+        raise HTTPException(status_code=404, detail="Vehicle not found in tenant")
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    key = {
+        "tenant_id": context.tenant_id,
+        "vehicle_id": payload.vehicle_id,
+        "type": payload.type,
+        "ref": payload.ref,
+    }
+    actor_doc = await db.users.find_one({"id": context.user_id}, {"_id": 0, "name": 1, "id": 1})
+    actor_name = (actor_doc or {}).get("name")
+    actor_id = context.user_id
+    set_doc = {
+        **key,
+        "action": payload.action,
+        "note": payload.note,
+        "actioned_by_user_id": actor_id,
+        "actioned_by_name": actor_name,
+        "actioned_at": now_iso,
+        "updated_at": now_iso,
+    }
+    existing = await db.compliance_acks.find_one(key, {"_id": 0})
+    if existing:
+        await db.compliance_acks.update_one(key, {"$set": set_doc})
+        ack_id = existing.get("id")
+    else:
+        ack_id = str(uuid.uuid4())
+        set_doc["id"] = ack_id
+        set_doc["created_at"] = now_iso
+        await db.compliance_acks.insert_one(dict(set_doc))
+
+    return {
+        "message": "Acknowledgment saved",
+        "acknowledgment": {**set_doc, "id": ack_id},
+    }
+
+
+@api_router.delete("/compliance/acknowledgments/{ack_id}")
+async def delete_compliance_ack(
+    ack_id: str,
+    context: TenantContext = Depends(require_admin),
+):
+    """Restore (un-acknowledge) a compliance issue so it appears again."""
+    result = await db.compliance_acks.delete_one(
+        {"id": ack_id, "tenant_id": context.tenant_id}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Acknowledgment not found")
+    return {"message": "Acknowledgment removed"}
+
+
 
 
 # Create uploads directory
@@ -4515,7 +4626,8 @@ async def bulk_import_vehicles(
 
     Expected columns (header row required):
       name, registration, current_status, tax_due_date, nct_due_date,
-      current_mileage, service_due_mileage, service_due_date, base_location
+      insurance_due_date, current_mileage, service_due_mileage,
+      service_due_date, base_location
 
     Required: name, registration
     Service due: provide EITHER service_due_mileage (km) OR service_due_date
@@ -4666,6 +4778,7 @@ async def bulk_import_vehicles(
                 "current_status": (row.get("current_status") or "Free").strip() or "Free",
                 "tax_due_date": _parse_date(row.get("tax_due_date") or ""),
                 "nct_due_date": _parse_date(row.get("nct_due_date") or ""),
+                "insurance_due_date": _parse_date(row.get("insurance_due_date") or ""),
                 "current_mileage": _parse_int(row.get("current_mileage") or ""),
                 # Service-due — admins can set either a target mileage OR a
                 # target date. Both columns are accepted; both may be empty.

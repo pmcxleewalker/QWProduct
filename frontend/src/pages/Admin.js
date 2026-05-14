@@ -71,6 +71,7 @@ const Admin = () => {
     current_status: 'Free',
     tax_due_date: '',
     nct_due_date: '',
+    insurance_due_date: '',
     service_due_mileage: '',
     service_due_date: '',
     base_location: '',
@@ -596,6 +597,7 @@ const Admin = () => {
         ...carForm,
         tax_due_date: carForm.tax_due_date || null,
         nct_due_date: carForm.nct_due_date || null,
+        insurance_due_date: carForm.insurance_due_date || null,
         service_due_mileage: carForm.service_due_mileage ? parseInt(carForm.service_due_mileage) : null,
         service_due_date: carForm.service_due_date || null,
         base_location: carForm.base_location || null,
@@ -610,7 +612,7 @@ const Admin = () => {
       }
       setShowCarForm(false);
       setEditingCar(null);
-      setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_mileage: '', service_due_date: '', base_location: '' });
+      setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', insurance_due_date: '', service_due_mileage: '', service_due_date: '', base_location: '' });
       fetchData();
     } catch (err) {
       // Handle plan limit errors (403)
@@ -653,6 +655,7 @@ const Admin = () => {
       current_status: car.current_status,
       tax_due_date: car.tax_due_date || '',
       nct_due_date: car.nct_due_date || '',
+      insurance_due_date: car.insurance_due_date || '',
       service_due_mileage: car.service_due_mileage || '',
       service_due_date: car.service_due_date || '',
       base_location: car.base_location || '',
@@ -1136,7 +1139,7 @@ const Admin = () => {
                   }
                   setShowCarForm(true);
                   setEditingCar(null);
-                  setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', service_due_mileage: '' });
+                  setCarForm({ name: '', registration: '', current_status: 'Free', tax_due_date: '', nct_due_date: '', insurance_due_date: '', service_due_mileage: '' });
                 }}
                 data-testid="add-car-button"
                 disabled={planData && planData.usage.vehicles >= planData.limits.max_vehicles}
@@ -1219,6 +1222,17 @@ const Admin = () => {
                         onChange={(e) => setCarForm({ ...carForm, nct_due_date: e.target.value })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Insurance Renewal</label>
+                      <input
+                        type="date"
+                        data-testid="car-insurance-date-input"
+                        value={carForm.insurance_due_date ? carForm.insurance_due_date.split('T')[0] : ''}
+                        onChange={(e) => setCarForm({ ...carForm, insurance_due_date: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-[11px] text-slate-500 mt-1">Annual insurance policy renewal date.</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Service Due At (km)</label>
@@ -1463,13 +1477,16 @@ const Admin = () => {
                 </div>
                 
                 {/* Compliance Dates Display */}
-                {(car.tax_due_date || car.nct_due_date) && (
+                {(car.tax_due_date || car.nct_due_date || car.insurance_due_date) && (
                   <div className="mt-2 p-2 bg-gray-50 rounded-lg text-xs">
                     {car.tax_due_date && (
                       <p className="text-gray-600">Tax: {new Date(car.tax_due_date).toLocaleDateString('en-IE')}</p>
                     )}
                     {car.nct_due_date && (
                       <p className="text-gray-600">NCT: {new Date(car.nct_due_date).toLocaleDateString('en-IE')}</p>
+                    )}
+                    {car.insurance_due_date && (
+                      <p className="text-gray-600">Insurance: {new Date(car.insurance_due_date).toLocaleDateString('en-IE')}</p>
                     )}
                   </div>
                 )}

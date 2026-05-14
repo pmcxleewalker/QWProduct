@@ -16,6 +16,7 @@ class VehicleBase(BaseModel):
     current_status: str = "Free"
     tax_due_date: Optional[str] = None
     nct_due_date: Optional[str] = None
+    insurance_due_date: Optional[str] = None  # YYYY-MM-DD — annual insurance renewal
     service_due_mileage: Optional[int] = None
     service_due_date: Optional[str] = None  # YYYY-MM-DD — alternative to mileage
     current_mileage: Optional[int] = None
@@ -32,6 +33,7 @@ class VehicleUpdate(BaseModel):
     current_status: Optional[str] = None
     tax_due_date: Optional[str] = None
     nct_due_date: Optional[str] = None
+    insurance_due_date: Optional[str] = None
     service_due_mileage: Optional[int] = None
     service_due_date: Optional[str] = None
     current_mileage: Optional[int] = None

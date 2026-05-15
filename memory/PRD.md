@@ -4,6 +4,21 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Bug Fix - May 15, 2026 (P0 customer-reported)
+**Live Fleet Sheet had empty Location / Time / Booked By / Notes columns for every car, including In Use / Booked vehicles.**
+- ROOT CAUSE: `statusAPI.getLive()` just calls `/api/vehicles` which returns vehicle records with no booking join. `LiveSheet.js` then wrapped each vehicle as `{ car, latest_status: null }` — `latest_status` was always null, so every row showed dashes.
+- FIX (`/app/frontend/src/pages/LiveSheet.js`):
+  - Fetch vehicles + bookings in parallel; client-side join keyed by `car_id`.
+  - For each car, find the booking whose `[start_time..end_time]` window covers "now" — that becomes the active booking shown in the row.
+  - If no active booking, surface the next upcoming booking starting within 24 h (labelled "Next: ..." in amber) so dispatchers see who's about to take the car.
+  - Cancelled/rejected bookings ignored; recurring detection unified.
+  - Synthesised `latest_status` populates Location, Start/End time, Booked By, Notes — all visible without any backend changes.
+  - Renamed columns: "Last Updated" → "Booking Time", "Updated By" → "Booked By". CSV export updated to match.
+- VERIFIED on preview: live booking for Ford Focus (Karen O'Sullivan, Cork CUH, "Client visit - Cork Hospital") renders the In Use row with full booking detail; Free cars stay as dashes.
+- Works tenant-agnostic (single shared component reading `bookingAPI.getAll()`), so applies to every paying client uniformly.
+
+
+
 ### Bug Fix - May 14, 2026 (P0 customer-reported)
 **All Cars Calendar disagreed with /bookings page for the same tenant.**
 - ROOT CAUSE 1 — `AllCarsCalendar.js` matched bookings only on `start_time === day` instead of doing a date-range overlap. Multi-day bookings (and single records that hold a recurring series with start=day1 end=dayN) appeared on day 1 only, while the Bookings page used range overlap and showed them across every day. With 36-vehicle Bluebird fleet running many recurring schedules, the Fleet view showed 2 events while Bookings showed 16+ for the exact same data.

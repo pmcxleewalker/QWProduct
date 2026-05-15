@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { statusAPI } from '../api/api';
+import { statusAPI, bookingAPI } from '../api/api';
 import StatusBadge from '../components/StatusBadge';
 import { RefreshCw, Download, MapPin, User, Clock } from 'lucide-react';
 
@@ -11,18 +11,74 @@ const LiveSheet = () => {
   const fetchLiveStatus = async () => {
     try {
       setLoading(true);
-      const response = await statusAPI.getLive();
-      // Transform vehicles data to expected format if needed
-      const data = response.data || [];
-      const transformedData = data.map(item => {
-        // If already in {car: {...}} format, use as is
-        if (item.car) return item;
-        // Otherwise, transform vehicle to expected format
-        return {
-          car: item,
-          latest_status: null
-        };
+      // Fetch vehicles AND bookings in parallel — Live Sheet needs booking
+      // info (driver, time window, location, notes) for every car that is
+      // currently Booked/In Use/Recurring. Without the join, the right-hand
+      // columns are stuck on "-".
+      const [vehiclesRes, bookingsRes] = await Promise.all([
+        statusAPI.getLive(),
+        bookingAPI.getAll().catch(() => ({ data: [] }))
+      ]);
+
+      const vehicles = vehiclesRes.data || [];
+      const allBookings = bookingsRes.data || [];
+      const now = new Date();
+
+      // Build the "currently active booking" for each car (the one whose
+      // window covers `now`). If none, fall back to the next upcoming
+      // booking starting within the next 24h so the dispatcher can see
+      // who's about to take the car. Cancelled/rejected bookings ignored.
+      const liveBookingByCar = new Map();
+      const upcomingBookingByCar = new Map();
+      allBookings.forEach(b => {
+        if (!b.car_id || !b.start_time || !b.end_time) return;
+        if (b.status === 'rejected' || b.status === 'cancelled') return;
+        const start = new Date(b.start_time);
+        const end = new Date(b.end_time);
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
+        if (start <= now && end >= now) {
+          // Active right now — prefer the latest-starting one if multiple
+          const existing = liveBookingByCar.get(b.car_id);
+          if (!existing || new Date(existing.start_time) < start) {
+            liveBookingByCar.set(b.car_id, b);
+          }
+        } else if (start > now && start - now <= 24 * 60 * 60 * 1000) {
+          const existing = upcomingBookingByCar.get(b.car_id);
+          if (!existing || new Date(existing.start_time) > start) {
+            upcomingBookingByCar.set(b.car_id, b);
+          }
+        }
       });
+
+      const transformedData = vehicles.map(item => {
+        const car = item.car ? item.car : item;
+        const existingStatus = item.car ? item.latest_status : null;
+        const activeBooking = liveBookingByCar.get(car.id);
+        const upcomingBooking = !activeBooking ? upcomingBookingByCar.get(car.id) : null;
+        const booking = activeBooking || upcomingBooking;
+
+        // Synthesize a `latest_status` from the booking when present so the
+        // existing table columns keep working as-is.
+        let latest_status = existingStatus;
+        if (booking) {
+          const isRecurring = booking.is_recurring === true || !!booking.recurring_group_id;
+          latest_status = {
+            ...(existingStatus || {}),
+            booking_id: booking.id,
+            booked_by: booking.user_name || booking.created_by_email,
+            user_name: booking.user_name || booking.created_by_email,
+            location: booking.location || booking.start_address || existingStatus?.location || null,
+            timestamp: booking.start_time,
+            start_time: booking.start_time,
+            end_time: booking.end_time,
+            is_recurring: isRecurring,
+            is_upcoming: !!upcomingBooking,
+            notes: booking.notes || booking.purpose || existingStatus?.notes || null,
+          };
+        }
+        return { car, latest_status };
+      });
+
       setLiveStatus(transformedData);
       setLastUpdated(new Date());
     } catch (error) {
@@ -64,14 +120,15 @@ const LiveSheet = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['Vehicle', 'Registration', 'Status', 'Location', 'Last Updated', 'Updated By', 'Notes'];
+    const headers = ['Vehicle', 'Registration', 'Status', 'Location', 'Start Time', 'End Time', 'Booked By', 'Notes'];
     const rows = liveStatus.map(item => [
       item.car.name,
       item.car.registration,
       item.car.current_status,
       item.latest_status?.location || '-',
-      item.latest_status ? formatTime(item.latest_status.timestamp) : '-',
-      item.latest_status?.user_name || '-',
+      item.latest_status?.start_time ? formatTime(item.latest_status.start_time) : (item.latest_status?.timestamp ? formatTime(item.latest_status.timestamp) : '-'),
+      item.latest_status?.end_time ? formatTime(item.latest_status.end_time) : '-',
+      item.latest_status?.booked_by || item.latest_status?.user_name || '-',
       item.latest_status?.notes || '-'
     ]);
 
@@ -192,10 +249,10 @@ const LiveSheet = () => {
                   Location
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Last Updated
+                  Booking Time
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Updated By
+                  Booked By
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Notes
@@ -232,20 +289,41 @@ const LiveSheet = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
-                      {item.latest_status?.timestamp ? formatTime(item.latest_status.timestamp) : '-'}
+                      {item.latest_status?.start_time ? (
+                        <div data-testid={`row-${item.car.id}-time`}>
+                          <div className={item.latest_status?.is_upcoming ? 'text-amber-700 font-medium' : ''}>
+                            {item.latest_status?.is_upcoming ? 'Next: ' : ''}
+                            {formatTime(item.latest_status.start_time)}
+                          </div>
+                          {item.latest_status?.end_time && !item.latest_status?.is_upcoming && (
+                            <div className="text-xs text-gray-400">
+                              until {formatTime(item.latest_status.end_time)}
+                            </div>
+                          )}
+                        </div>
+                      ) : item.latest_status?.timestamp ? formatTime(item.latest_status.timestamp) : '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {(item.car.current_status === 'Booked' || item.car.current_status === 'Recurring') && item.latest_status?.booked_by ? (
-                        <span className={`flex items-center ${item.car.current_status === 'Recurring' ? 'text-purple-700' : 'text-red-700'}`}>
-                          <User size={14} className={`mr-1 ${item.car.current_status === 'Recurring' ? 'text-purple-600' : 'text-red-600'}`} />
-                          {item.latest_status.booked_by}
-                        </span>
-                      ) : item.latest_status?.user_name ? (
-                        <span className="flex items-center">
-                          <User size={14} className="mr-1 text-gray-400" />
-                          {item.latest_status.user_name}
+                      {item.latest_status?.booked_by || item.latest_status?.user_name ? (
+                        <span
+                          className={`flex items-center ${
+                            item.latest_status?.is_recurring ? 'text-purple-700' :
+                            (item.car.current_status === 'Booked' || item.car.current_status === 'In Use') ? 'text-red-700' :
+                            item.latest_status?.is_upcoming ? 'text-amber-700' : ''
+                          }`}
+                          data-testid={`row-${item.car.id}-user`}
+                        >
+                          <User
+                            size={14}
+                            className={`mr-1 ${
+                              item.latest_status?.is_recurring ? 'text-purple-600' :
+                              (item.car.current_status === 'Booked' || item.car.current_status === 'In Use') ? 'text-red-600' :
+                              item.latest_status?.is_upcoming ? 'text-amber-600' : 'text-gray-400'
+                            }`}
+                          />
+                          {item.latest_status.booked_by || item.latest_status.user_name}
                         </span>
                       ) : (
                         <span className="text-gray-400">-</span>
@@ -253,12 +331,21 @@ const LiveSheet = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-500 max-w-xs truncate">
-                      {item.car.current_status === 'Recurring' ? (
+                    <div className="text-sm text-gray-500 max-w-xs truncate" data-testid={`row-${item.car.id}-notes`}>
+                      {item.latest_status?.notes ? (
+                        <span className={
+                          item.latest_status?.is_recurring ? 'text-purple-700 font-medium' :
+                          (item.car.current_status === 'Booked' || item.car.current_status === 'In Use') ? 'text-red-700' :
+                          item.latest_status?.is_upcoming ? 'text-amber-700' : ''
+                        }>
+                          {item.latest_status?.is_recurring ? '🔄 ' : ''}
+                          {item.latest_status.notes}
+                        </span>
+                      ) : item.car.current_status === 'Recurring' ? (
                         <span className="text-purple-700 font-medium">🔄 Recurring booking</span>
                       ) : item.car.current_status === 'Booked' ? (
                         <span className="text-red-700 font-medium">Currently booked</span>
-                      ) : item.latest_status?.notes || '-'}
+                      ) : '-'}
                     </div>
                   </td>
                 </tr>

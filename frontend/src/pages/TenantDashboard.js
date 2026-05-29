@@ -39,6 +39,7 @@ import StaffLicenceAlerts from '../components/StaffLicenceAlerts';
 import Greeting from '../components/Greeting';
 import BrandChips, { filterByBrand } from '../components/BrandChips';
 import CostAnalyticsDashboard from '../components/CostAnalyticsDashboard';
+import ResetUserPasswordModal from '../components/ResetUserPasswordModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -156,6 +157,9 @@ const TenantDashboard = () => {
   const [activeSubTab, setActiveSubTab] = useState(null); // For nested tabs
   const [vehicleSearch, setVehicleSearch] = useState(''); // Fleet list filter
   const [brandFilter, setBrandFilter] = useState(null); // Click-to-filter brand chip
+  // Reset-password modal (replaces buggy window.prompt flow that failed
+  // silently because the backend requires admin_password too).
+  const [resetPwUser, setResetPwUser] = useState(null);
   
   // Plan data for tier-based styling
   const [planData, setPlanData] = useState(null);
@@ -616,24 +620,12 @@ const TenantDashboard = () => {
     };
   };
 
-  // Handle password reset for team members
-  const handleResetPassword = async (userId, userName) => {
-    const newPassword = window.prompt(`Enter new password for ${userName}:`);
-    if (!newPassword) return;
-    
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
-    
-    try {
-      await axios.post(`${API}/tenant/users/${userId}/reset-password`, {
-        new_password: newPassword
-      });
-      toast.success(`Password updated for ${userName}`);
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to reset password');
-    }
+  // Handle password reset for team members — opens a proper modal that
+  // collects the admin's own password (required by backend) plus the new
+  // password + confirmation. The old window.prompt() flow always failed
+  // with 422 because admin_password was missing from the payload.
+  const handleResetPassword = (userId, userName, userEmail) => {
+    setResetPwUser({ id: userId, name: userName, email: userEmail });
   };
 
   const handleResendInvitation = async (userId, userName) => {
@@ -1993,7 +1985,7 @@ const TenantDashboard = () => {
                                       (but never the workspace owner / themselves) */}
                                   {member.id !== user?.id && member.role !== 'master_admin' && (
                                     <button
-                                      onClick={() => handleResetPassword(member.id, member.name)}
+                                      onClick={() => handleResetPassword(member.id, member.name, member.email)}
                                       className="px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded hover:bg-amber-200"
                                       title={`Reset password for ${member.name}`}
                                       data-testid={`reset-admin-pw-${member.id}`}
@@ -2119,7 +2111,7 @@ const TenantDashboard = () => {
                                     Resend Invite
                                   </button>
                                   <button
-                                    onClick={() => handleResetPassword(member.id, member.name)}
+                                    onClick={() => handleResetPassword(member.id, member.name, member.email)}
                                     className="px-2 py-1 text-xs bg-amber-100 text-amber-700 rounded hover:bg-amber-200"
                                     title="Reset staff password"
                                   >
@@ -2980,6 +2972,14 @@ const TenantDashboard = () => {
         onClose={() => setShowComplianceSettings(false)}
         settings={complianceSettings}
         onSave={handleSaveComplianceSettings}
+      />
+
+      {/* Reset Password Modal */}
+      <ResetUserPasswordModal
+        isOpen={!!resetPwUser}
+        targetUser={resetPwUser}
+        onClose={() => setResetPwUser(null)}
+        onSuccess={() => fetchData()}
       />
 
       {/* Service Alert Toast */}

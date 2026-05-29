@@ -4,6 +4,18 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Bug Fix - May 29, 2026 (P0 — production reported by paying client)
+**Reset Password "screen goes blank" — Team management page silent failure.**
+- ROOT CAUSE: `TenantDashboard.js:handleResetPassword` used `window.prompt()` and posted only `{ new_password }` to `/api/tenant/users/{id}/reset-password`. The backend `TenantResetPasswordRequest` Pydantic model requires BOTH `admin_password` AND `new_password`. Every call was rejected with HTTP 422 "Field required: admin_password". The error toast appeared briefly then auto-dismissed — to the user the "screen goes blank" after pressing OK.
+- FIX:
+  - New `ResetUserPasswordModal.js` component — proper modal with admin password confirmation, new password, confirm new password, show/hide toggles, inline error display for wrong admin password (HTTP 401), and minimum 6-char validation.
+  - Replaced `window.prompt()` flow in `TenantDashboard.js`; mounted modal at root, wired both Reset Password buttons (admins + staff) to open it with `setResetPwUser({id, name, email})`.
+  - On success: toast "Password updated for {Name}", modal closes, `fetchData()` refreshes team list.
+- VERIFIED on preview: all 3 HTTP paths confirmed via curl (422 with old payload, 200 with both fields, 401 with wrong admin password). Modal end-to-end test passed — admin entered password + new password, submit, success toast, modal closed.
+- `Admin.js` already had a correct modal — only the secondary TenantDashboard.js team management view was broken.
+
+
+
 ### Bug Fix - May 15, 2026 (P0 customer-reported)
 **Live Fleet Sheet had empty Location / Time / Booked By / Notes columns for every car, including In Use / Booked vehicles.**
 - ROOT CAUSE: `statusAPI.getLive()` just calls `/api/vehicles` which returns vehicle records with no booking join. `LiveSheet.js` then wrapped each vehicle as `{ car, latest_status: null }` — `latest_status` was always null, so every row showed dashes.

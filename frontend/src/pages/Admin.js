@@ -440,13 +440,22 @@ const Admin = () => {
       // Handle both array response and { users: [] } response
       const users = Array.isArray(response.data) ? response.data : (response.data?.users || response.data || []);
       
-      // Organize users by role
+      // Organize users by role.
+      // NOTE: a tenant can have MORE THAN ONE master_admin (e.g. when two
+      // people share franchise ownership). The previous `find()` only kept
+      // the first match and silently dropped the rest into "Franchise Users".
+      const masterAdmins = users.filter(u => u.role === 'master_admin');
+      const masterAdminIds = new Set(masterAdmins.map(u => u.id));
       const credentials = {
         superAdmin: users.find(u => u.role === 'super_admin' || u.email === 'superadmin@quickwing.com'),
-        masterAdmin: users.find(u => u.role === 'master_admin'),
+        masterAdmins,
         admins: users.filter(u => u.role === 'admin' && u.email !== 'superadmin@quickwing.com'),
         staff: users.filter(u => u.role === 'staff'),
-        allUsers: users.filter(u => u.email !== 'superadmin@quickwing.com'),
+        // Exclude master_admins from the generic Franchise Users table so
+        // they aren't duplicated; they already render in their own card(s).
+        allUsers: users.filter(u =>
+          u.email !== 'superadmin@quickwing.com' && !masterAdminIds.has(u.id)
+        ),
         tenantName: activeTenant?.name || 'This Franchise'
       };
       
@@ -2778,8 +2787,8 @@ const Admin = () => {
               </div>
 
               {/* Master Admin */}
-              {tenantCredentials?.masterAdmin && (
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+              {tenantCredentials?.masterAdmins?.map((masterAdmin) => (
+                <div key={masterAdmin.id} className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -2796,24 +2805,24 @@ const Admin = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase">Name</label>
-                        <p className="text-sm font-medium text-gray-900 mt-1">{tenantCredentials.masterAdmin.name || '-'}</p>
+                        <p className="text-sm font-medium text-gray-900 mt-1">{masterAdmin.name || '-'}</p>
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase">Email</label>
                         <code className="text-sm font-mono bg-gray-100 px-2 py-1 rounded block mt-1">
-                          {tenantCredentials.masterAdmin.email}
+                          {masterAdmin.email}
                         </code>
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase">Default Password</label>
                         <code className="text-sm font-mono bg-amber-100 text-amber-800 px-2 py-1 rounded block mt-1">
-                          {tenantCredentials.masterAdmin.name?.split(' ')[0] || 'Admin'}123
+                          {masterAdmin.name?.split(' ')[0] || 'Admin'}123
                         </code>
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
+              ))}
 
               {/* All Franchise Users - shown when there's no master_admin or in addition */}
               {tenantCredentials?.allUsers?.length > 0 && (

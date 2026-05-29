@@ -5,6 +5,16 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 
 
 ### Bug Fix - May 29, 2026 (P0 — production reported)
+**Show Credentials page only displayed ONE Master Admin even when a tenant has multiple co-owners.**
+- ROOT CAUSE: `Admin.js:fetchCredentials` set `masterAdmin: users.find(u => u.role === 'master_admin')` — `.find()` returns only the first match. When Karen + Nathan were both set as `master_admin` for Bluebird Care Dublin South, Karen (alphabetically later) silently dropped out of the Master Admin card and ended up in the generic "Franchise Users" table. `PlatformAdmin.js` had the same pattern in its tenant list.
+- FIX:
+  - `Admin.js`: state shape `masterAdmin` (single) → `masterAdmins` (array). UI now maps over the array, rendering one Master Admin card per owner. Generic "Franchise Users" list now excludes ALL master_admins (was only excluding the first one — Karen was being duplicated).
+  - `PlatformAdmin.js`: tenant rows now show every master_admin's name + email; if there's more than one, a `{n} owners` chip appears next to the first. "Other admins" filter correctly excludes the full set of master_admins, not just the first.
+- VERIFIED: production data confirmed via super-admin impersonation — both Karen O'Sullivan and Nathan Sweeney are `master_admin` + active in Bluebird Care Dublin South. After redeploy the Show Credentials page will render both Master Admin cards.
+
+
+
+### Bug Fix - May 29, 2026 (P0 — production reported)
 **"Failed to block car" error on Admin → Cars → Block for Appointment.**
 - ROOT CAUSE: `Admin.js:handleBlockCar` and `handleUnblockCar` called `carAPI.block(id, data)` and `carAPI.unblock(id, data)` — but `carAPI` in `/app/frontend/src/api/api.js` never had `block` / `unblock` methods defined. The call threw `TypeError: carAPI.block is not a function` which fell into the catch block as a generic "Failed to block car" message.
 - FIX: Added the two missing methods to `carAPI`:

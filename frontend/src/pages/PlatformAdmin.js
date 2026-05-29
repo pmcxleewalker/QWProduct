@@ -1692,11 +1692,13 @@ const PlatformAdmin = () => {
                   
                   <div className="divide-y">
                     {tenants.map(tenant => {
-                      // Find master admin for this tenant
-                      const masterAdmin = allUsers.find(u => 
+                      // Find ALL master admins for this tenant (a tenant may
+                      // have multiple co-owners).
+                      const tenantMasterAdmins = allUsers.filter(u =>
                         u.memberships?.some(m => m.tenant_id === tenant.id && m.role === 'master_admin')
                       );
-                      
+                      const masterAdmin = tenantMasterAdmins[0]; // primary, for legacy actions
+
                       return (
                         <div key={tenant.id} className="p-4 hover:bg-gray-50">
                           <div className="flex items-center justify-between">
@@ -1706,11 +1708,20 @@ const PlatformAdmin = () => {
                               </div>
                               <div>
                                 <h4 className="font-medium text-gray-900">{tenant.name}</h4>
-                                {masterAdmin ? (
-                                  <div className="text-sm text-gray-600">
-                                    <span className="font-medium">{masterAdmin.name}</span>
-                                    <span className="mx-2">•</span>
-                                    <span>{masterAdmin.email}</span>
+                                {tenantMasterAdmins.length > 0 ? (
+                                  <div className="text-sm text-gray-600 space-y-0.5">
+                                    {tenantMasterAdmins.map((ma, idx) => (
+                                      <div key={ma.id} className="flex items-center flex-wrap">
+                                        <span className="font-medium">{ma.name}</span>
+                                        <span className="mx-2">•</span>
+                                        <span>{ma.email}</span>
+                                        {tenantMasterAdmins.length > 1 && idx === 0 && (
+                                          <span className="ml-2 text-[10px] uppercase tracking-wide font-semibold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">
+                                            {tenantMasterAdmins.length} owners
+                                          </span>
+                                        )}
+                                      </div>
+                                    ))}
                                   </div>
                                 ) : (
                                   <p className="text-sm text-gray-400 italic">No master admin assigned</p>
@@ -1765,9 +1776,10 @@ const PlatformAdmin = () => {
                           
                           {/* Show other admins for this tenant */}
                           {(() => {
-                            const otherAdmins = allUsers.filter(u => 
+                            const masterAdminIds = new Set(tenantMasterAdmins.map(u => u.id));
+                            const otherAdmins = allUsers.filter(u =>
                               u.memberships?.some(m => m.tenant_id === tenant.id && m.role === 'admin') &&
-                              u.id !== masterAdmin?.id
+                              !masterAdminIds.has(u.id)
                             );
                             if (otherAdmins.length === 0) return null;
                             return (

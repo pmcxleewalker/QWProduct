@@ -4,6 +4,17 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Bug Fix - May 29, 2026 (P0 — production reported)
+**"Failed to block car" error on Admin → Cars → Block for Appointment.**
+- ROOT CAUSE: `Admin.js:handleBlockCar` and `handleUnblockCar` called `carAPI.block(id, data)` and `carAPI.unblock(id, data)` — but `carAPI` in `/app/frontend/src/api/api.js` never had `block` / `unblock` methods defined. The call threw `TypeError: carAPI.block is not a function` which fell into the catch block as a generic "Failed to block car" message.
+- FIX: Added the two missing methods to `carAPI`:
+  - `block(id, data)` → `POST /api/vehicles/{id}/block` with `{ reason, notes? }`
+  - `unblock(id, data)` → `POST /api/vehicles/{id}/unblock`
+- VERIFIED on preview: full block + unblock cycle returns HTTP 200; vehicle status flips Free → "Blocked - Service" → Free with status_updates log entries written.
+- `FleetVehicleCard.js` and `TenantDashboard.js` were unaffected (they use direct axios calls or only read `is_blocked`).
+
+
+
 ### Bug Fix - May 29, 2026 (P0 — production reported by paying client)
 **Reset Password "screen goes blank" — Team management page silent failure.**
 - ROOT CAUSE: `TenantDashboard.js:handleResetPassword` used `window.prompt()` and posted only `{ new_password }` to `/api/tenant/users/{id}/reset-password`. The backend `TenantResetPasswordRequest` Pydantic model requires BOTH `admin_password` AND `new_password`. Every call was rejected with HTTP 422 "Field required: admin_password". The error toast appeared briefly then auto-dismissed — to the user the "screen goes blank" after pressing OK.

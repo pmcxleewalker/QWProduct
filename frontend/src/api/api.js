@@ -11,9 +11,13 @@ export const carAPI = {
   update: (id, data) => axios.put(`${API}/vehicles/${id}`, data),
   delete: (id) => axios.delete(`${API}/vehicles/${id}`),
   getQRCode: (id) => `${API}/vehicles/${id}/qr`,
-  getAvailability: (id, date, view = 'day') => axios.get(`${API}/vehicles/${id}/availability`, { 
-    params: { date, view } 
+  getAvailability: (id, date, view = 'day') => axios.get(`${API}/vehicles/${id}/availability`, {
+    params: { date, view }
   }),
+  // Block / unblock for appointment (service, cleaning, repair) — backend
+  // expects { reason, notes? } on block and { sign_off_notes? } on unblock.
+  block: (id, data) => axios.post(`${API}/vehicles/${id}/block`, data),
+  unblock: (id, data) => axios.post(`${API}/vehicles/${id}/unblock`, data),
 };
 
 // Booking API (tenant-scoped)

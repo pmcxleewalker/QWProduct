@@ -1,17 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Shield } from 'lucide-react';
 
-const LINKS = [
-  { to: '/legal', label: 'Legal' },
-  { to: '/terms', label: 'Terms' },
-  { to: '/privacy-policy', label: 'Privacy' },
-  { to: '/dpa', label: 'DPA' },
-  { to: '/cookies', label: 'Cookies' },
-  { to: '/security', label: 'Security' },
-  { to: '/contact', label: 'Contact' },
-];
-
+// Legal/compliance links removed from the in-app footer at customer request
+// (Jun 2026). The legal pages still exist (/legal, /terms, /privacy-policy,
+// /dpa, /cookies, /security, /contact) and are reachable via direct URL —
+// required for GDPR / cookie compliance. The public landing page footer
+// keeps the visible legal link so the company's terms remain discoverable
+// for visitors.
 const Footer = () => {
   return (
     <footer
@@ -19,26 +14,12 @@ const Footer = () => {
       data-testid="app-footer"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <Shield size={14} className="text-blue-600" />
-            <span>
-              © 2026 QuickFleet Limited. Quick Wing is a product of QuickFleet
-              Limited. All rights reserved.
-            </span>
-          </div>
-          <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            {LINKS.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                className="text-xs text-slate-500 hover:text-blue-700 transition-colors"
-                data-testid={`footer-link-${l.label.toLowerCase()}`}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
+        <div className="flex justify-center sm:justify-start items-center gap-2 text-xs text-slate-500">
+          <Shield size={14} className="text-blue-600" />
+          <span>
+            © 2026 QuickFleet Limited. Quick Wing is a product of QuickFleet
+            Limited. All rights reserved.
+          </span>
         </div>
       </div>
     </footer>

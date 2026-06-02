@@ -526,14 +526,6 @@ const Navigation = ({ tenantSlug }) => {
                     <Key size={18} />
                   </button>
                 )}
-                <Link
-                  to="/legal"
-                  data-testid="nav-legal-centre"
-                  className="flex items-center p-2 text-white/85 hover:text-white hover:bg-white/15 rounded-md transition-colors"
-                  title="Legal Centre"
-                >
-                  <Scale size={18} />
-                </Link>
                 <button
                   onClick={handleLogout}
                   data-testid="logout-button"

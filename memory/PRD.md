@@ -4,6 +4,14 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### UX Change - Jun 2, 2026
+**Hide Legal & Compliance entry points inside the app.**
+- Removed the Scale ⚖️ icon link to `/legal` from `Navigation.js` desktop purple navbar (was visible to every logged-in user).
+- Stripped legal link row from in-app `Footer.js` (Legal / Terms / Privacy / DPA / Cookies / Security / Contact). Footer now shows only the copyright line.
+- Pages themselves remain reachable at their direct URLs (`/legal`, `/terms`, `/privacy-policy`, `/dpa`, `/cookies`, `/security`, `/contact`) — required for GDPR/cookie compliance. The public landing page footer also still links to them for visitor discoverability.
+
+
+
 ### Feature - Jun 2, 2026
 **White-labelled tenant login page with "Powered by Quick Wing" badge.**
 - `GET /api/tenants/by-slug/{slug}` extended (public endpoint) to also return `logo_url` + `primary_color` from the tenant's settings — safe to expose pre-auth and lets the login screen brand itself before the user signs in.

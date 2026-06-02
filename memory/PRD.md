@@ -4,6 +4,31 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature + Bug Fix - Feb 2, 2026
+**BUMBLEance branding tweak + tenant-logo URL persistence bug fix + perf quick-wins (date filters & TTL cache).**
+
+**A) BUMBLEance / tenant branding (UI refinement of the existing white-label feature)**
+- Inside-app navbar (`Navigation.js`, desktop + mobile): primary wordmark restored to "Quick Wing"; the tenant logo now appears as a *subtle* badge to the right of a thin divider. Desktop: `h-8`, max-w 120px, opacity-90. Mobile: `h-6`, max-w 80px, opacity-80 with a "·" separator. New data-testids: `navbar-tenant-logo` (desktop), `navbar-tenant-badge` (mobile).
+- Tenant login page (`TenantLogin.js`): co-brand row is now horizontal — **[Tenant logo] · POWERED BY · [Quick Wing logo]** — with the tenant name shown as small caption below ("`{Tenant Name} · Fleet Management Portal`"). When no tenant logo exists, page gracefully falls back to QW-only branding. New data-testid: `tenant-cobrand-row`, `quickwing-poweredby-logo`.
+
+**B) Critical bug fix — tenant-logo URLs hardcoded `http://localhost:8001`**
+- `POST /api/tenant/upload-logo` was building the stored URL as `os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001') + '/api/uploads/logos/...'`. Backend `.env` does **not** define `REACT_APP_BACKEND_URL`, so every uploaded logo URL was baked with `http://localhost:8001`. Browsers blocked these via Mixed Content + Chrome Private Network Access on the HTTPS preview/prod hosts, so BUMBLEance / any uploaded tenant logo silently disappeared.
+- **Fix**: upload now stores a relative path (`/api/uploads/logos/<file>.png`). The K8s ingress already routes `/api/*` to the backend, so `<img src="...">` resolves correctly on any host (preview, prod, future custom domains).
+- **One-time DB migration**: new `fix_legacy_logo_urls()` runs at server startup, rewriting any `http://(localhost|0.0.0.0|127.0.0.1):*/...` stored values to their relative path equivalents. Idempotent + only matches stale absolute URLs. Self-cleans existing tenants.
+
+**C) Performance quick-wins (P1 from previous backlog)**
+- **New TTL cache service**: `/app/backend/services/cache.py` — async-safe in-memory `TTLCache` with `get/set/get_or_set/invalidate/invalidate_prefix`. Process-local; swap for Redis with the same surface when scaling to multiple workers. Keys helpers: `tenant_settings_key`, `vehicles_key`, `locations_key`, `tenant_prefix`.
+- **Cached endpoints + TTL**:
+  - `GET /api/tenant/settings` — 30s TTL
+  - `GET /api/vehicles` (per skip/limit) — 15s TTL (kept short to preserve real-time `current_status` overlay)
+  - `GET /api/locations` — 60s TTL
+- **Invalidation on every mutation**: PUT `/tenant/settings`, PUT `/tenant/settings/compliance`, POST `/tenant/upload-logo` → `tenant:{id}:settings` cleared. POST/PUT/DELETE `/vehicles`, POST `/vehicles/bulk-import`, POST `/vehicles/{id}/block`, POST `/vehicles/{id}/unblock` → entire `tenant:{id}:` prefix flushed (covers vehicles + settings). POST/PUT/DELETE `/locations` → `tenant:{id}:locations` cleared.
+- **Bookings date filter**: `GET /api/bookings?from=YYYY-MM-DD&to=YYYY-MM-DD` (FastAPI aliases over `from_date`/`to_date` since `from` is a Python keyword). Overlap semantics: `start_time < to AND end_time > from`. Works alongside existing `status` / `car_id` / `user_id` / `include_secondary` filters. Useful for calendars to pull a month at a time instead of the full 2000-row default.
+- **Regression suite**: 18 new pytest tests under `/app/backend/tests/` — `test_cache_and_filters.py` (6) + `test_cache_invalidation_regression.py` (12). All passing.
+
+**Verified end-to-end** by testing agent (iteration 25, 18/18 backend pass) + visual screenshots — tenant logo now renders correctly on `/{slug}/login` co-brand row AND as the navbar badge after login.
+
+
 ### Feature - Jun 2, 2026
 **Compliance Alerts grouped by type + new AI-styled Booking Intelligence panel.**
 

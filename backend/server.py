@@ -1748,9 +1748,12 @@ async def upload_tenant_logo(
     with open(filepath, "wb") as f:
         f.write(contents)
     
-    # Generate URL
-    base_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
-    logo_url = f"{base_url}/api/uploads/logos/{filename}"
+    # Store a *relative* URL — the frontend prefixes it with REACT_APP_BACKEND_URL
+    # so the same DB record works in preview, production, or any other host. The
+    # earlier implementation baked in os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
+    # at upload time, which broke as soon as the request came from a different host
+    # (e.g. a preview URL or the production domain).
+    logo_url = f"/api/uploads/logos/{filename}"
     
     # Update tenant settings
     await db.tenants.update_one(
@@ -7929,6 +7932,10 @@ async def startup():
     # Seed Open Claw bot account
     await seed_bot_account()
     
+    # Fix any stale absolute logo URLs ('http://localhost:8001/...') left in
+    # the DB from before the upload endpoint was switched to relative URLs.
+    await fix_legacy_logo_urls()
+    
     # Ensure indexes exist — each wrapped so one failure doesn't skip the rest
     index_specs = [
         # --- Tenant lookup & auth (critical path for every request) ---
@@ -7972,6 +7979,37 @@ async def startup():
         except Exception as e:
             logger.debug(f"Index skip on {coll} {keys}: {e}")
     logger.info(f"Performance indexes ensured: {created}/{len(index_specs)} applied.")
+
+
+async def fix_legacy_logo_urls():
+    """One-time cleanup: tenant logos previously stored absolute URLs baked with
+    'http://localhost:8001/...' (because the upload endpoint defaulted to that
+    when REACT_APP_BACKEND_URL wasn't set in the backend env). Those URLs are
+    blocked by browsers when the app is served over HTTPS in preview/prod, so
+    rewrite them to relative '/api/uploads/logos/...' which works on any host.
+    Safe to run on every startup — only matches stale absolute URLs.
+    """
+    import re as _re
+    try:
+        cursor = db.tenants.find(
+            {"settings.logo_url": {"$regex": "^https?://(localhost|0\\.0\\.0\\.0|127\\.0\\.0\\.1)"}},
+            {"_id": 0, "id": 1, "settings.logo_url": 1, "name": 1},
+        )
+        fixed = 0
+        async for t in cursor:
+            lu = (t.get("settings") or {}).get("logo_url") or ""
+            # Strip scheme + host, keep the path
+            rel = _re.sub(r"^https?://[^/]+", "", lu)
+            if rel and rel != lu:
+                await db.tenants.update_one(
+                    {"id": t["id"]},
+                    {"$set": {"settings.logo_url": rel}},
+                )
+                fixed += 1
+        if fixed:
+            logger.info(f"fix_legacy_logo_urls: rewrote {fixed} stale absolute logo URL(s) to relative paths.")
+    except Exception as e:
+        logger.warning(f"fix_legacy_logo_urls failed: {e}")
 
 
 async def seed_bot_account():

@@ -5,6 +5,23 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 
 
 ### Feature - Jun 2, 2026
+**Per-tenant logo branding in navbar + persistent upload mechanism.**
+- `Navigation.js`: navbar now fetches `/api/tenant/settings.branding.logo_url` on tenant context change and renders the logo in place of the "Quick Wing" wordmark. Falls back to wordmark on missing/broken logo. Same logic applied to mobile header. Max-w 220px desktop / 140px mobile, h-12 / h-9, drop-shadow for purple background contrast.
+- `TenantDashboard.js` logo uploader rewritten to:
+  - Convert file to base64 data URL client-side
+  - PUT to `/api/tenant/settings` (instead of multipart `/upload-logo` which writes to local disk)
+  - Survives every redeploy — logo persists in MongoDB tenant document, no filesystem or S3 dependency
+  - Size cap reduced to 1.5 MB (base64 grows ~33%; keeps wire payload < 2 MB)
+  - "Remove logo" button now actually persists the removal to the backend (previously it only cleared local state).
+- **BUMBLEance production**:
+  - Enabled `custom_branding` feature override via super-admin API
+  - Uploaded their bumblebee-ambulance logo as base64 data URL (95 KB) — confirmed via `GET /api/tenant/settings` returning `branding.enabled: true` and `logo_url` length 95606
+  - Their navbar will display the new logo on next frontend redeploy
+- Per-tenant uploader available to all clients once `custom_branding` is enabled on their plan/override.
+
+
+
+### Feature - Jun 2, 2026
 **Booking "Assign To" — admin books a car on behalf of any team member.**
 - New field `assigned_to_user_id` on `BookingCreate`, `BookingUpdate`, `Booking` (Pydantic + Mongo).
 - `POST /api/bookings` accepts `assigned_to_user_id`:

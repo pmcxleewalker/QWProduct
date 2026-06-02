@@ -3228,21 +3228,31 @@ const TenantDashboard = () => {
                             onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (!file) return;
-                              
-                              // Validate size
-                              if (file.size > 2 * 1024 * 1024) {
-                                toast.error('File too large. Maximum size is 2MB');
+
+                              // Cap at 1.5 MB — base64-encoded payload grows ~33%
+                              // so 1.5 MB becomes ~2 MB on the wire, which is the
+                              // pragmatic limit Mongo + ingress are happy with.
+                              if (file.size > 1.5 * 1024 * 1024) {
+                                toast.error('File too large. Maximum size is 1.5MB');
                                 return;
                               }
-                              
-                              const formData = new FormData();
-                              formData.append('file', file);
-                              
+
                               try {
-                                const response = await axios.post(`${API}/tenant/upload-logo`, formData, {
-                                  headers: { 'Content-Type': 'multipart/form-data' }
+                                // Convert to a base64 data URL so the logo
+                                // lives entirely inside the tenant document.
+                                // This makes it deploy-proof — no filesystem,
+                                // no S3, no CDN expiry to worry about.
+                                const dataUrl = await new Promise((resolve, reject) => {
+                                  const reader = new FileReader();
+                                  reader.onload = () => resolve(reader.result);
+                                  reader.onerror = reject;
+                                  reader.readAsDataURL(file);
                                 });
-                                setSettingsForm({ ...settingsForm, logo_url: response.data.logo_url });
+                                const response = await axios.put(`${API}/tenant/settings`, {
+                                  logo_url: dataUrl,
+                                });
+                                const savedUrl = response.data?.settings?.branding?.logo_url || dataUrl;
+                                setSettingsForm({ ...settingsForm, logo_url: savedUrl });
                                 toast.success('Logo uploaded!');
                               } catch (err) {
                                 toast.error(err.response?.data?.detail || 'Failed to upload logo');
@@ -3259,12 +3269,20 @@ const TenantDashboard = () => {
                             Upload Logo
                           </label>
                           <p className="text-xs text-gray-500 mt-2">
-                            PNG, JPG, WEBP or SVG. Max 2MB.
+                            PNG, JPG, WEBP or SVG. Max 1.5MB. Logo appears in the top navigation bar.
                           </p>
                           {settingsForm.logo_url && (
                             <button
                               type="button"
-                              onClick={() => setSettingsForm({ ...settingsForm, logo_url: '' })}
+                              onClick={async () => {
+                                try {
+                                  await axios.put(`${API}/tenant/settings`, { logo_url: '' });
+                                  setSettingsForm({ ...settingsForm, logo_url: '' });
+                                  toast.success('Logo removed');
+                                } catch (err) {
+                                  toast.error('Failed to remove logo');
+                                }
+                              }}
                               className="text-xs text-red-600 hover:text-red-800 mt-1"
                             >
                               Remove logo

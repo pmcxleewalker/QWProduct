@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Crown, Building2, Eye, Shield, BarChart3, Scale } from 'lucide-react';
+import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { liftRequestAPI } from '../api/api';
 import ChangePasswordModal from './ChangePasswordModal';
 import usePushNotifications from '../hooks/usePushNotifications';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const Navigation = ({ tenantSlug }) => {
   const location = useLocation();
@@ -15,9 +18,36 @@ const Navigation = ({ tenantSlug }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showPushSettings, setShowPushSettings] = useState(false);
+  // Per-tenant logo (BUMBLEance, etc.). When set we replace the "Quick Wing"
+  // wordmark in the navbar with the client's own brand. Cached per tenant so
+  // switching back-and-forth doesn't re-flicker.
+  const [tenantLogo, setTenantLogo] = useState(null);
   const notificationRef = useRef(null);
   const seenRequestIds = useRef(new Set());
-  
+
+  // Fetch tenant logo whenever the active tenant changes.
+  useEffect(() => {
+    let cancelled = false;
+    const tenantId = activeTenant?.tenant_id;
+    if (!tenantId) {
+      setTenantLogo(null);
+      return;
+    }
+    axios
+      .get(`${API}/tenant/settings`)
+      .then((res) => {
+        if (cancelled) return;
+        const url = res?.data?.branding?.logo_url || null;
+        setTenantLogo(url);
+      })
+      .catch(() => {
+        if (!cancelled) setTenantLogo(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTenant?.tenant_id]);
+
   // Get the base path for tenant-scoped navigation
   // Use tenantSlug prop first, then activeTenant, then fallback
   const basePath = tenantSlug ? `/${tenantSlug}` : (activeTenant?.tenant_slug ? `/${activeTenant.tenant_slug}` : '');
@@ -269,7 +299,19 @@ const Navigation = ({ tenantSlug }) => {
       {/* Mobile Top Header */}
       <nav className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
         <div className="flex justify-between items-center h-14 px-4">
-          <h1 className="text-xl font-bold text-blue-600">{process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}</h1>
+          {tenantLogo ? (
+            <img
+              src={tenantLogo}
+              alt={activeTenant?.tenant_name || 'Tenant logo'}
+              className="h-9 w-auto max-w-[140px] object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                setTenantLogo(null);
+              }}
+            />
+          ) : (
+            <h1 className="text-xl font-bold text-blue-600">{process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}</h1>
+          )}
           <div className="flex items-center space-x-2">
             {/* Notification Bell - Mobile */}
             <div className="relative" ref={notificationRef}>
@@ -382,12 +424,27 @@ const Navigation = ({ tenantSlug }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1
-                className="text-2xl font-bold text-white"
-                style={{ textShadow: '0 0 12px rgba(216,180,254,0.45)' }}
-              >
-                {process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}
-              </h1>
+              {tenantLogo ? (
+                <img
+                  src={tenantLogo}
+                  alt={activeTenant?.tenant_name || 'Tenant logo'}
+                  className="h-12 w-auto max-w-[220px] object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.25)]"
+                  data-testid="navbar-tenant-logo"
+                  onError={(e) => {
+                    // If the logo URL ever fails (broken upload, expired CDN
+                    // link, etc.) fall back to the Quick Wing wordmark.
+                    e.currentTarget.style.display = 'none';
+                    setTenantLogo(null);
+                  }}
+                />
+              ) : (
+                <h1
+                  className="text-2xl font-bold text-white"
+                  style={{ textShadow: '0 0 12px rgba(216,180,254,0.45)' }}
+                >
+                  {process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}
+                </h1>
+              )}
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex space-x-2 lg:space-x-4">

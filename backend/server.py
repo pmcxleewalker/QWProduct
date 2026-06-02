@@ -659,17 +659,28 @@ async def record_consent(
 async def get_tenant_by_slug(slug: str):
     """
     Public endpoint to get tenant info by slug.
-    Used for branded login pages.
+    Used for branded login pages — exposes the tenant's logo so the
+    login screen can show the client's own brand BEFORE the user has
+    authenticated. Only safe-to-publish fields are returned; nothing
+    sensitive is leaked.
     """
     tenant = await db.tenants.find_one(
         {"slug": slug},
-        {"_id": 0, "id": 1, "name": 1, "slug": 1, "status": 1}
+        {"_id": 0, "id": 1, "name": 1, "slug": 1, "status": 1, "settings": 1},
     )
-    
+
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    
-    return tenant
+
+    settings = tenant.get("settings") or {}
+    return {
+        "id": tenant.get("id"),
+        "name": tenant.get("name"),
+        "slug": tenant.get("slug"),
+        "status": tenant.get("status"),
+        "logo_url": settings.get("logo_url") or None,
+        "primary_color": settings.get("primary_color") or None,
+    }
 
 
 # ==================== SUPER ADMIN - PLATFORM MANAGEMENT ====================

@@ -127,26 +127,60 @@ const TenantLogin = () => {
           <div className="relative bg-gradient-to-b from-slate-50 to-white border-b border-slate-100">
             {/* Metallic accent line */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-slate-300 via-blue-500 to-slate-300"></div>
-            
+
             <div className="px-8 pt-10 pb-8 text-center">
-              {/* Logo */}
-              <div className="inline-block">
-                <img 
-                  src="/quick-wing-logo.png" 
-                  alt="Quick Wing" 
-                  className="h-16 w-auto object-contain drop-shadow-sm"
-                  data-testid="tenant-login-title"
-                />
-              </div>
-              
-              {/* Franchise Name - Prominently displayed */}
-              {tenantInfo && (
-                <div className="mt-6">
-                  <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
+              {tenantInfo?.logo_url ? (
+                <>
+                  {/* Tenant's own brand — front and centre */}
+                  <div className="inline-block">
+                    <img
+                      src={tenantInfo.logo_url}
+                      alt={tenantInfo.name}
+                      className="h-24 w-auto max-w-[240px] object-contain mx-auto drop-shadow-md"
+                      data-testid="tenant-login-logo"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  </div>
+                  <h1
+                    className="text-2xl font-bold text-slate-800 tracking-tight mt-4"
+                    data-testid="tenant-login-title"
+                  >
                     {tenantInfo.name}
                   </h1>
                   <p className="text-sm text-slate-500 mt-1">Fleet Management Portal</p>
-                </div>
+
+                  {/* Powered-by — small but visible white-label badge */}
+                  <div className="mt-5 flex items-center justify-center gap-2">
+                    <span className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">
+                      Powered by
+                    </span>
+                    <img
+                      src="/quick-wing-logo.png"
+                      alt="Quick Wing"
+                      className="h-5 w-auto object-contain opacity-80"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* No tenant logo uploaded — fall back to QW branding only */}
+                  <div className="inline-block">
+                    <img
+                      src="/quick-wing-logo.png"
+                      alt="Quick Wing"
+                      className="h-16 w-auto object-contain drop-shadow-sm"
+                      data-testid="tenant-login-title"
+                    />
+                  </div>
+                  {tenantInfo && (
+                    <div className="mt-6">
+                      <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
+                        {tenantInfo.name}
+                      </h1>
+                      <p className="text-sm text-slate-500 mt-1">Fleet Management Portal</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -245,9 +279,11 @@ const TenantLogin = () => {
 
         {/* Footer */}
         <div className="text-center mt-8 space-y-2">
-          <p className="text-sm text-slate-500">
-            Powered by <span className="font-semibold text-blue-400">Quick Wing</span>
-          </p>
+          {!tenantInfo?.logo_url && (
+            <p className="text-sm text-slate-500">
+              Powered by <span className="font-semibold text-blue-400">Quick Wing</span>
+            </p>
+          )}
           <p className="text-xs text-slate-600">
             Need help? Contact your administrator
           </p>

@@ -5,6 +5,20 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 
 
 ### Feature - Jun 2, 2026
+**White-labelled tenant login page with "Powered by Quick Wing" badge.**
+- `GET /api/tenants/by-slug/{slug}` extended (public endpoint) to also return `logo_url` + `primary_color` from the tenant's settings — safe to expose pre-auth and lets the login screen brand itself before the user signs in.
+- `TenantLogin.js` header redesigned:
+  - Tenant logo (h-24, max-w-240px) rendered front-and-centre when present
+  - Tenant name + "Fleet Management Portal" caption beneath
+  - "POWERED BY [Quick Wing logo]" badge below the tenant identity (small, h-5, 80% opacity — present but subordinate)
+  - Image `onError` handler falls back to QW-only branding if a tenant logo ever fails to load
+- When no tenant logo is uploaded the page falls back to the original Quick Wing-only layout (no regression for new tenants who haven't configured branding yet).
+- Footer "Powered by Quick Wing" line removed when the header already shows the badge — prevents double-branding.
+- Verified on preview with BUMBLEance logo applied to test-fleet tenant — login page renders bumblebee logo at top, "POWERED BY Quick Wing" badge below.
+
+
+
+### Feature - Jun 2, 2026
 **Per-tenant logo branding in navbar + persistent upload mechanism.**
 - `Navigation.js`: navbar now fetches `/api/tenant/settings.branding.logo_url` on tenant context change and renders the logo in place of the "Quick Wing" wordmark. Falls back to wordmark on missing/broken logo. Same logic applied to mobile header. Max-w 220px desktop / 140px mobile, h-12 / h-9, drop-shadow for purple background contrast.
 - `TenantDashboard.js` logo uploader rewritten to:

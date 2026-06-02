@@ -666,9 +666,9 @@ const TenantDashboard = () => {
       ]
     : [
         { id: 'overview', label: 'Overview', icon: BarChart3 },
-        { 
-          id: 'fleet', 
-          label: 'Fleet', 
+        {
+          id: 'fleet',
+          label: 'Fleet',
           icon: Car,
           subTabs: [
             { id: 'live-fleet', label: 'Live Status' },
@@ -676,7 +676,10 @@ const TenantDashboard = () => {
             { id: 'all-cars', label: 'All Cars Calendar' }
           ]
         },
-        { id: 'bookings', label: 'Bookings', icon: Calendar },
+        // 'Bookings' sub-tab intentionally removed — the global navbar
+        // 'Bookings' link already takes admins to /bookings (the same page
+        // staff use) so having a duplicate sub-tab inside the dashboard
+        // caused confusion. Admins reach booking management via the top bar.
         { id: 'team', label: 'Team', icon: Users },
         { 
           id: 'reports', 
@@ -831,15 +834,7 @@ const TenantDashboard = () => {
                   </div>
                 </div>
               )}
-              
-              {/* Notification Bell */}
-              <NotificationBell 
-                onAnnouncementClick={() => {
-                  setActiveTab('announcements');
-                  setActiveSubTab(null);
-                }} 
-              />
-              
+
               <button
                 onClick={fetchData}
                 className="flex items-center space-x-2 px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 backdrop-blur-sm"
@@ -856,18 +851,6 @@ const TenantDashboard = () => {
                 >
                   <HelpCircle size={18} />
                   <span>Help</span>
-                </button>
-              )}
-              
-              {/* Settings Button - Available for all admins */}
-              {isAdmin && (
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
-                  data-testid="settings-button"
-                >
-                  <Settings size={18} />
-                  <span>Settings</span>
                 </button>
               )}
             </div>

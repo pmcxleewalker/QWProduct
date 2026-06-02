@@ -372,65 +372,57 @@ const Navigation = ({ tenantSlug }) => {
         </div>
       </nav>
 
-      {/* Desktop Header Navigation */}
-      <nav className="hidden md:block bg-white border-b border-gray-200 sticky top-0 z-50">
+      {/* Desktop Header Navigation — purple branded bar */}
+      <nav
+        className="hidden md:block sticky top-0 z-50 border-b border-violet-950/40 shadow-md"
+        style={{
+          background: 'linear-gradient(90deg, #2e1065 0%, #4c1d95 35%, #6d28d9 65%, #4c1d95 100%)',
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-blue-600">{process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}</h1>
+              <h1
+                className="text-2xl font-bold text-white"
+                style={{ textShadow: '0 0 12px rgba(216,180,254,0.45)' }}
+              >
+                {process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}
+              </h1>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex space-x-8">
+              <div className="flex space-x-2 lg:space-x-4">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   // For admin: show icons only for Bookings, Assistance, Admin (not Dashboard, Live Sheet)
                   const isIconOnlyForAdmin = isTenantAdmin() && ['Bookings', 'Assistance', 'Admin'].includes(item.label);
+                  const active = isActive(item.path);
                   return (
                     <Link
                       key={item.path}
                       to={item.path}
                       data-testid={item.isFishIcon ? 'nav-fish-desktop' : `nav-${item.label.toLowerCase()}`}
                       className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
-                        isActive(item.path)
-                          ? 'text-blue-600 bg-blue-50'
-                          : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                        active
+                          ? 'text-white bg-white/20 ring-1 ring-white/30 shadow-[0_0_18px_rgba(216,180,254,0.45)]'
+                          : 'text-white/80 hover:text-white hover:bg-white/10'
                       }`}
                       title={item.isFishIcon ? 'Live Sheet' : item.label}
                     >
-                      <Icon size={item.isFishIcon ? 24 : 20} className={item.isFishIcon ? 'text-blue-500' : ''} />
+                      <Icon size={item.isFishIcon ? 24 : 20} className={item.isFishIcon ? 'text-white' : ''} />
                       {item.label && !isIconOnlyForAdmin && <span>{item.label}</span>}
                     </Link>
                   );
                 })}
               </div>
-              
-              {/* Notification Bell - Desktop (Staff only) */}
-              {!isTenantAdmin() && (
-                <div className="relative" ref={notificationRef}>
-                  <button
-                    onClick={toggleNotifications}
-                    className="relative flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-                    title="View Lift Requests"
-                  >
-                    <Bell size={22} />
-                    {liftRequestCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold animate-pulse">
-                        {liftRequestCount > 9 ? '9+' : liftRequestCount}
-                      </span>
-                    )}
-                  </button>
-                  {showNotifications && <NotificationDropdown />}
-                </div>
-              )}
-              
+
               {/* Push Notifications Toggle - Desktop (Staff only) */}
               {isSupported && !isTenantAdmin() && (
                 <button
                   onClick={handlePushToggle}
                   className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg transition-colors text-sm ${
-                    isSubscribed 
-                      ? 'text-green-600 bg-green-50 hover:bg-green-100' 
-                      : 'text-gray-500 bg-gray-100 hover:bg-gray-200'
+                    isSubscribed
+                      ? 'text-emerald-200 bg-emerald-500/20 hover:bg-emerald-500/30'
+                      : 'text-white/70 bg-white/10 hover:bg-white/20'
                   }`}
                   title={isSubscribed ? 'Push notifications enabled - Click to disable' : 'Enable push notifications'}
                 >
@@ -438,19 +430,19 @@ const Navigation = ({ tenantSlug }) => {
                   <span className="hidden lg:inline">{isSubscribed ? 'Push On' : 'Push Off'}</span>
                 </button>
               )}
-              
-              <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
+
+              <div className="flex items-center space-x-3 pl-4 border-l border-white/25">
                 {/* Show email only for staff */}
-                {!isTenantAdmin() && <span className="text-sm text-gray-700">{user?.email}</span>}
+                {!isTenantAdmin() && <span className="text-sm text-white/85">{user?.email}</span>}
                 {isTenantAdmin() && (
                   <div className="flex items-center space-x-2">
                     {isPlatformAdmin() && (
-                      <Crown size={20} className="text-yellow-500" title="Master Admin" />
+                      <Crown size={20} className="text-amber-300 drop-shadow-[0_0_6px_rgba(252,211,77,0.7)]" title="Master Admin" />
                     )}
-                    <span className={`px-2 py-1 text-xs font-medium rounded ${
-                      isPlatformAdmin() 
-                        ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 border border-amber-300'
-                        : 'bg-purple-100 text-purple-800'
+                    <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                      isPlatformAdmin()
+                        ? 'bg-gradient-to-r from-amber-300 to-yellow-200 text-amber-900 border border-amber-200 shadow-[0_0_10px_rgba(252,211,77,0.45)]'
+                        : 'bg-white/20 text-white border border-white/30'
                     }`}>
                       {isPlatformAdmin() ? '👑 Master Admin' : 'Admin'}
                     </span>
@@ -460,7 +452,7 @@ const Navigation = ({ tenantSlug }) => {
                 {user?.role === 'super_admin' && (
                   <Link
                     to="/platform"
-                    className="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all shadow-sm"
+                    className="flex items-center space-x-2 px-3 py-1.5 bg-white/20 text-white text-sm font-medium rounded-lg hover:bg-white/30 transition-all border border-white/30"
                     title="Tenant Command Centre"
                   >
                     <Building2 size={16} />
@@ -471,7 +463,7 @@ const Navigation = ({ tenantSlug }) => {
                 {!isTenantAdmin() && (
                   <button
                     onClick={() => setShowChangePassword(true)}
-                    className="flex items-center p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    className="flex items-center p-2 text-white/85 hover:text-white hover:bg-white/15 rounded-md transition-colors"
                     title="Change Password"
                   >
                     <Key size={18} />
@@ -480,7 +472,7 @@ const Navigation = ({ tenantSlug }) => {
                 <Link
                   to="/legal"
                   data-testid="nav-legal-centre"
-                  className="flex items-center p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                  className="flex items-center p-2 text-white/85 hover:text-white hover:bg-white/15 rounded-md transition-colors"
                   title="Legal Centre"
                 >
                   <Scale size={18} />
@@ -488,7 +480,7 @@ const Navigation = ({ tenantSlug }) => {
                 <button
                   onClick={handleLogout}
                   data-testid="logout-button"
-                  className="flex items-center p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                  className="flex items-center p-2 text-white/85 hover:text-rose-200 hover:bg-rose-500/20 rounded-md transition-colors"
                   title="Logout"
                 >
                   <LogOut size={20} />

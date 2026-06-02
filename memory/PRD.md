@@ -4,6 +4,16 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - Jun 2, 2026
+**Unified purple branded header — consolidated two stacked bars into one cohesive nav.**
+- `Navigation.js` desktop header: white background → deep purple gradient (`#2e1065 → #4c1d95 → #6d28d9 → #4c1d95`). Logo, nav items, badges, buttons all restyled for white-on-purple contrast with white-glow active state.
+- Removed desktop notification bell (line that rendered for staff only) — Karen's request, push notifications + emails cover the need.
+- `TenantDashboard.js` purple banner (Row 2): removed `<NotificationBell>` and the standalone Settings button. Both were redundant — bell duplicated row 1's, Settings duplicated the Admin page's own Settings tab.
+- `tabs` array for admins: removed `{ id: 'bookings', label: 'Bookings' }` sub-tab — Row 1 `/bookings` link is the single source of truth. Staff "My Bookings" tab unchanged.
+- Net result: 3 stacked toolbars → 2 (purple Row 1 global + purple Row 2 tenant context) + dark sub-tabs ribbon underneath. Brand colour now dominant; admin has fewer paths to remember.
+
+
+
 ### Bug Fix - May 29, 2026 (P0 — production reported)
 **Show Credentials page only displayed ONE Master Admin even when a tenant has multiple co-owners.**
 - ROOT CAUSE: `Admin.js:fetchCredentials` set `masterAdmin: users.find(u => u.role === 'master_admin')` — `.find()` returns only the first match. When Karen + Nathan were both set as `master_admin` for Bluebird Care Dublin South, Karen (alphabetically later) silently dropped out of the Master Admin card and ended up in the generic "Franchise Users" table. `PlatformAdmin.js` had the same pattern in its tenant list.

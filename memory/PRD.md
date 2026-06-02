@@ -5,6 +5,28 @@ Quick Wing is a comprehensive fleet management SaaS platform designed for multi-
 
 
 ### Feature - Jun 2, 2026
+**Booking "Assign To" — admin books a car on behalf of any team member.**
+- New field `assigned_to_user_id` on `BookingCreate`, `BookingUpdate`, `Booking` (Pydantic + Mongo).
+- `POST /api/bookings` accepts `assigned_to_user_id`:
+  - Admin-only (403 for staff).
+  - Validates assignee is an active member of the same tenant (via `db.memberships` lookup, not embedded array — that was a misread of the data model and produced a bug during testing).
+  - Overwrites `user_name` with the assignee's stored name so all pills, the Live Sheet, calendar cells, and CSV exports show the right person.
+  - Conflict check runs against the **assignee's** schedule (not the admin's) — same person can't be double-booked across two cars at the same time. Admin's own conflict check is skipped when assigning to someone else.
+- `GET /api/bookings?user_id=X` now matches bookings where the user is the creator, secondary user, OR assignee — so the staff member sees admin-assigned bookings in their "My Bookings" feed.
+- Staff edit/delete permission extended: assignee can also modify a booking that was created for them.
+- `Bookings.js` UI: admins see a new **Assign To** dropdown above the user_name field (defaults to "Myself — {admin}"). Picking a member auto-fills the display name and shows a purple info-pill: "This booking will appear in {Name}'s My Bookings".
+- VERIFIED end-to-end: admin assigns booking to Alice → backend stamps the right fields → conflict on second booking returns 400 with assignee name → Alice's login lists the booking.
+
+### Operational Change - Jun 2, 2026
+**Quick Wing Support user removed; auto-seed disabled.**
+- Deleted production user `support@quickwing.com` ("Quick Wing Support") via super-admin API; tenant memberships purged at the same time.
+- `seed_support_admin()` call commented out of `startup_event` in server.py.
+- Auto-attach Support Admin to new tenants (in tenant create flow) commented out.
+- Both blocks left in place with comments so the feature can be re-enabled by uncommenting if Quick Wing ever wants cross-tenant support backdoor again.
+
+
+
+### Feature - Jun 2, 2026
 **Unified purple branded header — consolidated two stacked bars into one cohesive nav.**
 - `Navigation.js` desktop header: white background → deep purple gradient (`#2e1065 → #4c1d95 → #6d28d9 → #4c1d95`). Logo, nav items, badges, buttons all restyled for white-on-purple contrast with white-glow active state.
 - Removed desktop notification bell (line that rendered for staff only) — Karen's request, push notifications + emails cover the need.

@@ -1092,37 +1092,38 @@ async def create_tenant(
             }
             await db.memberships.insert_one(sa_membership)
     
-    # AUTO-ADD SUPPORT ADMIN (off-site support — same credentials across all tenants).
-    # This account has master_admin role: full equal access to Master Admin.
-    # support@quickwing.com / QuickWing123! — does NOT force password change.
-    support_admin = await db.users.find_one({"email": SUPPORT_ADMIN_EMAIL}, {"_id": 0})
-    if not support_admin:
-        # Lazy-seed if startup seeder didn't run yet (e.g. fresh deploy)
-        support_user_id = str(uuid.uuid4())
-        await db.users.insert_one({
-            "id": support_user_id,
-            "email": SUPPORT_ADMIN_EMAIL,
-            "name": SUPPORT_ADMIN_NAME,
-            "password_hash": get_password_hash(SUPPORT_ADMIN_PASSWORD),
-            "is_active": True,
-            "require_password_change": False,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        })
-    else:
-        support_user_id = support_admin["id"]
-    
-    existing_support_membership = await db.memberships.find_one({
-        "user_id": support_user_id,
-        "tenant_id": tenant_id,
-    })
-    if not existing_support_membership:
-        await db.memberships.insert_one({
-            "id": str(uuid.uuid4()),
-            "user_id": support_user_id,
-            "tenant_id": tenant_id,
-            "role": UserRole.MASTER_ADMIN.value,  # Equal access to Master Admin
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        })
+    # AUTO-ADD SUPPORT ADMIN — disabled May 2026 at customer request. The
+    # support@quickwing.com cross-tenant account was being shown in franchise
+    # team lists and confused master admins. Re-enable the block below if
+    # Quick Wing ever needs an off-site support backdoor again.
+    #
+    # support_admin = await db.users.find_one({"email": SUPPORT_ADMIN_EMAIL}, {"_id": 0})
+    # if not support_admin:
+    #     support_user_id = str(uuid.uuid4())
+    #     await db.users.insert_one({
+    #         "id": support_user_id,
+    #         "email": SUPPORT_ADMIN_EMAIL,
+    #         "name": SUPPORT_ADMIN_NAME,
+    #         "password_hash": get_password_hash(SUPPORT_ADMIN_PASSWORD),
+    #         "is_active": True,
+    #         "require_password_change": False,
+    #         "created_at": datetime.now(timezone.utc).isoformat(),
+    #     })
+    # else:
+    #     support_user_id = support_admin["id"]
+    #
+    # existing_support_membership = await db.memberships.find_one({
+    #     "user_id": support_user_id,
+    #     "tenant_id": tenant_id,
+    # })
+    # if not existing_support_membership:
+    #     await db.memberships.insert_one({
+    #         "id": str(uuid.uuid4()),
+    #         "user_id": support_user_id,
+    #         "tenant_id": tenant_id,
+    #         "role": UserRole.MASTER_ADMIN.value,
+    #         "created_at": datetime.now(timezone.utc).isoformat(),
+    #     })
     
     # Log audit event
     await audit_service.log_tenant_action(
@@ -6408,40 +6409,105 @@ async def create_booking(
                 detail=f"Secondary user already has a booking at this time ({existing_booking.get('user_name')} - {existing_booking.get('car_id')})"
             )
     
-    # Also check primary user for conflicts
-    primary_conflict_query = {
-        "tenant_id": context.tenant_id,
-        "$or": [
-            {"created_by_user_id": context.user_id},
-            {"secondary_user_id": context.user_id}
-        ],
-        "start_time": {"$lt": booking_data.end_time},
-        "end_time": {"$gt": booking_data.start_time},
-        "status": {"$nin": ["rejected", "cancelled"]}
-    }
-    primary_existing = await db.bookings.find_one(primary_conflict_query, {"_id": 0})
-    if primary_existing:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"You already have a booking at this time ({primary_existing.get('car_id')})"
+    # Also check primary user for conflicts.
+    # Skip this check if the admin is booking on behalf of someone else —
+    # the admin's own calendar is irrelevant in that case (only the
+    # assignee's calendar matters, which we check separately below).
+    is_assigning_to_other = (
+        booking_data.assigned_to_user_id
+        and booking_data.assigned_to_user_id != context.user_id
+    )
+    if not is_assigning_to_other:
+        primary_conflict_query = {
+            "tenant_id": context.tenant_id,
+            "$or": [
+                {"created_by_user_id": context.user_id},
+                {"secondary_user_id": context.user_id}
+            ],
+            "start_time": {"$lt": booking_data.end_time},
+            "end_time": {"$gt": booking_data.start_time},
+            "status": {"$nin": ["rejected", "cancelled"]}
+        }
+        primary_existing = await db.bookings.find_one(primary_conflict_query, {"_id": 0})
+        if primary_existing:
+            raise HTTPException(
+                status_code=400,
+                detail=f"You already have a booking at this time ({primary_existing.get('car_id')})"
+            )
+
+    # ============ ASSIGN TO (ADMIN-ONLY) ============
+    # Admins can book a car on behalf of another staff member or admin.
+    # The assignee will see this booking in their own "My Bookings" list.
+    assigned_user_doc = None
+    if booking_data.assigned_to_user_id and booking_data.assigned_to_user_id != context.user_id:
+        # Only admins/master_admins are allowed to assign bookings to others.
+        if context.role not in (UserRole.ADMIN, UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN):
+            raise HTTPException(
+                status_code=403,
+                detail="Only admins can assign a booking to another user."
+            )
+        assigned_user_doc = await db.users.find_one(
+            {"id": booking_data.assigned_to_user_id}, {"_id": 0}
         )
-    
+        if not assigned_user_doc:
+            raise HTTPException(status_code=404, detail="Assigned user not found")
+        # Verify the assignee is actually a member of this tenant (memberships
+        # are stored in their own collection, not embedded on the user doc).
+        membership = await db.memberships.find_one({
+            "user_id": booking_data.assigned_to_user_id,
+            "tenant_id": context.tenant_id,
+        })
+        if not membership or membership.get("is_active") is False:
+            raise HTTPException(
+                status_code=400,
+                detail="Assigned user is not a member of this tenant."
+            )
+        # Check assignee for time conflicts (don't double-book the person).
+        assignee_conflict_query = {
+            "tenant_id": context.tenant_id,
+            "$or": [
+                {"created_by_user_id": booking_data.assigned_to_user_id},
+                {"secondary_user_id": booking_data.assigned_to_user_id},
+                {"assigned_to_user_id": booking_data.assigned_to_user_id},
+            ],
+            "start_time": {"$lt": booking_data.end_time},
+            "end_time": {"$gt": booking_data.start_time},
+            "status": {"$nin": ["rejected", "cancelled"]},
+        }
+        assignee_existing = await db.bookings.find_one(assignee_conflict_query, {"_id": 0})
+        if assignee_existing:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"{assigned_user_doc.get('name') or 'That user'} already has a "
+                    f"booking at this time ({assignee_existing.get('user_name')} - "
+                    f"{assignee_existing.get('car_id')})"
+                ),
+            )
+
     # Determine booking status
     booking_status = "pending" if requires_approval else "approved"
-    
+
+    payload = booking_data.model_dump()
+    # When an admin assigns the booking, force user_name to the assignee's
+    # actual stored name so the booking shows the right owner everywhere
+    # (calendar pills, Live Sheet, /bookings list, staff app).
+    if assigned_user_doc:
+        payload["user_name"] = assigned_user_doc.get("name") or payload.get("user_name") or ""
+
     booking = {
         "id": str(uuid.uuid4()),
         "tenant_id": context.tenant_id,  # CRITICAL: Set tenant_id from context
-        **booking_data.model_dump(),
+        **payload,
         "status": booking_status,
         "requires_approval": requires_approval,
         "created_by_email": context.user_email,
         "created_by_user_id": context.user_id,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    
+
     await db.bookings.insert_one(booking)
-    
+
     return {k: v for k, v in booking.items() if k != "_id"}
 
 
@@ -6543,14 +6609,19 @@ async def list_bookings(
     if car_id:
         query["car_id"] = car_id
 
-    # If user_id is specified, include bookings where they are primary OR secondary user
+    # If user_id is specified, include bookings where they are primary,
+    # secondary, OR the assignee (admin booked the car on their behalf).
     if user_id and include_secondary:
         query["$or"] = [
             {"created_by_user_id": user_id},
-            {"secondary_user_id": user_id}
+            {"secondary_user_id": user_id},
+            {"assigned_to_user_id": user_id},
         ]
     elif user_id:
-        query["created_by_user_id"] = user_id
+        query["$or"] = [
+            {"created_by_user_id": user_id},
+            {"assigned_to_user_id": user_id},
+        ]
 
     bookings = await db.bookings.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     return bookings
@@ -6584,8 +6655,10 @@ async def update_booking(
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
     
-    # Staff can only edit their own bookings
-    if context.role == UserRole.STAFF and booking.get("created_by_user_id") != context.user_id:
+    # Staff can edit a booking if they created it OR it was assigned to them
+    # by an admin. (Admins/master_admins can edit anything.)
+    if context.role == UserRole.STAFF and booking.get("created_by_user_id") != context.user_id \
+            and booking.get("assigned_to_user_id") != context.user_id:
         raise HTTPException(status_code=403, detail="You can only edit your own bookings")
     
     update_dict = {k: v for k, v in update_data.model_dump().items() if v is not None}
@@ -6631,8 +6704,9 @@ async def delete_booking(
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
     
-    # Staff can only delete their own bookings
-    if context.role == UserRole.STAFF and booking.get("created_by_user_id") != context.user_id:
+    # Staff can delete a booking if they created it OR it was assigned to them.
+    if context.role == UserRole.STAFF and booking.get("created_by_user_id") != context.user_id \
+            and booking.get("assigned_to_user_id") != context.user_id:
         raise HTTPException(status_code=403, detail="You can only delete your own bookings")
     
     await db.bookings.delete_one(query)
@@ -7764,10 +7838,14 @@ async def startup():
     
     # Seed database with super admin
     await seed_super_admin()
-    
-    # Seed dedicated Support Admin (off-site support — same credentials across all tenants)
-    await seed_support_admin()
-    
+
+    # NOTE: Support Admin auto-seed disabled at customer request (May 2026).
+    # The cross-tenant support@quickwing.com account caused confusion in
+    # franchise team lists. Re-enable this line if Quick Wing ever needs an
+    # off-site support backdoor again. The user record + memberships have
+    # also been removed; uncommenting alone will re-create them on next boot.
+    # await seed_support_admin()
+
     # Seed Malcolm's super admin account
     await seed_malcolm_admin()
     

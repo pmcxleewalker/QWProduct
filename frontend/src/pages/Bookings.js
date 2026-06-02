@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { bookingAPI, carAPI } from '../api/api';
-import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp, Minus, AlertTriangle, Users, CheckCircle } from 'lucide-react';
+import { bookingAPI, carAPI, userAPI } from '../api/api';
+import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp, Minus, AlertTriangle, Users, CheckCircle, UserCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import EditBookingModal from '../components/EditBookingModal';
 import CarAvailabilityCard from '../components/CarAvailabilityCard';
@@ -11,9 +11,13 @@ const Bookings = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const carFromQR = searchParams.get('car'); // Get car ID from QR code URL
-  
+  // Admins (incl. master_admin) can assign a booking to any team member.
+  // Plain staff just book for themselves.
+  const isAdmin = user?.role === 'admin' || user?.role === 'master_admin' || user?.role === 'super_admin';
+
   const [bookings, setBookings] = useState([]);
   const [cars, setCars] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]); // For the Assign-to dropdown
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState('');
@@ -36,6 +40,7 @@ const Bookings = () => {
   const [formData, setFormData] = useState({
     car_id: carFromQR || '',
     user_name: '',
+    assigned_to_user_id: '', // Admin-only: book on behalf of another team member
     start_time: '',
     end_time: '',
     purpose: '',
@@ -107,15 +112,26 @@ const Bookings = () => {
 
   const fetchData = async () => {
     try {
-      const [bookingsRes, carsRes, suggestionsRes] = await Promise.all([
+      const requests = [
         bookingAPI.getAll(),
         carAPI.getAll(),
         bookingAPI.getSuggestions(),
-      ]);
+      ];
+      // Only admins need the team-member list for the Assign-to dropdown.
+      if (isAdmin) requests.push(userAPI.getAll());
+      const responses = await Promise.all(
+        requests.map((p) => p.catch((e) => ({ data: [], _err: e })))
+      );
+      const [bookingsRes, carsRes, suggestionsRes, usersRes] = responses;
       console.log('Fetched bookings:', bookingsRes.data?.length, 'Cars:', carsRes.data?.length);
       setBookings(bookingsRes.data || []);
       setCars(carsRes.data || []);
       setSuggestions(suggestionsRes.data || []);
+      if (isAdmin) {
+        const raw = usersRes?.data;
+        const list = Array.isArray(raw) ? raw : (raw?.users || []);
+        setTeamMembers(list.filter((u) => u.is_active !== false));
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to load bookings');
@@ -267,6 +283,12 @@ const Bookings = () => {
         location: formData.location || '',
         is_recurring: false,
       };
+      // Admin: assigning booking to a specific team member. Backend will
+      // overwrite user_name with the assignee's actual name, and the booking
+      // appears in that user's "My Bookings" feed.
+      if (isAdmin && formData.assigned_to_user_id) {
+        bookingData.assigned_to_user_id = formData.assigned_to_user_id;
+      }
       
       // Add recurrence data if recurring
       if (formData.is_recurring && formData.recurrence_type) {
@@ -300,6 +322,7 @@ const Bookings = () => {
       setFormData({
         car_id: '',
         user_name: '',
+        assigned_to_user_id: '',
         start_time: '',
         end_time: '',
         purpose: '',
@@ -1062,9 +1085,60 @@ const Bookings = () => {
                 </select>
               </div>
 
+              {/* Assign To — Admin only. Picking a team member auto-fills
+                  user_name and stamps assigned_to_user_id on the booking so
+                  the booking shows up on that staff member's app. */}
+              {isAdmin && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <span className="inline-flex items-center gap-1.5">
+                      <UserCheck size={14} className="text-purple-600" />
+                      Assign To
+                    </span>
+                    <span className="text-xs font-normal text-gray-500 ml-2">
+                      (book this car for another team member)
+                    </span>
+                  </label>
+                  <select
+                    data-testid="booking-assigned-to"
+                    value={formData.assigned_to_user_id}
+                    onChange={(e) => {
+                      const userId = e.target.value;
+                      const member = teamMembers.find((m) => m.id === userId);
+                      setFormData((prev) => ({
+                        ...prev,
+                        assigned_to_user_id: userId,
+                        // Auto-fill user_name to the assignee (or current user
+                        // when "Myself" picked). Admin can still override.
+                        user_name: member
+                          ? member.name || member.email || prev.user_name
+                          : (user?.name || user?.email || prev.user_name),
+                      }));
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="">Myself — {user?.name || user?.email}</option>
+                    {teamMembers
+                      .filter((m) => m.id !== user?.id)
+                      .sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || ''))
+                      .map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name || m.email} {m.role === 'admin' || m.role === 'master_admin' ? '· Admin' : '· Staff'}
+                        </option>
+                      ))}
+                  </select>
+                  {formData.assigned_to_user_id && (
+                    <p className="text-xs text-purple-700 bg-purple-50 border border-purple-200 rounded-md px-2 py-1 mt-2">
+                      This booking will appear in{' '}
+                      <strong>{formData.user_name}</strong>&apos;s &quot;My Bookings&quot;.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Your Name *
+                  {formData.assigned_to_user_id ? 'Display Name on Booking' : 'Your Name'} *
                 </label>
                 <input
                   type="text"

@@ -75,6 +75,11 @@ class BookingCreate(BaseModel):
     is_double_up_call: bool = False
     secondary_user_id: Optional[str] = None  # For double-up: the additional user
     secondary_user_name: Optional[str] = None
+    # Admin-only: book this car ON BEHALF of another user. If set, the backend
+    # writes the user's name into `user_name` and the booking will appear in
+    # that staff member's "My Bookings" list. The original admin who created
+    # the booking is still recorded via `created_by_user_id`.
+    assigned_to_user_id: Optional[str] = None
     is_recurring: bool = False
     recurrence_type: Optional[str] = None
     recurrence_end_date: Optional[str] = None
@@ -97,6 +102,7 @@ class BookingUpdate(BaseModel):
     is_double_up_call: Optional[bool] = None
     secondary_user_id: Optional[str] = None
     secondary_user_name: Optional[str] = None
+    assigned_to_user_id: Optional[str] = None  # Admins can re-assign
     # Journey tracking fields
     start_eircode: Optional[str] = None
     start_address: Optional[str] = None
@@ -119,6 +125,7 @@ class Booking(BaseModel):
     is_double_up_call: bool = False
     secondary_user_id: Optional[str] = None  # For double-up: the additional user
     secondary_user_name: Optional[str] = None
+    assigned_to_user_id: Optional[str] = None  # The staff/admin this booking is FOR
     is_recurring: bool = False
     recurrence_type: Optional[str] = None
     recurrence_end_date: Optional[str] = None

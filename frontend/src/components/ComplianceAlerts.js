@@ -428,71 +428,104 @@ const ComplianceAlerts = ({ vehicles, onSettingsClick, complianceSettings, isAdm
       </div>
 
       {/* Content */}
-      {expanded && (
-        <div className="p-4 space-y-4">
-          {critical.length > 0 && (
-            <div>
-              <h4 className="text-sm font-semibold text-red-800 mb-2 flex items-center">
-                <AlertTriangle size={14} className="mr-1" />
-                Critical - Immediate Action Required
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {critical.map(renderIssueCard)}
-              </div>
-            </div>
-          )}
+      {expanded && (() => {
+        // Group all (non-cleared) issues by compliance type so admins can
+        // mentally check "Tax — all done", "NCT — 2 outstanding" etc instead
+        // of scanning a single mixed list. Within each type we preserve the
+        // existing critical → warning → upcoming hierarchy so the most
+        // urgent items still surface first.
+        const TYPE_META = {
+          tax:       { label: 'Tax',        icon: Shield,   accent: 'text-violet-700', dot: 'bg-violet-500' },
+          nct:       { label: 'NCT',        icon: Calendar, accent: 'text-sky-700',    dot: 'bg-sky-500' },
+          insurance: { label: 'Insurance',  icon: FileText, accent: 'text-emerald-700', dot: 'bg-emerald-500' },
+          service:   { label: 'Service',    icon: Gauge,    accent: 'text-amber-700',  dot: 'bg-amber-500' },
+        };
+        const TYPE_ORDER = ['tax', 'nct', 'insurance', 'service'];
+        const grouped = { tax: [], nct: [], insurance: [], service: [] };
+        [...critical, ...warning, ...upcoming].forEach(issue => {
+          if (grouped[issue.type]) grouped[issue.type].push(issue);
+        });
+        // Sort within a type: critical first, then warning (high → low), then upcoming.
+        const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+        Object.keys(grouped).forEach(k => {
+          grouped[k].sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99));
+        });
 
-          {warning.length > 0 && (
-            <div>
-              <h4 className="text-sm font-semibold text-amber-800 mb-2 flex items-center">
-                <Bell size={14} className="mr-1" />
-                Warnings - Due Soon
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {warning.map(renderIssueCard)}
-              </div>
-            </div>
-          )}
+        return (
+          <div className="p-4 space-y-5">
+            {TYPE_ORDER.map((typeKey) => {
+              const issues = grouped[typeKey];
+              if (!issues || issues.length === 0) return null;
+              const meta = TYPE_META[typeKey];
+              const Icon = meta.icon;
+              const criticalCount = issues.filter(i => i.severity === 'critical').length;
+              const warningCount = issues.filter(i => i.severity === 'high' || i.severity === 'medium').length;
+              const upcomingCount = issues.filter(i => i.severity === 'low').length;
+              return (
+                <section key={typeKey} data-testid={`compliance-section-${typeKey}`}>
+                  <header className="flex items-center justify-between mb-2 pb-1 border-b border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${meta.dot}`} />
+                      <Icon size={16} className={meta.accent} />
+                      <h4 className={`text-sm font-semibold ${meta.accent}`}>
+                        {meta.label}
+                      </h4>
+                      <span className="text-xs text-slate-500">
+                        {issues.length} outstanding
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {criticalCount > 0 && (
+                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-red-100 text-red-700">
+                          {criticalCount} critical
+                        </span>
+                      )}
+                      {warningCount > 0 && (
+                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">
+                          {warningCount} due soon
+                        </span>
+                      )}
+                      {upcomingCount > 0 && (
+                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                          {upcomingCount} upcoming
+                        </span>
+                      )}
+                    </div>
+                  </header>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {issues.map(renderIssueCard)}
+                  </div>
+                </section>
+              );
+            })}
 
-          {upcoming.length > 0 && (
-            <details className="group">
-              <summary className="text-sm font-semibold text-blue-800 mb-2 flex items-center cursor-pointer list-none">
-                <Clock size={14} className="mr-1" />
-                Upcoming ({upcoming.length})
-                <ChevronDown size={14} className="ml-1 group-open:rotate-180 transition-transform" />
-              </summary>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
-                {upcoming.map(renderIssueCard)}
-              </div>
-            </details>
-          )}
-
-          {hasCleared && (
-            <details className="group">
-              <summary className="text-sm font-semibold text-slate-700 mb-2 flex items-center cursor-pointer list-none">
-                <EyeOff size={14} className="mr-1" />
-                Cleared by admin ({cleared.length})
-                <ChevronDown size={14} className="ml-1 group-open:rotate-180 transition-transform" />
-              </summary>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
-                {cleared.map(renderClearedCard)}
-              </div>
-            </details>
-          )}
-
-          {/* Summary Stats */}
-          <div className="flex items-center justify-between pt-3 border-t border-amber-200 text-xs text-amber-700">
-            <span>
-              Tax/NCT/Insurance {settings.tax_warning_days} days · Service {settings.service_warning_km} km
-            </span>
-            {onSettingsClick && (
-              <button onClick={onSettingsClick} className="text-amber-800 hover:underline font-medium">
-                Adjust Settings
-              </button>
+            {hasCleared && (
+              <details className="group">
+                <summary className="text-sm font-semibold text-slate-700 mb-2 flex items-center cursor-pointer list-none">
+                  <EyeOff size={14} className="mr-1" />
+                  Cleared by admin ({cleared.length})
+                  <ChevronDown size={14} className="ml-1 group-open:rotate-180 transition-transform" />
+                </summary>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
+                  {cleared.map(renderClearedCard)}
+                </div>
+              </details>
             )}
+
+            {/* Summary Stats */}
+            <div className="flex items-center justify-between pt-3 border-t border-amber-200 text-xs text-amber-700">
+              <span>
+                Tax/NCT/Insurance {settings.tax_warning_days} days · Service {settings.service_warning_km} km
+              </span>
+              {onSettingsClick && (
+                <button onClick={onSettingsClick} className="text-amber-800 hover:underline font-medium">
+                  Adjust Settings
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

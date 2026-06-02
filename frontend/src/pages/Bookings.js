@@ -5,6 +5,7 @@ import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, Chevr
 import { useAuth } from '../contexts/AuthContext';
 import EditBookingModal from '../components/EditBookingModal';
 import CarAvailabilityCard from '../components/CarAvailabilityCard';
+import BookingIntelligence from '../components/BookingIntelligence';
 
 const Bookings = () => {
   const { user } = useAuth();
@@ -832,6 +833,31 @@ const Bookings = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-3 py-4 sm:px-6 lg:px-8 pb-20 sm:pb-8">
+      {/* Booking Intelligence — AI-styled scanner that highlights conflicts
+          and recommends alternative vehicles or time slots. Sits at the very
+          top so admins see action items first. Clicking a suggestion calls
+          `applySuggestion` which fires a PATCH on the relevant booking. */}
+      {isAdmin && (
+        <div className="mb-5">
+          <BookingIntelligence
+            bookings={bookings}
+            vehicles={cars}
+            onApplySuggestion={async ({ bookingId, replaceCarId, replaceStart, replaceEnd }) => {
+              try {
+                const payload = {};
+                if (replaceCarId) payload.car_id = replaceCarId;
+                if (replaceStart) payload.start_time = replaceStart;
+                if (replaceEnd) payload.end_time = replaceEnd;
+                await bookingAPI.update(bookingId, payload);
+                await fetchData();
+              } catch (err) {
+                setError(err.response?.data?.detail || 'Failed to apply suggestion');
+              }
+            }}
+          />
+        </div>
+      )}
+
       {/* QR Code Banner */}
       {carFromQR && qrCarName && (
         <div className="bg-blue-600 text-white rounded-lg p-4 mb-4 flex items-center justify-between">

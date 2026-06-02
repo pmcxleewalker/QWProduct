@@ -4,6 +4,38 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - Jun 2, 2026
+**Compliance Alerts grouped by type + new AI-styled Booking Intelligence panel.**
+
+**A) Compliance Alerts grouping (`ComplianceAlerts.js`):**
+- Replaced flat critical/warning/upcoming list with **per-type sections**: Tax · NCT · Insurance · Service.
+- Each section shows: colour dot + icon + label + "{n} outstanding" + severity badges (e.g. "2 critical", "1 due soon", "3 upcoming").
+- Within each section issues sort critical → warning → upcoming (severity order preserved).
+- Empty sections auto-hide (no noise for tenants who don't track all 4).
+- Cleared-by-admin and Adjust Settings rows preserved at the bottom.
+- Test IDs: `compliance-section-tax`, `compliance-section-nct`, `compliance-section-insurance`, `compliance-section-service`.
+
+**B) Booking Intelligence (`BookingIntelligence.js` + `.css`):**
+- New "alive and breathing" AI-styled scanner mounted at top of `Bookings.js` (admin-only).
+- Deterministic analysis pass (instant, free, no LLM, never hallucinates) over upcoming 14-day window:
+  1. **Vehicle conflicts** — same car double-booked
+  2. **Driver conflicts** — same person on two cars simultaneously (covers creator + assignee + secondary user)
+  3. **Compliance risk** — booking falls on/after the vehicle's tax/NCT/insurance expiry
+  4. **Idle vehicles** — cars with zero bookings in next 14 days
+- For each conflict computes concrete fixes: alternative free vehicles + ±2h / ±1d slot shifts on the same car. Clicking a suggestion calls `bookingAPI.update` with the proposed car_id / start_time / end_time.
+- AI-styled visual treatment (CSS-only animations, no framer-motion dependency):
+  - Conic-gradient spinning border (`bi-border-glow`, 9s rotation, conic + `@property --bi-angle`)
+  - 18 floating particle dots drifting upward (`bi-particles`)
+  - Pulsing purple brain orb with 3 sparkles in orbit
+  - Gradient-shifting title text (purple → cyan → pink)
+  - Green pulsing "LIVE" badge with heartbeat dot
+  - Scanning bar during analysis + typewriter cursor in subtitle
+  - Live stat tiles with periodic sheen sweep + heartbeat re-render
+  - Cards have fade/slide-in entrance + neural top-border accent
+- VERIFIED on preview using a real Ford Focus booking with imminent tax expiry — panel renders, scans, detects 2 compliance risks + 4 idle vehicles, filter chips work, suggestions row appears on conflict cards.
+
+
+
 ### UX Change - Jun 2, 2026
 **Hide Legal & Compliance entry points inside the app.**
 - Removed the Scale ⚖️ icon link to `/legal` from `Navigation.js` desktop purple navbar (was visible to every logged-in user).

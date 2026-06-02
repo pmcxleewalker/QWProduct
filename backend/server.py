@@ -66,6 +66,13 @@ from middleware.tenant import (
 )
 from services.audit import AuditService
 from services.email_service import send_staff_invitation_email, send_owner_welcome_email
+from services.cache import (
+    cache as ttl_cache,
+    tenant_settings_key,
+    vehicles_key,
+    locations_key,
+    tenant_prefix,
+)
 from services.documents import (
     TemplateCreate as DocTemplateCreate,
     TemplateUpdate as DocTemplateUpdate,
@@ -1397,7 +1404,16 @@ class ComplianceSettingsUpdate(BaseModel):
 
 @api_router.get("/tenant/settings")
 async def get_tenant_settings(context: TenantContext = Depends(require_tenant_context)):
-    """Get tenant settings including branding and analytics configuration"""
+    """Get tenant settings including branding and analytics configuration.
+
+    Cached for 30s per tenant — invalidated by any mutation that touches the
+    tenant document (settings PUT, compliance settings PUT, logo upload, plan
+    overrides, etc.).
+    """
+    cached = await ttl_cache.get(tenant_settings_key(context.tenant_id))
+    if cached is not None:
+        return cached
+
     tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
@@ -1421,7 +1437,7 @@ async def get_tenant_settings(context: TenantContext = Depends(require_tenant_co
     # Return settings
     settings = tenant.get("settings", {})
     compliance_settings = settings.get("compliance", {})
-    return {
+    response = {
         "branding": {
             "logo_url": settings.get("logo_url"),
             "primary_color": settings.get("primary_color", "#7c3aed"),  # Default purple for Pro
@@ -1446,6 +1462,8 @@ async def get_tenant_settings(context: TenantContext = Depends(require_tenant_co
             "enable_service_alerts": compliance_settings.get("enable_service_alerts", True)
         }
     }
+    await ttl_cache.set(tenant_settings_key(context.tenant_id), response, ttl=30)
+    return response
 
 
 @api_router.put("/tenant/settings")
@@ -1501,6 +1519,7 @@ async def update_tenant_settings(
     if update_fields:
         update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
         await db.tenants.update_one({"id": context.tenant_id}, {"$set": update_fields})
+        await ttl_cache.invalidate(tenant_settings_key(context.tenant_id))
     
     # Return updated settings
     updated_tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
@@ -1554,6 +1573,7 @@ async def update_compliance_settings(
     if update_fields:
         update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
         await db.tenants.update_one({"id": context.tenant_id}, {"$set": update_fields})
+        await ttl_cache.invalidate(tenant_settings_key(context.tenant_id))
     
     # Return updated compliance settings
     updated_tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
@@ -1741,6 +1761,7 @@ async def upload_tenant_logo(
             "updated_at": datetime.now(timezone.utc).isoformat()
         }}
     )
+    await ttl_cache.invalidate(tenant_settings_key(context.tenant_id))
     
     return {
         "message": "Logo uploaded successfully",
@@ -4611,6 +4632,7 @@ async def create_vehicle(
     }
     
     await db.vehicles.insert_one(vehicle)
+    await ttl_cache.invalidate_prefix(tenant_prefix(context.tenant_id))
     
     await audit_service.log(
         actor_user_id=context.user_id,
@@ -4833,6 +4855,9 @@ async def bulk_import_vehicles(
     except Exception:
         # Audit log failure should not fail the import
         pass
+
+    if succeeded:
+        await ttl_cache.invalidate_prefix(tenant_prefix(context.tenant_id))
 
     return {
         "message": f"Imported {len(succeeded)} of {len(succeeded) + len(errors)} vehicles",
@@ -5685,7 +5710,19 @@ async def list_vehicles(
     limit: int = 100,
     context: TenantContext = Depends(require_tenant_context)
 ):
-    """List vehicles in the current tenant with real-time booking status"""
+    """List vehicles in the current tenant with real-time booking status.
+
+    Cached for 15s per (tenant, skip, limit) tuple. The active-booking
+    overlay means we keep TTL short so a freshly-started/ended booking
+    becomes visible within ~15s without manual invalidation. Mutations
+    (create/update/delete/block/unblock vehicles) explicitly invalidate
+    the tenant prefix so admin changes are reflected instantly.
+    """
+    cache_key = vehicles_key(context.tenant_id, skip, limit)
+    cached = await ttl_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     query = TenantQueryBuilder.scope(context.tenant_id)
     vehicles = await db.vehicles.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     
@@ -5724,6 +5761,7 @@ async def list_vehicles(
             # Only auto-update if it was set by booking system
             pass  # Keep manual status
     
+    await ttl_cache.set(cache_key, vehicles, ttl=15)
     return vehicles
 
 
@@ -5759,6 +5797,7 @@ async def update_vehicle(
     if update_dict:
         update_dict["updated_at"] = datetime.now(timezone.utc).isoformat()
         await db.vehicles.update_one(query, {"$set": update_dict})
+        await ttl_cache.invalidate_prefix(tenant_prefix(context.tenant_id))
     
     updated = await db.vehicles.find_one(query, {"_id": 0})
     return updated
@@ -5778,6 +5817,7 @@ async def delete_vehicle(
         raise HTTPException(status_code=404, detail="Vehicle not found")
     
     await db.vehicles.delete_one(query)
+    await ttl_cache.invalidate_prefix(tenant_prefix(context.tenant_id))
     
     await audit_service.log(
         actor_user_id=context.user_id,
@@ -5963,6 +6003,7 @@ async def block_vehicle_for_appointment(
     }
     
     await db.vehicles.update_one(query, {"$set": update_dict})
+    await ttl_cache.invalidate_prefix(tenant_prefix(context.tenant_id))
     
     # Log the block action
     status_update = {
@@ -6014,6 +6055,7 @@ async def unblock_vehicle(
     }
     
     await db.vehicles.update_one(query, {"$set": update_dict})
+    await ttl_cache.invalidate_prefix(tenant_prefix(context.tenant_id))
     
     # Log the unblock action
     status_update = {
@@ -6601,6 +6643,8 @@ async def list_bookings(
     status: Optional[str] = None,
     car_id: Optional[str] = None,
     user_id: Optional[str] = None,
+    from_date: Optional[str] = Query(None, alias="from"),
+    to_date: Optional[str] = Query(None, alias="to"),
     include_secondary: bool = True,
     skip: int = 0,
     limit: int = 2000,
@@ -6612,6 +6656,11 @@ async def list_bookings(
     recurring schedules render the same data set across the Bookings page,
     the Fleet > All Cars Calendar, and the Car Calendars grid. Clients can
     pass a smaller `limit` query param if needed.
+
+    Date window: `?from=YYYY-MM-DD&to=YYYY-MM-DD` (or full ISO) returns only
+    bookings that overlap that window — i.e. `start_time < to AND end_time > from`.
+    Useful for the calendar / Live Sheet so a month view only pulls a month
+    of rows instead of the full 2000-row history.
     """
     query = {"tenant_id": context.tenant_id}
 
@@ -6633,6 +6682,14 @@ async def list_bookings(
             {"created_by_user_id": user_id},
             {"assigned_to_user_id": user_id},
         ]
+
+    # Overlap filter: a booking overlaps the window [from_date, to_date) iff
+    # start_time < to AND end_time > from. Times are stored as ISO-8601
+    # strings, which compare correctly lexicographically.
+    if from_date:
+        query["end_time"] = {"$gt": from_date}
+    if to_date:
+        query["start_time"] = {"$lt": to_date}
 
     bookings = await db.bookings.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
     return bookings
@@ -7294,10 +7351,16 @@ async def dismiss_lift_request(
 async def list_locations(
     context: TenantContext = Depends(require_tenant_context)
 ):
-    """List all configured locations for the tenant"""
+    """List all configured locations for the tenant. Cached for 60s per tenant."""
+    cached = await ttl_cache.get(locations_key(context.tenant_id))
+    if cached is not None:
+        return cached
+
     query = TenantQueryBuilder.scope(context.tenant_id)
     locations = await db.locations.find(query, {"_id": 0}).sort("name", 1).to_list(100)
-    return {"locations": locations}
+    response = {"locations": locations}
+    await ttl_cache.set(locations_key(context.tenant_id), response, ttl=60)
+    return response
 
 
 @api_router.post("/locations")
@@ -7323,6 +7386,7 @@ async def create_location(
         )
     
     await db.locations.insert_one(location)
+    await ttl_cache.invalidate(locations_key(context.tenant_id))
     return {k: v for k, v in location.items() if k != "_id"}
 
 
@@ -7350,6 +7414,7 @@ async def update_location(
         )
     
     await db.locations.update_one(query, {"$set": update_data})
+    await ttl_cache.invalidate(locations_key(context.tenant_id))
     
     updated = await db.locations.find_one(query, {"_id": 0})
     return updated
@@ -7367,6 +7432,7 @@ async def delete_location(
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Location not found")
     
+    await ttl_cache.invalidate(locations_key(context.tenant_id))
     return {"message": "Location deleted"}
 
 

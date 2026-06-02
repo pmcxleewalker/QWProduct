@@ -1,0 +1,56 @@
+{
+  "summary": "Backend regression for the TTL cache invalidation + ?from/?to booking filter passed cleanly (18/18 pytest). Frontend branding regression uncovered a CRITICAL pre-existing backend bug: tenant logo_url is stored/served as http://localhost:8001/api/uploads/logos/... which is blocked by the browser (Mixed Content + private network / CORS) so the BUMBLEance/tenant logo never renders on either the TenantLogin co-brand row or the navbar tenant badge. The JSX branding code itself is correct and the navbar 'Quick Wing' wordmark + structure render as designed. Dashboard, Bookings, Admin navigation all load fine — cache layer did not break any existing flow.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/tenant/upload-logo (and /api/tenants/by-slug/{slug} response)",
+        "issue": "Stored/returned logo_url is 'http://localhost:8001/api/uploads/logos/<file>.png'. Browser blocks it with Mixed Content (http on https page) and 'Permission was denied for this request to access the loopback address space' (Chrome PNA). Result: tenant logo never displays in TenantLogin co-brand row or navbar tenant badge. Either store a relative path '/api/uploads/logos/...' and prefix with REACT_APP_BACKEND_URL on the FE, or build the absolute URL from the public host (request.url / X-Forwarded-Host) at upload time.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "TenantLogin (/<slug>/login) co-brand row",
+        "issue": "The <img data-testid='tenant-login-logo'> fails to load because logo_url is http://localhost:8001/...; the onError handler hides it, leaving only 'powered by [Quick Wing logo]' visible. Root cause is backend logo URL — once that is fixed the row renders correctly.",
+        "selector": "[data-testid='tenant-login-logo']",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Navigation (desktop + mobile) tenant badge",
+        "issue": "navbar-tenant-logo / navbar-tenant-badge never visible because the same broken logo_url 404s and onError sets tenantLogo=null. JSX wiring is correct (h-8 desktop badge after divider, h-6 mobile badge after '·').",
+        "selector": "[data-testid='navbar-tenant-logo'], [data-testid='navbar-tenant-badge']",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_cache_and_filters.py",
+    "/app/backend/tests/test_cache_invalidation_regression.py",
+    "/app/test_reports/pytest/cache_full.xml"
+  ],
+  "action_items": [
+    "Fix the upload-logo endpoint to NOT hardcode http://localhost:8001 as the host for the stored logo_url. Either (a) save a relative path like '/api/uploads/logos/<file>.png' and let the frontend prefix it with process.env.REACT_APP_BACKEND_URL, or (b) build the absolute URL using the public host from the incoming request (request.base_url / X-Forwarded-Proto + X-Forwarded-Host). After the fix, test-fleet's existing logo_url DB value also needs a one-time migration/correction (it currently points to localhost).",
+    "Once logo URL is fixed, retest TenantLogin co-brand layout and navbar tenant badge on /test-fleet — both should render the BUMBLEance logo next to Quick Wing."
+  ],
+  "critical_code_review_comments": [
+    "services/cache.py invalidation pattern (ttl_cache.invalidate_prefix) is correctly called on every mutation endpoint (vehicles POST/PUT/DELETE/block/unblock, locations POST/PUT/DELETE, tenant settings PUT/PUT-compliance, upload-logo). Verified end-to-end.",
+    "GET /api/bookings ?from/?to overlap filter is implemented as ISO-string lex comparison; relies on start_time/end_time always being normalized ISO-8601 with the same timezone offset. Works in practice with current data, but worth a code comment noting the assumption.",
+    "Frontend TenantLogin and Navigation co-brand layouts are clean and have appropriate data-testids; nothing to change there.",
+    "Pre-existing: 2 elements share data-testid='nav-bookings' (mobile bottom-nav + desktop top-nav) which forces test scripts to scope selectors. Consider differentiating to 'nav-bookings-mobile' / 'nav-bookings-desktop'."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_cache_invalidation_regression.py (new — 12 regression tests for cache invalidation + bookings filter)"
+  ],
+  "success_rate": {"backend": "100% (18/18)", "frontend": "70% (branding visual broken due to backend logo URL)"},
+  "test_credentials": "support@quickwing.com / QuickWing123! used (no forced password change); admin.test-fleet@quickwing.com / admin123 also works.",
+  "seed_data_creation": "Test created+deleted vehicles/locations during CRUD tests; one stray test vehicle (registration TESTCACHE1 / name 'Test Vehicle Renamed') may have been left in test-fleet from an intermediate failed run — visible in Admin > Fleet. Main agent or next run can purge.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 18 backend pytest pass. After main agent fixes the logo_url scheme bug, re-run frontend Playwright on /test-fleet/login and the dashboard navbar to confirm BUMBLEance logo finally renders alongside 'Quick Wing'. Use support@quickwing.com / QuickWing123! to avoid the forced-password-change modal.",
+  "rca_of_the_issue": "logo_url is generated server-side with hardcoded 'http://localhost:8001' as the base. Browsers loading the HTTPS preview block this image: (1) Mixed Content (http resource on https page), (2) Chrome Private Network Access denies loopback from a public origin. The frontend img tag's onError clears the logo, so the tenant brand silently disappears from both the login page and the navbar. The branding feature work in this session is otherwise complete and correct; this single backend URL construction issue is what makes the visual outcome appear broken."
+}

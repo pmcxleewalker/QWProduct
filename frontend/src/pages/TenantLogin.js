@@ -131,35 +131,28 @@ const TenantLogin = () => {
             <div className="px-8 pt-10 pb-8 text-center">
               {tenantInfo?.logo_url ? (
                 <>
-                  {/* Tenant's own brand — front and centre */}
-                  <div className="inline-block">
+                  {/* Horizontal co-brand: [Tenant logo] powered by [Quick Wing logo] */}
+                  <div className="flex items-center justify-center gap-4 flex-wrap" data-testid="tenant-cobrand-row">
                     <img
                       src={tenantInfo.logo_url}
                       alt={tenantInfo.name}
-                      className="h-24 w-auto max-w-[240px] object-contain mx-auto drop-shadow-md"
+                      className="h-16 sm:h-20 w-auto max-w-[180px] object-contain drop-shadow-md"
                       data-testid="tenant-login-logo"
                       onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
-                  </div>
-                  <h1
-                    className="text-2xl font-bold text-slate-800 tracking-tight mt-4"
-                    data-testid="tenant-login-title"
-                  >
-                    {tenantInfo.name}
-                  </h1>
-                  <p className="text-sm text-slate-500 mt-1">Fleet Management Portal</p>
-
-                  {/* Powered-by — small but visible white-label badge */}
-                  <div className="mt-5 flex items-center justify-center gap-2">
-                    <span className="text-[11px] uppercase tracking-wider text-slate-400 font-medium">
-                      Powered by
+                    <span className="text-xs uppercase tracking-[0.18em] text-slate-400 font-medium whitespace-nowrap">
+                      powered by
                     </span>
                     <img
                       src="/quick-wing-logo.png"
                       alt="Quick Wing"
-                      className="h-5 w-auto object-contain opacity-80"
+                      className="h-10 sm:h-12 w-auto object-contain opacity-90"
+                      data-testid="quickwing-poweredby-logo"
                     />
                   </div>
+                  <p className="text-sm text-slate-500 mt-6" data-testid="tenant-login-title">
+                    {tenantInfo.name} · Fleet Management Portal
+                  </p>
                 </>
               ) : (
                 <>

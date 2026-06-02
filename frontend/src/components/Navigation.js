@@ -299,19 +299,24 @@ const Navigation = ({ tenantSlug }) => {
       {/* Mobile Top Header */}
       <nav className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
         <div className="flex justify-between items-center h-14 px-4">
-          {tenantLogo ? (
-            <img
-              src={tenantLogo}
-              alt={activeTenant?.tenant_name || 'Tenant logo'}
-              className="h-9 w-auto max-w-[140px] object-contain"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                setTenantLogo(null);
-              }}
-            />
-          ) : (
-            <h1 className="text-xl font-bold text-blue-600">{process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}</h1>
-          )}
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-xl font-bold text-blue-600 whitespace-nowrap">{process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}</h1>
+            {tenantLogo && (
+              <>
+                <span className="text-gray-300 text-xs">·</span>
+                <img
+                  src={tenantLogo}
+                  alt={activeTenant?.tenant_name || 'Tenant logo'}
+                  className="h-6 w-auto max-w-[80px] object-contain opacity-80"
+                  data-testid="navbar-tenant-badge"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    setTenantLogo(null);
+                  }}
+                />
+              </>
+            )}
+          </div>
           <div className="flex items-center space-x-2">
             {/* Notification Bell - Mobile */}
             <div className="relative" ref={notificationRef}>
@@ -423,27 +428,27 @@ const Navigation = ({ tenantSlug }) => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              {tenantLogo ? (
-                <img
-                  src={tenantLogo}
-                  alt={activeTenant?.tenant_name || 'Tenant logo'}
-                  className="h-12 w-auto max-w-[220px] object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.25)]"
-                  data-testid="navbar-tenant-logo"
-                  onError={(e) => {
-                    // If the logo URL ever fails (broken upload, expired CDN
-                    // link, etc.) fall back to the Quick Wing wordmark.
-                    e.currentTarget.style.display = 'none';
-                    setTenantLogo(null);
-                  }}
-                />
-              ) : (
-                <h1
-                  className="text-2xl font-bold text-white"
-                  style={{ textShadow: '0 0 12px rgba(216,180,254,0.45)' }}
-                >
-                  {process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}
-                </h1>
+            <div className="flex items-center gap-3">
+              <h1
+                className="text-2xl font-bold text-white"
+                style={{ textShadow: '0 0 12px rgba(216,180,254,0.45)' }}
+              >
+                {process.env.REACT_APP_COMPANY_NAME || 'Quick Wing'}
+              </h1>
+              {tenantLogo && (
+                <>
+                  <span className="h-6 w-px bg-white/30"></span>
+                  <img
+                    src={tenantLogo}
+                    alt={activeTenant?.tenant_name || 'Tenant logo'}
+                    className="h-8 w-auto max-w-[120px] object-contain opacity-90 drop-shadow-[0_0_6px_rgba(255,255,255,0.2)]"
+                    data-testid="navbar-tenant-logo"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      setTenantLogo(null);
+                    }}
+                  />
+                </>
               )}
             </div>
             <div className="flex items-center space-x-4">

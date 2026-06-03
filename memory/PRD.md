@@ -4,6 +4,25 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Bug Fix - Feb 2, 2026 (production hotfix)
+**"Failed to update booking" alert in Edit Booking modal — fixed three chained bugs.**
+
+Client reported `quick-wing.com says: Update failed: Failed to update booking` when editing any booking via the Edit Booking modal. Root cause was a chain of three latent bugs:
+
+1. **Typo killing the whole save flow** — `EditBookingModal.js` called `bookingAPI.edit(booking.id, updateData)` but the method is named `update` in `api/api.js`. `bookingAPI.edit` was `undefined`, so calling it threw a `TypeError`. The catch block tried to read `err.response?.data?.detail`, found it undefined (TypeError has no `response`), and fell through to the generic `'Failed to update booking'` fallback message. The request **never reached the backend**.
+2. **`BookingUpdate` model missing `car_id`** — the "Swap Car" flow sent `car_id`, but Pydantic silently dropped the unknown field, so the swap never persisted. Backend returned 200 + the unchanged booking, frontend showed a misleading "success".
+3. **`BookingUpdate` missing `notes` and frontend used wrong field name** — modal wrote to `destination_notes` (doesn't exist anywhere in the codebase) and read from `booking.destination_notes` (always undefined). Notes typed into the textarea were silently discarded.
+
+**Fixes**:
+- `EditBookingModal.js`: replaced `bookingAPI.edit` → `bookingAPI.update`; renamed `destination_notes` → `notes` (with legacy-data fallback `booking.notes ?? booking.destination_notes ?? ''`).
+- `models/resources.py` → `BookingUpdate`: added `car_id: Optional[str]` and `notes: Optional[str]`.
+- `api/api.js`: also added the previously-missing `bookingAPI.getAvailableCars(start, end, excludeId)` (client-side intersection of `/vehicles` and `/bookings?from=&to=` — keeps the Swap Car selector working), plus `bookingAPI.approve(id)` and `bookingAPI.reject(id, reason)` which were being called from `Admin.js` but never defined.
+
+**Regression suite**: 3 new pytest tests in `/app/backend/tests/test_booking_update_regression.py` — notes persistence, time updates, car-swap persistence. All passing. Plus all 18 previous tests in `test_cache_and_filters.py` + `test_cache_invalidation_regression.py` still pass.
+
+**Note on deployment**: This fix only addresses preview/code. Production at https://quick-wing.com still has the broken build until the user clicks "Save to Github" and redeploys.
+
+
 ### Feature + Bug Fix - Feb 2, 2026
 **BUMBLEance branding tweak + tenant-logo URL persistence bug fix + perf quick-wins (date filters & TTL cache).**
 

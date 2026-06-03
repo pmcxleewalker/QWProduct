@@ -7,7 +7,7 @@ const EditBookingModal = ({ isOpen, onClose, booking, onSuccess }) => {
     user_name: '',
     start_time: '',
     end_time: '',
-    destination_notes: '',
+    notes: '',
     car_id: '',
   });
   const [loading, setLoading] = useState(false);
@@ -30,7 +30,9 @@ const EditBookingModal = ({ isOpen, onClose, booking, onSuccess }) => {
         user_name: booking.user_name || '',
         start_time: formatForInput(booking.start_time),
         end_time: formatForInput(booking.end_time),
-        destination_notes: booking.destination_notes || '',
+        // Backend stores the field as `notes`; fall back to legacy
+        // `destination_notes` for any old data, then default to ''.
+        notes: booking.notes ?? booking.destination_notes ?? '',
         car_id: booking.car_id || '',
       });
       
@@ -83,7 +85,7 @@ const EditBookingModal = ({ isOpen, onClose, booking, onSuccess }) => {
         user_name: formData.user_name,
         start_time: new Date(formData.start_time).toISOString(),
         end_time: new Date(formData.end_time).toISOString(),
-        destination_notes: formData.destination_notes,
+        notes: formData.notes,
       };
       
       // Include car_id if changed
@@ -91,7 +93,7 @@ const EditBookingModal = ({ isOpen, onClose, booking, onSuccess }) => {
         updateData.car_id = formData.car_id;
       }
       
-      await bookingAPI.edit(booking.id, updateData);
+      await bookingAPI.update(booking.id, updateData);
       alert('Booking updated successfully!');
       onSuccess?.();
       onClose();
@@ -260,8 +262,8 @@ const EditBookingModal = ({ isOpen, onClose, booking, onSuccess }) => {
               Destination / Notes
             </label>
             <textarea
-              value={formData.destination_notes}
-              onChange={(e) => setFormData({ ...formData, destination_notes: e.target.value })}
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={2}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
               placeholder="Optional notes..."

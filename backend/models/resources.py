@@ -94,10 +94,12 @@ class BookingCreate(BaseModel):
 
 class BookingUpdate(BaseModel):
     user_name: Optional[str] = None
+    car_id: Optional[str] = None  # Allow the "Swap Car" flow on existing bookings
     start_time: Optional[str] = None
     end_time: Optional[str] = None
     purpose: Optional[str] = None
     location: Optional[str] = None
+    notes: Optional[str] = None  # Free-text destination / driver notes (matches BookingCreate.notes)
     status: Optional[str] = None
     is_double_up_call: Optional[bool] = None
     secondary_user_id: Optional[str] = None

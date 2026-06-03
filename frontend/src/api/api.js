@@ -27,8 +27,32 @@ export const bookingAPI = {
   create: (data) => axios.post(`${API}/bookings`, data),
   update: (id, data) => axios.put(`${API}/bookings/${id}`, data),
   delete: (id) => axios.delete(`${API}/bookings/${id}`),
+  approve: (id) => axios.post(`${API}/bookings/${id}/approve`),
+  reject: (id, reason = '') => axios.post(`${API}/bookings/${id}/reject`, null, { params: { reason } }),
   getSuggestions: () => Promise.resolve({ data: [] }), // Booking suggestions - placeholder
   getPending: () => axios.get(`${API}/bookings/pending`).catch(() => ({ data: [] })), // Pending bookings
+  // Return cars that have no overlapping booking in the requested window.
+  // Used by the EditBookingModal "Swap Car" flow. Implemented client-side
+  // because the backend doesn't (yet) expose a dedicated availability search
+  // endpoint — we just intersect /vehicles with /bookings?from=&to=.
+  getAvailableCars: async (startISO, endISO, excludeBookingId = null) => {
+    const [carsRes, bookingsRes] = await Promise.all([
+      axios.get(`${API}/vehicles`),
+      axios.get(`${API}/bookings`, { params: { from: startISO, to: endISO } }),
+    ]);
+    const cars = carsRes.data || [];
+    const conflictingCarIds = new Set(
+      (bookingsRes.data || [])
+        .filter(b =>
+          b.id !== excludeBookingId &&
+          !['rejected', 'cancelled'].includes(b.status) &&
+          b.start_time < endISO && b.end_time > startISO
+        )
+        .map(b => b.car_id)
+    );
+    const free = cars.filter(c => !conflictingCarIds.has(c.id) && !c.is_blocked);
+    return { data: free };
+  },
 };
 
 // Provider API (tenant-scoped)

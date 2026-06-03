@@ -215,7 +215,30 @@
   text-align: center;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.4s ease;
+  transition: border-color 0.25s ease, transform 0.15s ease, background 0.25s ease, box-shadow 0.25s ease;
+  /* Make sure <button>-flavoured tiles look like the originals */
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.bi-stat:hover:not(:disabled) {
+  background: rgba(167, 139, 250, 0.10);
+  border-color: rgba(216, 180, 254, 0.45);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px -8px rgba(167, 139, 250, 0.55);
+}
+.bi-stat:focus-visible {
+  outline: 2px solid rgba(216, 180, 254, 0.8);
+  outline-offset: 2px;
+}
+.bi-stat:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+.bi-stat-active {
+  background: rgba(167, 139, 250, 0.16);
+  border-color: rgba(216, 180, 254, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(216, 180, 254, 0.35), 0 4px 16px -8px rgba(167, 139, 250, 0.7);
 }
 .bi-stat::before {
   content: '';

@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import EditBookingModal from '../components/EditBookingModal';
 import CarAvailabilityCard from '../components/CarAvailabilityCard';
 import BookingIntelligence from '../components/BookingIntelligence';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 const Bookings = () => {
   const { user } = useAuth();
@@ -839,22 +840,33 @@ const Bookings = () => {
           `applySuggestion` which fires a PATCH on the relevant booking. */}
       {isAdmin && (
         <div className="mb-5">
-          <BookingIntelligence
-            bookings={bookings}
-            vehicles={cars}
-            onApplySuggestion={async ({ bookingId, replaceCarId, replaceStart, replaceEnd }) => {
-              try {
-                const payload = {};
-                if (replaceCarId) payload.car_id = replaceCarId;
-                if (replaceStart) payload.start_time = replaceStart;
-                if (replaceEnd) payload.end_time = replaceEnd;
-                await bookingAPI.update(bookingId, payload);
-                await fetchData();
-              } catch (err) {
-                setError(err.response?.data?.detail || 'Failed to apply suggestion');
-              }
-            }}
-          />
+          <ErrorBoundary>
+            <BookingIntelligence
+              bookings={bookings}
+              vehicles={cars}
+              onApplySuggestion={async ({ bookingId, replaceCarId, replaceStart, replaceEnd }) => {
+                try {
+                  const payload = {};
+                  if (replaceCarId) payload.car_id = replaceCarId;
+                  if (replaceStart) payload.start_time = replaceStart;
+                  if (replaceEnd) payload.end_time = replaceEnd;
+                  await bookingAPI.update(bookingId, payload);
+                  await fetchData();
+                } catch (err) {
+                  // detail can be an object (e.g. 409 conflict detail) — don't pass
+                  // it straight to setError or rendering `{error}` will crash React
+                  // with "Objects are not valid as a React child" → blank screen.
+                  const d = err.response?.data?.detail;
+                  const msg =
+                    typeof d === 'string'
+                      ? d
+                      : (d && typeof d === 'object' && (d.message || d.msg)) ||
+                        'Failed to apply suggestion';
+                  setError(msg);
+                }
+              }}
+            />
+          </ErrorBoundary>
         </div>
       )}
 

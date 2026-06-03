@@ -5,6 +5,7 @@ import { Toaster } from 'sonner';
 import ProtectedRoute from './components/ProtectedRoute';
 import CookieConsent from './components/CookieConsent';
 import { ConfirmProvider } from './components/ConfirmDialog';
+import ErrorBoundary from './components/ErrorBoundary';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import TenantLogin from './pages/TenantLogin';
@@ -342,22 +343,24 @@ const TenantRoutes = () => {
     <>
       <Navigation tenantSlug={tenantSlug} />
       <div className="pt-16 pb-20 sm:pb-4 flex-grow">
-        <Routes>
-          <Route path="/" element={<TenantDashboard />} />
-          <Route path="/legacy-dashboard" element={<Dashboard />} />
-          <Route path="/live-sheet" element={<LiveSheet />} />
-          <Route path="/bookings" element={<Bookings />} />
-          <Route path="/assistance" element={<Assistance />} />
-          <Route path="/request-lift" element={<RequestLift />} />
-          <Route path="/mileage" element={<MileageUpdate />} />
-          <Route path="/setup-wizard" element={<SetupWizard />} />
-          <Route
-            path="/admin"
-            element={
-              isTenantAdmin ? <Admin /> : <Navigate to={`/${tenantSlug}`} replace />
-            }
-          />
-        </Routes>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<TenantDashboard />} />
+            <Route path="/legacy-dashboard" element={<Dashboard />} />
+            <Route path="/live-sheet" element={<LiveSheet />} />
+            <Route path="/bookings" element={<Bookings />} />
+            <Route path="/assistance" element={<Assistance />} />
+            <Route path="/request-lift" element={<RequestLift />} />
+            <Route path="/mileage" element={<MileageUpdate />} />
+            <Route path="/setup-wizard" element={<SetupWizard />} />
+            <Route
+              path="/admin"
+              element={
+                isTenantAdmin ? <Admin /> : <Navigate to={`/${tenantSlug}`} replace />
+              }
+            />
+          </Routes>
+        </ErrorBoundary>
       </div>
       <Footer />
       <MobileBottomNav tenantSlug={tenantSlug} onProfileClick={() => setShowProfileMenu(true)} />

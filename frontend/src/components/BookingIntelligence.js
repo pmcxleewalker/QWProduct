@@ -40,7 +40,10 @@ const BookingIntelligence = ({ bookings = [], vehicles = [], onApplySuggestion }
   const [analysisMs, setAnalysisMs] = useState(0);
   const [activeTypeFilter, setActiveTypeFilter] = useState('all');
   const [pulseTick, setPulseTick] = useState(0); // drives subtle "heartbeat" of stats
+  const [idleOpen, setIdleOpen] = useState(false); // controls the idle-vehicles details panel
   const analyseTimer = useRef(null);
+  const cardsRef = useRef(null);
+  const idleRef = useRef(null);
 
   // Re-run a fake analysis animation any time the data changes — gives the
   // operator a clear "the AI just re-checked" signal whenever they add or
@@ -66,8 +69,15 @@ const BookingIntelligence = ({ bookings = [], vehicles = [], onApplySuggestion }
 
   const now = useMemo(() => new Date(), []);
   // 14-day forward window — far enough to catch tomorrow's scheduling
-  // problems without dragging in the whole quarter.
+  // problems without dragging in the whole quarter. (Used for clash &
+  // compliance detection.)
   const windowEnd = useMemo(() => new Date(now.getTime() + 14 * 86400000), [now]);
+  // Tighter 48-hour window for the "idle vehicles" count. The 14-day window
+  // was too aggressive — every car with a weekly recurring booking ended up
+  // looking "in use", so fleets with heavy recurring schedules only ever
+  // showed one or two idle cars. 48h reflects what's actually sitting
+  // unused right now / tomorrow, which is what dispatchers care about.
+  const idleWindowEnd = useMemo(() => new Date(now.getTime() + 48 * 3600000), [now]);
 
   const vehiclesById = useMemo(() => {
     const map = new Map();
@@ -137,14 +147,30 @@ const BookingIntelligence = ({ bookings = [], vehicles = [], onApplySuggestion }
       }
     }
 
-    // Idle vehicles — cars with zero bookings in the window
-    const usedCarIds = new Set(upcoming.map((b) => b.car_id));
+    // Idle vehicles — cars with no booking starting in the next 48 hours.
+    // Use a fresh filter (instead of `upcoming`) because `upcoming` spans
+    // 14 days and was masking too many cars as "in use" — a vehicle with
+    // a single booking 10 days out is still idle today.
+    const idleWindowStart = now.getTime() - 3600000; // 1h grace for in-progress trips
+    const idleEnd = idleWindowEnd.getTime();
+    const carsInUseSoon = new Set(
+      bookings
+        .filter((b) => {
+          if (b.status === 'cancelled' || b.status === 'rejected') return false;
+          const s = new Date(b.start_time).getTime();
+          const e = new Date(b.end_time || b.start_time).getTime();
+          if (isNaN(s) || isNaN(e)) return false;
+          // Overlaps the next-48h window
+          return s < idleEnd && e > idleWindowStart;
+        })
+        .map((b) => b.car_id),
+    );
     const idleVehicles = vehicles
-      .filter((v) => !v.is_blocked && !usedCarIds.has(v.id))
+      .filter((v) => !v.is_blocked && !carsInUseSoon.has(v.id))
       .map((v) => ({ type: 'idle', vehicle: v }));
 
     return { vehicleConflicts, personConflicts, complianceRisks, idleVehicles };
-  }, [upcoming, vehicles, vehiclesById]);
+  }, [upcoming, vehicles, vehiclesById, bookings, now, idleWindowEnd]);
 
   // For each conflict, find concrete alternatives
   const suggestAlternatives = (booking) => {
@@ -267,24 +293,69 @@ const BookingIntelligence = ({ bookings = [], vehicles = [], onApplySuggestion }
             </div>
           </div>
 
-          {/* Live stat tiles */}
+          {/* Live stat tiles — each tile is clickable and drives the filter
+              chips below (or, for "Idle vehicles", expands the idle panel).
+              Keyboard-accessible because they're real <button>s. */}
           <div className="bi-stats" key={pulseTick}>
-            <div className="bi-stat" data-pulse>
+            <button
+              type="button"
+              className={`bi-stat ${activeTypeFilter === 'vehicle-conflict' ? 'bi-stat-active' : ''}`}
+              data-pulse
+              data-testid="bi-stat-vehicle-clashes"
+              disabled={insights.vehicleConflicts.length === 0}
+              onClick={() => {
+                setActiveTypeFilter('vehicle-conflict');
+                cardsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }}
+            >
               <span className="bi-stat-value">{insights.vehicleConflicts.length}</span>
               <span className="bi-stat-label">Vehicle clashes</span>
-            </div>
-            <div className="bi-stat" data-pulse>
+            </button>
+            <button
+              type="button"
+              className={`bi-stat ${activeTypeFilter === 'person-conflict' ? 'bi-stat-active' : ''}`}
+              data-pulse
+              data-testid="bi-stat-driver-clashes"
+              disabled={insights.personConflicts.length === 0}
+              onClick={() => {
+                setActiveTypeFilter('person-conflict');
+                cardsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }}
+            >
               <span className="bi-stat-value">{insights.personConflicts.length}</span>
               <span className="bi-stat-label">Driver clashes</span>
-            </div>
-            <div className="bi-stat" data-pulse>
+            </button>
+            <button
+              type="button"
+              className={`bi-stat ${activeTypeFilter === 'compliance' ? 'bi-stat-active' : ''}`}
+              data-pulse
+              data-testid="bi-stat-compliance-risk"
+              disabled={insights.complianceRisks.length === 0}
+              onClick={() => {
+                setActiveTypeFilter('compliance');
+                cardsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }}
+            >
               <span className="bi-stat-value">{insights.complianceRisks.length}</span>
               <span className="bi-stat-label">Compliance risk</span>
-            </div>
-            <div className="bi-stat" data-pulse>
+            </button>
+            <button
+              type="button"
+              className={`bi-stat ${idleOpen ? 'bi-stat-active' : ''}`}
+              data-pulse
+              data-testid="bi-stat-idle-vehicles"
+              disabled={insights.idleVehicles.length === 0}
+              onClick={() => {
+                setIdleOpen(true);
+                // Let React paint the open <details>, then scroll to it
+                requestAnimationFrame(() => {
+                  idleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+              }}
+            >
               <span className="bi-stat-value">{insights.idleVehicles.length}</span>
               <span className="bi-stat-label">Idle vehicles</span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -325,7 +396,7 @@ const BookingIntelligence = ({ bookings = [], vehicles = [], onApplySuggestion }
         )}
 
         {filteredCards.length > 0 && (
-          <div className="bi-cards" data-testid="bi-cards">
+          <div className="bi-cards" data-testid="bi-cards" ref={cardsRef}>
             {filteredCards.slice(0, 6).map((card, idx) => {
               if (card._kind === 'vehicle-conflict') {
                 const alt = suggestAlternatives(card.a);
@@ -454,13 +525,20 @@ const BookingIntelligence = ({ bookings = [], vehicles = [], onApplySuggestion }
           </div>
         )}
 
-        {/* Idle vehicles — gentle informational tile */}
+        {/* Idle vehicles — gentle informational tile (controlled by `idleOpen`
+            so the "Idle vehicles" stat tile can pop this open on click). */}
         {insights.idleVehicles.length > 0 && (
-          <details className="bi-idle">
+          <details
+            className="bi-idle"
+            ref={idleRef}
+            open={idleOpen}
+            onToggle={(e) => setIdleOpen(e.currentTarget.open)}
+            data-testid="bi-idle-section"
+          >
             <summary>
               <Sparkles size={12} className="bi-icon-spark" />
               {insights.idleVehicles.length} idle vehicle{insights.idleVehicles.length === 1 ? '' : 's'} —
-              no bookings in the next 14 days
+              no bookings in the next 48 hours
             </summary>
             <div className="bi-idle-list">
               {insights.idleVehicles.map((iv) => (

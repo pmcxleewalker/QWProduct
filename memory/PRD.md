@@ -4,6 +4,34 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Bug Fix + Enhancement - Feb 2, 2026 (BUMBLEance prod report)
+Client reported three issues on `quick-wing.com` (BUMBLEance tenant):
+
+**1) White screen when trying to create a conflicting booking** ✅
+Root cause: a couple of `setError(err.response?.data?.detail || ...)` calls in `Bookings.js` were passing an *object* (the 409 conflict detail `{message, conflict, available_cars, …}`) straight into React state. When `{error}` was then rendered as a React child, React threw "Objects are not valid as a React child" which — with no ErrorBoundary in place — unmounted the entire app tree (= white screen).
+
+**Fixes**:
+- Added `src/components/ErrorBoundary.js` — a class component that catches any render-time exception in its children and renders a friendly fallback panel ("Hmm, something hiccupped" + Try Again / Reload buttons) instead of letting React blank the screen.
+- Wrapped the entire tenant routes block in `App.js` (Dashboard / Live Sheet / Bookings / Admin / etc.) with `<ErrorBoundary>` so a crash on any one page now degrades to a recoverable error card, not a global blank screen.
+- Wrapped `<BookingIntelligence>` inside `Bookings.js` with its own `<ErrorBoundary>` (defence in depth — keeps the page usable even if the AI panel itself crashes).
+- Hardened the `onApplySuggestion` catch handler in `Bookings.js` to coerce a structured `detail` object into a string before calling `setError`.
+
+**2) Idle vehicles count too low on BUMBLEance** ✅
+Root cause: the previous logic counted a car as "in use" if it had ANY booking in the next **14 days**. For fleets with weekly recurring assignments (BUMBLEance), almost every car had at least one booking somewhere in that window, so only 1 truly idle car ever surfaced.
+
+**Fix**: shortened the "idle" window from 14 days → **48 hours**. Now reflects what's sitting unused today/tomorrow — which is what dispatchers actually care about. Summary text updated to "no bookings in the next 48 hours". Clash & compliance detection still use the full 14-day window.
+
+**3) Booking Intelligence stat tiles should drill-down** ✅
+Made all four tiles real `<button>` elements with proper hover/focus/active states:
+- **Vehicle clashes** → sets filter chip to `vehicle-conflict` + smooth-scrolls to the cards
+- **Driver clashes** → sets filter chip to `person-conflict` + scrolls
+- **Compliance risk** → sets filter chip to `compliance` + scrolls
+- **Idle vehicles** → expands the idle `<details>` panel + scrolls to it
+Tiles are disabled (greyed) when their count is 0 so they don't pretend to be interactive when there's nothing to drill into. New data-testids: `bi-stat-vehicle-clashes`, `bi-stat-driver-clashes`, `bi-stat-compliance-risk`, `bi-stat-idle-vehicles`. Active tile gets a purple glow ring matching the active filter chip.
+
+**Note**: These fixes only landed in preview — production at `quick-wing.com` still has the broken build until the user clicks "Save to Github" and triggers the redeploy.
+
+
 ### Bug Fix - Feb 2, 2026 (production hotfix)
 **"Failed to update booking" alert in Edit Booking modal — fixed three chained bugs.**
 

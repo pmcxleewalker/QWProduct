@@ -1966,7 +1966,7 @@ const Admin = () => {
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
+                        <div className="flex items-center flex-wrap gap-2 mb-2">
                           {isThisMasterAdmin && (
                             <Crown size={20} className="text-yellow-500" />
                           )}
@@ -1987,6 +1987,28 @@ const Admin = () => {
                           >
                             {adminUser.is_active ? 'Active' : 'Inactive'}
                           </span>
+                          {/* Sign-in status badge — admins want to see at a glance
+                              whether an invited admin/master-admin has ever logged
+                              in since their account was created. */}
+                          {adminUser.last_login_at ? (
+                            <span
+                              className="px-2 py-1 text-xs font-medium rounded bg-emerald-100 text-emerald-800 inline-flex items-center gap-1"
+                              data-testid={`admin-signin-status-${adminUser.id}`}
+                              title={`Last signed in ${new Date(adminUser.last_login_at).toLocaleString('en-IE', { dateStyle: 'medium', timeStyle: 'short' })}`}
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                              Signed in
+                            </span>
+                          ) : (
+                            <span
+                              className="px-2 py-1 text-xs font-medium rounded bg-amber-100 text-amber-800 inline-flex items-center gap-1"
+                              data-testid={`admin-signin-status-${adminUser.id}`}
+                              title="This admin has never logged in since the invitation was sent. Consider re-sending the invite."
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                              Never signed in
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm text-gray-500">
                           Joined: {new Date(adminUser.created_at).toLocaleDateString('en-IE')}
@@ -2093,7 +2115,7 @@ const Admin = () => {
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
+                        <div className="flex items-center flex-wrap gap-2 mb-2">
                           <h3 className="text-lg font-bold text-gray-900">{getUsername(user.email)}</h3>
                           <span className="px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
                             {user.role}
@@ -2107,6 +2129,28 @@ const Admin = () => {
                           >
                             {user.is_active ? 'Active' : 'Inactive'}
                           </span>
+                          {/* Sign-in status — separate from Active/Inactive.
+                              Tells admins whether the user has actually used
+                              the login credentials they were emailed. */}
+                          {user.last_login_at ? (
+                            <span
+                              className="px-2 py-1 text-xs font-medium rounded bg-emerald-100 text-emerald-800 inline-flex items-center gap-1"
+                              data-testid={`user-signin-status-${user.id}`}
+                              title={`Last signed in ${new Date(user.last_login_at).toLocaleString('en-IE', { dateStyle: 'medium', timeStyle: 'short' })}`}
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                              Signed in
+                            </span>
+                          ) : (
+                            <span
+                              className="px-2 py-1 text-xs font-medium rounded bg-amber-100 text-amber-800 inline-flex items-center gap-1"
+                              data-testid={`user-signin-status-${user.id}`}
+                              title="This user has never logged in since the invitation was sent. Consider re-sending the invite."
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                              Never signed in
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm text-gray-500">
                           Joined: {new Date(user.created_at).toLocaleDateString('en-IE')}
@@ -2863,6 +2907,29 @@ const Admin = () => {
                               {user.role === 'master_admin' ? 'Master Admin' :
                                user.role === 'admin' ? 'Admin' : 'Staff'}
                             </span>
+                          </div>
+                          {/* Sign-in status — surfaces stale invites so the
+                              admin can chase or re-send the welcome email. */}
+                          <div>
+                            {user.last_login_at ? (
+                              <span
+                                className="px-2 py-1 text-xs font-medium rounded bg-emerald-100 text-emerald-800 inline-flex items-center gap-1"
+                                data-testid={`user-signin-status-table-${user.id}`}
+                                title={`Last signed in ${new Date(user.last_login_at).toLocaleString('en-IE', { dateStyle: 'medium', timeStyle: 'short' })}`}
+                              >
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                Signed in
+                              </span>
+                            ) : (
+                              <span
+                                className="px-2 py-1 text-xs font-medium rounded bg-amber-100 text-amber-800 inline-flex items-center gap-1"
+                                data-testid={`user-signin-status-table-${user.id}`}
+                                title="This user has never logged in since the invitation was sent."
+                              >
+                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                                Never signed in
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>

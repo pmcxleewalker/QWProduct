@@ -4,6 +4,15 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Enhancement - Feb 2, 2026
+**Sign-in status badges next to every user / admin** so admins can immediately see whether an invited team member has ever actually used their login credentials. Hover tooltip shows the exact last-login timestamp.
+
+- **Backend**: no changes needed — `last_login_at` was already being stamped on `/api/auth/login` and exposed through `/api/tenant/users`.
+- **Frontend** (`pages/Admin.js`): added pills to all three user-card render paths — Administrators, Staff Members, and the User Reference table. Green "● Signed in" (`bg-emerald-100`) with tooltip showing exact last-login time; amber "● Never signed in" (`bg-amber-100`) with tooltip suggesting the admin re-send the invite. Switched the badge row containers from `space-x-3` to `flex-wrap gap-2` so the extra pill doesn't push other badges off the card on narrow screens. New data-testids: `user-signin-status-{id}`, `admin-signin-status-{id}`, `user-signin-status-table-{id}`.
+
+**Note**: Only in preview — production needs a redeploy via "Save to Github" before BUMBLEance can see it.
+
+
 ### Bug Fix + Enhancement - Feb 2, 2026 (BUMBLEance prod report)
 Client reported three issues on `quick-wing.com` (BUMBLEance tenant):
 

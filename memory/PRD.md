@@ -4,6 +4,25 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Bug Fix - Feb 2, 2026 — Empty "Fleet Reports" page
+
+Client reported the Admin → Reports tab showed only the date pickers + Export button with no metrics at all. Three issues stacked:
+
+1. **`AlertTriangle` not imported** in `Admin.js` — referenced at line ~3210 but missing from the lucide-react import list. Threw at render time → ErrorBoundary caught it (so users saw the friendly fallback card with the real error, not a white screen — confirming the safety net works).
+2. **`reportsAPI.getFleetUsage(...)` was undefined** — `Admin.js` called it (and several others: `getBookingCharts`, `getCarsWithoutBookings`, `getBookingsDetail`, `clearBookings`, `exportCSV`), but `api.js` only exported `getSummary`. Every call threw a TypeError, which the catch handler swallowed → `reportData` stayed `null` → blank page.
+3. **Backend ↔ frontend field-name mismatch** — backend returns `most_booked_cars` / `blocked_cars` / `bookings` (per-car), but the UI is written against `most_booked` / `blocked_vehicles` / `total_bookings`. Even after wiring up the API, cards wouldn't fill.
+
+**Fixes** (all in `frontend/src/api/api.js`):
+- Added the missing `AlertTriangle` to the lucide-react import in `Admin.js`.
+- Implemented `reportsAPI.getFleetUsage(start, end)` against `GET /api/tenant/fleet-reports` with `?from_date=&to_date=`, normalizing the response shape so the UI's existing field references work unchanged.
+- Implemented `reportsAPI.exportCSV()` returning the canonical CSV endpoint URL.
+- Stubbed `getBookingCharts`, `getCarsWithoutBookings`, `getBookingsDetail`, `clearBookings` to return empty payloads / a friendly error — no backend route exists for them yet, but the UI degrades gracefully (no crash, no spinner-of-death) and we can wire them up to real endpoints in a follow-up.
+
+**Verified**: Reports tab now shows live counts — Total Vehicles 6, Total Bookings 2, Pending 0, Blocked 0 — plus Enhanced Analytics (Avg Bookings/Vehicle, Fleet Availability, etc.) and Professional Analytics (Performance Score, Demand Forecast, Fleet Health). CSV export returns HTTP 200 with valid CSV. The previously-added ErrorBoundary visibly caught the AlertTriangle crash and showed the friendly fallback instead of going white.
+
+**Note**: preview only — push to production via "Save to Github" so BUMBLEance can see it.
+
+
 ### Enhancement - Feb 2, 2026
 **Sign-in status badges next to every user / admin** so admins can immediately see whether an invited team member has ever actually used their login credentials. Hover tooltip shows the exact last-login timestamp.
 

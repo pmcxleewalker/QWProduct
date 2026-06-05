@@ -90,6 +90,51 @@ export const liftRequestAPI = {
 // Reports API (tenant-scoped)
 export const reportsAPI = {
   getSummary: () => axios.get(`${API}/reports/summary`),
+
+  // Fleet usage report — main "Total Vehicles / Total Bookings / Pending /
+  // Blocked + Most Booked" card grid on the Admin > Reports tab.
+  // The backend response uses `most_booked_cars` / `blocked_cars` /
+  // `bookings` (per-car), but the UI was written against `most_booked` /
+  // `blocked_vehicles` / `total_bookings`. We normalize here so neither side
+  // needs to change.
+  getFleetUsage: async (startDate, endDate) => {
+    const params = {};
+    if (startDate) params.from_date = startDate;
+    if (endDate) params.to_date = endDate;
+    const res = await axios.get(`${API}/tenant/fleet-reports`, { params });
+    const d = res.data || {};
+    const normalized = {
+      ...d,
+      summary: {
+        total_vehicles: d.summary?.total_vehicles ?? 0,
+        total_bookings: d.summary?.total_bookings ?? 0,
+        pending_bookings: d.summary?.pending_bookings ?? 0,
+        blocked_vehicles: d.summary?.blocked_cars ?? d.summary?.blocked_vehicles ?? 0,
+      },
+      most_booked: (d.most_booked_cars || []).map((c) => ({
+        id: c.id,
+        car_name: c.name,
+        registration: c.registration,
+        total_bookings: c.bookings ?? 0,
+      })),
+    };
+    return { ...res, data: normalized };
+  },
+
+  // CSV export of the fleet report. Used by handleExportReport() in Admin.js
+  // — it does its own fetch() so we just need a URL string here.
+  exportCSV: () => `${API}/tenant/fleet-reports/csv`,
+
+  // Optional charts/detail endpoints — no backend route exists yet so we
+  // resolve with empty payloads. The Admin UI gracefully renders "no data"
+  // for these sections rather than erroring out. Will be implemented as
+  // proper endpoints in a follow-up.
+  getBookingCharts: async () => ({ data: null }),
+  getCarsWithoutBookings: async () => ({ data: { cars: [] } }),
+  getBookingsDetail: async () => ({ data: { rows: [], total_records: 0 } }),
+  clearBookings: async () => {
+    throw new Error('Clear bookings is not yet available.');
+  },
 };
 
 // Plan API (tenant-scoped)

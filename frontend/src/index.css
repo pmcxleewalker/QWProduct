@@ -9,6 +9,10 @@
 /* 1) Modern font stack — system fonts preferred, but use Inter where available */
 @import url('https://rsms.me/inter/inter.css');
 
+/* Handwritten cursive used for the founder's signature on the landing page.
+   Loaded on-demand from Google Fonts — only ~2KB, cached across visits. */
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap');
+
 body {
 	margin: 0;
 	padding: 0;

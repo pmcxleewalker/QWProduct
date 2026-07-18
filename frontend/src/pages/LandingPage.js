@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   CalendarCheck, ShieldCheck, Activity, LineChart,
-  Mail, Instagram, ArrowRight, Menu, X
+  Mail, Instagram, ArrowRight, Menu, X, Quote
 } from 'lucide-react';
 import ROICalculator from '../components/ROICalculator';
 
@@ -79,6 +79,7 @@ const Nav = ({ mobileOpen, onToggleMobile, onCloseMobile }) => (
             <a href="#features" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">Features</a>
             <a href="#demo" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">Demo</a>
             <a href="#roi-calculator" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">ROI Calculator</a>
+            <a href="#founder" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">Our story</a>
             <a href="#contact" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">Contact</a>
             <a
               href={MAILTO_DEMO}
@@ -106,6 +107,7 @@ const Nav = ({ mobileOpen, onToggleMobile, onCloseMobile }) => (
               ['Features', '#features'],
               ['Demo', '#demo'],
               ['ROI Calculator', '#roi-calculator'],
+              ['Our story', '#founder'],
               ['Contact', '#contact'],
             ].map(([label, href]) => (
               <a
@@ -249,6 +251,120 @@ const ROI = () => (
 );
 
 /* ============================================================
+   Trust bar — subtle social proof strip below the hero.
+   Kept intentionally understated (grayscale, small type) so it
+   reads as a credibility signal, not a big brag.
+   ============================================================ */
+const TrustBar = () => (
+  <section
+    className="border-t border-slate-200 bg-white py-8 px-4 sm:px-6"
+    aria-label="Trusted by"
+  >
+    <div className="max-w-6xl mx-auto text-center">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-3">
+        Trusted by
+      </p>
+      <p
+        className="text-2xl sm:text-3xl font-semibold text-slate-800 tracking-tight"
+        data-testid="trustbar-brand"
+      >
+        Bluebird Care Ireland
+      </p>
+      <p className="mt-2 text-sm text-slate-500">
+        …and a growing list of Irish operators.
+      </p>
+    </div>
+  </section>
+);
+
+/* ============================================================
+   Founder note — personal, editorial section that turns Quick Wing
+   from "another SaaS" into a story. Content comes verbatim from
+   Lee's own launch post so it reads authentic and consistent with
+   his social channels.
+   ============================================================ */
+const FounderNote = () => (
+  <section
+    id="founder"
+    className="py-20 sm:py-24 px-4 sm:px-6 border-t border-slate-200 bg-white"
+    aria-labelledby="founder-heading"
+  >
+    <div className="max-w-5xl mx-auto grid md:grid-cols-12 gap-10 md:gap-14 items-center">
+      <div className="md:col-span-4 flex justify-center md:justify-start">
+        <div className="relative">
+          {/* Subtle blue accent tile behind the photo — the only decorative
+              flourish on the page; keeps it warm without going gimmicky. */}
+          <div
+            className="absolute -inset-3 bg-blue-600/8 rounded-3xl rotate-2"
+            aria-hidden="true"
+          />
+          <img
+            src="/marketing/founder-lee.jpg"
+            alt="Lee Walker, Founder of Quick Wing"
+            className="relative rounded-2xl shadow-xl w-56 h-56 sm:w-64 sm:h-64 object-cover border-4 border-white"
+            width="256"
+            height="256"
+            loading="lazy"
+          />
+        </div>
+      </div>
+
+      <div className="md:col-span-8">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">
+          A note from the founder
+        </span>
+        <h2
+          id="founder-heading"
+          className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900"
+        >
+          Built from real experience.
+        </h2>
+
+        <Quote size={28} className="text-blue-600/25 mt-6 mb-3" aria-hidden="true" />
+        <div className="space-y-4 text-slate-700 leading-relaxed">
+          <p className="text-lg font-medium text-slate-900">
+            I&apos;m proud to announce the launch of Quick Wing, my fleet management software.
+          </p>
+          <p>
+            I built Quick Wing to help businesses manage vehicle bookings,
+            track compliance, and gain clear visibility over their fleet in one place.
+          </p>
+          <p className="italic text-slate-600">
+            Built from real operational experience. Designed for real working teams.
+          </p>
+          <p>
+            If you&apos;re interested in a demonstration or would like to use Quick Wing
+            in your company, please get in touch.
+          </p>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-slate-200 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p
+              className="text-2xl text-slate-900"
+              style={{ fontFamily: '"Dancing Script", "Great Vibes", cursive', fontWeight: 600 }}
+            >
+              Lee Walker
+            </p>
+            <p className="text-sm text-slate-500 mt-1">Founder, Quick Wing</p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-[11px] font-medium text-blue-700">
+            {['#QuickWing', '#FleetManagement', '#SaaS', '#Operations', '#BusinessInnovation'].map((tag) => (
+              <span
+                key={tag}
+                className="bg-blue-50 border border-blue-100 rounded-full px-2.5 py-0.5"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+/* ============================================================
    CTA + contact — combined into a single restrained band
    ============================================================ */
 const CTA = () => (
@@ -353,8 +469,10 @@ const LandingPage = () => {
         onCloseMobile={() => setMobileOpen(false)}
       />
       <Hero />
+      <TrustBar />
       <Features />
       <ROI />
+      <FounderNote />
       <CTA />
       <Footer onFranchiseLogin={() => navigate('/login')} />
     </main>

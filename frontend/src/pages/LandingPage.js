@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   Mail, Instagram, ArrowRight, Menu, X, Quote,
   Sparkles, Activity, LineChart, CalendarCheck, ShieldCheck, Users,
-  Check, XCircle, Clock, Award, Shield, MapPin
+  Check, XCircle, Award, Shield, MapPin
 } from 'lucide-react';
 import ROICalculator from '../components/ROICalculator';
 import FeatureCarousel from '../components/FeatureCarousel';
@@ -502,37 +502,6 @@ const ROI = () => (
 );
 
 /* ============================================================
-   Case Study Card — one quantified customer outcome. A single
-   real number beats a page of generic marketing claims.
-   ============================================================ */
-const CaseStudy = () => (
-  <section
-    className="py-16 sm:py-20 px-4 sm:px-6 border-t border-slate-200 bg-white"
-    aria-label="Customer outcome"
-  >
-    <div className="max-w-4xl mx-auto">
-      <div className="relative rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 p-8 sm:p-12 text-white shadow-xl overflow-hidden" data-testid="case-study-card">
-        <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
-        <div className="relative">
-          <div className="flex items-center gap-2 text-blue-200 text-[11px] font-semibold uppercase tracking-[0.14em] mb-4">
-            <Clock size={13} /> Customer outcome
-          </div>
-          <p className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight leading-snug">
-            &ldquo;We cut booking admin from{' '}
-            <span className="line-through decoration-2 text-blue-200/70">3 hours a day</span>{' '}
-            down to{' '}
-            <span className="bg-white/15 rounded-lg px-2 py-0.5">20 minutes</span>.&rdquo;
-          </p>
-          <p className="mt-6 text-blue-100 text-sm">
-            — Bluebird Care Ireland, Quick Wing customer since 2025
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-);
-
-/* ============================================================
    Founder note
    ============================================================ */
 const FounderNote = () => (
@@ -725,7 +694,6 @@ const LandingPage = () => {
       <Features />
       <Compare />
       <ROI />
-      <CaseStudy />
       <FounderNote />
       <CTA />
       <Footer onFranchiseLogin={() => navigate('/login')} />

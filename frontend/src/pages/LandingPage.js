@@ -169,32 +169,27 @@ const Hero = () => (
 
 /* ============================================================
    Features — carousel of real product screenshots + copy.
-   Dark section on a very light backdrop so the browser-framed
-   screenshots really pop and feel like the centrepiece.
+   Light section with generous whitespace so the browser-framed
+   screenshots feel like the centrepiece without changing tone.
    ============================================================ */
 const Features = () => (
   <section
     id="features"
-    className="py-24 sm:py-32 px-4 sm:px-6 bg-slate-950 border-t border-slate-200 relative overflow-hidden"
+    className="py-24 sm:py-32 px-4 sm:px-6 bg-slate-50 border-t border-slate-200"
     aria-labelledby="features-heading"
   >
-    {/* Ambient glow */}
-    <div
-      className="pointer-events-none absolute inset-x-0 -top-40 h-80 bg-gradient-to-b from-blue-500/10 to-transparent"
-      aria-hidden="true"
-    />
-    <div className="max-w-6xl mx-auto relative">
+    <div className="max-w-6xl mx-auto">
       <div className="max-w-2xl mb-14 sm:mb-16">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-400">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700">
           What you get
         </span>
         <h2
           id="features-heading"
-          className="mt-3 text-3xl sm:text-5xl font-semibold tracking-tight text-white"
+          className="mt-3 text-3xl sm:text-5xl font-semibold tracking-tight text-slate-900"
         >
           The real product, in real screenshots.
         </h2>
-        <p className="mt-5 text-slate-300 leading-relaxed text-base sm:text-lg">
+        <p className="mt-5 text-slate-600 leading-relaxed text-base sm:text-lg">
           Not stock imagery, not concept art — these are live screens from Quick Wing running today.
           Swipe through and see what your team could be looking at from Monday.
         </p>

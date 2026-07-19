@@ -139,7 +139,7 @@ const Hero = () => (
             Book a free demo <ArrowRight size={16} />
           </a>
           <a
-            href="#demo"
+            href="#features"
             data-testid="hero-tour-btn"
             className="inline-flex items-center gap-2 px-5 py-3 text-slate-700 font-semibold hover:text-slate-900 transition-colors"
           >
@@ -148,47 +148,55 @@ const Hero = () => (
         </div>
       </div>
 
-      {/* Brand hero mark — the new "official logo" on textured background.
-          Replaces the old duplicate screenshot (screenshots now live in the
-          FeatureCarousel below, so we don't want to show the same image
-          twice). */}
-      <div
-        id="demo"
-        className="mt-14 sm:mt-20 rounded-2xl overflow-hidden border border-slate-200 shadow-[0_20px_60px_-25px_rgba(15,23,42,0.35)] bg-white"
-      >
+      {/* Small brand-mark introduction — sits under the hero as a tasteful
+          "who we are" cue rather than a hero-image showstopper. Feature
+          screenshots do the real proof work below in the carousel. */}
+      <div id="demo" className="mt-14 flex items-center gap-4 justify-center sm:justify-start">
         <img
-          src="/quick-wing-logo-official.png"
+          src="/quick-wing-logo-nav.png"
           alt="Quick Wing — Car Fleet Management"
-          className="w-full h-auto block"
+          className="h-14 sm:h-16 w-auto"
           loading="eager"
         />
+        <div className="hidden sm:block h-8 w-px bg-slate-200" aria-hidden="true" />
+        <p className="hidden sm:block text-sm text-slate-500 max-w-[220px] leading-snug">
+          A product of QuickFleet Limited — proudly built in&nbsp;Ireland.
+        </p>
       </div>
     </div>
   </section>
 );
 
 /* ============================================================
-   Features — carousel of real product screenshots + copy
+   Features — carousel of real product screenshots + copy.
+   Dark section on a very light backdrop so the browser-framed
+   screenshots really pop and feel like the centrepiece.
    ============================================================ */
 const Features = () => (
   <section
     id="features"
-    className="py-20 sm:py-24 px-4 sm:px-6 border-t border-slate-200"
+    className="py-24 sm:py-32 px-4 sm:px-6 bg-slate-950 border-t border-slate-200 relative overflow-hidden"
     aria-labelledby="features-heading"
   >
-    <div className="max-w-6xl mx-auto">
-      <div className="max-w-2xl mb-12">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">
+    {/* Ambient glow */}
+    <div
+      className="pointer-events-none absolute inset-x-0 -top-40 h-80 bg-gradient-to-b from-blue-500/10 to-transparent"
+      aria-hidden="true"
+    />
+    <div className="max-w-6xl mx-auto relative">
+      <div className="max-w-2xl mb-14 sm:mb-16">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-400">
           What you get
         </span>
         <h2
           id="features-heading"
-          className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900"
+          className="mt-3 text-3xl sm:text-5xl font-semibold tracking-tight text-white"
         >
-          Real product. Real screenshots.
+          The real product, in real screenshots.
         </h2>
-        <p className="mt-4 text-slate-600 leading-relaxed">
+        <p className="mt-5 text-slate-300 leading-relaxed text-base sm:text-lg">
           Not stock imagery, not concept art — these are live screens from Quick Wing running today.
+          Swipe through and see what your team could be looking at from Monday.
         </p>
       </div>
       <FeatureCarousel />

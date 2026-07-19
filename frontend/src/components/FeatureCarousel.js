@@ -119,47 +119,57 @@ const FeatureCarousel = () => {
       aria-label="Quick Wing feature showcase"
     >
       {/* Slide */}
-      <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-        {/* Left: text */}
-        <div className="order-2 md:order-1">
-          <div className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-3 py-1 mb-5">
+      <div className="grid md:grid-cols-5 gap-8 md:gap-12 items-center">
+        {/* Left: text (narrower to give the image more room) */}
+        <div className="order-2 md:order-1 md:col-span-2">
+          <div className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-3 py-1 mb-5">
             <Icon size={14} strokeWidth={2} />
             {current.eyebrow}
           </div>
           <h3
             key={`title-${current.id}`}
-            className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 mb-4"
+            className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-white mb-4"
           >
             {current.title}
           </h3>
           <p
             key={`body-${current.id}`}
-            className="text-slate-600 leading-relaxed max-w-lg"
+            className="text-slate-300 leading-relaxed"
           >
             {current.body}
           </p>
 
           {/* Slide counter */}
-          <div className="mt-6 flex items-center gap-3">
-            <span className="text-sm font-semibold text-slate-900 tabular-nums">
+          <div className="mt-7 flex items-center gap-3">
+            <span className="text-sm font-semibold text-white tabular-nums">
               {String(index + 1).padStart(2, '0')}
-              <span className="text-slate-400"> / {String(SLIDES.length).padStart(2, '0')}</span>
+              <span className="text-slate-500"> / {String(SLIDES.length).padStart(2, '0')}</span>
             </span>
-            <div className="flex-1 h-px bg-slate-200 max-w-[100px]">
+            <div className="flex-1 h-px bg-white/10 max-w-[120px]">
               <div
-                className="h-full bg-blue-600 transition-[width] duration-500"
+                className="h-full bg-blue-400 transition-[width] duration-500"
                 style={{ width: `${((index + 1) / SLIDES.length) * 100}%` }}
               />
             </div>
           </div>
         </div>
 
-        {/* Right: image */}
-        <div className="order-1 md:order-2">
+        {/* Right: image inside a subtle "browser chrome" frame — communicates
+            "this is a live web app" more clearly than a plain screenshot. */}
+        <div className="order-1 md:order-2 md:col-span-3">
           <div
-            className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-[0_20px_60px_-25px_rgba(15,23,42,0.35)] bg-slate-50"
+            className="relative rounded-xl overflow-hidden border border-white/10 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.75)] bg-slate-100"
             data-testid={`carousel-slide-${current.id}`}
           >
+            {/* Fake browser bar */}
+            <div className="hidden sm:flex items-center gap-1.5 h-7 px-3 bg-slate-800/95">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
+              <span className="h-2.5 w-2.5 rounded-full bg-yellow-400/70" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+              <span className="ml-4 text-[10px] text-slate-400 truncate font-mono">
+                quick-wing.com / {current.id}
+              </span>
+            </div>
             <img
               key={current.id}
               src={current.image}
@@ -172,7 +182,7 @@ const FeatureCarousel = () => {
       </div>
 
       {/* Nav controls */}
-      <div className="mt-8 flex items-center justify-between">
+      <div className="mt-10 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {SLIDES.map((s, i) => (
             <button
@@ -181,7 +191,7 @@ const FeatureCarousel = () => {
               aria-label={`Go to slide ${i + 1}: ${s.title}`}
               data-testid={`carousel-dot-${i}`}
               className={`h-1.5 rounded-full transition-all ${
-                i === index ? 'w-8 bg-blue-600' : 'w-1.5 bg-slate-300 hover:bg-slate-400'
+                i === index ? 'w-8 bg-blue-400' : 'w-1.5 bg-white/20 hover:bg-white/40'
               }`}
             />
           ))}
@@ -191,7 +201,7 @@ const FeatureCarousel = () => {
             onClick={prev}
             aria-label="Previous slide"
             data-testid="carousel-prev-btn"
-            className="h-10 w-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors"
+            className="h-11 w-11 rounded-full border border-white/15 flex items-center justify-center text-white/80 hover:bg-white/5 hover:text-white transition-colors"
           >
             <ChevronLeft size={18} />
           </button>
@@ -199,7 +209,7 @@ const FeatureCarousel = () => {
             onClick={next}
             aria-label="Next slide"
             data-testid="carousel-next-btn"
-            className="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-white hover:bg-slate-800 transition-colors"
+            className="h-11 w-11 rounded-full bg-blue-500 flex items-center justify-center text-white hover:bg-blue-400 transition-colors shadow-lg shadow-blue-500/30"
           >
             <ChevronRight size={18} />
           </button>

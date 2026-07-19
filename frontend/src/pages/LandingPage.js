@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  CalendarCheck, ShieldCheck, Activity, LineChart,
   Mail, Instagram, ArrowRight, Menu, X, Quote
 } from 'lucide-react';
 import ROICalculator from '../components/ROICalculator';
+import FeatureCarousel from '../components/FeatureCarousel';
 
 /**
  * LandingPage
@@ -26,33 +26,9 @@ import ROICalculator from '../components/ROICalculator';
  *     Security / Franchise Login) — legally required, kept as-is
  */
 
-// Anchor for the demo request e-mail. Kept in one const so it's easy to swap.
 const MAILTO_DEMO = 'mailto:Lee.quickwing@gmail.com?subject=Quick Wing Demo';
 const MAILTO_ENQUIRY = 'mailto:Lee.quickwing@gmail.com?subject=Quick Wing Enquiry';
 const INSTAGRAM_URL = 'https://www.instagram.com/quick.wing2025';
-
-const FEATURES = [
-  {
-    icon: CalendarCheck,
-    title: 'Smart bookings',
-    body: 'Book any vehicle in seconds. Quick Wing spots double-bookings and suggests the next available car automatically.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Compliance built-in',
-    body: 'Tax, NCT, insurance and service dates tracked for every vehicle. Alerts before deadlines — not after.',
-  },
-  {
-    icon: Activity,
-    title: 'Live fleet visibility',
-    body: 'One dashboard shows every vehicle, driver and booking in real time. Fewer phone calls, cleaner handovers.',
-  },
-  {
-    icon: LineChart,
-    title: 'Reports that write themselves',
-    body: 'Utilisation, cost-per-km, driver activity and audit logs — exportable to CSV in a single click.',
-  },
-];
 
 /* ============================================================
    Nav
@@ -67,11 +43,11 @@ const Nav = ({ mobileOpen, onToggleMobile, onCloseMobile }) => (
         <div className="flex items-center justify-between h-14">
           <a href="/" aria-label="Quick Wing home" className="flex items-center">
             <img
-              src="/quick-wing-logo.png"
+              src="/quick-wing-logo-nav.png"
               alt="Quick Wing"
-              className="h-8 w-auto"
-              width="120"
-              height="32"
+              className="h-10 w-auto"
+              width="150"
+              height="40"
             />
           </a>
 
@@ -172,14 +148,17 @@ const Hero = () => (
         </div>
       </div>
 
-      {/* Product screenshot — sits below the headline for a "proof first" layout */}
+      {/* Brand hero mark — the new "official logo" on textured background.
+          Replaces the old duplicate screenshot (screenshots now live in the
+          FeatureCarousel below, so we don't want to show the same image
+          twice). */}
       <div
         id="demo"
-        className="mt-14 sm:mt-20 rounded-2xl overflow-hidden border border-slate-200 shadow-[0_20px_60px_-25px_rgba(15,23,42,0.35)] bg-slate-50"
+        className="mt-14 sm:mt-20 rounded-2xl overflow-hidden border border-slate-200 shadow-[0_20px_60px_-25px_rgba(15,23,42,0.35)] bg-white"
       >
         <img
-          src="/marketing/booking-intelligence.jpg"
-          alt="Quick Wing dashboard showing Booking Intelligence"
+          src="/quick-wing-logo-official.png"
+          alt="Quick Wing — Car Fleet Management"
           className="w-full h-auto block"
           loading="eager"
         />
@@ -189,7 +168,7 @@ const Hero = () => (
 );
 
 /* ============================================================
-   Features — clean 4-column list
+   Features — carousel of real product screenshots + copy
    ============================================================ */
 const Features = () => (
   <section
@@ -198,7 +177,7 @@ const Features = () => (
     aria-labelledby="features-heading"
   >
     <div className="max-w-6xl mx-auto">
-      <div className="max-w-2xl mb-14">
+      <div className="max-w-2xl mb-12">
         <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">
           What you get
         </span>
@@ -206,21 +185,13 @@ const Features = () => (
           id="features-heading"
           className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900"
         >
-          Everything you need. Nothing you don&apos;t.
+          Real product. Real screenshots.
         </h2>
+        <p className="mt-4 text-slate-600 leading-relaxed">
+          Not stock imagery, not concept art — these are live screens from Quick Wing running today.
+        </p>
       </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
-        {FEATURES.map((f) => (
-          <div key={f.title} data-testid={`feature-card-${f.title.toLowerCase().replace(/\s+/g, '-')}`}>
-            <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
-              <f.icon size={20} strokeWidth={1.8} />
-            </div>
-            <h3 className="text-base font-semibold text-slate-900 mb-2">{f.title}</h3>
-            <p className="text-sm text-slate-600 leading-relaxed">{f.body}</p>
-          </div>
-        ))}
-      </div>
+      <FeatureCarousel />
     </div>
   </section>
 );
@@ -413,11 +384,11 @@ const Footer = ({ onFranchiseLogin }) => (
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <img
-            src="/quick-wing-logo.png"
+            src="/quick-wing-logo-nav.png"
             alt="Quick Wing"
-            className="h-7 w-auto mb-3 brightness-0 invert"
-            width="120"
-            height="28"
+            className="h-9 w-auto mb-3 opacity-90"
+            width="140"
+            height="36"
           />
           <p className="text-xs text-slate-500">Fleet management software for Irish businesses.</p>
         </div>

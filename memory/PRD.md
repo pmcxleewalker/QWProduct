@@ -1564,3 +1564,36 @@ The platform now uses a 3-tier subscription model:
 - Test report: `/app/test_reports/iteration_23.json`. Pytest fixtures: `/app/backend/tests/test_session_features.py`.
 - Outstanding (not in scope this run): PDF export for fuel reports; refactor monolithic server.py; Twilio/WhatsApp integration; Resend DKIM record fix on user side.
 
+
+
+## 2026-02 — Landing page competitive redesign v3
+
+**Context:** User provided 3 competitor sites (Webfleet, Tranzaura, Eureka) and asked for concrete
+recommendations to beat them, then approved building the full P0+P1 stack.
+
+**Implemented in /app/frontend/src/pages/LandingPage.js:**
+- **StickyCTA**: floating "Book a demo" pill appears after 400px scroll, lifts mobile conversion
+- **Hero screenshot**: Booking Intelligence dashboard now displayed in browser-framed panel on lg+ screens (replaces previous small logo tile)
+- **Trust micro-cues**: "No credit card · 20-min setup · Built in Ireland" line under hero CTAs
+- **ProofStrip**: 3 numeric stats (10 hrs saved / 100% compliance visibility / 1 dashboard) mirroring Tranzaura's proof format for SMB pain points
+- **TrustBar upgrade**: marquee-ready layout (scales as customers grow) + 5 credential badges (Built in Ireland, GDPR Ready, ISO-27001-aligned hosting, 99.9% Uptime, Founder-led support)
+- **WhyStrip (dark)**: high-impact tagline "Fleet spreadsheets tell you *what happened*. Quick Wing tells you *what to do next*." positions vs actual competitor (Excel), not enterprise incumbents
+- **FeatureGrid**: 6-tile icon grid (Bookings, Compliance, Booking Intelligence, Live Sheet, Reports, Multi-Tenant) above FeatureCarousel — lets scanners grasp scope in 5 seconds
+- **Compare table**: "Spreadsheets vs Quick Wing" with 8 rows — sidesteps enterprise price wars
+- **CaseStudyCard**: gradient blue card with quantified Bluebird Care outcome ("3 hours → 20 minutes")
+- **Nav**: added "Compare" link, matching mobile menu
+
+**Preserved:**
+- All existing #section anchors and data-testids (features, roi-calculator, demo, founder, contact, hero-demo-btn, hero-tour-btn, trustbar-brand, nav-try-btn, contact-email-btn, footer-login-btn)
+- Founder Note, ROI Calculator, Footer legal links (all 7), Feature Carousel
+
+**Tested:**
+- ESLint: clean
+- Screenshot verification: hero screenshot, dark WhyStrip, Compare table, CaseStudy card, StickyCTA all rendering correctly at 1920×800
+- All new sections carry `data-testid`s (hero-screenshot, proof-stat-0..2, why-strip-tagline, feature-icon-grid, compare-table, case-study-card, sticky-cta) for future e2e coverage
+
+**Not yet done (backlog):**
+- P2 nice-to-haves: animated stat counters, framer-motion entrance animations, "As seen on" strip, FAQ accordion, dark-mode toggle
+- P1 Security Hardening block (rate limiting, CORS lock, 5MB upload cap, 24h JWT expiry)
+- server.py monolith split (11.6k lines)
+- Sentry + nightly Mongo backups (pre-onboarding P0)

@@ -48,7 +48,7 @@ from models.tenant import (
     FEATURE_REGISTRY, FEATURE_CATEGORIES, get_plan_default_features
 )
 from models.resources import (
-    VehicleCreate, VehicleUpdate, Vehicle,
+    VehicleCreate, VehicleUpdate, Vehicle, DropOffLocation,
     BookingCreate, BookingUpdate, Booking,
     StatusUpdate, ProviderCreate, Provider,
     MessageCreate, Message, TodoCreate, Todo,
@@ -5802,6 +5802,32 @@ async def update_vehicle(
         await db.vehicles.update_one(query, {"$set": update_dict})
         await ttl_cache.invalidate_prefix(tenant_prefix(context.tenant_id))
     
+    updated = await db.vehicles.find_one(query, {"_id": 0})
+    return updated
+
+
+@api_router.post("/vehicles/{vehicle_id}/drop-off")
+async def set_vehicle_drop_off(
+    vehicle_id: str,
+    data: DropOffLocation,
+    context: TenantContext = Depends(require_admin)
+):
+    """Record where a vehicle was dropped off (Eircode + optional label)."""
+    query = TenantQueryBuilder.scope_by_id(context.tenant_id, vehicle_id)
+    vehicle = await db.vehicles.find_one(query, {"_id": 0})
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+
+    eircode = (data.eircode or "").strip().upper()
+    label = (data.label or "").strip()
+
+    await db.vehicles.update_one(query, {"$set": {
+        "current_location_eircode": eircode or None,
+        "current_location_label": label or None,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }})
+    await ttl_cache.invalidate_prefix(tenant_prefix(context.tenant_id))
+
     updated = await db.vehicles.find_one(query, {"_id": 0})
     return updated
 

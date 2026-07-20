@@ -21,6 +21,11 @@ class VehicleBase(BaseModel):
     service_due_date: Optional[str] = None  # YYYY-MM-DD — alternative to mileage
     current_mileage: Optional[int] = None
     base_location: Optional[str] = None
+    # Where the vehicle was last dropped off (Fleet Board "Drop-off" flow).
+    # eircode is the machine-friendly key (e.g. "V92H6TP"); label lets an
+    # admin store the human name of the place ("Client — 12 Main St").
+    current_location_eircode: Optional[str] = None
+    current_location_label: Optional[str] = None
 
 
 class VehicleCreate(VehicleBase):
@@ -40,6 +45,15 @@ class VehicleUpdate(BaseModel):
     base_location: Optional[str] = None
     is_blocked: Optional[bool] = None
     blocked_reason: Optional[str] = None
+    current_location_eircode: Optional[str] = None
+    current_location_label: Optional[str] = None
+
+
+class DropOffLocation(BaseModel):
+    """Payload for POST /api/vehicles/{id}/drop-off. Either field may be blank
+    so the admin can clear the current location by sending both empty."""
+    eircode: Optional[str] = ""
+    label: Optional[str] = ""
 
 
 class Vehicle(VehicleBase):

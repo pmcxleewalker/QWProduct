@@ -1597,3 +1597,44 @@ recommendations to beat them, then approved building the full P0+P1 stack.
 - P1 Security Hardening block (rate limiting, CORS lock, 5MB upload cap, 24h JWT expiry)
 - server.py monolith split (11.6k lines)
 - Sentry + nightly Mongo backups (pre-onboarding P0)
+
+
+## 2026-02 — Fleet Board redesign of Bookings page
+
+**Context:** User wanted to remove the yellow "Available Cars & Time Slots" hour-grid on the Bookings page and replace it with a live per-vehicle card board (like the second screenshot) plus tab-switchable views.
+
+**Backend:**
+- Added `current_location_eircode` + `current_location_label` fields to `VehicleBase` / `VehicleUpdate` / `Vehicle` (`/app/backend/models/resources.py`).
+- New model `DropOffLocation`.
+- New endpoint `POST /api/vehicles/{id}/drop-off` (admin-scoped) that saves or clears the drop-off. Invalidates the vehicles cache.
+- Verified end-to-end via curl: save → GET → clear.
+
+**Frontend:**
+- New component `/app/frontend/src/components/FleetBoard.js` — live board of every vehicle for a chosen day:
+  - Status badge (Available / In Use / Blocked) + colour-coded left border
+  - Human availability summary ("Available all day", "In use until 20:50", "Available now — next booking 14:00")
+  - Drop-off chip + eircode/label
+  - "X.Yh free today (N bookings)" line
+  - Horizontal 07:00 → 22:00 timeline with clickable blue booking pills; clicking drops the from → to time inline underneath with an X to close (multiple pills can be expanded)
+  - "Now" pin (red) when viewing today
+  - Quick Book (opens New Booking form pre-filled with car + start=now rounded to next 15 min + end=+1h)
+  - Drop-off (inline Eircode + place-name inputs, Save/Clear/Cancel)
+  - Prev/Today/Next date nav; counters recompute per selected date
+- New component `/app/frontend/src/components/LiveMap.js` — placeholder for the GPS-integration view, listing all recorded drop-off locations.
+- `carAPI.setDropOff(id, {eircode, label})` in `/app/frontend/src/api/api.js`.
+- `Bookings.js`:
+  - Removed the yellow "Available Cars & Time Slots" collapsible block (and now-unused `CarAvailabilityCard` / `Lightbulb` / `showSuggestions` / `showAllCars` state).
+  - Added tab switcher above the calendar area: **Fleet Board (default)** / **All Cars Calendar** / **Live Map**.
+  - Old `renderCalendar()` output now shown only when the "All Cars Calendar" tab is active.
+
+**Tested:**
+- Backend: curl E2E on `POST /api/vehicles/{id}/drop-off` — save, GET, clear all pass.
+- Frontend smoke: logged in to `/test-fleet/bookings`, verified all three tabs render, Fleet Board renders 6 cards with counters, Live Map placeholder renders, Drop-off inline form opens on click.
+- ESLint clean on both new components and modified `Bookings.js`.
+
+**Data-testids added (for future e2e):**
+`fleet-view-tabs`, `fleet-view-tab-{fleet|calendar|map}`, `fleet-board`, `fleet-counters`, `fleet-date-prev`, `fleet-date-today`, `fleet-date-next`, `fleet-card-{id}`, `fleet-timeline-pill-{bookingId}`, `fleet-timeline-detail-{bookingId}`, `fleet-quick-book-{id}`, `fleet-drop-off-{id}`, `drop-off-form-{id}`, `drop-off-eircode-{id}`, `drop-off-label-{id}`, `drop-off-save-{id}`, `drop-off-clear-{id}`, `live-map`.
+
+**Follow-ups / backlog:**
+- Real GPS integration (SinoTrack / Traccar) to make the Live Map actually plot vehicles instead of showing drop-off list.
+- Optional: hook Drop-off completion to auto-close the currently-active booking on that vehicle.

@@ -18,6 +18,10 @@ export const carAPI = {
   // expects { reason, notes? } on block and { sign_off_notes? } on unblock.
   block: (id, data) => axios.post(`${API}/vehicles/${id}/block`, data),
   unblock: (id, data) => axios.post(`${API}/vehicles/${id}/unblock`, data),
+  // Fleet Board: record where a vehicle was dropped off. Accepts either an
+  // Eircode ("V92 H6TP") or a free-text location label — both may be blank
+  // to clear the current location.
+  setDropOff: (id, data) => axios.post(`${API}/vehicles/${id}/drop-off`, data),
 };
 
 // Booking API (tenant-scoped)

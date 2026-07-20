@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { bookingAPI, carAPI, userAPI } from '../api/api';
-import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Lightbulb, ChevronDown, ChevronUp, Minus, AlertTriangle, Users, CheckCircle, UserCheck } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Minus, AlertTriangle, Users, CheckCircle, UserCheck, LayoutGrid, Map as MapIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import EditBookingModal from '../components/EditBookingModal';
-import CarAvailabilityCard from '../components/CarAvailabilityCard';
 import BookingIntelligence from '../components/BookingIntelligence';
 import ErrorBoundary from '../components/ErrorBoundary';
+import FleetBoard from '../components/FleetBoard';
+import LiveMap from '../components/LiveMap';
 
 const Bookings = () => {
   const { user } = useAuth();
@@ -31,13 +32,15 @@ const Bookings = () => {
   const [selectedDateBookings, setSelectedDateBookings] = useState(null); // For day preview modal
   const [selectedDateStr, setSelectedDateStr] = useState(''); // Selected date string
   const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(true);
-  const [showAllCars, setShowAllCars] = useState(false); // Show more cars toggle
   const [showCarTabs, setShowCarTabs] = useState(false); // Toggle car tabs visibility
   const [qrCarName, setQrCarName] = useState(''); // Name of car from QR
   const [viewMode, setViewMode] = useState('all'); // 'all' or 'my' bookings
   const [conflictWarning, setConflictWarning] = useState(null); // Booking conflict alert
   const [checkingConflicts, setCheckingConflicts] = useState(false); // Loading state for conflict check
+  // Fleet Board / All Cars Calendar / Live Map tab switcher.
+  // Defaults to the new Fleet Board — this is the primary way we want admins
+  // to see live vehicle status and daily bookings from now on.
+  const [mainView, setMainView] = useState('fleet');
   
   const [formData, setFormData] = useState({
     car_id: carFromQR || '',
@@ -955,80 +958,6 @@ const Bookings = () => {
         </div>
       )}
 
-      {/* Booking Suggestions Section */}
-      {cars.length > 0 && (
-        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-lg mb-6 overflow-hidden" data-testid="suggestions-section">
-          <button
-            onClick={() => setShowSuggestions(!showSuggestions)}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-amber-100/50 transition-colors"
-          >
-            <div className="flex items-center space-x-2">
-              <Lightbulb className="text-amber-600" size={20} />
-              <span className="font-semibold text-amber-900">Available Cars & Time Slots</span>
-              <span className="bg-amber-200 text-amber-800 text-xs px-2 py-0.5 rounded-full">
-                {cars.filter(c => !c.is_blocked).length} cars
-              </span>
-            </div>
-            {showSuggestions ? <ChevronUp className="text-amber-600" size={20} /> : <ChevronDown className="text-amber-600" size={20} />}
-          </button>
-          
-          {showSuggestions && (
-            <div className="px-4 pb-4">
-              <p className="text-xs text-amber-700 mb-3">
-                Click on any available hour to book, or use Day/Week/Month view to see availability
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {cars
-                  .filter(c => !c.is_blocked)
-                  .slice(0, showAllCars ? undefined : 6)
-                  .map((car) => (
-                    <CarAvailabilityCard
-                      key={car.id}
-                      car={car}
-                      onBookClick={(car, date, hour) => {
-                        // Pre-fill form with car and time
-                        const startTime = hour !== undefined 
-                          ? `${date}T${String(hour).padStart(2, '0')}:00`
-                          : `${date}T09:00`;
-                        const endHour = hour !== undefined ? hour + 1 : 17;
-                        const endTime = `${date}T${String(endHour).padStart(2, '0')}:00`;
-                        
-                        setFormData({
-                          ...formData,
-                          car_id: car.id,
-                          start_time: startTime,
-                          end_time: endTime,
-                        });
-                        setShowForm(true);
-                      }}
-                    />
-                  ))}
-              </div>
-              
-              {/* Show More / Show Less Button */}
-              {cars.filter(c => !c.is_blocked).length > 6 && (
-                <div className="mt-4 text-center">
-                  <button
-                    onClick={() => setShowAllCars(!showAllCars)}
-                    className="px-6 py-2 bg-amber-200 text-amber-800 rounded-lg hover:bg-amber-300 transition-colors font-medium text-sm"
-                  >
-                    {showAllCars 
-                      ? `Show Less` 
-                      : `Show All ${cars.filter(c => !c.is_blocked).length} Cars`
-                    }
-                  </button>
-                  {!showAllCars && (
-                    <p className="text-xs text-amber-600 mt-1">
-                      Showing 6 of {cars.filter(c => !c.is_blocked).length} available cars
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Booking Form */}
       {showForm && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -1353,8 +1282,60 @@ const Bookings = () => {
         </div>
       )}
 
-      {/* Calendar View */}
-      {renderCalendar()}
+      {/* Fleet views: Fleet Board (default) / All Cars Calendar / Live Map */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap" data-testid="fleet-view-tabs">
+        {[
+          { key: 'fleet',    icon: LayoutGrid,   label: 'Fleet Board' },
+          { key: 'calendar', icon: CalendarIcon, label: 'All Cars Calendar' },
+          { key: 'map',      icon: MapIcon,      label: 'Live Map' },
+        ].map(({ key, icon: Icon, label }) => (
+          <button
+            key={key}
+            onClick={() => setMainView(key)}
+            data-testid={`fleet-view-tab-${key}`}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+              mainView === key
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <Icon size={15} />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {mainView === 'fleet' && (
+        <FleetBoard
+          cars={cars}
+          bookings={bookings}
+          onQuickBook={(car) => {
+            // Pre-fill "New Booking" with this car + start time = now (rounded
+            // up to the next 15 min), end time = start + 1 hour.
+            const start = new Date();
+            start.setSeconds(0, 0);
+            start.setMinutes(Math.ceil(start.getMinutes() / 15) * 15);
+            const end = new Date(start.getTime() + 60 * 60 * 1000);
+            const toLocal = (d) => {
+              const pad = (n) => String(n).padStart(2, '0');
+              return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            };
+            setFormData((prev) => ({
+              ...prev,
+              car_id: car.id,
+              start_time: toLocal(start),
+              end_time: toLocal(end),
+            }));
+            setShowForm(true);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onCarsChanged={fetchData}
+        />
+      )}
+
+      {mainView === 'calendar' && renderCalendar()}
+
+      {mainView === 'map' && <LiveMap cars={cars} />}
 
       {/* Booking Preview Modal */}
       {selectedBooking && (

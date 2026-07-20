@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, MapPin,
-  Clock, Zap, Navigation, X, Check, Ban,
+  Clock, Zap, Navigation, Check, Ban,
 } from 'lucide-react';
 import { carAPI } from '../api/api';
 
@@ -16,8 +16,9 @@ import { carAPI } from '../api/api';
  *  - Horizontal 07:00 → 22:00 timeline with clickable blue booking pills
  *  - Quick Book (opens new-booking form pre-filled) + Drop-off (Eircode entry)
  *
- * Clicking a blue pill drops the from → to time down underneath the timeline.
- * Multiple pills can be expanded at once, each with its own X to close.
+ * Clicking a blue pill opens the full booking preview modal via the
+ * `onOpenBooking(booking)` prop — so admins can view, edit or cancel the
+ * booking without leaving the Fleet Board.
  */
 
 const DAY_START_H = 7;
@@ -142,7 +143,7 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const Timeline = ({ pills, expanded, onTogglePill, isToday, now }) => {
+const Timeline = ({ pills, onPillClick, isToday, now }) => {
   const nowPct = isToday
     ? Math.max(0, Math.min(100, (((now.getHours() * 60 + now.getMinutes()) - DAY_START_MIN) / DAY_WINDOW_MIN) * 100))
     : null;
@@ -160,23 +161,18 @@ const Timeline = ({ pills, expanded, onTogglePill, isToday, now }) => {
       <div className="relative h-3 rounded-full bg-slate-100">
         <div className="absolute inset-y-0 right-0 w-[3%] rounded-r-full bg-emerald-100/70" />
 
-        {pills.map((p) => {
-          const isOpen = expanded.has(p.booking.id);
-          return (
-            <button
-              key={p.booking.id}
-              type="button"
-              onClick={() => onTogglePill(p.booking.id)}
-              aria-expanded={isOpen}
-              data-testid={`fleet-timeline-pill-${p.booking.id}`}
-              title={`${p.startHM} – ${p.endHM} · ${p.booking.user_name || 'Booking'}`}
-              className={`absolute top-1/2 -translate-y-1/2 h-3 rounded-full transition-all cursor-pointer ${
-                isOpen ? 'bg-blue-700 ring-2 ring-blue-300' : 'bg-blue-500 hover:bg-blue-600'
-              }`}
-              style={{ left: `${p.leftPct}%`, width: `${p.widthPct}%` }}
-            />
-          );
-        })}
+        {pills.map((p) => (
+          <button
+            key={p.booking.id}
+            type="button"
+            onClick={() => onPillClick(p.booking)}
+            data-testid={`fleet-timeline-pill-${p.booking.id}`}
+            title={`${p.startHM} – ${p.endHM} · ${p.booking.user_name || 'Booking'} · Click to open`}
+            aria-label={`Open booking ${p.startHM} to ${p.endHM}${p.booking.user_name ? ' for ' + p.booking.user_name : ''}`}
+            className="absolute top-1/2 -translate-y-1/2 h-3 rounded-full bg-blue-500 hover:bg-blue-600 hover:h-4 hover:-translate-y-2 transition-all cursor-pointer"
+            style={{ left: `${p.leftPct}%`, width: `${p.widthPct}%` }}
+          />
+        ))}
 
         {nowPct !== null && (
           <div
@@ -188,40 +184,6 @@ const Timeline = ({ pills, expanded, onTogglePill, isToday, now }) => {
           </div>
         )}
       </div>
-
-      {/* Expanded pill details */}
-      {[...expanded].length > 0 && (
-        <div className="mt-3 space-y-1.5">
-          {pills.filter((p) => expanded.has(p.booking.id)).map((p) => (
-            <div
-              key={p.booking.id}
-              className="flex items-center justify-between bg-blue-50 border border-blue-100 text-blue-900 text-sm rounded-lg px-3 py-2"
-              data-testid={`fleet-timeline-detail-${p.booking.id}`}
-            >
-              <div className="flex items-center gap-2">
-                <Clock size={14} className="text-blue-600" />
-                <span className="font-semibold tabular-nums">
-                  {p.startHM} – {p.endHM}
-                </span>
-                {p.booking.user_name && (
-                  <span className="text-blue-700/80">· {p.booking.user_name}</span>
-                )}
-                {p.booking.purpose && (
-                  <span className="text-blue-700/60 hidden sm:inline">· {p.booking.purpose}</span>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => onTogglePill(p.booking.id)}
-                className="p-1 rounded hover:bg-blue-100"
-                aria-label="Close booking details"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 };
@@ -312,23 +274,13 @@ const DropOffInline = ({ car, onSaved, onCancel }) => {
   );
 };
 
-const FleetCard = ({ car, allBookings, date, now, onQuickBook, onDropOffSaved }) => {
+const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, onDropOffSaved }) => {
   const { pills, freeHours, bookingCount, summary, status } = useMemo(
     () => summariseCarDay(car, allBookings, date, now),
     [car, allBookings, date, now]
   );
 
-  const [expanded, setExpanded] = useState(new Set());
   const [dropOffOpen, setDropOffOpen] = useState(false);
-
-  const togglePill = (id) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   const borderCls = {
     available: 'border-l-emerald-500',
@@ -383,8 +335,7 @@ const FleetCard = ({ car, allBookings, date, now, onQuickBook, onDropOffSaved })
 
       <Timeline
         pills={pills}
-        expanded={expanded}
-        onTogglePill={togglePill}
+        onPillClick={onOpenBooking}
         isToday={isSameYMD(date, now)}
         now={now}
       />
@@ -424,7 +375,7 @@ const FleetCard = ({ car, allBookings, date, now, onQuickBook, onDropOffSaved })
 };
 
 // ---------- main component ----------
-const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onCarsChanged }) => {
+const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onOpenBooking, onCarsChanged }) => {
   const [date, setDate] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -542,6 +493,7 @@ const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onCarsChanged }) =>
               date={date}
               now={now}
               onQuickBook={onQuickBook}
+              onOpenBooking={onOpenBooking}
               onDropOffSaved={handleDropOffSaved}
             />
           ))}

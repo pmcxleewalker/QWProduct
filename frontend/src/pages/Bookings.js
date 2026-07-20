@@ -1309,6 +1309,7 @@ const Bookings = () => {
         <FleetBoard
           cars={cars}
           bookings={bookings}
+          onOpenBooking={setSelectedBooking}
           onQuickBook={(car) => {
             // Pre-fill "New Booking" with this car + start time = now (rounded
             // up to the next 15 min), end time = start + 1 hour.

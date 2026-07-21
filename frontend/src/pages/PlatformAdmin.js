@@ -17,6 +17,7 @@ import {
 import ContentWorker from '../components/ContentWorker';
 import LegalRecordsSection from '../components/LegalRecordsSection';
 import { useConfirm } from '../components/ConfirmDialog';
+import { demoAPI } from '../api/api';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -1510,18 +1511,39 @@ const PlatformAdmin = () => {
                 const baseUrl = window.location.origin;
                 const franchiseUrl = `${baseUrl}/${tenant.slug}`;
                 const staffLoginUrl = `${baseUrl}/${tenant.slug}/login`;
-                
+                const isDemo = !!tenant.is_demo;
+                const magicLink = tenant.magic_link;
+
+                const regenerateMagicLink = async () => {
+                  if (!window.confirm(`Generate a new magic link for "${tenant.name}"? Any previous link stops working immediately.`)) return;
+                  try {
+                    const { data } = await demoAPI.regenerateForTenant(tenant.id, { expires_in_days: 30 });
+                    try { await navigator.clipboard.writeText(data.url); } catch { /* clipboard unavailable */ }
+                    setSuccess('New magic link generated and copied to clipboard');
+                    fetchData();
+                  } catch (e) {
+                    setError(getErrorMessage(e, 'Could not regenerate magic link'));
+                  }
+                };
+
                 return (
-                  <div key={tenant.id} className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow">
+                  <div key={tenant.id} className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow ${isDemo ? 'ring-1 ring-amber-200' : ''}`}>
                     {/* Card Header */}
-                    <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <div className={`p-4 border-b ${isDemo ? 'bg-gradient-to-r from-amber-50 to-orange-50' : 'bg-gradient-to-r from-blue-50 to-indigo-50'}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm">
-                            <Building2 size={24} className="text-white" />
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${isDemo ? 'bg-amber-500' : 'bg-blue-600'}`}>
+                            {isDemo ? <Zap size={24} className="text-white" /> : <Building2 size={24} className="text-white" />}
                           </div>
                           <div>
-                            <h3 className="font-bold text-gray-900">{tenant.name}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-gray-900">{tenant.name}</h3>
+                              {isDemo && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-amber-500 text-white" data-testid={`demo-badge-${tenant.id}`}>
+                                  Demo
+                                </span>
+                              )}
+                            </div>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getStatusColor(tenant.status)}`}>
                               {tenant.status}
                             </span>
@@ -1533,85 +1555,135 @@ const PlatformAdmin = () => {
                         </div>
                       </div>
                     </div>
-                    
-                    {/* Card Body - URLs and Credentials */}
-                    <div className="p-4 space-y-3">
-                      {/* Franchise URL */}
-                      <div>
-                        <label className="text-xs font-medium text-gray-500 flex items-center">
-                          <Globe size={12} className="mr-1" /> Franchise URL
-                        </label>
-                        <div className="flex items-center mt-1 bg-gray-50 rounded-lg overflow-hidden">
-                          <code className="flex-1 px-3 py-2 text-xs font-mono text-blue-700 truncate">
-                            {franchiseUrl}
-                          </code>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(franchiseUrl);
-                              setSuccess('Franchise URL copied!');
-                            }}
-                            className="px-3 py-2 bg-blue-600 text-white text-xs hover:bg-blue-700"
-                            title="Copy URL"
-                          >
-                            <Copy size={14} />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      {/* Staff Login URL */}
-                      <div>
-                        <label className="text-xs font-medium text-gray-500 flex items-center">
-                          <Users size={12} className="mr-1" /> Staff Login URL
-                        </label>
-                        <div className="flex items-center mt-1 bg-gray-50 rounded-lg overflow-hidden">
-                          <code className="flex-1 px-3 py-2 text-xs font-mono text-purple-700 truncate">
-                            {staffLoginUrl}
-                          </code>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(staffLoginUrl);
-                              setSuccess('Staff login URL copied!');
-                            }}
-                            className="px-3 py-2 bg-purple-600 text-white text-xs hover:bg-purple-700"
-                            title="Copy URL"
-                          >
-                            <Copy size={14} />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      {/* Master Admin Credentials */}
-                      <div className="pt-2 border-t">
-                        <label className="text-xs font-medium text-gray-500 flex items-center">
-                          <Key size={12} className="mr-1" /> Master Admin Login
-                        </label>
-                        <div className="mt-1 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                              <p className="text-xs">
-                                <span className="text-gray-500">Email: </span>
-                                <span className="font-mono font-medium text-gray-900">
-                                  {tenant.master_admin_email || `admin.${tenant.slug}@quickwing.com`}
-                                </span>
+
+                    {/* Card Body — Demo vs Real */}
+                    {isDemo ? (
+                      <div className="p-4 space-y-3">
+                        <div>
+                          <label className="text-xs font-medium text-gray-500 flex items-center">
+                            <Zap size={12} className="mr-1 text-amber-500" /> Magic link (no password, no signup)
+                          </label>
+                          {magicLink ? (
+                            <>
+                              <div className="flex items-center mt-1 bg-emerald-50 border border-emerald-200 rounded-lg overflow-hidden">
+                                <code className="flex-1 px-3 py-2 text-xs font-mono text-emerald-900 truncate" data-testid={`tenant-magic-url-${tenant.id}`}>
+                                  {magicLink.url}
+                                </code>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(magicLink.url);
+                                    setSuccess('Magic link copied!');
+                                  }}
+                                  className="px-3 py-2 bg-emerald-600 text-white text-xs hover:bg-emerald-700"
+                                  title="Copy magic link"
+                                  data-testid={`tenant-magic-copy-${tenant.id}`}
+                                >
+                                  <Copy size={14} />
+                                </button>
+                              </div>
+                              <p className="text-[11px] text-gray-500 mt-1.5">
+                                Expires {magicLink.expires_at ? new Date(magicLink.expires_at).toLocaleDateString() : '—'} · used {magicLink.use_count || 0}×
                               </p>
-                              <p className="text-xs text-gray-500">
-                                Password: <span className="italic">Set during creation</span>
-                              </p>
+                            </>
+                          ) : (
+                            <div className="mt-1 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900">
+                              No active magic link. Click <b>Regenerate</b> below to create one.
                             </div>
+                          )}
+                        </div>
+
+                        <div className="pt-2 border-t">
+                          <button
+                            onClick={regenerateMagicLink}
+                            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-200 rounded-lg"
+                            data-testid={`tenant-magic-regenerate-${tenant.id}`}
+                          >
+                            <RefreshCw size={13} /> {magicLink ? 'Regenerate link' : 'Generate magic link'}
+                          </button>
+                          <p className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
+                            Master admin credentials do not apply — this tenant has no password login.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 space-y-3">
+                        {/* Franchise URL */}
+                        <div>
+                          <label className="text-xs font-medium text-gray-500 flex items-center">
+                            <Globe size={12} className="mr-1" /> Franchise URL
+                          </label>
+                          <div className="flex items-center mt-1 bg-gray-50 rounded-lg overflow-hidden">
+                            <code className="flex-1 px-3 py-2 text-xs font-mono text-blue-700 truncate">
+                              {franchiseUrl}
+                            </code>
                             <button
                               onClick={() => {
-                                navigator.clipboard.writeText(tenant.master_admin_email || `admin.${tenant.slug}@quickwing.com`);
-                                setSuccess('Admin email copied!');
+                                navigator.clipboard.writeText(franchiseUrl);
+                                setSuccess('Franchise URL copied!');
                               }}
-                              className="p-2 text-amber-700 hover:bg-amber-100 rounded"
-                              title="Copy email"
+                              className="px-3 py-2 bg-blue-600 text-white text-xs hover:bg-blue-700"
+                              title="Copy URL"
                             >
                               <Copy size={14} />
                             </button>
                           </div>
                         </div>
+                      
+                        {/* Staff Login URL */}
+                        <div>
+                          <label className="text-xs font-medium text-gray-500 flex items-center">
+                            <Users size={12} className="mr-1" /> Staff Login URL
+                          </label>
+                          <div className="flex items-center mt-1 bg-gray-50 rounded-lg overflow-hidden">
+                            <code className="flex-1 px-3 py-2 text-xs font-mono text-purple-700 truncate">
+                              {staffLoginUrl}
+                            </code>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(staffLoginUrl);
+                                setSuccess('Staff login URL copied!');
+                              }}
+                              className="px-3 py-2 bg-purple-600 text-white text-xs hover:bg-purple-700"
+                              title="Copy URL"
+                            >
+                              <Copy size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      
+                        {/* Master Admin Credentials */}
+                        <div className="pt-2 border-t">
+                          <label className="text-xs font-medium text-gray-500 flex items-center">
+                            <Key size={12} className="mr-1" /> Master Admin Login
+                          </label>
+                          <div className="mt-1 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-1">
+                                <p className="text-xs">
+                                  <span className="text-gray-500">Email: </span>
+                                  <span className="font-mono font-medium text-gray-900">
+                                    {tenant.master_admin_email || `admin.${tenant.slug}@quickwing.com`}
+                                  </span>
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Password: <span className="italic">Set during creation</span>
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(tenant.master_admin_email || `admin.${tenant.slug}@quickwing.com`);
+                                  setSuccess('Admin email copied!');
+                                }}
+                                className="p-2 text-amber-700 hover:bg-amber-100 rounded"
+                                title="Copy email"
+                              >
+                                <Copy size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                     
                     {/* Card Footer - Actions */}
                     <div className="px-4 py-3 bg-gray-50 border-t flex items-center justify-between">

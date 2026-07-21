@@ -1269,8 +1269,56 @@ async def list_tenants(
         # Get usage counts
         tenant["vehicles_count"] = await db.vehicles.count_documents({"tenant_id": tenant["id"]})
         tenant["users_count"] = await db.memberships.count_documents({"tenant_id": tenant["id"]})
+
+        # For demo tenants, attach the currently-active magic link so the
+        # Clients list can render a copyable URL instead of a password box.
+        if tenant.get("is_demo"):
+            active_link = await db.demo_tokens.find_one(
+                {"tenant_id": tenant["id"], "revoked_at": None},
+                {"_id": 0},
+                sort=[("created_at", -1)],
+            )
+            tenant["magic_link"] = _demo_token_public(active_link) if active_link else None
     
     return {"tenants": tenants, "total": total}
+
+
+@api_router.post("/platform/tenants/{tenant_id}/magic-link")
+async def regenerate_tenant_magic_link(
+    tenant_id: str,
+    payload: Optional[dict] = None,
+    context: TenantContext = Depends(require_platform_admin),
+):
+    """Regenerate the magic link for a demo tenant. Revokes any previously
+    active links so the old URL stops working. Refuses on non-demo tenants."""
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    if not tenant.get("is_demo"):
+        raise HTTPException(status_code=400, detail="This is not a demo tenant")
+
+    # Revoke previously active links for this tenant
+    await db.demo_tokens.update_many(
+        {"tenant_id": tenant_id, "revoked_at": None},
+        {"$set": {"revoked_at": datetime.now(timezone.utc).isoformat()}},
+    )
+
+    expires_in_days = 30
+    if isinstance(payload, dict) and payload.get("expires_in_days"):
+        try:
+            expires_in_days = int(payload["expires_in_days"])
+        except (TypeError, ValueError):
+            pass
+
+    row = await _mint_demo_token_for_tenant(
+        tenant=tenant,
+        expires_in_days=expires_in_days,
+        created_by_user_id=context.user_id,
+        created_by_email=context.user_email,
+        prospect_name=tenant.get("name", ""),
+        prospect_email="",
+    )
+    return _demo_token_public(row)
 
 
 @api_router.get("/platform/tenants/{tenant_id}")

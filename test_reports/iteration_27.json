@@ -1,0 +1,33 @@
+{
+  "summary": "Iteration 27 — Verified per-tenant Demo Magic Link enhancements: list-endpoint enrichment, regenerate endpoint, and Clients card UI branching. Backend 8/8 new pytest pass (test_demo_regenerate_and_list.py) + previous 9/9 (test_demo_magic_link.py) still green. Frontend Playwright end-to-end: created a fresh demo tenant via Create Tenant → Demo toggle, verified success modal shows demo-magic-link-panel with URL; on the Clients list the new card renders a yellow DEMO badge (data-testid demo-badge-<id>), a green magic-link URL block (tenant-magic-url-<id>), a copy button (tenant-magic-copy-<id>) and Regenerate button (tenant-magic-regenerate-<id>). Card does NOT contain 'Master Admin Login', 'Franchise URL' or 'Staff Login URL'. Regenerate button changed the URL on the card, produced toast 'New magic link generated and copied to clipboard'. Opening the OLD URL in a fresh browser context lands on the demo-redeem-error page; opening the NEW URL auto-logs in and lands at /<slug>/setup-wizard. Real tenants on the same list still show Franchise URL + Staff Login URL + Master Admin Login blocks (regression clean). One demo card in the wild ('Reg Demo 1784624053') correctly shows the 'No active magic link — click Regenerate' fallback, matching backend magic_link=null semantics.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_demo_regenerate_and_list.py",
+    "/app/backend/tests/test_demo_magic_link.py",
+    "/app/test_reports/pytest/demo_regenerate.xml"
+  ],
+  "action_items": [
+    "None functional. Test tenants left in DB from this run: cardtest-<ts> (demo), regen-demo-<ts>, regen-real-<ts>, regen-null-<ts> — regen-* are auto-cleaned by the fixture teardown; cardtest-* remains and can be purged via Command Centre → Clients.",
+    "Cosmetic (already flagged in iter-26): the magic_link.url uses backend FRONTEND_URL env (quick-wing.com). Copy from Command Centre in the preview env still gives a quick-wing.com link — testers must swap host to REACT_APP_BACKEND_URL to open in the preview. Not a bug, but consider driving base URL off the request Host header in preview envs to reduce test friction."
+  ],
+  "critical_code_review_comments": [
+    "server.py list_tenants uses skip().limit(limit).to_list(limit) — fine here, but the enrichment loop issues one demo_tokens.find_one per demo tenant. On tenants with many demo entries this becomes N+1. Consider a single aggregate ($lookup) or bulk fetch of active tokens keyed by tenant_id if the tenant count grows.",
+    "PlatformAdmin.js regenerateMagicLink uses window.confirm — fine for now, but a modal-based confirmation with data-testid would be more test-friendly than dialog interception. The current implementation calls fetchData() after regenerate — good, keeps card URL in sync; but that refetch could be avoided by patching state in place.",
+    "The magic_link 'use_count' is exposed on the card ('used 0×') — nice UX. Ensure the counter is incremented atomically in the redeem endpoint (server.py /api/demo/redeem)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_demo_regenerate_and_list.py (new — 8 regression tests for iter-27)"
+  ],
+  "success_rate": {"backend": "100% (8/8 new, 9/9 previous)", "frontend": "100% (all acceptance criteria pass)"},
+  "test_credentials": "superadmin@quickwing.com / Super123",
+  "seed_data_creation": "cardtest-<ts> demo tenant left behind after e2e UI test; regen-* auto-cleaned.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All demo magic-link features work end-to-end: create returns magic_link, list_tenants exposes magic_link per demo tenant (null when all revoked), POST /platform/tenants/{id}/magic-link regenerates & revokes old, refuses on real tenants (400) & unknown tenants (404). Frontend Clients card branches on isDemo — demo shows magic link + Regenerate, real shows Franchise/Staff/Master Admin. Demo-link redeem via new token auto-logs in; old token shows demo-redeem-error page.",
+  "rca_of_the_issue": "Not applicable — no bugs found."
+}

@@ -1638,3 +1638,48 @@ recommendations to beat them, then approved building the full P0+P1 stack.
 **Follow-ups / backlog:**
 - Real GPS integration (SinoTrack / Traccar) to make the Live Map actually plot vehicles instead of showing drop-off list.
 - Optional: hook Drop-off completion to auto-close the currently-active booking on that vehicle.
+
+
+## 2026-02 — Demo tenant + magic-link sales links
+
+**Context:** Lee wanted a one-click sales demo — send a link to a prospect, no signup, no password, drops them straight into a pre-populated Quick Wing tenant.
+
+**Backend (`/app/backend/server.py`):**
+- `seed_demo_tenant()` — idempotent startup task creating:
+  - Tenant "Quick Wing Demo Ltd" (fixed id, slug `demo`, standard plan, `is_demo: true`)
+  - Demo user `demo@quickwing.com` (name "Prospect Demo", master_admin role, password hash sentinel `!MAGIC_LINK_ONLY!` — regular login blocked)
+  - 8 realistic Irish-reg vehicles with a spread of compliance states (green, amber, one expired to demo alerts)
+  - 4 driver staff (`aoife@demo…`, `sean@…`, `niamh@…`, `padraig@…`)
+  - 8 bookings across yesterday/today/tomorrow so Fleet Board timelines always have colour
+- New endpoints (super/master admin only):
+  - `POST /api/platform/demo-tokens` → mint magic link (fields: prospect_name, prospect_email, expires_in_days)
+  - `GET  /api/platform/demo-tokens` → list all
+  - `DELETE /api/platform/demo-tokens/{id}` → revoke
+- Public endpoint:
+  - `POST /api/demo/redeem` → exchanges a magic-link token for a full JWT scoped to the demo tenant + demo user. Records use_count / last_used_at. Rejects revoked or expired tokens.
+- Token URLs use `FRONTEND_URL` env var (defaults to `quick-wing.com` in prod).
+- Added `import secrets` at module top-level for token generation.
+
+**Frontend:**
+- `/app/frontend/src/pages/DemoRedeem.js` — new public page at `/demo-link/:token`. Clears any existing session, hits `/api/demo/redeem`, stores the new JWT + activeTenant + flags (`isDemoSession`, `demoProspectName`), hard-navigates to `/demo`. Shows friendly error state if the token is invalid/expired/revoked.
+- `/app/frontend/src/components/DemoBanner.js` — persistent yellow strip below the top nav when `isDemoSession === '1'`. Personalised with the prospect's name, includes a "Book a real demo" mailto CTA and a dismiss X (session-scoped).
+- `/app/frontend/src/components/DemoLinksSection.js` — new platform-admin console: left column = create-link form (name, optional email, expiry dropdown 3/7/14/30/60 days), right column = table of every link ever minted (Active / Expired / Revoked, use count, last used, Copy / Open / Revoke).
+- `PlatformAdmin.js` — new "Demo · Magic Links" tab wired into main nav.
+- `api.js` — new `demoAPI` (list, create, revoke, redeem).
+- `App.js` — mounts `<DemoBanner />` inside `TenantRoutes` so it appears on every authenticated page in the demo tenant, and adds the public `/demo-link/:token` route BEFORE the tenant catch-alls to avoid slug collisions.
+
+**IMPORTANT — route naming:** magic link URLs deliberately use the path `/demo-link/{token}` rather than `/demo/{token}` to avoid colliding with `/demo/bookings`, `/demo/reports`, etc. which are legitimate tenant routes once the prospect is inside.
+
+**Tested end-to-end (browser + curl):**
+- Super admin logs in → Command Centre → Demo tab → generates link
+- Fresh browser context opens the magic link → auto-redirected to `/demo` with the yellow "Prospect Demo" banner
+- `/demo/bookings` renders 8 fleet cards + 4 timeline pills, banner still visible
+- Revoke works, expired tokens rejected, invalid tokens show friendly error page
+- Seed function idempotent — re-running startup doesn't duplicate cars/bookings
+
+**Data-testids:** `demo-links-section`, `demo-links-prospect-name`, `demo-links-prospect-email`, `demo-links-expires`, `demo-links-create`, `demo-links-just-created`, `demo-link-row-{id}`, `demo-link-copy-{id}`, `demo-link-revoke-{id}`, `demo-redeem-loading`, `demo-redeem-error`, `demo-banner`, `demo-banner-cta`, `demo-banner-dismiss`, PlatformAdmin tab `tab-demo-links`.
+
+**Backlog / follow-ups:**
+- Add "Reset demo data" super-admin button (wipes bookings & drop-off locations to restore pristine state).
+- Track referral analytics on redeem (UTM-style stats per link).
+- Nightly cron to purge tokens expired > 90 days.

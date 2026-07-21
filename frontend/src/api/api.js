@@ -223,8 +223,17 @@ export const bookingLocationsAPI = {
   getLocationsForDate: (date, carId) => axios.get(`${API}/bookings/locations`, { params: { date, car_id: carId } }).catch(() => ({ data: { pins: [] } })),
 };
 
+// Demo (magic-link) API — used by the platform admin console to mint, list
+// and revoke magic-link demo URLs for prospects.
+export const demoAPI = {
+  list:   () => axios.get(`${API}/platform/demo-tokens`),
+  create: (data) => axios.post(`${API}/platform/demo-tokens`, data),
+  revoke: (id) => axios.delete(`${API}/platform/demo-tokens/${id}`),
+  redeem: (token) => axios.post(`${API}/demo/redeem`, { token }),
+};
+
 export default { 
   carAPI, bookingAPI, providerAPI, messageAPI, todoAPI, liftRequestAPI, 
   reportsAPI, planAPI, settingsAPI, userAPI, platformAPI, authAPI, assistanceAPI, complianceAPI, 
-  statusAPI, pushAPI, liftNotificationAPI, bookingNotificationAPI, bookingLocationsAPI
+  statusAPI, pushAPI, liftNotificationAPI, bookingNotificationAPI, bookingLocationsAPI, demoAPI
 };

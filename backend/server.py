@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Any, Dict
 from datetime import timedelta, datetime, timezone
 import uuid
+import secrets
 import qrcode
 from io import BytesIO
 import json
@@ -7957,6 +7958,9 @@ async def startup():
     
     # Seed Open Claw bot account
     await seed_bot_account()
+
+    # Seed Quick Wing Demo tenant (idempotent) so magic-link demo urls work
+    await seed_demo_tenant()
     
     # Fix any stale absolute logo URLs ('http://localhost:8001/...') left in
     # the DB from before the upload endpoint was switched to relative URLs.
@@ -8284,6 +8288,326 @@ async def seed_super_admin():
         
     except Exception as e:
         logger.error(f"Error seeding super admin: {e}")
+
+
+# ==================== DEMO TENANT & MAGIC LINK ====================
+
+DEMO_TENANT_SLUG = "demo"
+DEMO_TENANT_ID = "00000000-0000-0000-0000-000000000d00"  # fixed so re-runs are safe
+DEMO_USER_ID = "00000000-0000-0000-0000-000000000d01"
+DEMO_USER_EMAIL = "demo@quickwing.com"
+DEMO_USER_NAME = "Prospect Demo"
+
+
+async def seed_demo_tenant():
+    """Idempotently create the Quick Wing Demo tenant used by magic-link
+    prospect demos. Populates a realistic Irish fleet, a small team and a
+    handful of past/current/future bookings so the app feels alive on first
+    click. Safe to run on every startup — nothing is duplicated.
+    """
+    from datetime import timedelta as _td
+
+    try:
+        # 1) Tenant
+        existing = await db.tenants.find_one({"id": DEMO_TENANT_ID}, {"_id": 0})
+        if not existing:
+            tenant = {
+                "id": DEMO_TENANT_ID,
+                "name": "Quick Wing Demo Ltd",
+                "slug": DEMO_TENANT_SLUG,
+                "status": TenantStatus.ACTIVE.value,
+                "plan": TenantPlan.STANDARD.value,
+                "max_vehicles": 25,
+                "max_users": 25,
+                "monthly_price": 0,
+                "customizations_remaining": 0,
+                "customizations_reset_date": (datetime.now(timezone.utc) + _td(days=30)).isoformat(),
+                "feature_overrides": {},
+                "subscription_expires_at": None,
+                "is_demo": True,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+            await db.tenants.insert_one(tenant)
+            logger.info("Demo tenant created: Quick Wing Demo Ltd (/demo)")
+        else:
+            logger.info("Demo tenant already exists")
+
+        # 2) Demo user (no password — magic link mints a JWT for them)
+        existing_user = await db.users.find_one({"id": DEMO_USER_ID}, {"_id": 0})
+        if not existing_user:
+            demo_user = {
+                "id": DEMO_USER_ID,
+                "email": DEMO_USER_EMAIL,
+                "name": DEMO_USER_NAME,
+                "password_hash": "!MAGIC_LINK_ONLY!",  # not a valid bcrypt — password login blocked
+                "role": UserRole.MASTER_ADMIN.value,
+                "tenant_id": DEMO_TENANT_ID,
+                "is_active": True,
+                "is_demo": True,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+            await db.users.insert_one(demo_user)
+        # Ensure membership
+        if not await db.memberships.find_one({"user_id": DEMO_USER_ID, "tenant_id": DEMO_TENANT_ID}):
+            await db.memberships.insert_one({
+                "id": str(uuid.uuid4()),
+                "user_id": DEMO_USER_ID,
+                "tenant_id": DEMO_TENANT_ID,
+                "role": UserRole.MASTER_ADMIN.value,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+
+        # 3) Fleet — realistic Irish reg mix + spread of compliance states
+        today = datetime.now(timezone.utc).date()
+        fleet_seed = [
+            ("Ford Focus",   "12-D-45123", today + _td(days=90),  today + _td(days=45), today + _td(days=180)),
+            ("Hyundai i30",  "17-C-8842",  today + _td(days=210), today + _td(days=95), today + _td(days=60)),
+            ("Toyota Yaris", "20-KE-3341", today + _td(days=15),  today + _td(days=240), today + _td(days=140)),
+            ("Renault Zoe (EV)", "23-D-11902", today + _td(days=300), today + _td(days=300), today + _td(days=250)),
+            ("Dacia Sandero", "19-WW-2054", today - _td(days=5),  today + _td(days=120), today + _td(days=30)),  # tax expired demo
+            ("Nissan Leaf (EV)", "22-D-18191", today + _td(days=170), today + _td(days=70), today + _td(days=200)),
+            ("Skoda Octavia", "18-L-6612", today + _td(days=55),  today + _td(days=8),   today + _td(days=110)),  # NCT amber
+            ("VW Caddy Van",  "21-KY-4470", today + _td(days=120), today + _td(days=200), today + _td(days=90)),
+        ]
+        existing_vehicles = {v["registration"]: v for v in await db.vehicles.find(
+            {"tenant_id": DEMO_TENANT_ID}, {"_id": 0}
+        ).to_list(200)}
+        seeded_car_ids = []
+        for name, reg, tax_due, nct_due, ins_due in fleet_seed:
+            if reg in existing_vehicles:
+                seeded_car_ids.append(existing_vehicles[reg]["id"])
+                continue
+            car_id = str(uuid.uuid4())
+            await db.vehicles.insert_one({
+                "id": car_id,
+                "tenant_id": DEMO_TENANT_ID,
+                "name": name,
+                "registration": reg,
+                "current_status": "Free",
+                "tax_due_date": tax_due.isoformat(),
+                "nct_due_date": nct_due.isoformat(),
+                "insurance_due_date": ins_due.isoformat(),
+                "current_mileage": 45000 + hash(reg) % 40000,
+                "is_blocked": False,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            })
+            seeded_car_ids.append(car_id)
+
+        # 4) Team — a handful of drivers so admin views feel populated
+        drivers_seed = [
+            ("Aoife O'Brien", "aoife@demo.quickwing.com", "staff"),
+            ("Sean Murphy",   "sean@demo.quickwing.com",  "staff"),
+            ("Niamh Byrne",   "niamh@demo.quickwing.com", "staff"),
+            ("Padraig Kelly", "padraig@demo.quickwing.com", "staff"),
+        ]
+        for name, email, role in drivers_seed:
+            if await db.users.find_one({"email": email}):
+                continue
+            uid = str(uuid.uuid4())
+            await db.users.insert_one({
+                "id": uid, "email": email, "name": name,
+                "password_hash": "!DEMO_STAFF_NO_LOGIN!",
+                "role": role, "tenant_id": DEMO_TENANT_ID, "is_active": True,
+                "is_demo": True,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+            await db.memberships.insert_one({
+                "id": str(uuid.uuid4()), "user_id": uid,
+                "tenant_id": DEMO_TENANT_ID, "role": role,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+
+        # 5) Bookings — spread across yesterday / today / tomorrow so the
+        # Fleet Board timeline and calendar always have colour on them.
+        existing_booking_count = await db.bookings.count_documents({"tenant_id": DEMO_TENANT_ID})
+        if existing_booking_count == 0 and seeded_car_ids:
+            now_local = datetime.now()
+            today_str = now_local.strftime("%Y-%m-%d")
+            yday_str = (now_local - _td(days=1)).strftime("%Y-%m-%d")
+            tmrw_str = (now_local + _td(days=1)).strftime("%Y-%m-%d")
+
+            def _book(car_ix, day_str, sh, eh, driver_name, purpose):
+                return {
+                    "id": str(uuid.uuid4()),
+                    "tenant_id": DEMO_TENANT_ID,
+                    "car_id": seeded_car_ids[car_ix % len(seeded_car_ids)],
+                    "user_name": driver_name,
+                    "start_time": f"{day_str}T{sh:02d}:00",
+                    "end_time":   f"{day_str}T{eh:02d}:00",
+                    "purpose": purpose,
+                    "location": "",
+                    "notes": "",
+                    "status": "approved",
+                    "created_by_email": DEMO_USER_EMAIL,
+                    "created_by_user_id": DEMO_USER_ID,
+                    "is_recurring": False,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+
+            samples = [
+                _book(0, yday_str, 9, 12, "Aoife O'Brien", "Client visit — Cork"),
+                _book(1, yday_str, 14, 17, "Sean Murphy",  "Airport transfer"),
+                _book(2, today_str, 8, 11, "Niamh Byrne",  "Morning care route"),
+                _book(3, today_str, 10, 13, "Padraig Kelly", "Delivery run"),
+                _book(4, today_str, 13, 15, "Aoife O'Brien", "Site inspection"),
+                _book(0, today_str, 16, 18, "Sean Murphy",  "Evening drop-off"),
+                _book(5, tmrw_str, 9, 12, "Niamh Byrne",   "Training day"),
+                _book(6, tmrw_str, 13, 16, "Padraig Kelly", "Depot rotation"),
+            ]
+            await db.bookings.insert_many(samples)
+
+        logger.info("Demo tenant seeding complete")
+    except Exception as e:
+        logger.error(f"Error seeding demo tenant: {e}")
+
+
+class DemoTokenCreate(BaseModel):
+    """Payload used by super admins to mint a magic-link for a prospect."""
+    prospect_name: str
+    prospect_email: Optional[str] = ""
+    expires_in_days: int = 14
+
+
+def _demo_token_public(t: dict, frontend_url: Optional[str] = None) -> dict:
+    """Shape a demo_tokens row for the API response (adds computed URL)."""
+    base = frontend_url or os.environ.get("FRONTEND_URL") or ""
+    url_path = f"/demo-link/{t['token']}"
+    return {
+        "id": t["id"],
+        "token": t["token"],
+        "prospect_name": t.get("prospect_name", ""),
+        "prospect_email": t.get("prospect_email", ""),
+        "created_by_email": t.get("created_by_email", ""),
+        "created_at": t.get("created_at"),
+        "expires_at": t.get("expires_at"),
+        "revoked_at": t.get("revoked_at"),
+        "last_used_at": t.get("last_used_at"),
+        "use_count": t.get("use_count", 0),
+        "url": f"{base}{url_path}" if base else url_path,
+    }
+
+
+@api_router.post("/platform/demo-tokens")
+async def create_demo_token(
+    payload: DemoTokenCreate,
+    context: TenantContext = Depends(require_platform_admin),
+):
+    """Mint a new magic-link demo token for a prospect."""
+    if not payload.prospect_name.strip():
+        raise HTTPException(status_code=400, detail="Prospect name is required")
+
+    token_row = {
+        "id": str(uuid.uuid4()),
+        "token": secrets.token_urlsafe(24),
+        "prospect_name": payload.prospect_name.strip(),
+        "prospect_email": (payload.prospect_email or "").strip(),
+        "created_by_user_id": context.user_id,
+        "created_by_email": context.user_email,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(days=max(1, min(365, payload.expires_in_days)))).isoformat(),
+        "revoked_at": None,
+        "last_used_at": None,
+        "use_count": 0,
+    }
+    await db.demo_tokens.insert_one(token_row)
+    token_row.pop("_id", None)
+    return _demo_token_public(token_row)
+
+
+@api_router.get("/platform/demo-tokens")
+async def list_demo_tokens(
+    context: TenantContext = Depends(require_platform_admin),
+):
+    """List every demo token ever minted so admins can revoke or reshare."""
+    rows = await db.demo_tokens.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return [_demo_token_public(r) for r in rows]
+
+
+@api_router.delete("/platform/demo-tokens/{token_id}")
+async def revoke_demo_token(
+    token_id: str,
+    context: TenantContext = Depends(require_platform_admin),
+):
+    """Revoke a token — it can no longer be redeemed after this call."""
+    row = await db.demo_tokens.find_one({"id": token_id}, {"_id": 0})
+    if not row:
+        raise HTTPException(status_code=404, detail="Token not found")
+    await db.demo_tokens.update_one(
+        {"id": token_id},
+        {"$set": {"revoked_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    return {"ok": True}
+
+
+class DemoRedeemPayload(BaseModel):
+    token: str
+
+
+@api_router.post("/demo/redeem")
+async def redeem_demo_token(payload: DemoRedeemPayload):
+    """Public endpoint. Exchange a magic-link token for a full auth JWT
+    scoped to the demo tenant and demo user. No password required.
+    """
+    row = await db.demo_tokens.find_one({"token": payload.token}, {"_id": 0})
+    if not row:
+        raise HTTPException(status_code=404, detail="Invalid demo link")
+    if row.get("revoked_at"):
+        raise HTTPException(status_code=403, detail="This demo link has been revoked")
+    exp = row.get("expires_at")
+    if exp:
+        try:
+            if datetime.fromisoformat(exp.replace("Z", "+00:00")) < datetime.now(timezone.utc):
+                raise HTTPException(status_code=403, detail="This demo link has expired")
+        except HTTPException:
+            raise
+        except Exception:
+            pass  # bad stored value — treat as no expiry rather than crash
+
+    # Confirm demo user + tenant still exist (they should — seeded on startup)
+    demo_user = await db.users.find_one({"id": DEMO_USER_ID}, {"_id": 0})
+    demo_tenant = await db.tenants.find_one({"id": DEMO_TENANT_ID}, {"_id": 0})
+    if not demo_user or not demo_tenant:
+        raise HTTPException(status_code=503, detail="Demo environment is not ready yet")
+
+    # Mint an auth token identical to what /auth/login would return, so the
+    # standard AuthContext flow "just works" on the frontend.
+    access_token = create_access_token({
+        "sub": DEMO_USER_ID,
+        "email": DEMO_USER_EMAIL,
+        "role": UserRole.MASTER_ADMIN.value,
+        "tenant_id": DEMO_TENANT_ID,
+        "is_impersonating": False,
+        "is_demo": True,
+    })
+
+    # Track usage — one link can be opened many times by the same prospect
+    await db.demo_tokens.update_one(
+        {"id": row["id"]},
+        {"$set": {"last_used_at": datetime.now(timezone.utc).isoformat()},
+         "$inc": {"use_count": 1}},
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": DEMO_USER_ID,
+            "email": DEMO_USER_EMAIL,
+            "name": DEMO_USER_NAME,
+            "role": UserRole.MASTER_ADMIN.value,
+            "require_password_change": False,
+        },
+        "active_tenant": {
+            "tenant_id": DEMO_TENANT_ID,
+            "tenant_name": demo_tenant.get("name", "Quick Wing Demo Ltd"),
+            "tenant_slug": demo_tenant.get("slug", DEMO_TENANT_SLUG),
+            "role": UserRole.MASTER_ADMIN.value,
+            "status": demo_tenant.get("status", "active"),
+        },
+        "prospect_name": row.get("prospect_name", ""),
+    }
 
 
 # ==================== QUICK WING CONTENT WORKER ====================

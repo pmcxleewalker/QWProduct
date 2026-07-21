@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import ContentWorker from '../components/ContentWorker';
 import LegalRecordsSection from '../components/LegalRecordsSection';
+import DemoLinksSection from '../components/DemoLinksSection';
 import { useConfirm } from '../components/ConfirmDialog';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -851,7 +852,8 @@ const PlatformAdmin = () => {
               { id: 'reports', label: 'Finance', sublabel: 'Reports & Billing', icon: Receipt, roles: ['super_admin', 'master_admin'] },
               { id: 'audit', label: 'Activity', sublabel: 'Audit Log', icon: FileText, roles: ['super_admin', 'master_admin'] },
               { id: 'backup', label: 'Backup', sublabel: 'Disaster Recovery', icon: Database, roles: ['super_admin', 'master_admin'] },
-              { id: 'legal-records', label: 'Legal', sublabel: 'Legal Records', icon: Scale, roles: ['super_admin'] }
+              { id: 'legal-records', label: 'Legal', sublabel: 'Legal Records', icon: Scale, roles: ['super_admin'] },
+              { id: 'demo-links', label: 'Demo', sublabel: 'Magic Links', icon: Zap, roles: ['super_admin', 'master_admin'] }
             ]
             .filter(tab => !tab.roles || tab.roles.includes(user?.role))
             .map(tab => (
@@ -3839,6 +3841,10 @@ const PlatformAdmin = () => {
             token={localStorage.getItem('token') || sessionStorage.getItem('token')}
             isSuperAdmin={user?.role === 'super_admin'}
           />
+        )}
+
+        {activeTab === 'demo-links' && (
+          <DemoLinksSection />
         )}
       </div>
       

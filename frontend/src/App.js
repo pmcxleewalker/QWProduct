@@ -30,6 +30,8 @@ import Contact from './pages/Contact';
 import ActivateAccount from './pages/ActivateAccount';
 import TenantSelector from './pages/TenantSelector';
 import PlatformAdmin from './pages/PlatformAdmin';
+import DemoRedeem from './pages/DemoRedeem';
+import DemoBanner from './components/DemoBanner';
 import Reports from './pages/Reports';
 import RequestLift from './pages/RequestLift';
 import Navigation from './components/Navigation';
@@ -342,6 +344,7 @@ const TenantRoutes = () => {
   return (
     <>
       <Navigation tenantSlug={tenantSlug} />
+      <DemoBanner />
       <div className="pt-16 pb-20 sm:pb-4 flex-grow">
         <ErrorBoundary>
           <Routes>
@@ -402,6 +405,7 @@ const AppContent = () => {
         <Route path="/login" element={<LoginRedirect />} />
         <Route path="/register" element={<Register />} />
         <Route path="/setup" element={<Setup />} />
+        <Route path="/demo-link/:token" element={<DemoRedeem />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/legal" element={<Legal />} />

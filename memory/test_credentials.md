@@ -30,3 +30,10 @@
 - test-fleet (Test Fleet) — created in this session, used for backend curl tests
 - Other historical tenants may have been deleted — check `GET /api/platform/tenants` for current list
 - Default tenant master admin: email `admin.<slug>@quickwing.com`, password `admin123`
+
+## Demo Tenant (Magic Link, no password)
+- Tenant slug: `demo`  (name: "Quick Wing Demo Ltd")
+- Demo user: `demo@quickwing.com` — password login is BLOCKED (hash sentinel).
+- Only entry path: `/demo-link/{token}` (magic link).
+- Magic link creation: Super admin → Command Centre → **Demo** tab → generate link.
+- Seed data: 8 realistic Irish-reg vehicles, 4 dummy drivers, 8 bookings spread across yesterday/today/tomorrow. Idempotent — re-seeded on every startup.

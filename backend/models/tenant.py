@@ -383,6 +383,11 @@ class TenantCreate(BaseModel):
     custom_price: Optional[float] = None
     # Feature overrides (super admin can enable/disable specific features)
     feature_overrides: Optional[dict] = None
+    # Demo mode: creates a BLANK tenant with no master admin password. Access
+    # is via a magic link URL returned from the create endpoint. No email +
+    # password login is possible for demo tenants.
+    is_demo: bool = False
+    demo_link_expires_in_days: int = 30
     
 
 class TenantUpdate(BaseModel):

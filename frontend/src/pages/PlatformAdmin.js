@@ -16,7 +16,6 @@ import {
 } from 'lucide-react';
 import ContentWorker from '../components/ContentWorker';
 import LegalRecordsSection from '../components/LegalRecordsSection';
-import DemoLinksSection from '../components/DemoLinksSection';
 import { useConfirm } from '../components/ConfirmDialog';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -101,6 +100,8 @@ const PlatformAdmin = () => {
     custom_max_vehicles: 10,
     custom_max_users: 15,
     custom_price: 199,
+    is_demo: false,
+    demo_link_expires_in_days: 30,
   });
   
   // Created tenant result (to show credentials)
@@ -392,7 +393,11 @@ const PlatformAdmin = () => {
         }
       }
       
-      const response = await axios.post(`${API}/platform/tenants`, newTenant);
+      const response = await axios.post(`${API}/platform/tenants`, {
+        ...newTenant,
+        master_admin_email: newTenant.master_admin_email || undefined,
+        master_admin_name: newTenant.master_admin_name || undefined,
+      });
       // Store the result to show credentials
       setCreatedTenantResult(response.data);
       setShowCreateForm(false);
@@ -852,8 +857,7 @@ const PlatformAdmin = () => {
               { id: 'reports', label: 'Finance', sublabel: 'Reports & Billing', icon: Receipt, roles: ['super_admin', 'master_admin'] },
               { id: 'audit', label: 'Activity', sublabel: 'Audit Log', icon: FileText, roles: ['super_admin', 'master_admin'] },
               { id: 'backup', label: 'Backup', sublabel: 'Disaster Recovery', icon: Database, roles: ['super_admin', 'master_admin'] },
-              { id: 'legal-records', label: 'Legal', sublabel: 'Legal Records', icon: Scale, roles: ['super_admin'] },
-              { id: 'demo-links', label: 'Demo', sublabel: 'Magic Links', icon: Zap, roles: ['super_admin', 'master_admin'] }
+              { id: 'legal-records', label: 'Legal', sublabel: 'Legal Records', icon: Scale, roles: ['super_admin'] }
             ]
             .filter(tab => !tab.roles || tab.roles.includes(user?.role))
             .map(tab => (
@@ -1161,6 +1165,37 @@ const PlatformAdmin = () => {
             {showCreateForm && (
               <div className="bg-white rounded-xl p-6 shadow-sm border">
                 <h3 className="font-semibold text-gray-900 mb-4">Create New Client</h3>
+
+                {/* Real / Demo toggle */}
+                <div className="mb-5 flex gap-2 p-1 bg-gray-100 rounded-lg" data-testid="tenant-type-toggle">
+                  <button
+                    type="button"
+                    onClick={() => setNewTenant({ ...newTenant, is_demo: false })}
+                    data-testid="tenant-type-real"
+                    className={`flex-1 px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+                      !newTenant.is_demo ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Real client
+                    <span className="block text-[10px] font-normal text-gray-400 mt-0.5">
+                      Full tenant with login credentials
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewTenant({ ...newTenant, is_demo: true })}
+                    data-testid="tenant-type-demo"
+                    className={`flex-1 px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+                      newTenant.is_demo ? 'bg-white text-amber-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Demo (blank + magic link)
+                    <span className="block text-[10px] font-normal text-gray-400 mt-0.5">
+                      No password — access via a shareable URL
+                    </span>
+                  </button>
+                </div>
+
                 <form onSubmit={handleCreateTenant} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -1254,7 +1289,8 @@ const PlatformAdmin = () => {
                     </div>
                   </div>
                   
-                  {/* Master Admin Section */}
+                  {/* Master Admin Section — hidden for demo tenants */}
+                  {!newTenant.is_demo && (
                   <div className="border-t pt-4 mt-4">
                     <h4 className="font-medium text-gray-900 mb-3">Master Admin (Franchise Owner)</h4>
                     <p className="text-sm text-gray-500 mb-3">
@@ -1288,14 +1324,44 @@ const PlatformAdmin = () => {
                       </div>
                     </div>
                   </div>
+                  )}
+
+                  {/* Demo magic-link config — shown for demo tenants */}
+                  {newTenant.is_demo && (
+                  <div className="border-t pt-4 mt-4">
+                    <h4 className="font-medium text-amber-900 mb-1 flex items-center gap-2">
+                      <Zap size={16} className="text-amber-500" /> Magic link settings
+                    </h4>
+                    <p className="text-sm text-gray-500 mb-3">
+                      A shareable URL is generated on submit. Anyone with the link enters this
+                      blank tenant as a demo user — no signup, no password. Master admin
+                      credentials are not created.
+                    </p>
+                    <div className="max-w-xs">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Link expires in</label>
+                      <select
+                        value={newTenant.demo_link_expires_in_days}
+                        onChange={(e) => setNewTenant({ ...newTenant, demo_link_expires_in_days: parseInt(e.target.value, 10) })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-white"
+                        data-testid="demo-expires-select"
+                      >
+                        <option value={7}>7 days</option>
+                        <option value={14}>14 days</option>
+                        <option value={30}>30 days</option>
+                        <option value={60}>60 days</option>
+                        <option value={90}>90 days</option>
+                      </select>
+                    </div>
+                  </div>
+                  )}
                   
                   <div className="flex space-x-3">
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      className={`px-4 py-2 text-white rounded-lg ${newTenant.is_demo ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                       data-testid="create-tenant-submit-btn"
                     >
-                      Create Franchise
+                      {newTenant.is_demo ? 'Create Demo & Get Magic Link' : 'Create Franchise'}
                     </button>
                     <button
                       type="button"
@@ -1321,61 +1387,107 @@ const PlatformAdmin = () => {
                     </div>
                   </div>
                   <div className="p-6 space-y-4">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <p className="text-sm text-blue-600 font-medium mb-1">Franchise Name</p>
-                      <p className="text-lg font-bold text-blue-900">{createdTenantResult.tenant?.name}</p>
+                    <div className={`p-4 rounded-lg ${createdTenantResult.is_demo ? 'bg-amber-50' : 'bg-blue-50'}`}>
+                      <p className={`text-sm font-medium mb-1 ${createdTenantResult.is_demo ? 'text-amber-700' : 'text-blue-600'}`}>
+                        {createdTenantResult.is_demo ? 'Demo Client Name' : 'Franchise Name'}
+                      </p>
+                      <p className={`text-lg font-bold ${createdTenantResult.is_demo ? 'text-amber-900' : 'text-blue-900'}`}>
+                        {createdTenantResult.tenant?.name}
+                      </p>
                     </div>
-                    
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-600 font-medium mb-2">Master Admin Credentials</p>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-500">Email:</span>
-                          <span className="font-mono font-medium text-gray-900">{createdTenantResult.master_admin?.email}</span>
-                        </div>
-                        {createdTenantResult.master_admin?.password && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-500">Password:</span>
-                            <span className="font-mono font-medium text-gray-900 bg-yellow-100 px-2 py-1 rounded">{createdTenantResult.master_admin?.password}</span>
+
+                    {createdTenantResult.is_demo ? (
+                      // Demo — show magic link, no credentials
+                      <>
+                        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg" data-testid="demo-magic-link-panel">
+                          <p className="text-sm text-emerald-800 font-semibold mb-2 flex items-center gap-1.5">
+                            <Zap size={14} /> Magic link (share this with the prospect)
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <code className="flex-1 font-mono text-xs text-emerald-900 bg-white border border-emerald-200 px-2 py-1.5 rounded overflow-auto" data-testid="demo-magic-link-url">
+                              {createdTenantResult.magic_link?.url}
+                            </code>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(createdTenantResult.magic_link?.url || '');
+                                setSuccess('Magic link copied to clipboard!');
+                              }}
+                              className="px-2 py-1.5 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700"
+                              data-testid="demo-magic-link-copy"
+                            >
+                              Copy
+                            </button>
                           </div>
-                        )}
-                        {!createdTenantResult.master_admin?.password && (
-                          <p className="text-sm text-amber-600">
-                            User already exists - they can use their existing password.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="bg-purple-50 p-4 rounded-lg">
-                      <p className="text-sm text-purple-600 font-medium mb-1">Login URL</p>
-                      <div className="flex items-center space-x-2">
-                        <code className="flex-1 font-mono text-sm text-purple-900 bg-purple-100 px-2 py-1 rounded overflow-auto">
-                          {createdTenantResult.login_url}
-                        </code>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(createdTenantResult.login_url);
-                            setSuccess('Login URL copied to clipboard!');
-                          }}
-                          className="px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
-                        >
-                          Copy
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
-                      <div className="flex items-start space-x-2">
-                        <AlertTriangle size={18} className="text-amber-600 mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium text-amber-800">Important</p>
-                          <p className="text-sm text-amber-700">
-                            {createdTenantResult.instructions}
+                          <p className="mt-2 text-xs text-emerald-700">
+                            Expires {createdTenantResult.magic_link?.expires_at ? new Date(createdTenantResult.magic_link.expires_at).toLocaleDateString() : ''}.
+                            No signup, no password. Anyone with the link enters a blank sandbox tenant.
                           </p>
                         </div>
-                      </div>
-                    </div>
+                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                          <div className="flex items-start space-x-2">
+                            <AlertTriangle size={18} className="text-amber-600 mt-0.5" />
+                            <p className="text-sm text-amber-800">
+                              This is a <b>blank demo tenant</b> — no cars, drivers or bookings.
+                              The demo user has <b>no password</b>. Email + password login is disabled for this account.
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      // Real client — original credentials + login URL
+                      <>
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <p className="text-sm text-gray-600 font-medium mb-2">Master Admin Credentials</p>
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-500">Email:</span>
+                              <span className="font-mono font-medium text-gray-900">{createdTenantResult.master_admin?.email}</span>
+                            </div>
+                            {createdTenantResult.master_admin?.password && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-500">Password:</span>
+                                <span className="font-mono font-medium text-gray-900 bg-yellow-100 px-2 py-1 rounded">{createdTenantResult.master_admin?.password}</span>
+                              </div>
+                            )}
+                            {!createdTenantResult.master_admin?.password && (
+                              <p className="text-sm text-amber-600">
+                                User already exists - they can use their existing password.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="bg-purple-50 p-4 rounded-lg">
+                          <p className="text-sm text-purple-600 font-medium mb-1">Login URL</p>
+                          <div className="flex items-center space-x-2">
+                            <code className="flex-1 font-mono text-sm text-purple-900 bg-purple-100 px-2 py-1 rounded overflow-auto">
+                              {createdTenantResult.login_url}
+                            </code>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(createdTenantResult.login_url);
+                                setSuccess('Login URL copied to clipboard!');
+                              }}
+                              className="px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                          <div className="flex items-start space-x-2">
+                            <AlertTriangle size={18} className="text-amber-600 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-medium text-amber-800">Important</p>
+                              <p className="text-sm text-amber-700">
+                                {createdTenantResult.instructions}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="p-6 border-t bg-gray-50">
                     <button
@@ -3841,10 +3953,6 @@ const PlatformAdmin = () => {
             token={localStorage.getItem('token') || sessionStorage.getItem('token')}
             isSuperAdmin={user?.role === 'super_admin'}
           />
-        )}
-
-        {activeTab === 'demo-links' && (
-          <DemoLinksSection />
         )}
       </div>
       

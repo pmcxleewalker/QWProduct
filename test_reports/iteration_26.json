@@ -1,0 +1,34 @@
+{
+  "summary": "Verified the new per-tenant Demo Magic Link flow end-to-end. Backend: 9/9 pytest pass — real tenant regression, demo tenant creation returns {tenant, is_demo:true, master_admin:null, magic_link:{url,token,id,tenant_id,tenant_slug,expires_at}}, demo tenant is blank (empty /api/vehicles + /api/bookings), demo user password login blocked with 401 'demo-only' message, legacy shared demo tenant (id 00000000-...d00) removed, slug 'demo' collision-free, revoked demo tokens rejected with 403, invalid tokens rejected with 404. Frontend: Create Tenant form Real/Demo toggle works, demo branch hides master admin fields and shows expiry dropdown, submit label becomes 'Create Demo & Get Magic Link', success modal shows demo-magic-link-panel with URL + Copy (no master admin creds), old 'Demo · Magic Links' tab is gone. Fresh-context /demo-link/<token> auto-logs the visitor in with NO login screen, lands at /<demo-slug>/setup-wizard, yellow demo banner visible; /demo-link/<invalid> renders friendly 'Demo link isn't valid' page with data-testid=demo-redeem-error.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_demo_magic_link.py",
+    "/app/test_reports/pytest/demo_magic_link.xml"
+  ],
+  "action_items": [
+    "None functional. Optional cleanup: Test tenants created during this run (reg-real-<ts>, e2edemo-<ts>, e2edemo2-<ts>, uxdemo-<ts>, plus one 'Fresh Demo' with slug 'demo') can be purged from Platform Admin > Clients. The regression test does auto-cleanup for reg-real and reg-demo, but the UI-driven ones remain.",
+    "Optional: the magic_link.url returned by the backend uses the FRONTEND_URL env value (https://quick-wing.com) rather than the preview host. That is correct for production but means when copy-pasting from the preview Command Centre modal, testers must swap the host for the preview URL. Consider deriving the base URL from the request host, or documenting this in the modal helper text for the preview environment."
+  ],
+  "critical_code_review_comments": [
+    "FIXED here: /app/frontend/src/pages/PlatformAdmin.js handleCreateTenant used to POST the entire newTenant state as-is, which meant master_admin_email='' (empty string) was sent even in demo mode. Backend TenantCreate.master_admin_email is Optional[EmailStr]; Pydantic v2 rejects '' with 422 'value is not a valid email address'. This blocked the entire Create Demo submit. Fix: strip empty email/name to undefined before axios.post. Confirmed working: modal now shows the magic link panel.",
+    "backend/server.py cleanup_legacy_demo_tenant() runs on startup and hard-deletes the shared demo tenant + all its scoped data. Good. Consider logging count of deleted records to ops logs for auditability.",
+    "/api/demo/redeem is correctly public (no auth dependency), validates token, revoked_at, expires_at, then mints a real JWT bound to the demo user + tenant. is_demo=true is embedded in the JWT payload — downstream code should verify no privileged mutation endpoints skip this flag.",
+    "DemoRedeem.js stores JWT in sessionStorage (good — closes with the tab) while activeTenant + isDemoSession sit in localStorage. Mixed storage is intentional but worth a comment so future refactors don't 'normalise' it and break demo session isolation."
+  ],
+  "updated_files": [
+    "/app/frontend/src/pages/PlatformAdmin.js (strip empty master_admin_email/name before POST /platform/tenants — unblocks the demo flow)",
+    "/app/backend/tests/test_demo_magic_link.py (new — 9 regression tests)"
+  ],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "100% (all acceptance criteria pass)"},
+  "test_credentials": "superadmin@quickwing.com / Super123 used for all platform-admin ops. Demo user emails demo+<slug>@quickwing.com are password-blocked by design.",
+  "seed_data_creation": "Test tenants left behind in DB: e2edemo-1784624177, e2edemo2-1784624295, uxdemo-1784624211, plus a 'Fresh Demo' with slug 'demo' from the slug-collision test (auto-deleted by regression suite but Command Centre may still show it briefly). Reg-real and reg-demo tenants auto-cleaned.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Whole demo flow works. If retesting, use unique slugs each run. The magic_link.url uses the backend FRONTEND_URL env (quick-wing.com); to test in preview, swap the host to REACT_APP_BACKEND_URL and keep the /demo-link/<token> path.",
+  "rca_of_the_issue": "Root-caused frontend 422 on Create Demo submit: newTenant state contained master_admin_email:'' which reached the backend and failed Pydantic EmailStr validation (v2 rejects '' as not @-signed). Applied minimal safe fix by nulling empty strings in the axios payload; nothing else in the tenant-creation contract changed."
+}

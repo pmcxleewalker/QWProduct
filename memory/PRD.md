@@ -1683,3 +1683,47 @@ recommendations to beat them, then approved building the full P0+P1 stack.
 - Add "Reset demo data" super-admin button (wipes bookings & drop-off locations to restore pristine state).
 - Track referral analytics on redeem (UTM-style stats per link).
 - Nightly cron to purge tokens expired > 90 days.
+
+
+## 2026-02 — Demo tenants v2: per-tenant blank sandboxes (replaces v1)
+
+**User feedback that triggered rebuild:** Original v1 (shared "Quick Wing Demo Ltd" tenant + magic-link tokens) was rejected — "the magic link still requires login credentials" and "it's not a demo app, it's a complete version of a paying client's app". The seeded 8-car / 4-driver / 8-booking Quick Wing Demo Ltd tenant looked like a real customer's data. Requirement: "when I create a new tenant, let me select Real or Demo. Real builds the tenant as normal. Demo lets me create a blank demo that works off a url and no need to login credentials."
+
+**What was removed:**
+- `seed_demo_tenant()` startup task (deleted the pre-seeded cars/drivers/bookings/user)
+- `Quick Wing Demo Ltd` shared tenant (id 00000000-0000-0000-0000-000000000d00) is DELETED on next startup by new `cleanup_legacy_demo_tenant()`
+- Standalone "Demo · Magic Links" tab in Platform Admin (obsolete — magic link is now issued at tenant creation)
+- `DemoLinksSection.js` component (file deleted)
+- Old `POST /api/platform/demo-tokens` endpoint (magic links are now minted only via tenant creation)
+
+**What was added:**
+- `TenantCreate.is_demo: bool = False` and `demo_link_expires_in_days: int = 30`
+- Real / Demo toggle at the top of the Create Client form (`data-testid=tenant-type-toggle` / `tenant-type-real` / `tenant-type-demo`)
+- Demo branch of the form hides master admin email/name fields and shows a "Magic link settings" block with an expiry-days dropdown (`data-testid=demo-expires-select`)
+- Submit label switches to "Create Demo & Get Magic Link"
+- Backend `POST /api/platform/tenants` with `is_demo=True`:
+  - Skips the auto-generated master-admin-with-password path entirely
+  - Creates ONE demo user `demo+<slug>@quickwing.com` with an invalid bcrypt sentinel — email + password login blocked
+  - Mints ONE magic link (`_mint_demo_token_for_tenant`) bound to THIS tenant's id
+  - Returns `{tenant, is_demo:true, master_admin:null, magic_link:{url,token,tenant_id,tenant_slug,expires_at,...}}`
+- `POST /api/demo/redeem` rewritten to look up the token's `tenant_id` — mints a JWT scoped to that specific demo tenant + demo user (no hardcoded IDs)
+- `POST /api/auth/login` rejects any user with `is_demo=True` early with a clean 401 (previously bcrypt would crash on the sentinel hash → 500)
+- Success modal branches on `is_demo`: real client shows credentials + login URL; demo shows a green magic-link panel with URL + Copy button + amber "blank demo, no password" warning
+
+**Route naming:** `/demo-link/:token` on the frontend (NOT `/demo/:token`) to avoid collisions with `/<slug>/anything` routes once the visitor is inside a tenant whose slug happens to be "demo".
+
+**Testing (testing agent, iteration_26.json):**
+- 9/9 backend pytest pass (real regression, demo blank verification, redemption, password-login-blocked, legacy-cleanup, slug collision, revoke, invalid token)
+- All frontend acceptance criteria pass (toggle, hidden fields in demo mode, magic-link modal panel, magic-link auto-login in fresh browser context, invalid-token error page, old tab removed)
+- Testing agent fixed one edge case in `handleCreateTenant`: sends `master_admin_email/name` as `undefined` if empty (Pydantic v2 EmailStr rejects '')
+
+**Files touched:**
+- `/app/backend/server.py` — new create_tenant demo branch, new helpers `_mint_demo_token_for_tenant`, `_demo_token_public`, `cleanup_legacy_demo_tenant`, rewritten `redeem_demo_token`, login rejects is_demo users; removed `seed_demo_tenant` and `POST /api/platform/demo-tokens` endpoint
+- `/app/backend/models/tenant.py` — TenantCreate extended
+- `/app/frontend/src/pages/PlatformAdmin.js` — toggle, conditional fields, magic-link success modal, tab removed, import removed
+- `/app/frontend/src/pages/DemoRedeem.js` — unchanged (already used active_tenant from response)
+- `/app/frontend/src/components/DemoBanner.js` — unchanged
+- `/app/frontend/src/components/DemoLinksSection.js` — DELETED
+- `/app/backend/tests/test_demo_magic_link.py` — NEW (9 regression tests, added by testing agent)
+
+**Test credentials for demo:** none — the whole point is that the magic link opens the demo without credentials. For creating demo tenants, use `superadmin@quickwing.com / Super123`.

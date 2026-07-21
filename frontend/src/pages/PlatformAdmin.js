@@ -410,6 +410,8 @@ const PlatformAdmin = () => {
         custom_max_vehicles: 10,
         custom_max_users: 15,
         custom_price: 199,
+        is_demo: false,
+        demo_link_expires_in_days: 30,
       });
       fetchData();
     } catch (err) {

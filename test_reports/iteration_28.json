@@ -1,0 +1,22 @@
+{
+  "summary": "Verified magic-link URL host derivation fix. New pytest suite (11/11) covers: default preview-host derivation via the public URL (proves the original cartrack-19.emergent.host bug is fixed), Host header fallback via loopback, X-Forwarded-Host and X-Forwarded-Proto honouring via loopback, all four endpoints (POST/GET /platform/tenants, POST /platform/tenants/{id}/magic-link, GET /platform/demo-tokens), end-to-end redeemability, and real-tenant regression. Prior magic-link regression suites also pass: 8/8 (test_demo_magic_link.py, 1 pre-existing skip) + 8/8 (test_demo_regenerate_and_list.py).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_demo_url_host_derivation.py",
+    "/app/test_reports/pytest/host_derivation.xml",
+    "/app/test_reports/pytest/demo_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Note: K8s/CloudFront ingress overrides client-supplied X-Forwarded-Host with the real host before reaching the backend (confirmed by 403 + rewrite). Header-derivation therefore only helps for legitimate proxy chains (e.g., custom domain fronting the Emergent deployment) — for those, the code correctly picks up ingress-provided X-Forwarded-Host. Tests use loopback :8001 to prove the code path itself works.",
+    "server.py is 12k+ lines — should be split into focused modules (unchanged from previous iterations)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "n/a"},
+  "test_credentials": "Super Admin: superadmin@quickwing.com / Super123 (per /app/memory/test_credentials.md if present, otherwise from request).",
+  "seed_data_creation": "Tests create ~7 demo tenants + 1 real tenant with unique timestamp slugs; teardown removes them via DELETE /api/platform/tenants/{id}.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Host-derivation fix verified. New regression file: /app/backend/tests/test_demo_url_host_derivation.py — public-URL tests + internal-loopback tests for X-Forwarded-*. Kubernetes ingress strips/overrides client-supplied X-Forwarded-Host, so any future X-Forwarded-Host tests via public URL must use loopback :8001 instead."
+}

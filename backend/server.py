@@ -1096,7 +1096,7 @@ async def create_tenant(
             "tenant": tenant,
             "is_demo": True,
             "master_admin": None,        # no admin credentials at all
-            "magic_link": _demo_token_public(token_row),
+            "magic_link": _demo_token_public(token_row, base_url=_base_url_from_request(request)),
         }
     # ------------------------------------------------------------------------------
 
@@ -1238,7 +1238,8 @@ async def list_tenants(
     status: Optional[str] = None,
     skip: int = 0,
     limit: int = 100,
-    context: TenantContext = Depends(require_platform_admin)
+    context: TenantContext = Depends(require_platform_admin),
+    request: Request = None,
 ):
     """List all tenants (Super/Master Admin only) with master admin info and usage stats"""
     query = {}
@@ -1278,7 +1279,7 @@ async def list_tenants(
                 {"_id": 0},
                 sort=[("created_at", -1)],
             )
-            tenant["magic_link"] = _demo_token_public(active_link) if active_link else None
+            tenant["magic_link"] = _demo_token_public(active_link, base_url=_base_url_from_request(request)) if active_link else None
     
     return {"tenants": tenants, "total": total}
 
@@ -1288,6 +1289,7 @@ async def regenerate_tenant_magic_link(
     tenant_id: str,
     payload: Optional[dict] = None,
     context: TenantContext = Depends(require_platform_admin),
+    request: Request = None,
 ):
     """Regenerate the magic link for a demo tenant. Revokes any previously
     active links so the old URL stops working. Refuses on non-demo tenants."""
@@ -1318,7 +1320,7 @@ async def regenerate_tenant_magic_link(
         prospect_name=tenant.get("name", ""),
         prospect_email="",
     )
-    return _demo_token_public(row)
+    return _demo_token_public(row, base_url=_base_url_from_request(request))
 
 
 @api_router.get("/platform/tenants/{tenant_id}")
@@ -8441,9 +8443,25 @@ async def cleanup_legacy_demo_tenant():
         logger.error(f"Error cleaning up legacy demo tenant: {e}")
 
 
-def _demo_token_public(t: dict, frontend_url: Optional[str] = None) -> dict:
-    """Shape a demo_tokens row for the API response (adds computed URL)."""
-    base = frontend_url or os.environ.get("FRONTEND_URL") or ""
+def _base_url_from_request(request: Optional[Request]) -> str:
+    """Derive the public base URL from the incoming request so magic-link
+    URLs always match the domain the admin is actually browsing (preview,
+    production, or a custom domain like quick-wing.com). Falls back to the
+    stable public URL if request is None."""
+    if request is None:
+        return get_public_url().rstrip('/')
+    host = request.headers.get('x-forwarded-host') or request.headers.get('host') or ''
+    if not host:
+        return get_public_url().rstrip('/')
+    scheme = request.headers.get('x-forwarded-proto') or request.url.scheme or 'https'
+    return f"{scheme}://{host}"
+
+
+def _demo_token_public(t: dict, base_url: Optional[str] = None) -> dict:
+    """Shape a demo_tokens row for the API response (adds computed URL).
+    base_url should be the host the admin is browsing — pass str(request.base_url)
+    from the endpoint, not FRONTEND_URL, so links match the current domain."""
+    base = (base_url or get_public_url()).rstrip('/')
     url_path = f"/demo-link/{t['token']}"
     return {
         "id": t["id"],
@@ -8459,7 +8477,7 @@ def _demo_token_public(t: dict, frontend_url: Optional[str] = None) -> dict:
         "revoked_at": t.get("revoked_at"),
         "last_used_at": t.get("last_used_at"),
         "use_count": t.get("use_count", 0),
-        "url": f"{base}{url_path}" if base else url_path,
+        "url": f"{base}{url_path}",
     }
 
 
@@ -8496,10 +8514,12 @@ async def _mint_demo_token_for_tenant(tenant: dict, expires_in_days: int,
 @api_router.get("/platform/demo-tokens")
 async def list_demo_tokens(
     context: TenantContext = Depends(require_platform_admin),
+    request: Request = None,
 ):
     """List every demo token so admins can copy/reshare or revoke."""
     rows = await db.demo_tokens.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
-    return [_demo_token_public(r) for r in rows]
+    base_url = _base_url_from_request(request)
+    return [_demo_token_public(r, base_url=base_url) for r in rows]
 
 
 @api_router.delete("/platform/demo-tokens/{token_id}")

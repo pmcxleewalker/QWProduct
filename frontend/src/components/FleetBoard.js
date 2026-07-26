@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, MapPin,
-  Clock, Zap, Navigation, Check, Ban,
+  Clock, Zap, Navigation, Check, Ban, Radio,
 } from 'lucide-react';
 import { carAPI } from '../api/api';
 
@@ -274,7 +274,7 @@ const DropOffInline = ({ car, onSaved, onCancel }) => {
   );
 };
 
-const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, onDropOffSaved }) => {
+const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, onDropOffSaved, onGoToLive }) => {
   const { pills, freeHours, bookingCount, summary, status } = useMemo(
     () => summariseCarDay(car, allBookings, date, now),
     [car, allBookings, date, now]
@@ -360,6 +360,17 @@ const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, on
           >
             <Zap size={14} /> Quick Book
           </button>
+          {onGoToLive && (
+            <button
+              type="button"
+              onClick={() => onGoToLive(car)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold rounded-lg hover:bg-emerald-100 transition-colors"
+              title="Show this car on the Live Map"
+              data-testid={`fleet-live-${car.id}`}
+            >
+              <Radio size={14} /> Live
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setDropOffOpen(true)}
@@ -375,7 +386,7 @@ const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, on
 };
 
 // ---------- main component ----------
-const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onOpenBooking, onCarsChanged }) => {
+const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onOpenBooking, onCarsChanged, onGoToLive }) => {
   const [date, setDate] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -495,6 +506,7 @@ const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onOpenBooking, onCa
               onQuickBook={onQuickBook}
               onOpenBooking={onOpenBooking}
               onDropOffSaved={handleDropOffSaved}
+              onGoToLive={onGoToLive}
             />
           ))}
         </div>

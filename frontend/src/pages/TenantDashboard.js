@@ -11,7 +11,7 @@ import {
   ArrowRight, MoreVertical, BookOpen, HelpCircle, PieChart,
   Activity, TrendingDown, CalendarDays, QrCode, Camera, Gauge,
   ClipboardList, Bell, Megaphone, Crown, Star, Zap, Palette, DollarSign,
-  Save, X, Sparkles, Search, Satellite
+  Save, X, Sparkles, Search, Satellite, Radio
 } from 'lucide-react';
 import AdminTraining from '../components/AdminTraining';
 import CarBookingCalendar from '../components/CarBookingCalendar';
@@ -35,6 +35,7 @@ import GDPRSettings from '../components/GDPRSettings';
 import UserProfileMenu from '../components/UserProfileMenu';
 import ComplianceAlerts, { ComplianceSettingsModal } from '../components/ComplianceAlerts';
 import GpsSettingsModal from '../components/GpsSettingsModal';
+import TrackerDevicesModal from '../components/TrackerDevicesModal';
 import { computeLicenceStatus } from '../components/DriverLicenceCard';
 import StaffLicenceAlerts from '../components/StaffLicenceAlerts';
 import Greeting from '../components/Greeting';
@@ -211,6 +212,7 @@ const TenantDashboard = () => {
 
   // GPS Fleet Tracking (SinoTrack bridge, Phase 1 = toggle only)
   const [showGpsSettings, setShowGpsSettings] = useState(false);
+  const [showTrackerDevices, setShowTrackerDevices] = useState(false);
   const [gpsSettings, setGpsSettings] = useState({
     enabled: false,
     speed_limit_kmh: 120,
@@ -1611,6 +1613,17 @@ const TenantDashboard = () => {
                           GPS {gpsSettings.enabled ? 'On' : 'Off'}
                         </span>
                       </button>
+                      {gpsSettings.enabled && (
+                        <button
+                          onClick={() => setShowTrackerDevices(true)}
+                          className="flex items-center space-x-2 px-3 py-2 border border-blue-300 text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg"
+                          title="Manage GPS Trackers"
+                          data-testid="tracker-devices-btn"
+                        >
+                          <Radio size={18} />
+                          <span className="hidden sm:inline">Trackers</span>
+                        </button>
+                      )}
                       <button
                         onClick={() => setShowAddVehicle(true)}
                         className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -2997,6 +3010,12 @@ const TenantDashboard = () => {
         onClose={() => setShowGpsSettings(false)}
         gps={gpsSettings}
         onSaved={(next) => setGpsSettings(next)}
+      />
+
+      {/* GPS Trackers Management Modal (Phase 3) */}
+      <TrackerDevicesModal
+        isOpen={showTrackerDevices}
+        onClose={() => setShowTrackerDevices(false)}
       />
 
       {/* Reset Password Modal */}

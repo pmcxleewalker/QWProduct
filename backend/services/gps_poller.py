@@ -30,6 +30,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from services.sinotrack_client import fetch_position
+from services import gps_demo_simulator
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,10 @@ logger = logging.getLogger(__name__)
 # read but is currently used only as an informational hint to the poller;
 # for simplicity all tenants share the master 30 s cadence.
 MASTER_TICK_SECONDS = 30
+
+# In-memory state used by the demo simulator (device_id -> state dict).
+# Not persisted — demo cars gracefully reseed after a restart.
+_demo_state: dict = {}
 
 _scheduler: Optional[AsyncIOScheduler] = None
 _db = None  # motor db, injected via start()
@@ -55,7 +60,13 @@ async def _process_device(tenant: dict, device: dict, speed_limit: int, device_p
         return
 
     # Blocking network call — run in a thread so we don't stall the event loop.
-    position = await asyncio.to_thread(fetch_position, imei, device_password)
+    # Demo IMEIs (DEMO-*, SIM-*) skip SinoTrack entirely and run through the
+    # local simulator instead. Real hardware IMEIs go through the cloud.
+    if gps_demo_simulator.is_demo_imei(imei):
+        state = _demo_state.setdefault(device["id"], {"tick_seconds": MASTER_TICK_SECONDS})
+        position = gps_demo_simulator.simulate(imei, state)
+    else:
+        position = await asyncio.to_thread(fetch_position, imei, device_password)
 
     # Previous position (used for movement + voltage delta detection)
     prev = await _db.tracker_positions.find_one(

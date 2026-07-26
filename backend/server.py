@@ -1810,8 +1810,15 @@ async def register_tracker_device(
         raise HTTPException(status_code=400, detail="Enable GPS Fleet Tracking first")
 
     imei = (payload.imei or "").strip()
-    if not imei.isdigit() or not (10 <= len(imei) <= 20):
-        raise HTTPException(status_code=400, detail="IMEI must be 10-20 digits")
+    # Demo IMEIs are alphanumeric, prefixed DEMO- or SIM-. Real hardware
+    # IMEIs are pure digits.
+    is_demo_device = imei.upper().startswith("DEMO-") or imei.upper().startswith("SIM-")
+    if is_demo_device:
+        if not (5 <= len(imei) <= 30):
+            raise HTTPException(status_code=400, detail="Demo IMEI must be 5-30 characters (e.g. DEMO-001)")
+    else:
+        if not imei.isdigit() or not (10 <= len(imei) <= 20):
+            raise HTTPException(status_code=400, detail="IMEI must be 10-20 digits")
 
     existing = await db.tracker_devices.find_one(
         {"tenant_id": context.tenant_id, "imei": imei}, {"_id": 0}
@@ -1834,15 +1841,17 @@ async def register_tracker_device(
         if already:
             raise HTTPException(status_code=409, detail="This vehicle already has an active tracker")
 
-    # Verify with SinoTrack (non-fatal — allow save even if verify fails so
-    # tenants without an internet-connected device can pre-register).
+    # Verify with SinoTrack (skipped for demo devices — those use the local
+    # simulator instead of hitting the real cloud). Real-device verify is
+    # non-fatal so tenants without an internet-connected device can pre-register.
     device_password = (tenant.get("gps_settings") or {}).get("device_password", "123456")
     verified = False
-    try:
-        from services.sinotrack_client import login as _login
-        verified = await asyncio.to_thread(_login, imei, device_password)
-    except Exception as e:
-        logger.warning(f"[tracker] IMEI verify failed: {e}")
+    if not is_demo_device:
+        try:
+            from services.sinotrack_client import login as _login
+            verified = await asyncio.to_thread(_login, imei, device_password)
+        except Exception as e:
+            logger.warning(f"[tracker] IMEI verify failed: {e}")
 
     doc = {
         "id": str(uuid.uuid4()),
@@ -1853,6 +1862,7 @@ async def register_tracker_device(
         "sim_number": (payload.sim_number or "").strip(),
         "apn": (payload.apn or "").strip(),
         "is_active": True,
+        "is_demo": is_demo_device,
         "verified_with_sinotrack": verified,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat(),

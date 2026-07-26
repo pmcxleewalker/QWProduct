@@ -1,0 +1,62 @@
+{
+  "summary": "Phase 3 (Demo Mode + Live Map + Tracker Devices UI) tested end-to-end. Backend: 14/14 new tests in test_gps_demo_phase3.py pass and 9/9 Phase 1 regression tests still pass. Security: real production IMEIs are absent from all source (backend/frontend/memory) AND from DB collections (tracker_devices/positions/history/alerts). Simulator returns deterministic, Ireland-bounded positions, mileage advances, forced stops honoured. POST /api/tracker/devices demo branch skips SinoTrack, validates 5-30 chars, real IMEI still requires 10-20 digits. Poller routes DEMO-* through simulator with ZERO httpx calls; tenant isolation between two ephemeral tenants holds. Frontend Tracker modal fully functional (all 6 data-testids present, Demo button injects DEMO-xxxx, SMS accordion reveals 5 codes, 2 existing demo trackers shown with DEMO badge + toggle + delete + car-reassignment). Live Map tab loads at /test-fleet/bookings and shows correct '2 moving / 0 idle / 0 offline' counters with 2 tracker_positions polled every 30s. HOWEVER a CRITICAL runtime error occurs whenever the LiveMap remounts or the Leaflet map performs a setView/fitBounds during transition — 'Cannot read properties of undefined (reading _leaflet_pos)' at NewClass._onZoomTransitionEnd. This blocks (a) clicking the fleet-live-<carId> button on the Fleet Board card and (b) switching tabs while the map is animating, both of which are core acceptance criteria for Phase 3.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "LiveMap (/components/LiveMap.js FitBounds child)",
+        "issue": "react-leaflet crash: 'TypeError: Cannot read properties of undefined (reading _leaflet_pos)' fires on the map's onZoomTransitionEnd after setView/fitBounds when the tab (Live Map) unmounts or is switched while a zoom animation is in flight. Also fires when clicking the fleet-live-<carId> button which changes focusCarId + switches to the map tab in the same render — the FitBounds useEffect calls map.setView but the map's internal pane is not ready or already torn down. Need to (a) call setView with {animate:false} for initial focus, (b) guard useEffect with map && map._loaded && !map._container?.classList.contains('leaflet-container--disposed') style check, or (c) render LiveMap eagerly (keepMounted) so it's not being ripped in/out.",
+        "selector": "[data-testid=\"live-map\"] → FitBounds useEffect",
+        "priority": "HIGH"
+      },
+      {
+        "component": "Marker (react-leaflet)",
+        "issue": "Passing data-testid={`live-map-pin-${p.car_id}`} to <Marker> has no effect — react-leaflet's Marker does NOT forward arbitrary props to the DOM. This means the acceptance criterion 'Clicking a marker opens a popup (data-testid=live-map-popup-<carId>)' is effectively untestable via selector. Suggest attaching data-testid via markerRef and calling marker.getElement().setAttribute(...) after mount.",
+        "selector": "[data-testid^=live-map-pin-]",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Fleet Board → Live button → Live Map focus",
+        "issue": "onGoToLive callback fires and switches mainView to 'map', but the LiveMap immediately crashes with the _leaflet_pos error, so the user never actually sees the focused marker. This is a P3 blocker until the LiveMap FitBounds effect is hardened.",
+        "affected_selectors": ["[data-testid^=fleet-live-]", "[data-testid=live-map]"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_gps_demo_phase3.py",
+    "/app/backend/tests/test_gps_settings_phase1.py",
+    "/app/test_reports/pytest/phase3_demo.xml"
+  ],
+  "action_items": [
+    "HIGH: Fix LiveMap FitBounds effect — reproduce by clicking any [data-testid^=fleet-live-] on Fleet Board or by switching from Live Map → Fleet Board while pins are moving. Recommended fix: wrap map.setView / map.fitBounds in try/catch OR use useMap()'s whenReady, OR pass {animate:false} to setView so no transition-end callback fires, OR mount LiveMap once via CSS visibility toggle instead of react-conditional-render.",
+    "MEDIUM: Attach data-testid to Marker DOM element via ref (marker.getElement().setAttribute) so tests can select individual pins by car id.",
+    "LOW: Consider clamping timeAgo to '0s ago' minimum (currently shows negative deltas if client clock is ahead of server)."
+  ],
+  "critical_code_review_comments": [
+    "LiveMap.js FitBounds useEffect calls map.setView({animate:true}) on every positions/focusCarId change — this schedules zoom animations that outlive the component lifecycle and crash on unmount. Root cause of the _leaflet_pos bug.",
+    "gps_demo_simulator._pick_loop uses abs(hash(imei)) which is process-salted in Python 3.11+ (PYTHONHASHSEED). Two Python processes will assign the same IMEI to different city loops — cross-process determinism claim in the docstring is only true within a single process lifetime. Acceptable for demo but worth documenting; use hashlib.sha1 if long-term determinism is needed.",
+    "backend/server.py POST /api/tracker/devices validation is duplicated between models/resources.TrackerDeviceCreate (Pydantic) and the endpoint (manual is_demo check). Consider moving the DEMO-/SIM- + digit validation into a Pydantic validator so the same rule applies to future PATCH/import paths.",
+    "backend/server.py is now ~12,300 lines. Tracker endpoints (100+ lines) should live in routers/tracker.py to keep server.py maintainable — flagged in iteration_31 and still true.",
+    "LiveMap uses window setInterval(REFRESH_MS=30000) — matches poller cadence but doesn't refresh on tab focus. If a user leaves the tab for 5 min they see stale data for up to 30s. Minor UX."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_gps_demo_phase3.py (new file)",
+    "/app/test_reports/pytest/phase3_demo.xml (new junit)"
+  ],
+  "success_rate": {
+    "backend": "100% (14/14 phase 3 new + 9/9 phase 1 regression)",
+    "frontend": "70% — Tracker modal all-green, Live Map tab loads with correct stats/refresh, but pin markers and fleet-live focus flow are broken by the react-leaflet _leaflet_pos crash"
+  },
+  "test_credentials": "Tenant admin: admin.test-fleet@quickwing.com / admin123 (test-fleet, gps enabled, 6 vehicles). Superadmin: superadmin@quickwing.com / Super123.",
+  "seed_data_creation": "Two ephemeral tenants (p3iso-a-*, p3iso-b-*) with gps_enabled=true created and torn down by pytest module fixtures. Also created demo trackers DEMO-A00X in test-fleet during modal UI tests — these persist; there are currently 2 demo trackers registered on test-fleet.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend Phase 3 is fully green. Frontend Trackers modal is fully green. The ONLY outstanding issue is the react-leaflet _leaflet_pos crash inside LiveMap.js when the FitBounds useEffect fires during a tab-switch or when the fleet-live-<carId> button focuses a car. Reproduce by: (1) log in as admin.test-fleet@quickwing.com/admin123, (2) go to /test-fleet/bookings, (3) click 'Live Map' tab — page loads fine, stats show '2 moving / 0 idle / 0 offline', (4) click 'Fleet Board' tab — crash overlay appears. Or from Fleet Board, click any Live button. Note: individual Marker data-testids don't reach the DOM (react-leaflet quirk), so use markerRef+getElement().setAttribute if per-pin selectors are needed by E1's own tests. Real IMEIs are confirmed absent from source AND all DB collections.",
+  "rca of the issue": "LiveMap.js FitBounds child component calls map.setView({animate:true}) inside a useEffect keyed on [positions, focusCarId, map]. Leaflet enqueues a CSS zoom transition that finishes ~250ms later by firing onZoomTransitionEnd on the internal pane. If the LiveMap is unmounted (tab switch) or the internal state resets before that transition completes, Leaflet's pane object is torn down but the transition-end handler still runs — it dereferences an undefined pane and reads `_leaflet_pos`, throwing. This same pathway is hit synchronously by the fleet-live-<carId> click because setFocusCarId triggers a re-render + setView({animate:true}) while the map DOM is still being mounted for the first time by the tab switch. Mitigations (in order of preference): use setView({animate:false}) for initial/focus repositioning, wrap in try/catch, or use `useMap().whenReady(cb)` to defer until pane is ready. This is a well-documented react-leaflet issue (see leaflet/Leaflet#7331, react-leaflet/react-leaflet#936)."
+}

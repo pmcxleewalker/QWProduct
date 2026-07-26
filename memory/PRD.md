@@ -1770,8 +1770,8 @@ recommendations to beat them, then approved building the full P0+P1 stack.
 **Spec:** /app/memory/SINOTRACK_MULTI_TENANT_PROMPT.md (Phase 2 of 7).
 
 **Verified against real hardware:**
-- IMEI **7018530625** — live, moving (~38 km/h near Bantry, Cork, ~51.68 N, -9.47 W)
-- IMEI **7018530607** — live, stationary (~52.28 N, -9.69 W, voltage 12.7 V)
+- IMEI **[REDACTED_IMEI_1]** — live, moving (~38 km/h near Bantry, Cork, ~51.68 N, -9.47 W)
+- IMEI **[REDACTED_IMEI_2]** — live, stationary (~52.28 N, -9.69 W, voltage 12.7 V)
 - Both connected via SinoTrack cloud (`246.sinotrack.com`), password `123456`
 
 **Backend — new files:**

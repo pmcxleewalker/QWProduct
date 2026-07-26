@@ -44,6 +44,9 @@ const Bookings = () => {
   // GPS Fleet Tracking toggle (Phase 1): controls whether the Live Map tab
   // is even shown. When false, tab is hidden entirely per the spec.
   const [gpsEnabled, setGpsEnabled] = useState(false);
+  // When the user clicks "Live" on a Fleet Board card, we jump to the map
+  // tab and focus that car's marker.
+  const [focusCarId, setFocusCarId] = useState(null);
   
   const [formData, setFormData] = useState({
     car_id: carFromQR || '',
@@ -1353,12 +1356,18 @@ const Bookings = () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           onCarsChanged={fetchData}
+          onGoToLive={(car) => {
+            if (gpsEnabled) {
+              setFocusCarId(car.id);
+              setMainView('map');
+            }
+          }}
         />
       )}
 
       {mainView === 'calendar' && renderCalendar()}
 
-      {mainView === 'map' && gpsEnabled && <LiveMap cars={cars} />}
+      {mainView === 'map' && gpsEnabled && <LiveMap cars={cars} focusCarId={focusCarId} />}
 
       {/* Booking Preview Modal */}
       {selectedBooking && (

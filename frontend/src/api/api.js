@@ -233,6 +233,16 @@ export const demoAPI = {
   redeem: (token) => axios.post(`${API}/demo/redeem`, { token }),
 };
 
+// SinoTrack GPS Tracker (Phase 2 + 3)
+export const trackerAPI = {
+  listDevices: () => axios.get(`${API}/tracker/devices`),
+  registerDevice: (data) => axios.post(`${API}/tracker/devices`, data),
+  updateDevice: (id, data) => axios.patch(`${API}/tracker/devices/${id}`, data),
+  deleteDevice: (id) => axios.delete(`${API}/tracker/devices/${id}`),
+  listPositions: () => axios.get(`${API}/tracker/positions`),
+  carPosition: (carId) => axios.get(`${API}/tracker/car/${carId}`),
+};
+
 export default { 
   carAPI, bookingAPI, providerAPI, messageAPI, todoAPI, liftRequestAPI, 
   reportsAPI, planAPI, settingsAPI, userAPI, platformAPI, authAPI, assistanceAPI, complianceAPI, 

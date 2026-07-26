@@ -4,6 +4,32 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - Feb 2026 — SinoTrack GPS Bridge · Phase 6 (Telemetry Cards + Driver Behaviour)
+
+**What was built**: Live fleet telemetry cards on the FleetBoard, plus a driver-behaviour event feed for admin review. Explicitly NOT a scoring/grading system.
+
+**(A) Fleet Telemetry**
+- **New endpoint** `GET /api/tracker/telemetry` — per-tracked-car payload: speed, ignition, voltage, satellite count (gps_signal), mileage_today_km (haversine sum of today's tracker_history), connection status (`live` ≤5 min, `idle` 5-60 min, `offline` >60 min), address (from cache), last update.
+- **New endpoint** `GET /api/tracker/geocode?lat=&lon=` — reverse-geocode via OSM Nominatim with `geocode_cache` (4-decimal ~11 m rounding). Cache lookup first, only hits Nominatim on miss.
+- **New service** `/app/backend/services/fleet_telemetry_service.py`.
+- **New component** `FleetTelemetryPanel.js` — LIVE/IDLE/OFFLINE pill + 6 metric tiles + lazy address line. Rendered inside each tracked car's FleetBoard card below the Timeline. Polled every 30 s from `Bookings.js`.
+
+**(B) Driver Behaviour Monitoring**
+- **New collection** `driver_behaviour_events` with types: `speeding`, `harsh_braking`, `harsh_acceleration`, `disconnection`.
+- **New service** `/app/backend/services/driver_behaviour_service.py` — detection helpers + booking→staff linkage (`car_id + start_time ≤ ts ≤ end_time`; fallback `staff_name="Unbooked"`).
+- **Detection thresholds** (in the poller):
+  - Harsh braking: drop ≥15 km/h AND prev speed >10 km/h.
+  - Harsh acceleration: rise ≥20 km/h.
+  - Speeding: point speed > tenant `speed_limit_kmh`.
+  - Disconnection: voltage transition >10 V → <5 V OR first offline transition (≥10 min silent).
+- **New endpoint** `GET /api/behaviour/events?type=&car_id=&staff_id=&from_date=&to_date=` — filtered feed, newest first.
+- **New endpoint** `GET /api/behaviour/summary?window_days=` — `{total, by_type, top_staff}` for the summary strip.
+- **New page** `/behaviour` — 5-tile summary strip, Top-Staff card (click to filter), filter dropdowns (type/car/staff/from/to), chronological event list with car + staff + coords. **No scoring, no grades, no leaderboard** — verified by testing agent.
+- **Nav item** "Behaviour" (icon: ShieldAlert) visible to tenant admins on GPS-enabled tenants.
+- **Multi-tenant safety** — every read/write scoped by `tenant_id` (verified 14/14 pytest).
+- **Test coverage** — `test_phase6_behaviour_telemetry.py` (14/14 backend pass) + frontend E2E in iteration_37 (100% requested checks pass; 5 summary tiles, top-staff filter, no-scoring language check confirmed).
+
+
 ### Feature - Feb 2026 — SinoTrack GPS Bridge · Phase 5 (Alerts + Geofence)
 
 **What was built**: Speeding, unplug, offline, and geofence alerts with tenant-configurable thresholds. Full alerts dashboard + acknowledge flow + nav badge.

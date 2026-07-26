@@ -1,0 +1,37 @@
+{
+  "summary": "Phase 6 retest — /test-fleet/behaviour fix VERIFIED. The users.map crash is gone; the ErrorBoundary card no longer appears. All 5 summary tiles render with correct counts (Total 19, Speeding 3, Harsh Braking 9, Harsh Accel 6, Disconnection 1 in 7-day window). Top staff card lists Alice Murphy (4 events) and Ben Kelly (2 events). All 5 filter testids (type/car/staff/from/to) present. Clicking a top-staff row filters the event list from 19 → 4. No forbidden scoring language anywhere on the page (no Leaderboard/Grade/Score:/letter grades). Bookings page (/test-fleet/bookings) still renders FleetTelemetryPanel (6 fleet-telemetry* testids found, no ErrorBoundary) — no regression.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "First load of /test-fleet/behaviour after super-admin impersonation",
+        "issue": "First render fires /api/tenant/users with the platform token before the tenant token settles → 400. A one-off reload clears it and everything works. Not fatal (the page still renders with an empty staff-filter list on first mount because the fetch is Promise.allSettled) but the console shows a red 400. Consider adding a token-ready gate in AuthContext, or a retry when tenant switches.",
+        "affected_selectors": ["behaviour-filter-staff"]
+      },
+      {
+        "flow": "Top-staff click applies staff filter",
+        "issue": "Events list correctly filters (19 → 4) because setFilters propagates staff_id to the API call. However, the behaviour-filter-staff <select> visibly shows 'All staff' after the click because the clicked staff_id ('staff-1') isn't present in the /api/tenant/users list (users have UUID ids, telemetry events use synthetic staff-1/staff-2). Minor cosmetic mismatch; functional filtering works.",
+        "affected_selectors": ["behaviour-filter-staff", "behaviour-top-staff-staff-1"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_phase6_behaviour_telemetry.py"],
+  "action_items": [
+    "(Low) Reconcile the staff_id space: behaviour events reference 'staff-1'/'staff-2' but /api/tenant/users returns UUID ids → the staff filter dropdown never lights up when a top-staff row is clicked. Either seed telemetry events with real user UUIDs, or include synthetic staff entries in the users response.",
+    "(Low) Gate the first Behaviour fetch on tenant-token readiness to eliminate the transient 400 on /api/tenant/users right after super-admin impersonation."
+  ],
+  "critical_code_review_comments": [
+    "Behaviour.js now correctly unwraps `.users` (line 63-65) — response-shape defensive with Array.isArray check. Good.",
+    "Staff-id namespace is inconsistent between behaviour events (synthetic staff-1/staff-2) and /api/tenant/users (UUIDs). Any staff filter driven from the top-staff card will not visually reflect on the dropdown. Backend contract mismatch — not blocking, but worth normalising."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not retested (unchanged per request)", "frontend": "100% of requested checks passed"},
+  "test_credentials": "superadmin@quickwing.com / Super123 (impersonates test-fleet)",
+  "seed_data_creation": "None — used the 7 pre-seeded events (backend reports 19 total in 7d window, showing additional events beyond the 7 mentioned in review request — likely accumulated from the 30s poller).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The /test-fleet/behaviour page requires ONE reload after super-admin login to switch tenant tokens (first load fires /api/tenant/users with wrong token → 400 → empty staff filter, but the page still renders without crashing). After reload everything is green. Top-staff click updates the URL params/filters correctly and shrinks the event list, but the staff dropdown visually stays on 'All staff' because seeded staff_ids ('staff-1', 'staff-2') do not match the UUID ids in /api/tenant/users — this is a data-model inconsistency in the seed, not a UI bug.",
+  "rca of the issue": "Original bug (iteration_36): pages/Behaviour.js called users.map(...) on the raw response of /api/tenant/users which is {users:[...]}, not an array → TypeError caught by ErrorBoundary. Fix applied: line 63-65 now does `Array.isArray(raw) ? raw : (raw?.users || [])`. Retest confirms the page mounts cleanly, all 5 summary tiles, top-staff card, 5 filter dropdowns and event feed render; scoring/grading language is absent; bookings telemetry panel unchanged."
+}

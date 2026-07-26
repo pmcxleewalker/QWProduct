@@ -58,7 +58,12 @@ const Behaviour = () => {
     Promise.allSettled([carAPI.getAll(), userAPI.getAll()])
       .then(([carsRes, usersRes]) => {
         if (carsRes.status === 'fulfilled') setCars(carsRes.value.data || []);
-        if (usersRes.status === 'fulfilled') setUsers(usersRes.value.data || []);
+        // /api/tenant/users returns {users: [...]}, not a bare array
+        if (usersRes.status === 'fulfilled') {
+          const raw = usersRes.value.data;
+          const list = Array.isArray(raw) ? raw : (raw?.users || []);
+          setUsers(list);
+        }
       });
   }, []);
 

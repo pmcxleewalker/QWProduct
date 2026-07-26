@@ -1763,3 +1763,46 @@ recommendations to beat them, then approved building the full P0+P1 stack.
 
 **Data-testids added:**
 `create-tenant-gps-enabled`, `gps-settings-btn`, `gps-settings-modal`, `gps-enabled-checkbox`, `gps-advanced-settings`, `gps-speed-limit`, `gps-poll-interval`, `gps-history-days`, `gps-device-password`, `gps-settings-save`.
+
+
+## 2026-02 — SinoTrack GPS Bridge Phase 2: Cloud client + poller
+
+**Spec:** /app/memory/SINOTRACK_MULTI_TENANT_PROMPT.md (Phase 2 of 7).
+
+**Verified against real hardware:**
+- IMEI **7018530625** — live, moving (~38 km/h near Bantry, Cork, ~51.68 N, -9.47 W)
+- IMEI **7018530607** — live, stationary (~52.28 N, -9.69 W, voltage 12.7 V)
+- Both connected via SinoTrack cloud (`246.sinotrack.com`), password `123456`
+
+**Backend — new files:**
+- `/app/backend/services/sinotrack_client.py`:
+  - `_call_sinotrack(token_raw)` — reverse-engineered signing (base64 + MD5 + nonce)
+  - `login(imei, password)` — verifies credentials (parses `m_arrRecord[0][0]=='1'`)
+  - `fetch_position(imei, password)` — returns `{latitude, longitude, speed, direction, gps_signal, gsm_signal, mileage, voltage, timestamp}` or None. Handles SinoTrack's column-oriented `m_arrField`/`m_arrRecord` JSON shape.
+  - Voltage parsing treats `Voltages=0.0` placeholder as None (avoids bogus unplug alerts).
+- `/app/backend/services/gps_poller.py`:
+  - APScheduler AsyncIOScheduler, master tick 30 s
+  - `sinotrack_bridge_job()` iterates all `gps_enabled` tenants
+  - Per-device: fetches position (via `asyncio.to_thread`), upserts `tracker_positions`, appends `tracker_history` ONLY if speed>0 OR moving→stopped transition, writes speeding alert if speed>tenant limit, writes unplug alert on voltage drop >10 V → <5 V.
+  - Started idempotently on FastAPI startup via `services.gps_poller.start(db)`.
+
+**Backend — new models + endpoints:**
+- `models/resources.py` — `TrackerDeviceCreate {imei, car_id?, label?, sim_number?, apn?}`, `TrackerDeviceUpdate {car_id?, label?, sim_number?, apn?, is_active?}`
+- `server.py`:
+  - `POST /api/tracker/devices` (admin) — validates IMEI 10-20 digits, dedupes per tenant, enforces one active tracker per car, best-effort verifies via SinoTrack (`verified_with_sinotrack` flag)
+  - `GET  /api/tracker/devices` — tenant-scoped list
+  - `PATCH /api/tracker/devices/{id}` (admin) — reassign car / edit / activate
+  - `DELETE /api/tracker/devices/{id}` (admin) — device row removed, positions/history retained
+  - `GET  /api/tracker/positions` — latest per tracker for current tenant
+  - `GET  /api/tracker/car/{car_id}` — one car's latest fix
+- `requirements.txt` — added `APScheduler==3.11.3`, `tzlocal==5.4.4`
+
+**Testing (iteration_31):** 20/20 new pytest at `/app/backend/tests/test_sinotrack_phase2.py`, plus 9/9 Phase 1 regression — 29/29 total. Verified against LIVE SinoTrack hardware (real coords retrieved), moving-only history rule holds, tenant isolation confirmed (create in A, empty in B).
+
+**Data-testids added:** none (Phase 3 scope — frontend UI for device management + live map).
+
+**Deferred:**
+- Frontend tracker device management UI (Phase 3)
+- Live map with plotted positions (Phase 3)
+- Journey playback (Phase 4)
+- Testing-agent-flagged nits: per-tenant `poll_interval_seconds` currently informational only; verify_error hint on POST /tracker/devices; server.py should be split into routers; `_db` singleton in poller should become class-based.

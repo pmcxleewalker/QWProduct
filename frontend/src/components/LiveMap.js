@@ -41,18 +41,29 @@ const iconFor = (status, isDemo, isFocused) => L.divIcon({
 const FitBounds = ({ positions, focusCarId }) => {
   const map = useMap();
   useEffect(() => {
-    if (focusCarId) {
-      const p = positions.find((x) => x.car_id === focusCarId);
-      if (p) map.setView([p.lat, p.lon], 15, { animate: true });
-      return;
-    }
-    if (positions.length === 0) return;
-    if (positions.length === 1) {
-      map.setView([positions[0].lat, positions[0].lon], 13, { animate: true });
-      return;
-    }
-    const bounds = L.latLngBounds(positions.map((p) => [p.lat, p.lon]));
-    map.fitBounds(bounds.pad(0.2));
+    if (!map) return;
+    // Guard: setView/fitBounds mid-mount or during an unmount schedules a
+    // Leaflet zoom-transition callback that later derefs a torn-down pane
+    // and crashes with "_leaflet_pos". Wait for map ready + use animate:false.
+    let cancelled = false;
+    map.whenReady(() => {
+      if (cancelled) return;
+      try {
+        if (focusCarId) {
+          const p = positions.find((x) => x.car_id === focusCarId);
+          if (p) map.setView([p.lat, p.lon], 15, { animate: false });
+          return;
+        }
+        if (positions.length === 0) return;
+        if (positions.length === 1) {
+          map.setView([positions[0].lat, positions[0].lon], 13, { animate: false });
+          return;
+        }
+        const bounds = L.latLngBounds(positions.map((p) => [p.lat, p.lon]));
+        map.fitBounds(bounds.pad(0.2), { animate: false });
+      } catch { /* map torn down mid-tick — safe to ignore */ }
+    });
+    return () => { cancelled = true; };
   }, [positions, focusCarId, map]);
   return null;
 };

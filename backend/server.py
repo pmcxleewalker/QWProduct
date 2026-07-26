@@ -15,6 +15,7 @@ from typing import List, Optional, Any, Dict
 from datetime import timedelta, datetime, timezone
 import uuid
 import secrets
+import asyncio
 import qrcode
 from io import BytesIO
 import json
@@ -50,6 +51,7 @@ from models.tenant import (
 )
 from models.resources import (
     VehicleCreate, VehicleUpdate, Vehicle, DropOffLocation,
+    TrackerDeviceCreate, TrackerDeviceUpdate,
     BookingCreate, BookingUpdate, Booking,
     StatusUpdate, ProviderCreate, Provider,
     MessageCreate, Message, TodoCreate, Todo,
@@ -1791,6 +1793,171 @@ async def update_gps_settings(
         "message": "GPS settings updated successfully",
         "gps": _gps_response(updated_tenant),
     }
+
+
+# ---------- Tracker Devices (Phase 2) ----------
+
+@api_router.post("/tracker/devices")
+async def register_tracker_device(
+    payload: TrackerDeviceCreate,
+    context: TenantContext = Depends(require_admin),
+):
+    """Register a SinoTrack tracker under the current tenant. Verifies the
+    IMEI + password against SinoTrack's cloud before saving so admins get
+    immediate feedback if the credentials are wrong."""
+    tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    if not tenant or not tenant.get("gps_enabled"):
+        raise HTTPException(status_code=400, detail="Enable GPS Fleet Tracking first")
+
+    imei = (payload.imei or "").strip()
+    if not imei.isdigit() or not (10 <= len(imei) <= 20):
+        raise HTTPException(status_code=400, detail="IMEI must be 10-20 digits")
+
+    existing = await db.tracker_devices.find_one(
+        {"tenant_id": context.tenant_id, "imei": imei}, {"_id": 0}
+    )
+    if existing:
+        raise HTTPException(status_code=409, detail="This IMEI is already registered for your tenant")
+
+    # Optional car assignment must belong to this tenant
+    car_id = (payload.car_id or "").strip() or None
+    if car_id:
+        car = await db.vehicles.find_one(
+            {"id": car_id, "tenant_id": context.tenant_id}, {"_id": 0}
+        )
+        if not car:
+            raise HTTPException(status_code=404, detail="Vehicle not found for this tenant")
+        already = await db.tracker_devices.find_one(
+            {"tenant_id": context.tenant_id, "car_id": car_id, "is_active": True},
+            {"_id": 0},
+        )
+        if already:
+            raise HTTPException(status_code=409, detail="This vehicle already has an active tracker")
+
+    # Verify with SinoTrack (non-fatal — allow save even if verify fails so
+    # tenants without an internet-connected device can pre-register).
+    device_password = (tenant.get("gps_settings") or {}).get("device_password", "123456")
+    verified = False
+    try:
+        from services.sinotrack_client import login as _login
+        verified = await asyncio.to_thread(_login, imei, device_password)
+    except Exception as e:
+        logger.warning(f"[tracker] IMEI verify failed: {e}")
+
+    doc = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": context.tenant_id,
+        "imei": imei,
+        "car_id": car_id,
+        "label": (payload.label or "").strip(),
+        "sim_number": (payload.sim_number or "").strip(),
+        "apn": (payload.apn or "").strip(),
+        "is_active": True,
+        "verified_with_sinotrack": verified,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.tracker_devices.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@api_router.get("/tracker/devices")
+async def list_tracker_devices(
+    context: TenantContext = Depends(get_tenant_context),
+):
+    """List all trackers for the current tenant."""
+    rows = await db.tracker_devices.find(
+        {"tenant_id": context.tenant_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(500)
+    return rows
+
+
+@api_router.patch("/tracker/devices/{device_id}")
+async def update_tracker_device(
+    device_id: str,
+    payload: TrackerDeviceUpdate,
+    context: TenantContext = Depends(require_admin),
+):
+    """Assign/reassign a car, edit label/SIM/APN, or deactivate a tracker."""
+    row = await db.tracker_devices.find_one(
+        {"id": device_id, "tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Tracker not found")
+
+    update = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    if payload.car_id is not None:
+        car_id = (payload.car_id or "").strip() or None
+        if car_id:
+            car = await db.vehicles.find_one(
+                {"id": car_id, "tenant_id": context.tenant_id}, {"_id": 0}
+            )
+            if not car:
+                raise HTTPException(status_code=404, detail="Vehicle not found for this tenant")
+            conflict = await db.tracker_devices.find_one({
+                "tenant_id": context.tenant_id,
+                "car_id": car_id,
+                "is_active": True,
+                "id": {"$ne": device_id},
+            })
+            if conflict:
+                raise HTTPException(status_code=409, detail="Another active tracker is already assigned to this vehicle")
+        update["car_id"] = car_id
+    for field in ("label", "sim_number", "apn"):
+        val = getattr(payload, field)
+        if val is not None:
+            update[field] = str(val).strip()
+    if payload.is_active is not None:
+        update["is_active"] = bool(payload.is_active)
+
+    await db.tracker_devices.update_one(
+        {"id": device_id, "tenant_id": context.tenant_id},
+        {"$set": update},
+    )
+    updated = await db.tracker_devices.find_one(
+        {"id": device_id, "tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    return updated
+
+
+@api_router.delete("/tracker/devices/{device_id}")
+async def delete_tracker_device(
+    device_id: str,
+    context: TenantContext = Depends(require_admin),
+):
+    """Hard-delete a tracker registration (positions/history retained)."""
+    res = await db.tracker_devices.delete_one(
+        {"id": device_id, "tenant_id": context.tenant_id}
+    )
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Tracker not found")
+    return {"ok": True}
+
+
+@api_router.get("/tracker/positions")
+async def list_tracker_positions(
+    context: TenantContext = Depends(get_tenant_context),
+):
+    """Latest position per tracker for the current tenant."""
+    rows = await db.tracker_positions.find(
+        {"tenant_id": context.tenant_id}, {"_id": 0}
+    ).to_list(500)
+    return rows
+
+
+@api_router.get("/tracker/car/{car_id}")
+async def get_car_tracker_position(
+    car_id: str,
+    context: TenantContext = Depends(get_tenant_context),
+):
+    """Latest position for a single car (or 404 if none)."""
+    row = await db.tracker_positions.find_one(
+        {"tenant_id": context.tenant_id, "car_id": car_id}, {"_id": 0}
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="No tracker position yet")
+    return row
 
 
 # ==================== COMPLIANCE ACKNOWLEDGMENTS ====================
@@ -8161,6 +8328,14 @@ async def startup():
     # if it still exists. The demo model moved from one-shared-tenant-plus-
     # magic-links to per-demo-tenant creation (via the "Create Client" form).
     await cleanup_legacy_demo_tenant()
+
+    # Start the SinoTrack bridge poller (Phase 2). Idempotent — safe if
+    # startup runs twice under WatchFiles reload.
+    try:
+        from services import gps_poller
+        gps_poller.start(db)
+    except Exception as e:
+        logger.error(f"Failed to start SinoTrack bridge: {e}")
     
     # Fix any stale absolute logo URLs ('http://localhost:8001/...') left in
     # the DB from before the upload endpoint was switched to relative URLs.

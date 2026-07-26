@@ -56,6 +56,26 @@ class DropOffLocation(BaseModel):
     label: Optional[str] = ""
 
 
+class TrackerDeviceCreate(BaseModel):
+    """Register a SinoTrack GPS tracker under the current tenant. `imei` is
+    the device's own identifier (printed on the label). `car_id` is optional
+    — devices can be registered ahead of assignment. Default password is the
+    factory 123456."""
+    imei: str
+    car_id: Optional[str] = None
+    label: Optional[str] = ""
+    sim_number: Optional[str] = ""
+    apn: Optional[str] = ""
+
+
+class TrackerDeviceUpdate(BaseModel):
+    car_id: Optional[str] = None
+    label: Optional[str] = None
+    sim_number: Optional[str] = None
+    apn: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
 class Vehicle(VehicleBase):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

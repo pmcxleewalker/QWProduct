@@ -9,6 +9,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import FleetBoard from '../components/FleetBoard';
 import LiveMap from '../components/LiveMap';
 import JourneyPlayback from '../components/JourneyPlayback';
+import GeofenceModal from '../components/GeofenceModal';
 
 const Bookings = () => {
   const { user } = useAuth();
@@ -50,6 +51,8 @@ const Bookings = () => {
   const [focusCarId, setFocusCarId] = useState(null);
   // Journey Playback modal (opens over Fleet Board when clicking "Journey")
   const [journeyCar, setJourneyCar] = useState(null);
+  // Geofence modal (opens from FleetBoard's tracked car cards)
+  const [geofenceCar, setGeofenceCar] = useState(null);
   // Set of car_ids that currently have an active tracker (for showing the
   // Journey button only on tracked cars).
   const [trackedCarIds, setTrackedCarIds] = useState(() => new Set());
@@ -1390,6 +1393,9 @@ const Bookings = () => {
           onOpenJourney={(car) => {
             if (trackedCarIds.has(car.id)) setJourneyCar(car);
           }}
+          onOpenGeofence={(car) => {
+            if (trackedCarIds.has(car.id)) setGeofenceCar(car);
+          }}
           trackedCarIds={trackedCarIds}
         />
       )}
@@ -1402,6 +1408,17 @@ const Bookings = () => {
         <JourneyPlayback
           car={journeyCar}
           onClose={() => setJourneyCar(null)}
+        />
+      )}
+
+      {geofenceCar && (
+        <GeofenceModal
+          car={geofenceCar}
+          onClose={() => setGeofenceCar(null)}
+          onSaved={() => {
+            setGeofenceCar(null);
+            fetchData();
+          }}
         />
       )}
 

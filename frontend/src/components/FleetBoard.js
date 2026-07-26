@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, MapPin,
-  Clock, Zap, Navigation, Check, Ban, Radio, Route,
+  Clock, Zap, Navigation, Check, Ban, Radio, Route, ShieldAlert,
 } from 'lucide-react';
 import { carAPI } from '../api/api';
 
@@ -274,7 +274,7 @@ const DropOffInline = ({ car, onSaved, onCancel }) => {
   );
 };
 
-const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, onDropOffSaved, onGoToLive, onOpenJourney, isTracked }) => {
+const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, onDropOffSaved, onGoToLive, onOpenJourney, onOpenGeofence, isTracked }) => {
   const { pills, freeHours, bookingCount, summary, status } = useMemo(
     () => summariseCarDay(car, allBookings, date, now),
     [car, allBookings, date, now]
@@ -382,6 +382,21 @@ const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, on
               <Route size={14} /> Journey
             </button>
           )}
+          {onOpenGeofence && isTracked && (
+            <button
+              type="button"
+              onClick={() => onOpenGeofence(car)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 border text-sm font-semibold rounded-lg transition-colors ${
+                car.geofence_center_lat != null
+                  ? 'bg-purple-100 border-purple-300 text-purple-800 hover:bg-purple-200'
+                  : 'bg-purple-50 border-purple-200 text-purple-800 hover:bg-purple-100'
+              }`}
+              title={car.geofence_center_lat != null ? `Geofenced: ${car.geofence_radius_km} km` : 'Set geofence for alerts'}
+              data-testid={`fleet-geofence-${car.id}`}
+            >
+              <ShieldAlert size={14} /> {car.geofence_center_lat != null ? 'Geofenced' : 'Geofence'}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setDropOffOpen(true)}
@@ -397,7 +412,7 @@ const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, on
 };
 
 // ---------- main component ----------
-const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onOpenBooking, onCarsChanged, onGoToLive, onOpenJourney, trackedCarIds = null }) => {
+const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onOpenBooking, onCarsChanged, onGoToLive, onOpenJourney, onOpenGeofence, trackedCarIds = null }) => {
   const [date, setDate] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -519,6 +534,7 @@ const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onOpenBooking, onCa
               onDropOffSaved={handleDropOffSaved}
               onGoToLive={onGoToLive}
               onOpenJourney={onOpenJourney}
+              onOpenGeofence={onOpenGeofence}
               isTracked={trackedCarIds ? trackedCarIds.has(car.id) : false}
             />
           ))}

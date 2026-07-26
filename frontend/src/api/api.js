@@ -243,6 +243,12 @@ export const trackerAPI = {
   carPosition: (carId) => axios.get(`${API}/tracker/car/${carId}`),
   history: (carId, date) => axios.get(`${API}/tracker/history/${carId}`, { params: { date } }),
   seedDemoHistory: (carId, days = 3) => axios.post(`${API}/tracker/history/${carId}/seed-demo`, null, { params: { days } }),
+  // Alerts (Phase 5)
+  listAlerts: (acknowledged = false) => axios.get(`${API}/tracker/alerts`, { params: { acknowledged } }),
+  alertsCount: () => axios.get(`${API}/tracker/alerts/count`),
+  ackAlert: (id) => axios.post(`${API}/tracker/alerts/${id}/ack`),
+  ackBulk: (type = null) => axios.post(`${API}/tracker/alerts/ack-bulk`, type ? { type } : {}),
+  setGeofence: (carId, data) => axios.put(`${API}/vehicles/${carId}/geofence`, data),
 };
 
 export default { 

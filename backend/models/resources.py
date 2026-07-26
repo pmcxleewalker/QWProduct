@@ -26,6 +26,13 @@ class VehicleBase(BaseModel):
     # admin store the human name of the place ("Client — 12 Main St").
     current_location_eircode: Optional[str] = None
     current_location_label: Optional[str] = None
+    # Geofence base location (SinoTrack Phase 5). If all three are set, the
+    # GPS poller emits a `geofence_exit` alert whenever the car is fixed
+    # outside `geofence_radius_km` of (geofence_center_lat, geofence_center_lon).
+    geofence_center_lat: Optional[float] = None
+    geofence_center_lon: Optional[float] = None
+    geofence_radius_km: Optional[float] = None
+    geofence_label: Optional[str] = None
 
 
 class VehicleCreate(VehicleBase):
@@ -47,6 +54,18 @@ class VehicleUpdate(BaseModel):
     blocked_reason: Optional[str] = None
     current_location_eircode: Optional[str] = None
     current_location_label: Optional[str] = None
+    geofence_center_lat: Optional[float] = None
+    geofence_center_lon: Optional[float] = None
+    geofence_radius_km: Optional[float] = None
+    geofence_label: Optional[str] = None
+
+
+class GeofenceUpdate(BaseModel):
+    """Payload for PUT /api/vehicles/{id}/geofence. Send nulls to clear."""
+    geofence_center_lat: Optional[float] = None
+    geofence_center_lon: Optional[float] = None
+    geofence_radius_km: Optional[float] = None
+    geofence_label: Optional[str] = ""
 
 
 class DropOffLocation(BaseModel):

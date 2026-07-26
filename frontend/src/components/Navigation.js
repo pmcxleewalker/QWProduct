@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Crown, Building2, Eye, Shield, BarChart3, Scale } from 'lucide-react';
+import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Crown, Building2, Eye, Shield, BarChart3, Scale, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { liftRequestAPI } from '../api/api';
+import { liftRequestAPI, trackerAPI } from '../api/api';
 import ChangePasswordModal from './ChangePasswordModal';
 import usePushNotifications from '../hooks/usePushNotifications';
 
@@ -22,6 +22,10 @@ const Navigation = ({ tenantSlug }) => {
   // wordmark in the navbar with the client's own brand. Cached per tenant so
   // switching back-and-forth doesn't re-flicker.
   const [tenantLogo, setTenantLogo] = useState(null);
+  // GPS alerts nav badge (Phase 5). Only shown when the tenant has GPS
+  // enabled AND the user is a tenant admin. Polls every 60 s.
+  const [gpsEnabled, setGpsEnabled] = useState(false);
+  const [alertCounts, setAlertCounts] = useState({ total: 0, critical: 0 });
   const notificationRef = useRef(null);
   const seenRequestIds = useRef(new Set());
 
@@ -39,6 +43,7 @@ const Navigation = ({ tenantSlug }) => {
         if (cancelled) return;
         const url = res?.data?.branding?.logo_url || null;
         setTenantLogo(url);
+        setGpsEnabled(!!res?.data?.gps?.enabled);
       })
       .catch(() => {
         if (!cancelled) setTenantLogo(null);
@@ -47,6 +52,30 @@ const Navigation = ({ tenantSlug }) => {
       cancelled = true;
     };
   }, [activeTenant?.tenant_id]);
+
+  // GPS alerts count poller — only fires when tenant has GPS enabled
+  // and the current user is a tenant admin.
+  useEffect(() => {
+    if (!gpsEnabled || !isTenantAdmin()) {
+      setAlertCounts({ total: 0, critical: 0 });
+      return;
+    }
+    let cancelled = false;
+    const fetchCounts = async () => {
+      try {
+        const { data } = await trackerAPI.alertsCount();
+        if (!cancelled) setAlertCounts(data || { total: 0, critical: 0 });
+      } catch {
+        /* silent — API may be unreachable during login flip */
+      }
+    };
+    fetchCounts();
+    const t = setInterval(fetchCounts, 60000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [gpsEnabled, isTenantAdmin, activeTenant?.tenant_id]);
 
   // Get the base path for tenant-scoped navigation
   // Use tenantSlug prop first, then activeTenant, then fallback
@@ -91,6 +120,18 @@ const Navigation = ({ tenantSlug }) => {
   // Only show Admin for admin users
   if (isTenantAdmin()) {
     navItems.push({ path: getTenantPath('/admin'), icon: Settings, label: 'Admin' });
+  }
+
+  // Show GPS Alerts nav item to tenant admins on GPS-enabled tenants.
+  // Rendered with a red badge showing unacknowledged alert count (Phase 5).
+  if (isTenantAdmin() && gpsEnabled) {
+    navItems.splice(navItems.length - 1, 0, {
+      path: getTenantPath('/alerts'),
+      icon: AlertTriangle,
+      label: 'Alerts',
+      badge: alertCounts.total || 0,
+      badgeCritical: alertCounts.critical || 0,
+    });
   }
 
   // Close dropdown when clicking outside
@@ -405,7 +446,7 @@ const Navigation = ({ tenantSlug }) => {
                 key={item.path}
                 to={item.path}
                 data-testid={item.isFishIcon ? 'nav-fish' : `nav-${item.label.toLowerCase()}`}
-                className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
+                className={`flex flex-col items-center justify-center flex-1 h-full transition-colors relative ${
                   isActive(item.path)
                     ? 'text-blue-600'
                     : 'text-gray-600 hover:text-blue-600'
@@ -413,6 +454,16 @@ const Navigation = ({ tenantSlug }) => {
               >
                 <Icon size={item.isFishIcon ? 28 : 24} className={item.isFishIcon ? 'text-blue-500' : ''} />
                 {item.label && <span className="text-xs mt-1">{item.label}</span>}
+                {item.badge > 0 && (
+                  <span
+                    className={`absolute top-1 right-1/3 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-bold text-white flex items-center justify-center ${
+                      item.badgeCritical > 0 ? 'bg-red-600 animate-pulse' : 'bg-amber-500'
+                    }`}
+                    data-testid={`nav-alerts-badge-mobile`}
+                  >
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -463,7 +514,7 @@ const Navigation = ({ tenantSlug }) => {
                       key={item.path}
                       to={item.path}
                       data-testid={item.isFishIcon ? 'nav-fish-desktop' : `nav-${item.label.toLowerCase()}`}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
+                      className={`relative flex items-center space-x-2 px-3 py-2 rounded-md transition-colors ${
                         active
                           ? 'text-white bg-white/20 ring-1 ring-white/30 shadow-[0_0_18px_rgba(216,180,254,0.45)]'
                           : 'text-white/80 hover:text-white hover:bg-white/10'
@@ -472,6 +523,17 @@ const Navigation = ({ tenantSlug }) => {
                     >
                       <Icon size={item.isFishIcon ? 24 : 20} className={item.isFishIcon ? 'text-white' : ''} />
                       {item.label && !isIconOnlyForAdmin && <span>{item.label}</span>}
+                      {item.badge > 0 && (
+                        <span
+                          className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold text-white flex items-center justify-center ring-2 ring-purple-900 ${
+                            item.badgeCritical > 0 ? 'bg-red-600 animate-pulse' : 'bg-amber-500'
+                          }`}
+                          data-testid={`nav-alerts-badge-desktop`}
+                          title={`${item.badge} unacknowledged alert${item.badge === 1 ? '' : 's'}${item.badgeCritical > 0 ? ` (${item.badgeCritical} critical)` : ''}`}
+                        >
+                          {item.badge > 99 ? '99+' : item.badge}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}

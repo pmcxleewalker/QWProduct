@@ -1,6 +1,6 @@
 """
-GPS Poller — SinoTrack Bridge (Phase 2)
-========================================
+GPS Poller — SinoTrack Bridge (Phase 2 + Phase 5 alerts)
+=========================================================
 
 APScheduler-driven background loop that pulls positions from SinoTrack's
 cloud for every tenant with `gps_enabled: true` and writes them into
@@ -10,11 +10,17 @@ Behaviour matches the spec:
     - `tracker_positions`  : upserted per (tenant_id, car_id) with the latest fix
     - `tracker_history`    : appended ONLY when speed > 0, OR one final "stop"
                              point when transitioning moving → stopped
-    - `tracker_alerts`     : written when speed exceeds tenant's speed_limit_kmh,
-                             or when voltage drops from >10 V to <5 V (unplug)
+    - `tracker_alerts`     : written for four alert types (each with severity):
+                               * speeding    (warning: 1-30 km/h over, critical: 30+ over)
+                               * unplug      (voltage drops from >10 V to <5 V)
+                               * offline     (warning: 10+ min no fix, critical: 60+ min)
+                               * geofence_exit (car outside vehicle.geofence_radius_km
+                                                of vehicle.geofence_center_lat/lon)
+                             Alerts are deduped: no new offline/geofence row
+                             emitted while the previous one is still active.
     - Offline detection    : if fetch returns None but previous status was
                              "online", flip status to "offline" in the current
-                             position row
+                             position row and emit an offline alert.
 
 Every DB write MUST include `tenant_id` — no cross-tenant leakage allowed.
 """
@@ -22,6 +28,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
@@ -51,7 +58,37 @@ def _iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-async def _process_device(tenant: dict, device: dict, speed_limit: int, device_password: str):
+def _speed_severity(speed: int, limit: int) -> str:
+    """1-30 km/h over -> warning; 30+ km/h over -> critical."""
+    return "critical" if (speed - limit) >= 30 else "warning"
+
+
+def _haversine_km(lat1, lon1, lat2, lon2) -> float:
+    R = 6371.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlam = math.radians(lon2 - lon1)
+    h = math.sin(dphi / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlam / 2) ** 2
+    return 2 * R * math.asin(math.sqrt(h))
+
+
+async def _has_active_alert(tenant_id: str, car_id: str, alert_type: str) -> bool:
+    """Suppress duplicate offline / geofence alerts while the previous one
+    remains unacknowledged. Speeding + unplug are point-in-time so they
+    always emit."""
+    doc = await _db.tracker_alerts.find_one(
+        {
+            "tenant_id": tenant_id,
+            "car_id": car_id,
+            "type": alert_type,
+            "acknowledged": False,
+        },
+        {"_id": 1},
+    )
+    return doc is not None
+
+
+async def _process_device(tenant: dict, device: dict, speed_limit: int, device_password: str, car_by_id: dict):
     """Fetch one device's position and update all downstream collections."""
     tenant_id = tenant["id"]
     imei = device.get("imei")
@@ -72,14 +109,18 @@ async def _process_device(tenant: dict, device: dict, speed_limit: int, device_p
     prev = await _db.tracker_positions.find_one(
         {"tenant_id": tenant_id, "car_id": car_id}, {"_id": 0}
     )
+    now_iso = _iso_now()
 
     if not position:
-        # No fix / API error — mark as offline if we previously had one
+        # No fix / API error. Flip to offline and, if the tracker has been
+        # silent long enough, emit an offline alert (dedupe against existing
+        # unacknowledged one).
         if prev and prev.get("status") == "online":
             await _db.tracker_positions.update_one(
                 {"tenant_id": tenant_id, "car_id": car_id},
-                {"$set": {"status": "offline", "last_update": _iso_now()}},
+                {"$set": {"status": "offline", "last_update": now_iso}},
             )
+        await _maybe_emit_offline_alert(tenant_id, car_id, device["id"], prev, now_iso)
         return
 
     speed = int(position.get("speed") or 0)
@@ -87,7 +128,6 @@ async def _process_device(tenant: dict, device: dict, speed_limit: int, device_p
     ignition = speed > 0 or (voltage is not None and voltage > 13.0)
     status = "online"
 
-    now_iso = _iso_now()
     pos_doc = {
         "tenant_id": tenant_id,
         "car_id": car_id,
@@ -130,14 +170,21 @@ async def _process_device(tenant: dict, device: dict, speed_limit: int, device_p
             "timestamp": now_iso,
         })
 
-    # ---- Speed alert ----
+    car = car_by_id.get(car_id) or {}
+
+    # ---- Speed alert (with severity) ----
     if speed_limit and speed > speed_limit:
+        severity = _speed_severity(speed, speed_limit)
         await _db.tracker_alerts.insert_one({
             "id": str(uuid.uuid4()),
             "tenant_id": tenant_id,
             "tracker_id": device["id"],
             "car_id": car_id,
+            "car_name": car.get("name"),
+            "registration": car.get("registration"),
             "type": "speeding",
+            "severity": severity,
+            "message": f"Speed {speed} km/h exceeds limit {speed_limit} km/h",
             "speed": speed,
             "limit": speed_limit,
             "lat": pos_doc["lat"],
@@ -159,7 +206,11 @@ async def _process_device(tenant: dict, device: dict, speed_limit: int, device_p
             "tenant_id": tenant_id,
             "tracker_id": device["id"],
             "car_id": car_id,
+            "car_name": car.get("name"),
+            "registration": car.get("registration"),
             "type": "unplug",
+            "severity": "critical",
+            "message": f"Tracker unplugged (voltage {prev_voltage:.1f} V → {voltage:.1f} V)",
             "voltage": voltage,
             "prev_voltage": prev_voltage,
             "lat": pos_doc["lat"],
@@ -167,6 +218,101 @@ async def _process_device(tenant: dict, device: dict, speed_limit: int, device_p
             "timestamp": now_iso,
             "acknowledged": False,
         })
+
+    # ---- Geofence exit detection ----
+    g_lat = car.get("geofence_center_lat")
+    g_lon = car.get("geofence_center_lon")
+    g_radius = car.get("geofence_radius_km")
+    if g_lat is not None and g_lon is not None and g_radius:
+        distance_km = _haversine_km(g_lat, g_lon, pos_doc["lat"], pos_doc["lon"])
+        if distance_km > float(g_radius):
+            if not await _has_active_alert(tenant_id, car_id, "geofence_exit"):
+                await _db.tracker_alerts.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "tenant_id": tenant_id,
+                    "tracker_id": device["id"],
+                    "car_id": car_id,
+                    "car_name": car.get("name"),
+                    "registration": car.get("registration"),
+                    "type": "geofence_exit",
+                    "severity": "warning",
+                    "message": (
+                        f"Left {car.get('geofence_label') or 'base'} — "
+                        f"{distance_km:.1f} km from centre (radius {float(g_radius):.0f} km)"
+                    ),
+                    "distance_km": round(distance_km, 2),
+                    "radius_km": float(g_radius),
+                    "lat": pos_doc["lat"],
+                    "lon": pos_doc["lon"],
+                    "timestamp": now_iso,
+                    "acknowledged": False,
+                })
+
+
+async def _maybe_emit_offline_alert(
+    tenant_id: str,
+    car_id: str,
+    tracker_id: str,
+    prev_position: Optional[dict],
+    now_iso: str,
+):
+    """Emit an offline alert if the tracker has been silent for 10+ min.
+    Upgrades severity to critical after 60 min. Dedupes against any existing
+    unacknowledged offline alert."""
+    if not prev_position:
+        return
+    last_iso = prev_position.get("last_update")
+    if not last_iso:
+        return
+    try:
+        last_dt = datetime.fromisoformat(last_iso.replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return
+
+    minutes = (datetime.now(timezone.utc) - last_dt).total_seconds() / 60.0
+    if minutes < 10:
+        return
+
+    severity = "critical" if minutes >= 60 else "warning"
+
+    # Find the currently-open offline alert (if any) and update its severity
+    # timestamp if it should escalate. Otherwise insert a new one.
+    car = await _db.vehicles.find_one(
+        {"id": car_id, "tenant_id": tenant_id},
+        {"_id": 0, "name": 1, "registration": 1},
+    ) or {}
+
+    existing = await _db.tracker_alerts.find_one(
+        {"tenant_id": tenant_id, "car_id": car_id, "type": "offline", "acknowledged": False},
+        {"_id": 0, "id": 1, "severity": 1},
+    )
+    if existing:
+        if existing.get("severity") != severity:
+            await _db.tracker_alerts.update_one(
+                {"id": existing["id"], "tenant_id": tenant_id},
+                {"$set": {
+                    "severity": severity,
+                    "message": f"Tracker offline for {int(minutes)} min",
+                    "minutes_offline": int(minutes),
+                    "timestamp": now_iso,
+                }},
+            )
+        return
+
+    await _db.tracker_alerts.insert_one({
+        "id": str(uuid.uuid4()),
+        "tenant_id": tenant_id,
+        "tracker_id": tracker_id,
+        "car_id": car_id,
+        "car_name": car.get("name"),
+        "registration": car.get("registration"),
+        "type": "offline",
+        "severity": severity,
+        "message": f"Tracker offline for {int(minutes)} min",
+        "minutes_offline": int(minutes),
+        "timestamp": now_iso,
+        "acknowledged": False,
+    })
 
 
 async def _sync_tenant(tenant: dict):
@@ -186,9 +332,20 @@ async def _sync_tenant(tenant: dict):
     if not devices:
         return
 
+    # Prefetch vehicles once so we can enrich alerts with car name + geofence
+    # config without hitting Mongo per device.
+    car_ids = [d.get("car_id") for d in devices if d.get("car_id")]
+    car_by_id: dict = {}
+    if car_ids:
+        cars = await _db.vehicles.find(
+            {"tenant_id": tenant_id, "id": {"$in": car_ids}},
+            {"_id": 0},
+        ).to_list(500)
+        car_by_id = {c["id"]: c for c in cars}
+
     for device in devices:
         try:
-            await _process_device(tenant, device, speed_limit, device_password)
+            await _process_device(tenant, device, speed_limit, device_password, car_by_id)
         except Exception as e:
             logger.warning(f"[gps-poller] device {device.get('imei')} in tenant {tenant_id}: {e}")
 

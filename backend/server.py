@@ -50,7 +50,7 @@ from models.tenant import (
     FEATURE_REGISTRY, FEATURE_CATEGORIES, get_plan_default_features
 )
 from models.resources import (
-    VehicleCreate, VehicleUpdate, Vehicle, DropOffLocation,
+    VehicleCreate, VehicleUpdate, Vehicle, DropOffLocation, GeofenceUpdate,
     TrackerDeviceCreate, TrackerDeviceUpdate,
     BookingCreate, BookingUpdate, Booking,
     StatusUpdate, ProviderCreate, Provider,
@@ -2029,6 +2029,145 @@ async def seed_car_demo_history(
     from services.gps_history_service import seed_demo_journeys
     inserted = await seed_demo_journeys(db, context.tenant_id, device, days=days)
     return {"ok": True, "inserted": inserted, "days": days}
+
+
+# ==================== TRACKER ALERTS (Phase 5) ====================
+# Speeding, unplug, offline, and geofence-exit alerts are written by the
+# GPS poller (see services/gps_poller.py). These endpoints let tenant
+# admins list them, acknowledge them, and see a live badge count.
+
+class AlertAckPayload(BaseModel):
+    """Optional bulk-ack payload: pass `type` to ack every unacknowledged
+    alert of a specific type for the current tenant."""
+    type: Optional[str] = None  # 'speeding' | 'unplug' | 'offline' | 'geofence_exit'
+
+
+@api_router.get("/tracker/alerts")
+async def list_tracker_alerts(
+    acknowledged: bool = Query(False, description="Include acknowledged alerts"),
+    limit: int = Query(200, ge=1, le=1000),
+    context: TenantContext = Depends(get_tenant_context),
+):
+    """List tenant alerts, sorted by severity (critical first) then most
+    recent. Defaults to only unacknowledged; pass ?acknowledged=true to
+    include historical alerts."""
+    query = {"tenant_id": context.tenant_id}
+    if not acknowledged:
+        query["acknowledged"] = False
+
+    rows = await db.tracker_alerts.find(query, {"_id": 0}).sort(
+        [("timestamp", -1)]
+    ).to_list(limit)
+
+    # Rank by severity (critical > warning > info), preserving newest-first
+    # order within each severity group. Python's sort is stable so the
+    # timestamp-desc order from Mongo is preserved.
+    sev_rank = {"critical": 0, "warning": 1, "info": 2}
+    rows.sort(key=lambda a: sev_rank.get(a.get("severity", "warning"), 99))
+
+    # Counts (used by the badge without a second round-trip)
+    counts = {"total": len(rows)}
+    for a in rows:
+        t = a.get("type", "other")
+        counts[t] = counts.get(t, 0) + 1
+
+    return {"alerts": rows, "counts": counts}
+
+
+@api_router.get("/tracker/alerts/count")
+async def get_tracker_alerts_count(
+    context: TenantContext = Depends(get_tenant_context),
+):
+    """Cheap count endpoint for the nav badge."""
+    total = await db.tracker_alerts.count_documents(
+        {"tenant_id": context.tenant_id, "acknowledged": False}
+    )
+    critical = await db.tracker_alerts.count_documents(
+        {"tenant_id": context.tenant_id, "acknowledged": False, "severity": "critical"}
+    )
+    return {"total": total, "critical": critical}
+
+
+@api_router.post("/tracker/alerts/{alert_id}/ack")
+async def acknowledge_tracker_alert(
+    alert_id: str,
+    context: TenantContext = Depends(require_admin),
+):
+    """Acknowledge a single alert (only for the current tenant)."""
+    now_iso = datetime.now(timezone.utc).isoformat()
+    res = await db.tracker_alerts.update_one(
+        {"id": alert_id, "tenant_id": context.tenant_id, "acknowledged": False},
+        {"$set": {"acknowledged": True, "acknowledged_at": now_iso, "acknowledged_by": context.user_id}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Alert not found or already acknowledged")
+    return {"ok": True}
+
+
+@api_router.post("/tracker/alerts/ack-bulk")
+async def bulk_acknowledge_alerts(
+    payload: AlertAckPayload,
+    context: TenantContext = Depends(require_admin),
+):
+    """Bulk-acknowledge every unacknowledged alert for the current tenant.
+    If `type` is provided, only alerts of that type are acknowledged."""
+    now_iso = datetime.now(timezone.utc).isoformat()
+    query = {"tenant_id": context.tenant_id, "acknowledged": False}
+    if payload.type:
+        allowed = {"speeding", "unplug", "offline", "geofence_exit"}
+        if payload.type not in allowed:
+            raise HTTPException(status_code=400, detail="Unknown alert type")
+        query["type"] = payload.type
+
+    res = await db.tracker_alerts.update_many(
+        query,
+        {"$set": {"acknowledged": True, "acknowledged_at": now_iso, "acknowledged_by": context.user_id}},
+    )
+    return {"ok": True, "acknowledged": res.modified_count}
+
+
+# ==================== VEHICLE GEOFENCE (Phase 5) ====================
+# Base-location + radius per car. The poller reads these fields off the
+# vehicle document on every tick and emits a `geofence_exit` alert when
+# the car is fixed outside the circle.
+
+@api_router.put("/vehicles/{car_id}/geofence")
+async def set_vehicle_geofence(
+    car_id: str,
+    payload: GeofenceUpdate,
+    context: TenantContext = Depends(require_admin),
+):
+    """Set or clear the geofence for a single vehicle. Pass nulls for lat,
+    lon, radius to clear."""
+    car = await db.vehicles.find_one(
+        {"id": car_id, "tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    if not car:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+
+    lat = payload.geofence_center_lat
+    lon = payload.geofence_center_lon
+    radius = payload.geofence_radius_km
+
+    # Validate: all three or none
+    if any(v is not None for v in (lat, lon, radius)) and not all(v is not None for v in (lat, lon, radius)):
+        raise HTTPException(status_code=400, detail="Provide lat, lon and radius together (or all null to clear)")
+
+    if radius is not None and (radius <= 0 or radius > 5000):
+        raise HTTPException(status_code=400, detail="Radius must be between 0 and 5000 km")
+
+    update = {
+        "geofence_center_lat": lat,
+        "geofence_center_lon": lon,
+        "geofence_radius_km": radius,
+        "geofence_label": (payload.geofence_label or "").strip() or None,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.vehicles.update_one(
+        {"id": car_id, "tenant_id": context.tenant_id},
+        {"$set": update},
+    )
+    return {"ok": True, **update}
 
 
 # ==================== COMPLIANCE ACKNOWLEDGMENTS ====================

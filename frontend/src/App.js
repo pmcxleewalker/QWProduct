@@ -16,6 +16,7 @@ import LiveSheet from './pages/LiveSheet';
 import Bookings from './pages/Bookings';
 import Assistance from './pages/Assistance';
 import Admin from './pages/Admin';
+import Alerts from './pages/Alerts';
 import MileageUpdate from './pages/MileageUpdate';
 import MileageLog from './pages/MileageLog';
 import Setup from './pages/Setup';
@@ -352,6 +353,7 @@ const TenantRoutes = () => {
             <Route path="/legacy-dashboard" element={<Dashboard />} />
             <Route path="/live-sheet" element={<LiveSheet />} />
             <Route path="/bookings" element={<Bookings />} />
+            <Route path="/alerts" element={<Alerts />} />
             <Route path="/assistance" element={<Assistance />} />
             <Route path="/request-lift" element={<RequestLift />} />
             <Route path="/mileage" element={<MileageUpdate />} />
@@ -458,6 +460,7 @@ const AppContent = () => {
                   <Route path="/legacy-dashboard" element={<Dashboard />} />
                   <Route path="/live-sheet" element={<LiveSheet />} />
                   <Route path="/bookings" element={<Bookings />} />
+                  <Route path="/alerts" element={<Alerts />} />
                   <Route path="/assistance" element={<Assistance />} />
                   <Route path="/mileage" element={<MileageUpdate />} />
                   <Route

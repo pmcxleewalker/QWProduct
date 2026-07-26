@@ -1,0 +1,49 @@
+{
+  "summary": "Phase 5 (Alerts + Geofence) verified end-to-end. Backend: 14/14 pytest tests pass across list/count/single-ack/bulk-ack/tenant-isolation/geofence-set-clear/validation/cross-tenant. Frontend: /test-fleet/alerts renders severity strip (2 critical, 3 warning), correct filter pill counts (Speeding=2, Unplug=1, Offline=1, Geofence=1), list sorted critical-first, red pulsing nav badge shows 5, single Ack removes the row, bulk 'Ack {type}' button appears when a filter is active, 'Acknowledge all' + browser confirm clears the list and shows the empty state. Bookings /test-fleet/bookings shows Geofence button ONLY on the 2 tracked cars (Ford Focus, Hyundai i30). GeofenceModal opens with all required data-testids, Save persists via PUT /api/vehicles/{id}/geofence, 'Use current position' fills lat/lon from tracker position API, button flips to 'Geofenced' with bg-purple-100 filled background after page refresh.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Geofence Save button label refresh",
+        "issue": "After Save, Bookings.js calls fetchData() to refresh cars, but the FleetBoard button label ('Geofence' -> 'Geofenced') and darker purple background only visibly refresh on a hard reload — the immediate re-render after fetchData shows the previous state for ~1.5-2s. Not a functional bug (the value is persisted, refresh recovers it), but slightly janky UX. Consider passing the updated car directly from onSaved payload and merging into local state without waiting for the full fetch.",
+        "affected_selectors": ["fleet-geofence-{car_id}"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "/alerts alert rows",
+        "issues": ["Alert rows display 'Vehicle' as the subject rather than the car name / registration. The alert docs stored by the seed (and by the poller) don't denormalize car_name/registration onto the alert. Consider enriching in the list endpoint by joining vehicles for a friendlier UI."]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_phase5_alerts_geofence.py",
+    "/app/backend/tests/seed_phase5_alerts.py",
+    "/app/test_reports/pytest/phase5_alerts.xml"
+  ],
+  "action_items": [
+    "(Optional) Denormalize car_name + registration onto alert documents (or enrich in list_tracker_alerts server-side) so the /alerts UI shows the vehicle instead of generic 'Vehicle'.",
+    "(Optional) In GeofenceModal onSaved, patch the affected car in local cars state so the 'Geofenced' label + filled purple bg reflect instantly without a full reload.",
+    "(Optional) Nav badge polls every 60s per Navigation.js; spec says 'decrements within 30s'. If the tighter SLA matters, drop the poll interval or trigger an immediate refresh on ack via a shared context."
+  ],
+  "critical_code_review_comments": [
+    "server.py set_vehicle_geofence radius guard uses `radius <= 0` — a value of 0.5 is currently accepted even though the modal label says 'between 1 and 5000 km'. Minor UX mismatch; either bump the server check to `< 1` or update the modal helper text.",
+    "list_tracker_alerts sorts by timestamp desc in Mongo then re-sorts in Python by severity — fine (Python sort is stable). No index on tracker_alerts(tenant_id, acknowledged, timestamp) — consider adding for scale.",
+    "Alerts.js polls listAlerts every 30s AND on includeAcked toggle — the second useEffect duplicates the includeAcked dep; harmless but the two effects could be merged."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_phase5_alerts_geofence.py (new)",
+    "/app/backend/tests/seed_phase5_alerts.py (new)"
+  ],
+  "success_rate": {"backend": "100% (14/14)", "frontend": "100% of tested flows"},
+  "test_credentials": "superadmin@quickwing.com / Super123 -> tenant test-fleet (id f95fbe53-46cc-4f29-af6b-b9ea51758cbd). Alt tenant B for isolation tests: 1ca4ea67-3094-40b7-9cfe-024a712de1f6 (test-iso-e6c7af).",
+  "seed_data_creation": "Created /app/backend/tests/seed_phase5_alerts.py — deletes all open alerts for Test Fleet then inserts 5 fresh ones (2 speeding [1 critical + 1 warning], 1 unplug critical, 1 offline warning, 1 geofence_exit warning). Idempotent, run with: `cd /app/backend && python -m tests.seed_phase5_alerts`. The pytest fixture `fresh_alerts` invokes it before and after each test that mutates alerts. Ford Focus geofence was cleared after the UI test to leave state clean.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend regression: `cd /app/backend && source .env && REACT_APP_BACKEND_URL=<preview_url> pytest tests/test_phase5_alerts_geofence.py -v`. To re-seed the 5 Phase 5 UI alerts: `python -m tests.seed_phase5_alerts`. Test Fleet tenant id f95fbe53-46cc-4f29-af6b-b9ea51758cbd, tracked cars Ford Focus 2f028b73-b82e-427e-992c-ccc99857e52d and Hyundai i30 39faf6ff-0e95-4be8-a24b-30b2b433cb4c. Alerts nav badge poll = 60s. Navigation: super admin lands on /platform; direct nav to /test-fleet/{page} auto-selects tenant via TenantLayout — first request may 400 while the token is being switched; wait 3-5s before asserting.",
+  "rca of the issue": "No P0/P1 issues. Two non-blocking UX notes: (a) alert rows show 'Vehicle' instead of car_name because the alert schema doesn't denormalize; (b) after saving a geofence, the FleetBoard button label appears one render cycle stale until fetchData resolves and re-renders — a hard reload shows the correct 'Geofenced' + filled purple bg. Both are ergonomic improvements, not correctness issues."
+}

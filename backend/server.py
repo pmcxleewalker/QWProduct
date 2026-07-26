@@ -1970,6 +1970,67 @@ async def get_car_tracker_position(
     return row
 
 
+@api_router.get("/tracker/history/{car_id}")
+async def get_car_history(
+    car_id: str,
+    date: str = Query(..., description="YYYY-MM-DD (UTC)"),
+    context: TenantContext = Depends(get_tenant_context),
+):
+    """Journey playback: return grouped trips for a car on a specific day.
+
+    - Trip detection: gap > 3 min between points = new trip
+    - Filters out trips where max_speed == 0 (pure stationary noise)
+    - Strictly tenant-scoped
+    """
+    # Ownership check so an admin can't read another tenant's car history
+    car = await db.vehicles.find_one(
+        {"id": car_id, "tenant_id": context.tenant_id}, {"_id": 0, "id": 1, "name": 1, "registration": 1}
+    )
+    if not car:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+
+    from services.gps_history_service import get_car_journeys
+    trips = await get_car_journeys(db, context.tenant_id, car_id, date)
+    return {
+        "car_id": car_id,
+        "car_name": car.get("name"),
+        "registration": car.get("registration"),
+        "date": date,
+        "trip_count": len(trips),
+        "trips": trips,
+    }
+
+
+@api_router.post("/tracker/history/{car_id}/seed-demo")
+async def seed_car_demo_history(
+    car_id: str,
+    days: int = Query(3, ge=1, le=14),
+    context: TenantContext = Depends(require_admin),
+):
+    """Backfill realistic demo trips for a demo-tracked car (idempotent).
+    Only works for tenants with GPS enabled and where the car has an
+    active `is_demo=True` tracker."""
+    tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    if not tenant or not tenant.get("gps_enabled"):
+        raise HTTPException(status_code=400, detail="Enable GPS Fleet Tracking first")
+
+    device = await db.tracker_devices.find_one(
+        {
+            "tenant_id": context.tenant_id,
+            "car_id": car_id,
+            "is_active": True,
+            "is_demo": True,
+        },
+        {"_id": 0},
+    )
+    if not device:
+        raise HTTPException(status_code=404, detail="No active demo tracker on this vehicle")
+
+    from services.gps_history_service import seed_demo_journeys
+    inserted = await seed_demo_journeys(db, context.tenant_id, device, days=days)
+    return {"ok": True, "inserted": inserted, "days": days}
+
+
 # ==================== COMPLIANCE ACKNOWLEDGMENTS ====================
 # Admins can mark a per-vehicle compliance issue (tax/NCT/insurance/service)
 # as "actioned" or "dismissed" so it disappears from the dashboard. The

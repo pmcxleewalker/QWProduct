@@ -241,6 +241,8 @@ export const trackerAPI = {
   deleteDevice: (id) => axios.delete(`${API}/tracker/devices/${id}`),
   listPositions: () => axios.get(`${API}/tracker/positions`),
   carPosition: (carId) => axios.get(`${API}/tracker/car/${carId}`),
+  history: (carId, date) => axios.get(`${API}/tracker/history/${carId}`, { params: { date } }),
+  seedDemoHistory: (carId, days = 3) => axios.post(`${API}/tracker/history/${carId}/seed-demo`, null, { params: { days } }),
 };
 
 export default { 

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, MapPin,
-  Clock, Zap, Navigation, Check, Ban, Radio,
+  Clock, Zap, Navigation, Check, Ban, Radio, Route,
 } from 'lucide-react';
 import { carAPI } from '../api/api';
 
@@ -274,7 +274,7 @@ const DropOffInline = ({ car, onSaved, onCancel }) => {
   );
 };
 
-const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, onDropOffSaved, onGoToLive }) => {
+const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, onDropOffSaved, onGoToLive, onOpenJourney, isTracked }) => {
   const { pills, freeHours, bookingCount, summary, status } = useMemo(
     () => summariseCarDay(car, allBookings, date, now),
     [car, allBookings, date, now]
@@ -371,6 +371,17 @@ const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, on
               <Radio size={14} /> Live
             </button>
           )}
+          {onOpenJourney && isTracked && (
+            <button
+              type="button"
+              onClick={() => onOpenJourney(car)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 border border-indigo-200 text-indigo-800 text-sm font-semibold rounded-lg hover:bg-indigo-100 transition-colors"
+              title="Replay this car's journeys"
+              data-testid={`fleet-journey-${car.id}`}
+            >
+              <Route size={14} /> Journey
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setDropOffOpen(true)}
@@ -386,7 +397,7 @@ const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, on
 };
 
 // ---------- main component ----------
-const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onOpenBooking, onCarsChanged, onGoToLive }) => {
+const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onOpenBooking, onCarsChanged, onGoToLive, onOpenJourney, trackedCarIds = null }) => {
   const [date, setDate] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -507,6 +518,8 @@ const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onOpenBooking, onCa
               onOpenBooking={onOpenBooking}
               onDropOffSaved={handleDropOffSaved}
               onGoToLive={onGoToLive}
+              onOpenJourney={onOpenJourney}
+              isTracked={trackedCarIds ? trackedCarIds.has(car.id) : false}
             />
           ))}
         </div>

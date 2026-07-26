@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { bookingAPI, carAPI, userAPI, settingsAPI } from '../api/api';
+import { bookingAPI, carAPI, userAPI, settingsAPI, trackerAPI } from '../api/api';
 import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Minus, AlertTriangle, Users, CheckCircle, UserCheck, LayoutGrid, Map as MapIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import EditBookingModal from '../components/EditBookingModal';
@@ -8,6 +8,7 @@ import BookingIntelligence from '../components/BookingIntelligence';
 import ErrorBoundary from '../components/ErrorBoundary';
 import FleetBoard from '../components/FleetBoard';
 import LiveMap from '../components/LiveMap';
+import JourneyPlayback from '../components/JourneyPlayback';
 
 const Bookings = () => {
   const { user } = useAuth();
@@ -47,6 +48,11 @@ const Bookings = () => {
   // When the user clicks "Live" on a Fleet Board card, we jump to the map
   // tab and focus that car's marker.
   const [focusCarId, setFocusCarId] = useState(null);
+  // Journey Playback modal (opens over Fleet Board when clicking "Journey")
+  const [journeyCar, setJourneyCar] = useState(null);
+  // Set of car_ids that currently have an active tracker (for showing the
+  // Journey button only on tracked cars).
+  const [trackedCarIds, setTrackedCarIds] = useState(() => new Set());
   
   const [formData, setFormData] = useState({
     car_id: carFromQR || '',
@@ -86,6 +92,25 @@ const Bookings = () => {
       .catch(() => { /* silent — settings failure shouldn't block bookings */ });
     return () => { cancelled = true; };
   }, []);
+
+  // Fetch tracker devices once GPS is enabled so we know which cars have
+  // an active tracker (Journey Playback button only appears on tracked cars).
+  useEffect(() => {
+    if (!gpsEnabled) return;
+    let cancelled = false;
+    trackerAPI.listDevices()
+      .then((res) => {
+        if (cancelled) return;
+        const ids = new Set(
+          (res.data || [])
+            .filter((d) => d.is_active && d.car_id)
+            .map((d) => d.car_id)
+        );
+        setTrackedCarIds(ids);
+      })
+      .catch(() => { /* silent */ });
+    return () => { cancelled = true; };
+  }, [gpsEnabled]);
 
   // Handle QR code car parameter - auto-select car and open booking form
   useEffect(() => {
@@ -1362,12 +1387,23 @@ const Bookings = () => {
               setMainView('map');
             }
           }}
+          onOpenJourney={(car) => {
+            if (trackedCarIds.has(car.id)) setJourneyCar(car);
+          }}
+          trackedCarIds={trackedCarIds}
         />
       )}
 
       {mainView === 'calendar' && renderCalendar()}
 
       {mainView === 'map' && gpsEnabled && <LiveMap cars={cars} focusCarId={focusCarId} />}
+
+      {journeyCar && (
+        <JourneyPlayback
+          car={journeyCar}
+          onClose={() => setJourneyCar(null)}
+        />
+      )}
 
       {/* Booking Preview Modal */}
       {selectedBooking && (

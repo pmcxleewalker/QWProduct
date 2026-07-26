@@ -690,6 +690,7 @@ const TenantDashboard = () => {
           icon: Car,
           subTabs: [
             { id: 'live-fleet', label: 'Live Status' },
+            { id: 'vehicles', label: 'Manage Vehicles' },
             { id: 'car-calendars', label: 'Car Calendars' },
             { id: 'all-cars', label: 'All Cars Calendar' }
           ]

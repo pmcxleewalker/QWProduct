@@ -1,0 +1,23 @@
+{
+  "summary": "Frontend re-test of GPS Phase 1 UI after the fix that registered the 'vehicles' sub-tab in Fleet.subTabs. All requested flows pass end-to-end: sub-tab renders in the correct order, Manage Vehicles view shows GPS button, modal opens, master checkbox toggles the advanced settings block, filled settings save via PUT /api/tenant/settings/gps, button label flips to 'GPS On' with emerald background, /bookings Live Map tab appears when GPS is enabled and disappears after disabling + reload.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_gps_settings_phase1.py"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "TenantDashboard.js is now ~3500 lines — well past the 700-line guideline. Consider splitting Fleet / Reports / Team / Overview into dedicated sub-components.",
+    "Non-blocking React warning in console: 'Received true for a non-boolean attribute jsx' (likely a styled-jsx boolean prop passed to a non-styled tag). Not caused by this iteration but worth cleaning up."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not-tested (unchanged per request)", "frontend": "100%"},
+  "test_credentials": "Fresh tenant created for retest: slug=gps-retest-1785063906, master admin admin.gps-retest-1785063906@quickwing.com / admin123 (professional plan, 1 seed vehicle 'Test Car 1' TEST-001).",
+  "seed_data_creation": "1) Created tenant 'GPS Retest gps-retest-1785063906' via POST /api/platform/tenants (super admin). 2) Added Test Car 1 via POST /api/vehicles as master admin so the setup-wizard redirect is skipped.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Playwright evidence collected: sub-tab order = [subtab-live-fleet, subtab-vehicles, subtab-car-calendars, subtab-all-cars]. GPS modal contract (gps-enabled-checkbox toggles gps-advanced-settings, gps-settings-save PUTs settings, gps-settings-btn label + emerald class reflect state). /{slug}/bookings reads gps.enabled once on mount – hard-reload required after toggle (documented behaviour). Note the tenant dashboard base URL is /{slug} (not /{slug}/dashboard).",
+  "rca of the issue": "Original bug (iteration 29): Fleet.subTabs did not include a 'vehicles' entry, so the render branch `activeTab==='fleet' && activeSubTab==='vehicles'` (which hosts the GPS settings button) was never reachable via the UI. Fix in TenantDashboard.js lines 691-696 adds {id:'vehicles', label:'Manage Vehicles'} to Fleet.subTabs, exposing the pre-existing render block and data-testids. Verified reachable and functional in this iteration."
+}

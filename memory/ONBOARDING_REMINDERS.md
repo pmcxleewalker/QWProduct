@@ -57,3 +57,22 @@ When the user next mentions onboarding/new clients OR scaling/growth:
 3. If user is asking about long-term growth, also remind them about 🟢 items (especially S3 photos)
 4. Ask if they want to knock these out before onboarding starts
 
+
+
+---
+
+## 🟡 REMIND USER — Resend email domain verification (added Feb 2026)
+
+**TRIGGER**: Before any real client onboarding, OR the next time user mentions staff invites / password resets / any email flow.
+
+**Current state**: `RESEND_API_KEY` in `/app/backend/.env` is a restricted onboarding key. It can only send FROM `onboarding@resend.dev` and only TO Lee's own gmail. Real staff-invite emails silently fail with `"The associated domain with your API key is not verified"`. Bluebird's Karen (and every other real staff member) never receives their activation email.
+
+**Mitigation already in place**: When email delivery fails, the resend endpoint returns an `activation_url` and the admin sees a copyable modal (`manual-invite-dialog` in TenantDashboard.js) — they can copy the link + temp password and share it via WhatsApp/SMS. So onboarding is technically possible today, just clunky.
+
+**What the user needs to do (2 options)**:
+- **Option A** (preferred): In Resend dashboard → Domains → add `send.quick-wing.com` → paste DNS records into Cloudflare/registrar → wait for verification (~10 min). No code change needed after that.
+- **Option B**: Generate a full-access Resend API key with an already-verified domain → paste into `RESEND_API_KEY` in backend .env → restart backend.
+
+Once done, `email_sent` will flip to `true` and the manual-invite modal will stop appearing. Zero code changes required.
+
+**Do NOT recreate Bluebird Care Dublin South unless user explicitly asks** — user confirmed Feb 2026 not to spin it up.

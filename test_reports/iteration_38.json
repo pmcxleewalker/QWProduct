@@ -1,0 +1,27 @@
+{
+  "summary": "Verified 'Resend Invite' fallback fix end-to-end. Backend: POST /api/tenant/users/{user_id}/resend-invitation returns 200 with the full contract {message, email_sent, email_error, temporary_password, activation_url}. activation_url is a well-formed https URL of shape https://<host>/<slug>/activate?token=<64-hex>. Token is persisted in db.activation_tokens with used=false and 7-day expiry (verified via direct Mongo query). Cross-tenant call correctly returns 404 'User is not a member of this tenant', staff-role call returns 403, and password_hash is reset to 'QuickWing123!' after resend (login as staff succeeds). Frontend: super-admin -> /test-fleet -> Team tab -> Resend Invite (Push Test user 9a870e59) -> confirm dialog -> manual-invite-dialog opens with activation URL (starts with https://, contains /activate?token=), password 'QuickWing123!', provider-error banner ('The associated domain with your API key is not verified'), Copy link & Copy password both fire success toasts (Activation link copied, Password copied), and Done closes the dialog. All required data-testids present: manual-invite-dialog, manual-invite-url, manual-invite-password, manual-invite-copy, manual-invite-copy-pw, manual-invite-close.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_resend_invitation_activation_url.py",
+    "/app/test_reports/pytest/iter38_resend.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py _issue_staff_invitation cleanly returns activation_url alongside sent/error — good separation. The resend endpoint (line 12175) unconditionally resets the user's password_hash BEFORE the email attempt; that is intentional (activation link needs to be usable regardless of delivery), documented in the code.",
+    "TenantDashboard.js manual-invite dialog is a plain fixed-overlay div (not a Radix/shadcn Dialog). It is functional and accessible (role=dialog, aria-modal), but does not auto-focus the URL field, does not trap focus, and does not close on Esc. Nice-to-have accessibility polish, not blocking.",
+    "Bluebird Care Dublin South is confirmed absent from the tenants collection (0 hits for /bluebird|dublin|karen/i). The Resend restriction on the platform Resend API key (onboarding@resend.dev only) is the true root cause of the original user-reported bug; the copyable-link fallback is the correct product mitigation."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (4/4 passed, 1 skipped — no public activation-token introspection endpoint)", "frontend": "100% (all assertions passed)"},
+  "test_credentials": "superadmin@quickwing.com / Super123 (impersonating test-fleet id f95fbe53-46cc-4f29-af6b-b9ea51758cbd)",
+  "seed_data_creation": "Created 1 disposable staff user in test-fleet during pytest run (TEST_resend_* prefix). Also triggered resend on the pre-seeded push.test staff user 9a870e59 via the UI.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Resend fallback is fully wired. If E1 later verifies the Resend sending domain (send.quick-wing.com) or upgrades the API key, email_sent should flip to true and the toast 'Invitation email sent' path will fire instead of the manual-invite-dialog. Both branches are handled in TenantDashboard.js handleResendInvitation (~line 656). No changes required.",
+  "rca of the issue": "Original user complaint that Resend Invite 'doesn't work' had two root causes: (1) the tenant they wanted (Bluebird Care Dublin South) does not exist in the DB after an earlier rollback — nothing to resend TO; (2) Resend API key on this deployment is restricted to onboarding@resend.dev with FROM=onboarding@resend.dev, so real deliveries silently fail with 'The associated domain with your API key is not verified'. E1's fix converts the silent-fail into an actionable UX: the endpoint always returns activation_url, and the frontend now surfaces a copyable modal so the admin can hand-deliver the activation link out-of-band. Verified working."
+}

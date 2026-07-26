@@ -12213,6 +12213,10 @@ async def resend_user_invitation(
         "email_sent": invite_result.get("sent", False),
         "email_error": invite_result.get("error"),
         "temporary_password": new_temp,
+        # Always surface the activation URL — when email delivery fails,
+        # admins can copy this link and hand it to the staff member via
+        # WhatsApp / SMS / another channel.
+        "activation_url": invite_result.get("activation_url"),
     }
 
 

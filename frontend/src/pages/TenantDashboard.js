@@ -648,6 +648,11 @@ const TenantDashboard = () => {
     setResetPwUser({ id: userId, name: userName, email: userEmail });
   };
 
+  // Activation-link fallback dialog: shown when the resend email API returns
+  // email_sent=false. Lets the admin copy the activation URL and hand it to
+  // the staff member out-of-band (WhatsApp / SMS).
+  const [manualInviteDialog, setManualInviteDialog] = useState(null);
+
   const handleResendInvitation = async (userId, userName) => {
     if (!await confirm({
       title: `Resend invitation to ${userName}?`,
@@ -658,9 +663,17 @@ const TenantDashboard = () => {
     try {
       const res = await axios.post(`${API}/tenant/users/${userId}/resend-invitation`);
       if (res.data?.email_sent) {
-        toast.success(`Invitation sent to ${userName}`);
+        toast.success(`Invitation email sent to ${userName}`);
       } else {
-        toast.warning(`User reset, but email failed: ${res.data?.email_error || 'unknown error'}`);
+        // Email delivery failed — surface a copyable activation link so the
+        // admin can share it directly. Common cause: Resend sending domain
+        // isn't verified yet, or API key is on the free-tier restricted plan.
+        setManualInviteDialog({
+          userName,
+          activationUrl: res.data?.activation_url,
+          temporaryPassword: res.data?.temporary_password,
+          errorMessage: res.data?.email_error || 'Email service returned an error.',
+        });
       }
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to resend invitation');
@@ -3528,6 +3541,107 @@ const TenantDashboard = () => {
 
       {/* Add padding at bottom for sticky button on mobile */}
       {isStaffUser && <div className="h-24 md:hidden"></div>}
+
+      {/* Manual invite fallback — shown when the resend endpoint could not
+          deliver the email (e.g. Resend sending domain not verified). Lets
+          the admin copy the activation URL and share it out-of-band. */}
+      {manualInviteDialog && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          data-testid="manual-invite-dialog"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="h-10 w-10 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0">
+                <AlertTriangle size={20} className="text-amber-600" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-lg font-semibold text-slate-900">Email delivery failed</h3>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  {manualInviteDialog.userName}&apos;s account has been reset, but the invitation email
+                  could not be sent. Copy the activation link below and share it with them directly.
+                </p>
+              </div>
+            </div>
+
+            {manualInviteDialog.errorMessage && (
+              <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-100 rounded-md px-3 py-2 mb-4">
+                <strong>Provider error:</strong> {manualInviteDialog.errorMessage}
+              </p>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                  Activation link (single-use, 7-day expiry)
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={manualInviteDialog.activationUrl || ''}
+                    onFocus={(e) => e.target.select()}
+                    className="flex-1 px-3 py-2 text-xs font-mono border border-slate-300 rounded-md bg-slate-50 focus:outline-none focus:border-blue-500"
+                    data-testid="manual-invite-url"
+                  />
+                  <button
+                    onClick={() => {
+                      if (manualInviteDialog.activationUrl) {
+                        navigator.clipboard.writeText(manualInviteDialog.activationUrl);
+                        toast.success('Activation link copied');
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                    data-testid="manual-invite-copy"
+                  >
+                    Copy link
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                  Temporary password (fallback if they open the app directly)
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={manualInviteDialog.temporaryPassword || ''}
+                    onFocus={(e) => e.target.select()}
+                    className="flex-1 px-3 py-2 text-sm font-mono border border-slate-300 rounded-md bg-slate-50 focus:outline-none focus:border-blue-500"
+                    data-testid="manual-invite-password"
+                  />
+                  <button
+                    onClick={() => {
+                      if (manualInviteDialog.temporaryPassword) {
+                        navigator.clipboard.writeText(manualInviteDialog.temporaryPassword);
+                        toast.success('Password copied');
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50"
+                    data-testid="manual-invite-copy-pw"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setManualInviteDialog(null)}
+                className="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+                data-testid="manual-invite-close"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

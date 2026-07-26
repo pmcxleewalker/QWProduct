@@ -4,6 +4,19 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - Feb 2026 — SinoTrack GPS Bridge · Phase 4 (Journey Playback)
+
+**What was built**: Animated route playback so admins can review any car's journeys for driver performance.
+
+- **New endpoint** `GET /api/tracker/history/{car_id}?date=YYYY-MM-DD` — reads tenant-scoped `tracker_history`, groups points into trips (gap > 3 min = new trip), drops noise trips whose max_speed == 0. Returns `{car_id, car_name, registration, date, trip_count, trips[]}`; each trip has `id, start_time, end_time, duration_min, max_speed, avg_speed, point_count, points[]`.
+- **New endpoint** `POST /api/tracker/history/{car_id}/seed-demo?days=3` — idempotent demo backfill (3-5 realistic trips per day per demo tracker). Skips days that already have >20 rows. Real trackers can't seed (404).
+- **New service** `/app/backend/services/gps_history_service.py` — trip grouping + demo backfill along the same city loops used by the live simulator.
+- **New component** `/app/frontend/src/components/JourneyPlayback.js` — modal with react-leaflet map (blue travelled polyline, gray remaining), animated car icon rotating by direction, green start / red end markers. Controls: Play/Pause, Skip Back/Forward, timeline scrubber, 1x/2x/4x/8x speed. Info tiles: Time, Speed, Voltage, Heading + point counter (`N/M`). Sidebar shows clickable trip list with `PLAYING` pill on active trip and per-trip stats (duration, max/avg speed, point count).
+- **FleetBoard integration** — "Journey" button appears only on TRACKED cars (`data-testid=fleet-journey-<car_id>`). `trackedCarIds` set is fetched from `trackerAPI.listDevices()` in `Bookings.js`.
+- **Multi-tenant safety** — all reads/writes filter by `tenant_id` + `car_id`; vehicle ownership pre-check returns 404 across tenants.
+- **Test coverage** — `/app/backend/tests/test_journey_playback.py` (9/9 pass): endpoint shape, seed idempotency, tenant isolation, trip grouping (>3 min gap = new trip, <3 min = same, all-zero-speed dropped).
+
+
 ### Bug Fix - Feb 2, 2026 — Empty "Fleet Reports" page
 
 Client reported the Admin → Reports tab showed only the date pickers + Export button with no metrics at all. Three issues stacked:

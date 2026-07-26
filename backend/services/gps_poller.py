@@ -38,6 +38,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from services.sinotrack_client import fetch_position
 from services import gps_demo_simulator
+from services import driver_behaviour_service as behaviour
 
 logger = logging.getLogger(__name__)
 
@@ -192,6 +193,26 @@ async def _process_device(tenant: dict, device: dict, speed_limit: int, device_p
             "timestamp": now_iso,
             "acknowledged": False,
         })
+        # Phase 6 — mirror to driver_behaviour_events (booking-linked)
+        await behaviour.detect_speeding(
+            _db, tenant_id, {"id": car_id, **car},
+            speed=speed, limit=speed_limit,
+            timestamp=now_iso, lat=pos_doc["lat"], lon=pos_doc["lon"],
+        )
+
+    # ---- Phase 6 harsh-driving detection (only when we have a prev fix) ----
+    if prev and prev.get("lat") is not None and speed > 0:
+        car_ctx = {"id": car_id, **car}
+        await behaviour.detect_harsh_braking(
+            _db, tenant_id, car_ctx,
+            prev_speed=prev_speed, new_speed=speed,
+            timestamp=now_iso, lat=pos_doc["lat"], lon=pos_doc["lon"],
+        )
+        await behaviour.detect_harsh_acceleration(
+            _db, tenant_id, car_ctx,
+            prev_speed=prev_speed, new_speed=speed,
+            timestamp=now_iso, lat=pos_doc["lat"], lon=pos_doc["lon"],
+        )
 
     # ---- Unplug detection (voltage drop) ----
     prev_voltage = (prev or {}).get("voltage")
@@ -218,6 +239,13 @@ async def _process_device(tenant: dict, device: dict, speed_limit: int, device_p
             "timestamp": now_iso,
             "acknowledged": False,
         })
+        # Phase 6 mirror
+        await behaviour.detect_disconnection(
+            _db, tenant_id, {"id": car_id, **car},
+            reason=f"Tracker unplugged (voltage {prev_voltage:.1f} V → {voltage:.1f} V)",
+            timestamp=now_iso, lat=pos_doc["lat"], lon=pos_doc["lon"],
+            extra={"voltage": voltage, "prev_voltage": prev_voltage},
+        )
 
     # ---- Geofence exit detection ----
     g_lat = car.get("geofence_center_lat")
@@ -313,6 +341,13 @@ async def _maybe_emit_offline_alert(
         "timestamp": now_iso,
         "acknowledged": False,
     })
+    # Phase 6 mirror — one disconnection event per offline transition
+    await behaviour.detect_disconnection(
+        _db, tenant_id, {"id": car_id, **car},
+        reason=f"Tracker went offline (silent {int(minutes)} min)",
+        timestamp=now_iso,
+        extra={"minutes_offline": int(minutes)},
+    )
 
 
 async def _sync_tenant(tenant: dict):

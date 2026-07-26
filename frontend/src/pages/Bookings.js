@@ -56,6 +56,8 @@ const Bookings = () => {
   // Set of car_ids that currently have an active tracker (for showing the
   // Journey button only on tracked cars).
   const [trackedCarIds, setTrackedCarIds] = useState(() => new Set());
+  // Phase 6 — live telemetry keyed by car_id, refreshed every 30 s.
+  const [telemetryByCar, setTelemetryByCar] = useState({});
   
   const [formData, setFormData] = useState({
     car_id: carFromQR || '',
@@ -113,6 +115,24 @@ const Bookings = () => {
       })
       .catch(() => { /* silent */ });
     return () => { cancelled = true; };
+  }, [gpsEnabled]);
+
+  // Fleet telemetry poller — refreshes every 30 s for the FleetBoard cards.
+  useEffect(() => {
+    if (!gpsEnabled) return;
+    let cancelled = false;
+    const fetchTelemetry = async () => {
+      try {
+        const { data } = await trackerAPI.telemetry();
+        if (cancelled) return;
+        const map = {};
+        (data?.telemetry || []).forEach((t) => { map[t.car_id] = t; });
+        setTelemetryByCar(map);
+      } catch { /* silent */ }
+    };
+    fetchTelemetry();
+    const t = setInterval(fetchTelemetry, 30000);
+    return () => { cancelled = true; clearInterval(t); };
   }, [gpsEnabled]);
 
   // Handle QR code car parameter - auto-select car and open booking form
@@ -1397,6 +1417,7 @@ const Bookings = () => {
             if (trackedCarIds.has(car.id)) setGeofenceCar(car);
           }}
           trackedCarIds={trackedCarIds}
+          telemetryByCar={telemetryByCar}
         />
       )}
 

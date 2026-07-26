@@ -4,6 +4,7 @@ import {
   Clock, Zap, Navigation, Check, Ban, Radio, Route, ShieldAlert,
 } from 'lucide-react';
 import { carAPI } from '../api/api';
+import FleetTelemetryPanel from './FleetTelemetryPanel';
 
 /**
  * FleetBoard
@@ -274,7 +275,7 @@ const DropOffInline = ({ car, onSaved, onCancel }) => {
   );
 };
 
-const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, onDropOffSaved, onGoToLive, onOpenJourney, onOpenGeofence, isTracked }) => {
+const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, onDropOffSaved, onGoToLive, onOpenJourney, onOpenGeofence, isTracked, telemetry }) => {
   const { pills, freeHours, bookingCount, summary, status } = useMemo(
     () => summariseCarDay(car, allBookings, date, now),
     [car, allBookings, date, now]
@@ -339,6 +340,13 @@ const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, on
         isToday={isSameYMD(date, now)}
         now={now}
       />
+
+      {isTracked && telemetry && (
+        <FleetTelemetryPanel
+          telemetry={telemetry}
+          testIdPrefix={`fleet-telemetry-${car.id}`}
+        />
+      )}
 
       {dropOffOpen ? (
         <DropOffInline
@@ -412,7 +420,7 @@ const FleetCard = ({ car, allBookings, date, now, onQuickBook, onOpenBooking, on
 };
 
 // ---------- main component ----------
-const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onOpenBooking, onCarsChanged, onGoToLive, onOpenJourney, onOpenGeofence, trackedCarIds = null }) => {
+const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onOpenBooking, onCarsChanged, onGoToLive, onOpenJourney, onOpenGeofence, trackedCarIds = null, telemetryByCar = {} }) => {
   const [date, setDate] = useState(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -536,6 +544,7 @@ const FleetBoard = ({ cars = [], bookings = [], onQuickBook, onOpenBooking, onCa
               onOpenJourney={onOpenJourney}
               onOpenGeofence={onOpenGeofence}
               isTracked={trackedCarIds ? trackedCarIds.has(car.id) : false}
+              telemetry={telemetryByCar[car.id]}
             />
           ))}
         </div>

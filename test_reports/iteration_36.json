@@ -1,0 +1,43 @@
+{
+  "summary": "Phase 6 (Fleet Telemetry + Driver Behaviour) — Backend 100% green (14/14 pytest). Fleet Telemetry Panel on /test-fleet/bookings works correctly (LIVE/DEMO badge, all 6 tiles, lazy-fetched Nominatim addresses, only on the 2 tracked cars). The Behaviour dashboard page (/test-fleet/behaviour) CRASHES on load with 'users.map is not a function' due to a response-shape mismatch between userAPI.getAll() (returns {users:[...]}) and Behaviour.js which treats it as an array. All /behaviour UI-level assertions (summary tiles, filters, top-staff card, no-scoring check) are BLOCKED until this is fixed. Explicitly verified backend has NO scoring/grading fields (endpoints only return by_type + top_staff counts).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "pages/Behaviour.js",
+        "issue": "Runtime crash on mount: `users.map is not a function`. Line 61 does `setUsers(usersRes.value.data || [])` but /api/tenant/users returns `{users:[...]}` (object), not an array. When line 208 calls `users.map(...)` the whole page falls back to the ErrorBoundary ('Hmm, something hiccupped'). Fix: `setUsers((usersRes.value.data && usersRes.value.data.users) || [])`.",
+        "selector": "n/a (entire /behaviour route)",
+        "priority": "CRITICAL"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_phase6_behaviour_telemetry.py",
+    "/app/test_reports/pytest/phase6.xml"
+  ],
+  "action_items": [
+    "Fix /app/frontend/src/pages/Behaviour.js line 61: unwrap `.users` from the /api/tenant/users response before setUsers(). One-liner. This unblocks 100% of the /behaviour UI checks (summary tiles, top-staff click filter, filter dropdowns, no-scoring verification).",
+    "(Optional) Consider normalising userAPI.getAll() in /app/frontend/src/api/api.js to `.then(r => ({...r, data: r.data.users || []}))` so every consumer gets an array consistently."
+  ],
+  "critical_code_review_comments": [
+    "Behaviour.js assumes userAPI.getAll() returns an array while the backend endpoint /api/tenant/users returns `{users:[...]}`. Response-shape contract is not enforced.",
+    "fleet_telemetry_service.build_telemetry runs one Mongo query per car per request for mileage_today (N+1). Fine at 2 cars but if a tenant has 50+ trackers this becomes a hotspot — consider an aggregation with $bucket by car_id.",
+    "driver_behaviour_service._find_active_booking uses lexicographic string compare on ISO timestamps — works because all timestamps are UTC with the same offset, but fragile if a booking is ever stored with a different tz suffix.",
+    "reverse_geocode endpoint has no client-side rate limit — a bulk-fetch client could exceed Nominatim's 1 req/sec. Consider a per-tenant semaphore or in-process rate limiter."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_phase6_behaviour_telemetry.py (new)"
+  ],
+  "success_rate": {"backend": "100% (14/14)", "frontend": "50% — telemetry panel fully verified; /behaviour dashboard blocked by users.map crash"},
+  "test_credentials": "superadmin@quickwing.com / Super123 → impersonates tenant test-fleet (f95fbe53-46cc-4f29-af6b-b9ea51758cbd)",
+  "seed_data_creation": "None. Relied on the 7 behaviour events pre-seeded in Mongo. Backend tests use synthetic timestamps and clean up after themselves.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend regression: `cd /app/backend && MONGO_URL=mongodb://localhost:27017 DB_NAME=quick_wing_db REACT_APP_BACKEND_URL=<preview_url> pytest tests/test_phase6_behaviour_telemetry.py -v`. After the users.map fix, replay the /behaviour UI tests: log in as superadmin → GET /test-fleet/behaviour → assert 5 summary tiles (Total >=7, Speeding >=3, Braking >=2, Accel >=1, Disconnection >=1), 5 filter testids (behaviour-filter-type/car/staff/from/to), behaviour-top-staff-<staff_id> rows for Alice Murphy (>=4) and Ben Kelly (>=2), and confirm NO 'Leaderboard'/'Grade'/'Score:' strings anywhere on the page. Telemetry panel (bookings) already verified — Dublin/Limerick addresses render via Nominatim (2183 km and 2395 km today values are demo simulator artefacts, expected). Note super admin lands on /platform after login; navigating to /test-fleet/{page} works but the first render may 400 for ~1-2s while the tenant token is switched — reload once for a clean state.",
+  "rca of the issue": "Behaviour.js has an incorrect assumption about the shape of the /api/tenant/users response. It expects an array but the endpoint returns `{users:[...]}`. When rendering the staff filter <select> it calls users.map(...) which throws 'users.map is not a function' → React ErrorBoundary catches it and displays the generic 'Hmm, something hiccupped' card. Reproduction: log in as superadmin@quickwing.com → navigate to /test-fleet/behaviour → error card appears immediately. Mitigation: change line 61 of /app/frontend/src/pages/Behaviour.js from `if (usersRes.status === 'fulfilled') setUsers(usersRes.value.data || []);` to `if (usersRes.status === 'fulfilled') setUsers((usersRes.value.data && usersRes.value.data.users) || []);`."
+}

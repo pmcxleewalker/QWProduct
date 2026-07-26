@@ -249,6 +249,16 @@ export const trackerAPI = {
   ackAlert: (id) => axios.post(`${API}/tracker/alerts/${id}/ack`),
   ackBulk: (type = null) => axios.post(`${API}/tracker/alerts/ack-bulk`, type ? { type } : {}),
   setGeofence: (carId, data) => axios.put(`${API}/vehicles/${carId}/geofence`, data),
+  // Phase 6 — telemetry + behaviour
+  telemetry: () => axios.get(`${API}/tracker/telemetry`),
+  geocode: (lat, lon) => axios.get(`${API}/tracker/geocode`, { params: { lat, lon } }),
+};
+
+// Driver Behaviour Monitoring (Phase 6). NOT a scoring system — just an
+// event feed with booking/staff linkage.
+export const behaviourAPI = {
+  listEvents: (filters = {}) => axios.get(`${API}/behaviour/events`, { params: filters }),
+  summary: (windowDays = 7) => axios.get(`${API}/behaviour/summary`, { params: { window_days: windowDays } }),
 };
 
 export default { 

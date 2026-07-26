@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Crown, Building2, Eye, Shield, BarChart3, Scale, AlertTriangle } from 'lucide-react';
+import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Crown, Building2, Eye, Shield, BarChart3, Scale, AlertTriangle, ShieldAlert } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { liftRequestAPI, trackerAPI } from '../api/api';
@@ -131,6 +131,13 @@ const Navigation = ({ tenantSlug }) => {
       label: 'Alerts',
       badge: alertCounts.total || 0,
       badgeCritical: alertCounts.critical || 0,
+    });
+    // Driver Behaviour dashboard — sits next to Alerts. No badge; the
+    // feed is browsed on demand.
+    navItems.splice(navItems.length - 1, 0, {
+      path: getTenantPath('/behaviour'),
+      icon: ShieldAlert,
+      label: 'Behaviour',
     });
   }
 

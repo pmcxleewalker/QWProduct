@@ -2170,6 +2170,107 @@ async def set_vehicle_geofence(
     return {"ok": True, **update}
 
 
+# ==================== FLEET TELEMETRY (Phase 6) ====================
+# Aggregated live telemetry for every tracked car in the current tenant.
+# Frontend re-polls this every 30 s to power the fleet cards.
+
+@api_router.get("/tracker/telemetry")
+async def get_fleet_telemetry(
+    context: TenantContext = Depends(get_tenant_context),
+):
+    from services.fleet_telemetry_service import build_telemetry
+    rows = await build_telemetry(db, context.tenant_id)
+    return {"telemetry": rows, "count": len(rows)}
+
+
+@api_router.get("/tracker/geocode")
+async def reverse_geocode(
+    lat: float = Query(...),
+    lon: float = Query(...),
+    context: TenantContext = Depends(get_tenant_context),
+):
+    """Reverse-geocode a single lat/lon via cached OpenStreetMap Nominatim.
+    Called lazily by the FleetBoard card once per car when the telemetry
+    payload has no cached address."""
+    from services.fleet_telemetry_service import resolve_address
+    address = await resolve_address(db, lat, lon)
+    return {"address": address}
+
+
+# ==================== DRIVER BEHAVIOUR EVENTS (Phase 6) ====================
+# Feed of flagged driving events for admin review. NOT a scoring system —
+# just raw events with booking + staff linkage. Filters: type, car,
+# staff, date range.
+
+@api_router.get("/behaviour/events")
+async def list_behaviour_events(
+    event_type: Optional[str] = Query(None, alias="type"),
+    car_id: Optional[str] = Query(None),
+    staff_id: Optional[str] = Query(None),
+    from_date: Optional[str] = Query(None, description="ISO date/datetime, inclusive lower bound"),
+    to_date: Optional[str] = Query(None, description="ISO date/datetime, inclusive upper bound"),
+    limit: int = Query(200, ge=1, le=1000),
+    context: TenantContext = Depends(get_tenant_context),
+):
+    query: dict = {"tenant_id": context.tenant_id}
+    if event_type:
+        if event_type not in {"speeding", "harsh_braking", "harsh_acceleration", "disconnection"}:
+            raise HTTPException(status_code=400, detail="Unknown event type")
+        query["type"] = event_type
+    if car_id:
+        query["car_id"] = car_id
+    if staff_id:
+        query["staff_id"] = staff_id
+    if from_date or to_date:
+        ts_q: dict = {}
+        if from_date:
+            ts_q["$gte"] = from_date
+        if to_date:
+            ts_q["$lte"] = to_date
+        query["timestamp"] = ts_q
+
+    events = await db.driver_behaviour_events.find(query, {"_id": 0}).sort(
+        "timestamp", -1
+    ).to_list(limit)
+    return {"events": events, "count": len(events)}
+
+
+@api_router.get("/behaviour/summary")
+async def behaviour_summary(
+    window_days: int = Query(7, ge=1, le=90),
+    context: TenantContext = Depends(get_tenant_context),
+):
+    """Summary stats for the /behaviour dashboard: totals by type + worst
+    offenders (staff members with the most events) inside the window."""
+    from_iso = (datetime.now(timezone.utc) - timedelta(days=window_days)).isoformat()
+    pipeline_type = [
+        {"$match": {"tenant_id": context.tenant_id, "timestamp": {"$gte": from_iso}}},
+        {"$group": {"_id": "$type", "count": {"$sum": 1}}},
+    ]
+    pipeline_staff = [
+        {"$match": {"tenant_id": context.tenant_id, "timestamp": {"$gte": from_iso}, "staff_id": {"$ne": None}}},
+        {"$group": {
+            "_id": "$staff_id",
+            "count": {"$sum": 1},
+            "staff_name": {"$first": "$staff_name"},
+        }},
+        {"$sort": {"count": -1}},
+        {"$limit": 5},
+    ]
+    by_type = {row["_id"]: row["count"] async for row in db.driver_behaviour_events.aggregate(pipeline_type)}
+    top_staff = [
+        {"staff_id": row["_id"], "staff_name": row.get("staff_name") or "Unknown", "count": row["count"]}
+        async for row in db.driver_behaviour_events.aggregate(pipeline_staff)
+    ]
+    total = sum(by_type.values())
+    return {
+        "window_days": window_days,
+        "total": total,
+        "by_type": by_type,
+        "top_staff": top_staff,
+    }
+
+
 # ==================== COMPLIANCE ACKNOWLEDGMENTS ====================
 # Admins can mark a per-vehicle compliance issue (tax/NCT/insurance/service)
 # as "actioned" or "dismissed" so it disappears from the dashboard. The

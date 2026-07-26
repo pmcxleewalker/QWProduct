@@ -1415,9 +1415,24 @@ const Bookings = () => {
         <GeofenceModal
           car={geofenceCar}
           onClose={() => setGeofenceCar(null)}
-          onSaved={() => {
+          onSaved={(updated) => {
+            // Patch the car in local state so the FleetBoard's "Geofence" ->
+            // "Geofenced" label + filled purple bg reflect immediately,
+            // without waiting for a full fetchData round-trip.
+            setCars((prev) =>
+              prev.map((c) =>
+                c.id === geofenceCar.id
+                  ? {
+                      ...c,
+                      geofence_center_lat: updated.geofence_center_lat,
+                      geofence_center_lon: updated.geofence_center_lon,
+                      geofence_radius_km: updated.geofence_radius_km,
+                      geofence_label: updated.geofence_label,
+                    }
+                  : c
+              )
+            );
             setGeofenceCar(null);
-            fetchData();
           }}
         />
       )}

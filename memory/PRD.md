@@ -4,6 +4,29 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - Feb 2026 — SinoTrack GPS Bridge · Phase 5 (Alerts + Geofence)
+
+**What was built**: Speeding, unplug, offline, and geofence alerts with tenant-configurable thresholds. Full alerts dashboard + acknowledge flow + nav badge.
+
+- **Poller enhancements** (`services/gps_poller.py`):
+  - Speeding alerts now carry `severity`: warning (1-30 km/h over), critical (30+ over).
+  - `unplug` alerts: critical severity when voltage falls from >10 V to <5 V between polls.
+  - `offline` alerts: emitted when a previously-online tracker has been silent >=10 min (warning) or >=60 min (critical). Deduped — the open row's severity/timestamp escalates instead of piling up.
+  - `geofence_exit` alerts: when the vehicle's fix is farther than `vehicle.geofence_radius_km` from `vehicle.geofence_center_lat/lon` (haversine). Deduped like offline.
+- **API endpoints** (all tenant-scoped):
+  - `GET /api/tracker/alerts` — list (default excludes acked), sorted critical-first.
+  - `GET /api/tracker/alerts/count` — `{total, critical}` for nav badge.
+  - `POST /api/tracker/alerts/{id}/ack` — single ack (admin).
+  - `POST /api/tracker/alerts/ack-bulk` — `{type?}` bulk ack (admin).
+  - `PUT /api/vehicles/{car_id}/geofence` — set/clear geofence (admin). Validates all-or-none, radius 1-5000 km.
+- **Vehicle model**: added `geofence_center_lat/lon`, `geofence_radius_km`, `geofence_label`. `GeofenceUpdate` payload model.
+- **Alerts dashboard** (`/app/frontend/src/pages/Alerts.js`, route `/alerts`): severity summary strip, type filter pills with counts, per-alert Ack button, bulk "Ack {type}" and "Acknowledge all". Auto-polls every 30 s.
+- **Nav badge** (`Navigation.js`): tenant admins on GPS-enabled tenants see the Alerts nav item with a red pulsing badge (or amber if no critical) showing unacknowledged count. Polls `alertsCount` every 60 s.
+- **Geofence editor** (`GeofenceModal.js`): lat/lon/radius/label form, "Use vehicle's current tracker position" auto-fill, Save + Clear. Opened from FleetBoard's "Geofence" button which appears only on tracked cars.
+- **Multi-tenant safety**: every read/write is scoped by `tenant_id`; cross-tenant ack returns 404 (verified in 14/14 pytest).
+- **Test coverage**: `/app/backend/tests/test_phase5_alerts_geofence.py` (14/14 pass) + frontend E2E via testing_agent (severity strip, filter pills, single + bulk ack, geofence save flow).
+
+
 ### Feature - Feb 2026 — SinoTrack GPS Bridge · Phase 4 (Journey Playback)
 
 **What was built**: Animated route playback so admins can review any car's journeys for driver performance.

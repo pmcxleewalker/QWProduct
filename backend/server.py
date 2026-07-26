@@ -2153,8 +2153,8 @@ async def set_vehicle_geofence(
     if any(v is not None for v in (lat, lon, radius)) and not all(v is not None for v in (lat, lon, radius)):
         raise HTTPException(status_code=400, detail="Provide lat, lon and radius together (or all null to clear)")
 
-    if radius is not None and (radius <= 0 or radius > 5000):
-        raise HTTPException(status_code=400, detail="Radius must be between 0 and 5000 km")
+    if radius is not None and (radius < 1 or radius > 5000):
+        raise HTTPException(status_code=400, detail="Radius must be between 1 and 5000 km")
 
     update = {
         "geofence_center_lat": lat,

@@ -4,6 +4,22 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Bug Fix - Feb 2026 — Resend Invite fallback (Bluebird investigation)
+
+**User report**: "Resend button for sending staff their login email doesn't work — especially for Bluebird Dublin South."
+
+**Root cause (two things)**:
+1. **Bluebird Care Dublin South tenant does not exist** in the current database (0 hits for `bluebird`/`dublin`/`karen` — likely wiped in an earlier rollback; 67 tenants total).
+2. **Resend API key is restricted** — free-tier onboarding key that only allows FROM `onboarding@resend.dev` and sending to Lee's own gmail. The custom sender `invites@send.quick-wing.com` (domain `send.quick-wing.com`) is not verified in Resend, so every real send returns `"The associated domain with your API key is not verified"`.
+
+**Fix delivered** — turned a silent failure into an actionable admin workflow:
+- **Backend**: `POST /api/tenant/users/{user_id}/resend-invitation` now returns `activation_url` in every response (even on email failure). Activation token is persisted regardless of delivery outcome.
+- **Frontend**: `pages/TenantDashboard.js` — on `email_sent=false`, opens a copyable modal (`manual-invite-dialog`) with the activation URL and temporary password. Admin can copy either and share via WhatsApp/SMS. Modal shows the underlying provider error so the admin knows *why* delivery failed.
+- **Testing**: 4/4 backend pytest pass + full frontend E2E (iteration_38) — 100% pass. Cross-tenant 404, staff 403, password reset, copyable link + password with Copy toasts, provider error banner, all data-testids verified.
+
+**Action required from user** (not code): Verify `send.quick-wing.com` DNS records in the Resend dashboard OR provide a full-access Resend API key. Once done, `email_sent` will flip to true automatically — no further code changes needed.
+
+
 ### Feature - Feb 2026 — SinoTrack GPS Bridge · Phase 6 (Telemetry Cards + Driver Behaviour)
 
 **What was built**: Live fleet telemetry cards on the FleetBoard, plus a driver-behaviour event feed for admin review. Explicitly NOT a scoring/grading system.

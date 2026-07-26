@@ -1727,3 +1727,39 @@ recommendations to beat them, then approved building the full P0+P1 stack.
 - `/app/backend/tests/test_demo_magic_link.py` — NEW (9 regression tests, added by testing agent)
 
 **Test credentials for demo:** none — the whole point is that the magic link opens the demo without credentials. For creating demo tenants, use `superadmin@quickwing.com / Super123`.
+
+
+## 2026-02 — SinoTrack GPS Bridge Phase 1: Toggle plumbing
+
+**Spec:** /app/memory/SINOTRACK_MULTI_TENANT_PROMPT.md (Phase 1 of 7).
+
+**Scope:** Just the on/off switch. No poller yet, no positions written. Prep the tenant model + settings + UI so Phase 2's poller can just flip on.
+
+**Backend:**
+- `Tenant` model — new fields `gps_enabled: bool = False`, `gps_settings: Optional[dict]` (spec dict shape).
+- `TenantCreate` — new field `gps_enabled: bool = False`; when true at creation, `gps_settings` is seeded with `GPS_DEFAULTS` (speed_limit_kmh=120, poll_interval_seconds=30, history_retention_days=60, device_password="123456").
+- `TenantUpdate` — accepts `gps_enabled` and `gps_settings` overrides.
+- `GET /api/tenant/settings` — now returns a `gps` block with the tenant's current state (defaults when unset).
+- `PUT /api/tenant/settings/gps` — new admin-only endpoint with `GpsSettingsUpdate` schema. Enabling seeds defaults on first flip. Disabling retains previous overrides. Clamps applied: speed 30-300, poll 10-600 s, retention 7-730 days. Invalidates settings cache.
+
+**Frontend:**
+- New `/app/frontend/src/components/GpsSettingsModal.js` — master checkbox + collapsible advanced fields (speed limit, poll interval, retention, device password) + Save. All fields carry data-testids per spec.
+- `TenantDashboard.js` — imports the modal, loads `gps` from settings, adds a **GPS On/Off** button next to Compliance Reminders in the **Fleet → Manage Vehicles** sub-tab (Fleet.subTabs updated to include `{id: 'vehicles', label: 'Manage Vehicles'}` so the block is reachable), added `Satellite` icon import.
+- `PlatformAdmin.js` — Create Client form has a new **Enable GPS Fleet Tracking (SinoTrack)** checkbox (data-testid=create-tenant-gps-enabled) available in both Real and Demo modes. `newTenant.gps_enabled` state, reset after submit.
+- `Bookings.js` — imports `settingsAPI`, reads `gps.enabled` once on mount, filters the **Live Map** tab out of `fleet-view-tabs` when disabled, guards the map render.
+- `LiveMap.js` — docstring updated to reflect Phase 1 status.
+- `api.js` — new `settingsAPI.updateGps(data)`.
+
+**Tested end-to-end (testing agent, iteration_29 + iteration_30):**
+- Backend 9/9 new pytest at `/app/backend/tests/test_gps_settings_phase1.py` — defaults, enable+seed, partial update, disable-retains, clamps, staff 403, tenant-create honours gps_enabled, tenant-create defaults null.
+- Regression 27/28 prior demo tests (1 pre-existing skip).
+- Frontend 100% pass — Manage Vehicles sub-tab added and reachable, GPS button visible + label reflects state, modal all testids present, save persists, Live Map tab appears/disappears with the toggle.
+
+**Not tested / deferred to Phase 2:**
+- Actual SinoTrack cloud polling
+- Tracker device registration UI
+- Live positions written to `tracker_positions` / `tracker_history`
+- Speed / unplug alerts
+
+**Data-testids added:**
+`create-tenant-gps-enabled`, `gps-settings-btn`, `gps-settings-modal`, `gps-enabled-checkbox`, `gps-advanced-settings`, `gps-speed-limit`, `gps-poll-interval`, `gps-history-days`, `gps-device-password`, `gps-settings-save`.

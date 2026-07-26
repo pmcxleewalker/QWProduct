@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { bookingAPI, carAPI, userAPI } from '../api/api';
+import { bookingAPI, carAPI, userAPI, settingsAPI } from '../api/api';
 import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Minus, AlertTriangle, Users, CheckCircle, UserCheck, LayoutGrid, Map as MapIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import EditBookingModal from '../components/EditBookingModal';
@@ -41,6 +41,9 @@ const Bookings = () => {
   // Defaults to the new Fleet Board — this is the primary way we want admins
   // to see live vehicle status and daily bookings from now on.
   const [mainView, setMainView] = useState('fleet');
+  // GPS Fleet Tracking toggle (Phase 1): controls whether the Live Map tab
+  // is even shown. When false, tab is hidden entirely per the spec.
+  const [gpsEnabled, setGpsEnabled] = useState(false);
   
   const [formData, setFormData] = useState({
     car_id: carFromQR || '',
@@ -62,6 +65,23 @@ const Bookings = () => {
     // Auto-refresh every 30 seconds
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Read GPS toggle from tenant settings so we can conditionally show the
+  // Live Map tab (Phase 1 of the SinoTrack bridge).
+  useEffect(() => {
+    let cancelled = false;
+    settingsAPI.get()
+      .then((res) => {
+        if (cancelled) return;
+        const enabled = !!res?.data?.gps?.enabled;
+        setGpsEnabled(enabled);
+        // If we were on the map tab but GPS just got disabled elsewhere,
+        // fall back to Fleet Board so we don't leave a dead tab selected.
+        setMainView((v) => (v === 'map' && !enabled ? 'fleet' : v));
+      })
+      .catch(() => { /* silent — settings failure shouldn't block bookings */ });
+    return () => { cancelled = true; };
   }, []);
 
   // Handle QR code car parameter - auto-select car and open booking form
@@ -1287,7 +1307,9 @@ const Bookings = () => {
         {[
           { key: 'fleet',    icon: LayoutGrid,   label: 'Fleet Board' },
           { key: 'calendar', icon: CalendarIcon, label: 'All Cars Calendar' },
-          { key: 'map',      icon: MapIcon,      label: 'Live Map' },
+          // Live Map tab is only visible when GPS Fleet Tracking is enabled
+          // for this tenant. Phase 1 of the SinoTrack bridge.
+          ...(gpsEnabled ? [{ key: 'map', icon: MapIcon, label: 'Live Map' }] : []),
         ].map(({ key, icon: Icon, label }) => (
           <button
             key={key}
@@ -1336,7 +1358,7 @@ const Bookings = () => {
 
       {mainView === 'calendar' && renderCalendar()}
 
-      {mainView === 'map' && <LiveMap cars={cars} />}
+      {mainView === 'map' && gpsEnabled && <LiveMap cars={cars} />}
 
       {/* Booking Preview Modal */}
       {selectedBooking && (

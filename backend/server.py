@@ -1051,6 +1051,8 @@ async def create_tenant(
         "feature_overrides": tenant_data.feature_overrides or {},
         "subscription_expires_at": None,
         "is_demo": bool(tenant_data.is_demo),
+        "gps_enabled": bool(getattr(tenant_data, "gps_enabled", False)),
+        "gps_settings": dict(GPS_DEFAULTS) if getattr(tenant_data, "gps_enabled", False) else None,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
@@ -1561,6 +1563,16 @@ async def get_tenant_settings(context: TenantContext = Depends(require_tenant_co
             "enable_nct_alerts": compliance_settings.get("enable_nct_alerts", True),
             "enable_insurance_alerts": compliance_settings.get("enable_insurance_alerts", True),
             "enable_service_alerts": compliance_settings.get("enable_service_alerts", True)
+        },
+        # GPS Fleet Tracking (SinoTrack bridge). Frontend uses `enabled` to
+        # gate the Live Map tab and all tracker UI. Phase 1 = toggle only;
+        # the actual poller lands in Phase 2.
+        "gps": {
+            "enabled": bool(tenant.get("gps_enabled", False)),
+            "speed_limit_kmh": (tenant.get("gps_settings") or {}).get("speed_limit_kmh", 120),
+            "poll_interval_seconds": (tenant.get("gps_settings") or {}).get("poll_interval_seconds", 30),
+            "history_retention_days": (tenant.get("gps_settings") or {}).get("history_retention_days", 60),
+            "device_password": (tenant.get("gps_settings") or {}).get("device_password", "123456"),
         }
     }
     await ttl_cache.set(tenant_settings_key(context.tenant_id), response, ttl=30)
@@ -1692,6 +1704,92 @@ async def update_compliance_settings(
             "enable_insurance_alerts": compliance_settings.get("enable_insurance_alerts", True),
             "enable_service_alerts": compliance_settings.get("enable_service_alerts", True)
         }
+    }
+
+
+# ==================== GPS FLEET TRACKING (Phase 1: settings only) ====================
+# The SinoTrack bridge (Phase 2+) writes tracker positions / history into
+# tenant-scoped collections. Phase 1 exposes only the on/off toggle + a few
+# knobs so tenants can be onboarded ahead of the poller landing.
+
+class GpsSettingsUpdate(BaseModel):
+    """Payload for PUT /api/tenant/settings/gps. All fields optional so the
+    caller can flip just the toggle or just the speed limit."""
+    enabled: Optional[bool] = None
+    speed_limit_kmh: Optional[int] = None       # default 120
+    poll_interval_seconds: Optional[int] = None # default 30
+    history_retention_days: Optional[int] = None # default 60
+    device_password: Optional[str] = None       # default "123456"
+
+
+GPS_DEFAULTS = {
+    "speed_limit_kmh": 120,
+    "poll_interval_seconds": 30,
+    "history_retention_days": 60,
+    "device_password": "123456",
+}
+
+
+def _gps_response(tenant: dict) -> dict:
+    """Shape the GPS block returned by settings endpoints."""
+    gs = tenant.get("gps_settings") or {}
+    return {
+        "enabled": bool(tenant.get("gps_enabled", False)),
+        "speed_limit_kmh": gs.get("speed_limit_kmh", GPS_DEFAULTS["speed_limit_kmh"]),
+        "poll_interval_seconds": gs.get("poll_interval_seconds", GPS_DEFAULTS["poll_interval_seconds"]),
+        "history_retention_days": gs.get("history_retention_days", GPS_DEFAULTS["history_retention_days"]),
+        "device_password": gs.get("device_password", GPS_DEFAULTS["device_password"]),
+    }
+
+
+@api_router.put("/tenant/settings/gps")
+async def update_gps_settings(
+    payload: GpsSettingsUpdate,
+    context: TenantContext = Depends(require_admin),
+):
+    """Toggle GPS Fleet Tracking and configure its per-tenant knobs.
+    Admin-only. Enabling initialises `gps_settings` with defaults; disabling
+    retains the settings so data isn't lost. The Phase 2 poller loop simply
+    skips tenants where gps_enabled is false."""
+    tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    update_fields = {}
+    if payload.enabled is not None:
+        update_fields["gps_enabled"] = bool(payload.enabled)
+        # First-time enable: seed defaults if none stored yet
+        if payload.enabled and not tenant.get("gps_settings"):
+            update_fields["gps_settings"] = dict(GPS_DEFAULTS)
+
+    # Merge any overrides into gps_settings
+    current_settings = dict(tenant.get("gps_settings") or GPS_DEFAULTS)
+    merged = dict(current_settings)
+    changed = False
+    if payload.speed_limit_kmh is not None:
+        merged["speed_limit_kmh"] = max(30, min(300, int(payload.speed_limit_kmh)))
+        changed = True
+    if payload.poll_interval_seconds is not None:
+        merged["poll_interval_seconds"] = max(10, min(600, int(payload.poll_interval_seconds)))
+        changed = True
+    if payload.history_retention_days is not None:
+        merged["history_retention_days"] = max(7, min(730, int(payload.history_retention_days)))
+        changed = True
+    if payload.device_password is not None:
+        merged["device_password"] = str(payload.device_password).strip() or GPS_DEFAULTS["device_password"]
+        changed = True
+    if changed:
+        update_fields["gps_settings"] = merged
+
+    if update_fields:
+        update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.tenants.update_one({"id": context.tenant_id}, {"$set": update_fields})
+        await ttl_cache.invalidate(tenant_settings_key(context.tenant_id))
+
+    updated_tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    return {
+        "message": "GPS settings updated successfully",
+        "gps": _gps_response(updated_tenant),
     }
 
 

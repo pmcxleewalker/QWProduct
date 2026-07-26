@@ -150,6 +150,7 @@ export const planAPI = {
 export const settingsAPI = {
   get: () => axios.get(`${API}/tenant/settings`),
   update: (data) => axios.put(`${API}/tenant/settings`, data),
+  updateGps: (data) => axios.put(`${API}/tenant/settings/gps`, data),
 };
 
 // Tenant User API (tenant admin)

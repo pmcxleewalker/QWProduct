@@ -11,7 +11,7 @@ import {
   ArrowRight, MoreVertical, BookOpen, HelpCircle, PieChart,
   Activity, TrendingDown, CalendarDays, QrCode, Camera, Gauge,
   ClipboardList, Bell, Megaphone, Crown, Star, Zap, Palette, DollarSign,
-  Save, X, Sparkles, Search
+  Save, X, Sparkles, Search, Satellite
 } from 'lucide-react';
 import AdminTraining from '../components/AdminTraining';
 import CarBookingCalendar from '../components/CarBookingCalendar';
@@ -34,6 +34,7 @@ import NotificationBell from '../components/NotificationBell';
 import GDPRSettings from '../components/GDPRSettings';
 import UserProfileMenu from '../components/UserProfileMenu';
 import ComplianceAlerts, { ComplianceSettingsModal } from '../components/ComplianceAlerts';
+import GpsSettingsModal from '../components/GpsSettingsModal';
 import { computeLicenceStatus } from '../components/DriverLicenceCard';
 import StaffLicenceAlerts from '../components/StaffLicenceAlerts';
 import Greeting from '../components/Greeting';
@@ -208,6 +209,16 @@ const TenantDashboard = () => {
     enable_service_alerts: true
   });
 
+  // GPS Fleet Tracking (SinoTrack bridge, Phase 1 = toggle only)
+  const [showGpsSettings, setShowGpsSettings] = useState(false);
+  const [gpsSettings, setGpsSettings] = useState({
+    enabled: false,
+    speed_limit_kmh: 120,
+    poll_interval_seconds: 30,
+    history_retention_days: 60,
+    device_password: '123456',
+  });
+
   // Use the isAdminUser variable defined at top
   const isAdmin = isAdminUser;
 
@@ -336,6 +347,10 @@ const TenantDashboard = () => {
             if (settingsRes.data?.compliance) {
               setComplianceSettings(settingsRes.data.compliance);
             }
+            // Load GPS settings (Phase 1)
+            if (settingsRes.data?.gps) {
+              setGpsSettings(settingsRes.data.gps);
+            }
           } catch (err) {
             console.error('Failed to load tenant settings:', err);
           }
@@ -345,6 +360,9 @@ const TenantDashboard = () => {
             const settingsRes = await settingsAPI.get();
             if (settingsRes.data?.compliance) {
               setComplianceSettings(settingsRes.data.compliance);
+            }
+            if (settingsRes.data?.gps) {
+              setGpsSettings(settingsRes.data.gps);
             }
           } catch (err) {
             console.error('Failed to load compliance settings:', err);
@@ -1576,6 +1594,21 @@ const TenantDashboard = () => {
                       >
                         <Settings size={18} />
                         <span className="hidden sm:inline">Reminders</span>
+                      </button>
+                      <button
+                        onClick={() => setShowGpsSettings(true)}
+                        className={`flex items-center space-x-2 px-3 py-2 border rounded-lg ${
+                          gpsSettings.enabled
+                            ? 'border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                        title="GPS Fleet Tracking Settings"
+                        data-testid="gps-settings-btn"
+                      >
+                        <Satellite size={18} />
+                        <span className="hidden sm:inline">
+                          GPS {gpsSettings.enabled ? 'On' : 'Off'}
+                        </span>
                       </button>
                       <button
                         onClick={() => setShowAddVehicle(true)}
@@ -2955,6 +2988,14 @@ const TenantDashboard = () => {
         onClose={() => setShowComplianceSettings(false)}
         settings={complianceSettings}
         onSave={handleSaveComplianceSettings}
+      />
+
+      {/* GPS Fleet Tracking Settings Modal (Phase 1) */}
+      <GpsSettingsModal
+        isOpen={showGpsSettings}
+        onClose={() => setShowGpsSettings(false)}
+        gps={gpsSettings}
+        onSaved={(next) => setGpsSettings(next)}
       />
 
       {/* Reset Password Modal */}

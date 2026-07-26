@@ -103,6 +103,7 @@ const PlatformAdmin = () => {
     custom_price: 199,
     is_demo: false,
     demo_link_expires_in_days: 30,
+    gps_enabled: false,
   });
   
   // Created tenant result (to show credentials)
@@ -1357,6 +1358,29 @@ const PlatformAdmin = () => {
                     </div>
                   </div>
                   )}
+
+                  {/* GPS Fleet Tracking opt-in (Phase 1 of SinoTrack bridge).
+                      Available for both real and demo tenants — flips
+                      tenant.gps_enabled at creation, which will make the
+                      Phase 2 poller start syncing tracker positions once it lands. */}
+                  <div className="border-t pt-4 mt-4">
+                    <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        checked={!!newTenant.gps_enabled}
+                        onChange={(e) => setNewTenant({ ...newTenant, gps_enabled: e.target.checked })}
+                        className="h-4 w-4 mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        data-testid="create-tenant-gps-enabled"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">Enable GPS Fleet Tracking (SinoTrack)</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Turns on the SinoTrack cloud bridge for this tenant. Off by default —
+                          the tenant admin can enable it later from their settings.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
                   
                   <div className="flex space-x-3">
                     <button

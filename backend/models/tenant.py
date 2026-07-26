@@ -388,6 +388,9 @@ class TenantCreate(BaseModel):
     # password login is possible for demo tenants.
     is_demo: bool = False
     demo_link_expires_in_days: int = 30
+    # Opt-in: enable SinoTrack GPS Fleet Tracking on this tenant at creation.
+    # When false, no GPS collections / polling are ever spun up for this tenant.
+    gps_enabled: bool = False
     
 
 class TenantUpdate(BaseModel):
@@ -401,6 +404,9 @@ class TenantUpdate(BaseModel):
     # Feature overrides for super admin
     feature_overrides: Optional[dict] = None
     customizations_remaining: Optional[int] = None
+    # GPS Fleet Tracking (SinoTrack bridge — see /app/memory/SINOTRACK_MULTI_TENANT_PROMPT.md)
+    gps_enabled: Optional[bool] = None
+    gps_settings: Optional[dict] = None
 
 
 class Tenant(BaseModel):
@@ -417,6 +423,10 @@ class Tenant(BaseModel):
     customizations_reset_date: Optional[datetime] = None
     feature_overrides: Optional[dict] = None  # Super admin can override features
     notes: Optional[str] = None
+    # GPS Fleet Tracking (opt-in add-on, off by default). When true, the
+    # SinoTrack bridge poller (Phase 2) starts syncing tracker positions.
+    gps_enabled: bool = False
+    gps_settings: Optional[dict] = None  # {speed_limit_kmh, poll_interval_seconds, history_retention_days, device_password}
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

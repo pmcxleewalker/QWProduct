@@ -4,9 +4,10 @@ import { MapPin, Navigation, Zap } from 'lucide-react';
 /**
  * LiveMap
  * -------
- * Placeholder for the live fleet map. A real map view needs a GPS/telematics
- * feed per vehicle — SinoTrack, Traccar, or a similar integration. Until then
- * this shows the visitor exactly what the tab will do and how to enable it.
+ * Placeholder for the live fleet map. GPS Fleet Tracking is enabled for
+ * this tenant (Phase 1 toggle is ON) but the actual SinoTrack poller lands
+ * in Phase 2 — until then this shows the drop-off locations captured by
+ * the Fleet Board's Drop-off button as a stand-in.
  */
 const LiveMap = ({ cars = [] }) => {
   const withLocation = cars.filter((c) => c.current_location_eircode || c.current_location_label);

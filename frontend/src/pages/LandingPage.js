@@ -69,10 +69,42 @@ const LandingPage = () => {
       </section>
 
       {/* Authority Bar */}
-      <div className="py-8 bg-white border-y border-slate-100 flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-50 grayscale">
-        <span className="text-[10px] font-black uppercase tracking-[0.3em]">As featured in</span>
-        <span className="font-black text-xl tracking-tighter">AI SIX PODCAST</span>
-        <span className="font-black text-xl tracking-tighter">BLUEBIRD CARE</span>
+      <div className="py-10 bg-white border-y border-slate-100">
+        <div className="max-w-4xl mx-auto px-6">
+          <p className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-6">
+            As featured in
+          </p>
+          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6">
+            {/* AI Six Podcast — stylised wordmark */}
+            <div className="flex items-center gap-2.5 opacity-70 hover:opacity-100 transition-opacity">
+              <div className="relative w-11 h-11 rounded-xl bg-slate-900 flex items-center justify-center shadow-sm">
+                <span className="text-white font-black text-lg leading-none tracking-tighter">AI</span>
+                <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-md bg-amber-400 flex items-center justify-center text-slate-900 font-black text-[11px] leading-none border-2 border-white">6</span>
+              </div>
+              <div className="text-left">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 leading-none">The</p>
+                <p className="text-base font-black tracking-tight text-slate-900 leading-tight">AI Six Podcast</p>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <span className="hidden sm:inline-block w-px h-10 bg-slate-200" aria-hidden="true"></span>
+
+            {/* Bluebird Care — inline SVG (current brand mark) */}
+            <div className="flex items-center gap-2.5 opacity-70 hover:opacity-100 transition-opacity">
+              <svg viewBox="0 0 50 63" className="h-10 w-auto" aria-label="Bluebird Care logo" role="img">
+                <path
+                  fill="#0F73DB"
+                  d="M44.0458207,0 C47.3320227,0 50,2.66697983 50,5.95195322 L50,57.0474713 C50,60.3327603 47.3317658,63 44.045245,63 L5.95495309,63 C2.66832396,63 0,60.3326737 0,57.0472733 L0,5.95272667 C0,2.66732633 2.66832396,0 5.95495309,0 L44.0458207,0 Z M15.0297478,8.21382415 L7.64431603,8.21382415 L7.64431603,44.8958811 C10.9958589,43.9238264 13.7860624,41.6353147 15.4214616,38.6280969 C15.7375825,38.070037 17.7093036,33.5983321 18.8725353,30.8676636 C19.8844577,28.2777813 22.4031991,26.4422706 25.3525764,26.4422706 C27.7942131,26.4422706 29.9402283,27.7007528 31.1812334,29.6032506 L34.8391372,29.6032506 L30.5319632,32.0636261 C32.7629351,33.7357097 34.206654,36.4004558 34.206654,39.4023028 C34.206654,44.4651153 30.1009403,48.569294 25.0363271,48.569294 C22.9332731,48.569294 20.9968765,47.8599713 19.4497858,46.6697539 L19.4497858,46.6833636 C18.0665765,45.4955439 16.269122,44.7760674 14.3024227,44.7760674 C11.5054133,44.7760674 9.0495832,46.2294035 7.64431603,48.4205284 L7.64431603,54.0476415 L14.5989169,54.0476415 L14.5989169,50.1102343 C16.9991336,53.1247535 20.9995598,54.7858974 25.5538449,54.7858974 C35.03178,54.7858974 42.3556499,47.2802481 42.3556499,37.4982551 C42.3556499,27.6547263 34.9702181,20.1490801 25.6154036,20.1490801 C21.1226836,20.1490801 17.3684027,21.7485954 15.0297478,24.5171386 L15.0297478,8.21382415 Z"
+                />
+              </svg>
+              <div className="text-left">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 leading-none">Client</p>
+                <p className="text-base font-black tracking-tight text-slate-900 leading-tight">Bluebird Care</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* App Showcase - The "Important Info" */}

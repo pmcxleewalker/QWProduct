@@ -1,19 +1,34 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Shield, Play, ArrowRight, Calculator } from 'lucide-react';
+import { Shield, Play, ArrowRight, Calculator, Clock, TrendingUp, Wrench, Sparkles } from 'lucide-react';
 import ContactFormModal from '@/components/ContactFormModal';
 
 const LandingPage = () => {
   const [contactOpen, setContactOpen] = useState(false);
   const [contactType, setContactType] = useState('pricing');
-  const [fleetSize, setFleetSize] = useState(10);
-  const [savings, setSavings] = useState(0);
+
+  // ROI calculator — five moving parts
+  const [fleetSize, setFleetSize] = useState(15);
+  const [hoursPerVehicle, setHoursPerVehicle] = useState(5);
+  const [hourlyRate, setHourlyRate] = useState(25);
+  const [downtimeDaysAvoided, setDowntimeDaysAvoided] = useState(2);
+  const [downtimeCost, setDowntimeCost] = useState(150);
+
+  const [adminSavings, setAdminSavings] = useState(0);
+  const [downtimeSavings, setDowntimeSavings] = useState(0);
+  const [totalSavings, setTotalSavings] = useState(0);
+  const [hoursSavedYearly, setHoursSavedYearly] = useState(0);
 
   useEffect(() => {
-    // Logic: 5 hours saved per vehicle/month * €25/hr
-    setSavings(fleetSize * 5 * 12 * 25);
-  }, [fleetSize]);
+    const admin = fleetSize * hoursPerVehicle * 12 * hourlyRate;
+    const downtime = fleetSize * downtimeDaysAvoided * downtimeCost;
+    const hours = fleetSize * hoursPerVehicle * 12;
+    setAdminSavings(admin);
+    setDowntimeSavings(downtime);
+    setTotalSavings(admin + downtime);
+    setHoursSavedYearly(hours);
+  }, [fleetSize, hoursPerVehicle, hourlyRate, downtimeDaysAvoided, downtimeCost]);
 
   const openPricingForm = () => { setContactType('pricing'); setContactOpen(true); };
 
@@ -96,27 +111,110 @@ const LandingPage = () => {
 
       {/* ROI Calculator */}
       <section className="py-20 px-6 bg-blue-600 text-white rounded-[3rem] mx-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 mb-6 opacity-80 uppercase tracking-widest text-xs font-bold">
-            <Calculator size={16} /> ROI Calculator
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 mb-4 opacity-80 uppercase tracking-widest text-xs font-bold">
+              <Calculator size={16} /> ROI Calculator
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold mb-3">See what Quick Wing gives back.</h2>
+            <p className="text-blue-100 max-w-xl mx-auto">
+              Drag the sliders — the numbers below update live. Based on typical Irish care-fleet workflows.
+            </p>
           </div>
-          <h2 className="text-3xl md:text-5xl font-bold mb-8">How much can you save?</h2>
-          <div className="bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20">
-            <label className="block text-xl mb-4 font-medium">My fleet size is: <span className="text-yellow-400 font-bold">{fleetSize} Vehicles</span></label>
-            <input
-              type="range" min="1" max="100" value={fleetSize}
-              onChange={(e) => setFleetSize(Number(e.target.value))}
-              className="w-full h-3 bg-blue-400 rounded-lg appearance-none cursor-pointer accent-white mb-10"
-            />
-            <div className="grid sm:grid-cols-2 gap-8 text-left">
-              <div className="bg-white/10 p-6 rounded-2xl">
-                <p className="text-blue-100 text-sm uppercase font-bold mb-1">Estimated Annual Savings</p>
-                <p className="text-4xl font-black">€{savings.toLocaleString()}</p>
-              </div>
-              <div className="bg-white/10 p-6 rounded-2xl">
-                <p className="text-blue-100 text-sm uppercase font-bold mb-1">Admin Time Saved</p>
-                <p className="text-4xl font-black">~{fleetSize * 60} hrs/year</p>
-              </div>
+
+          <div className="bg-white/10 backdrop-blur-md p-6 md:p-10 rounded-3xl border border-white/20">
+            {/* --- Inputs --- */}
+            <div className="grid md:grid-cols-2 gap-6 mb-10">
+              <RoiSlider
+                icon={<TrendingUp size={16} />}
+                label="Fleet size"
+                value={fleetSize}
+                onChange={setFleetSize}
+                min={1} max={100} step={1}
+                display={`${fleetSize} vehicles`}
+                testid="roi-fleet-size"
+              />
+              <RoiSlider
+                icon={<Clock size={16} />}
+                label="Admin hours saved per vehicle / month"
+                value={hoursPerVehicle}
+                onChange={setHoursPerVehicle}
+                min={1} max={15} step={1}
+                display={`${hoursPerVehicle} hrs`}
+                testid="roi-hours-per-vehicle"
+              />
+              <RoiSlider
+                icon={<Sparkles size={16} />}
+                label="Admin hourly rate"
+                value={hourlyRate}
+                onChange={setHourlyRate}
+                min={15} max={60} step={1}
+                display={`€${hourlyRate} / hr`}
+                testid="roi-hourly-rate"
+              />
+              <RoiSlider
+                icon={<Wrench size={16} />}
+                label="Downtime days avoided per vehicle / year"
+                value={downtimeDaysAvoided}
+                onChange={setDowntimeDaysAvoided}
+                min={0} max={10} step={1}
+                display={`${downtimeDaysAvoided} day${downtimeDaysAvoided === 1 ? '' : 's'}`}
+                testid="roi-downtime-days"
+              />
+              <RoiSlider
+                icon={<Wrench size={16} />}
+                label="Cost of a day off the road (€)"
+                value={downtimeCost}
+                onChange={setDowntimeCost}
+                min={50} max={500} step={10}
+                display={`€${downtimeCost}`}
+                testid="roi-downtime-cost"
+              />
+            </div>
+
+            {/* --- Outputs --- */}
+            <div className="grid sm:grid-cols-3 gap-4 mb-6">
+              <RoiOutput
+                label="Admin savings / year"
+                value={`€${adminSavings.toLocaleString()}`}
+                testid="roi-admin-savings"
+              />
+              <RoiOutput
+                label="Downtime avoided / year"
+                value={`€${downtimeSavings.toLocaleString()}`}
+                testid="roi-downtime-savings"
+              />
+              <RoiOutput
+                label="Hours back to your team"
+                value={`${hoursSavedYearly.toLocaleString()} hrs`}
+                testid="roi-hours-saved"
+              />
+            </div>
+
+            <div className="bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 rounded-2xl p-6 md:p-8 text-center shadow-xl">
+              <p className="text-xs md:text-sm font-bold uppercase tracking-widest text-amber-900 mb-2">
+                Estimated total annual value
+              </p>
+              <p className="text-4xl md:text-6xl font-black tabular-nums" data-testid="roi-total">
+                €{totalSavings.toLocaleString()}
+              </p>
+              <p className="text-xs md:text-sm text-amber-900/80 mt-3">
+                per year for a fleet of {fleetSize} · updates as you tweak the sliders
+              </p>
+            </div>
+
+            <div className="mt-8 text-center">
+              <Button
+                size="lg"
+                className="bg-white text-blue-700 hover:bg-blue-50 font-bold text-base px-8 h-12 rounded-xl shadow-lg"
+                onClick={openPricingForm}
+                data-testid="roi-cta"
+              >
+                Get pricing for my fleet <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              <p className="text-blue-100 text-xs mt-3">
+                Sanity-check: assumes 12 admin months, per-day downtime cost is the loss when a car is off the road (lost visits + cover).
+              </p>
             </div>
           </div>
         </div>
@@ -184,3 +282,41 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+
+// ---------- ROI calculator sub-components ----------
+
+const RoiSlider = ({ icon, label, value, onChange, min, max, step, display, testid }) => {
+  const pct = ((value - min) / (max - min)) * 100;
+  return (
+    <div className="bg-white/5 hover:bg-white/10 transition-colors rounded-2xl p-4 border border-white/10">
+      <div className="flex items-center justify-between mb-2 gap-3">
+        <span className="inline-flex items-center gap-2 text-sm font-medium text-blue-100">
+          {icon} {label}
+        </span>
+        <span className="text-yellow-400 font-black text-lg tabular-nums shrink-0" data-testid={`${testid}-value`}>
+          {display}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+        style={{
+          background: `linear-gradient(to right, #fbbf24 0%, #fbbf24 ${pct}%, rgba(255,255,255,0.25) ${pct}%, rgba(255,255,255,0.25) 100%)`,
+        }}
+        data-testid={testid}
+      />
+    </div>
+  );
+};
+
+const RoiOutput = ({ label, value, testid }) => (
+  <div className="bg-white/10 border border-white/15 p-5 rounded-2xl">
+    <p className="text-blue-100 text-[11px] uppercase font-bold tracking-wider mb-1">{label}</p>
+    <p className="text-2xl md:text-3xl font-black tabular-nums" data-testid={testid}>{value}</p>
+  </div>
+);

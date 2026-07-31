@@ -75,17 +75,26 @@ const LandingPage = () => {
             As featured in
           </p>
           <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6">
-            {/* AI Six Podcast — stylised wordmark */}
-            <div className="flex items-center gap-2.5 opacity-70 hover:opacity-100 transition-opacity">
-              <div className="relative w-11 h-11 rounded-xl bg-slate-900 flex items-center justify-center shadow-sm">
-                <span className="text-white font-black text-lg leading-none tracking-tighter">AI</span>
-                <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-md bg-amber-400 flex items-center justify-center text-slate-900 font-black text-[11px] leading-none border-2 border-white">6</span>
-              </div>
+            {/* AI Six Podcast — real logo, linked to founder's interview */}
+            <a
+              href="https://youtu.be/_oR2ROeUOp4"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 opacity-80 hover:opacity-100 transition-opacity group"
+              data-testid="ai-six-podcast-link"
+              aria-label="Watch our founder on AI Six Podcast"
+            >
+              <img
+                src="https://customer-assets-rejwkqb3.emergentagent.net/job_22fc8b90-f3dc-480b-a483-1b60e58c83e5/artifacts/bvfhwrto_IMG_7448.jpeg"
+                alt="AI Six Podcast"
+                className="h-12 w-12 rounded-xl object-cover shadow-sm ring-1 ring-slate-200 group-hover:ring-blue-300 transition"
+                data-testid="ai-six-podcast-logo"
+              />
               <div className="text-left">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 leading-none">The</p>
-                <p className="text-base font-black tracking-tight text-slate-900 leading-tight">AI Six Podcast</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 leading-none">As featured on</p>
+                <p className="text-base font-black tracking-tight text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">AI Six Podcast</p>
               </div>
-            </div>
+            </a>
 
             {/* Divider */}
             <span className="hidden sm:inline-block w-px h-10 bg-slate-200" aria-hidden="true"></span>

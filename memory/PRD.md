@@ -4,6 +4,13 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - Feb 2026 — Landing Page "As Featured In" AI Six Logo
+
+**What was built**: Replaced the placeholder AI Six wordmark in the Landing Page "As featured in" bar with the real AI Six Podcast logo artwork (from user-uploaded artifact `IMG_7448.jpeg`). The logo is now an anchor tag linking to the founder's interview at `https://youtu.be/_oR2ROeUOp4` (opens in new tab). Hover state fades ring to blue and title text turns blue. Bluebird Care mark preserved next to it. Verified visually via screenshot tool.
+
+**Files touched**: `frontend/src/pages/LandingPage.js` (SVG placeholder → `<a>` wrapping `<img>` with `data-testid="ai-six-podcast-link"` and `data-testid="ai-six-podcast-logo"`).
+
+
 ### Bug Fix - Feb 2026 — Resend Invite fallback (Bluebird investigation)
 
 **User report**: "Resend button for sending staff their login email doesn't work — especially for Bluebird Dublin South."

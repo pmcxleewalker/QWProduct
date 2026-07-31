@@ -1,704 +1,390 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import {
-  Mail, Instagram, ArrowRight, Menu, X, Quote,
-  Sparkles, Activity, LineChart, CalendarCheck, ShieldCheck, Users,
-  Check, XCircle, Award, Shield, MapPin
+  Truck, Shield, Calendar, Bell, BarChart3,
+  ArrowRight, Check, Settings, Car, Clock, Play
 } from 'lucide-react';
-import ROICalculator from '../components/ROICalculator';
-import FeatureCarousel from '../components/FeatureCarousel';
+import ContactFormModal from '@/components/ContactFormModal';
 
-/**
- * LandingPage
- * ------------
- * Public marketing page shown at "/" — visitors land here before signing in.
- *
- * Redesign v3 (Feb 2026):
- *   - Editorial / Stripe-inspired professional look with generous whitespace
- *   - Blue accent (blue-600) + warm amber accent for compliance signals
- *   - Real product screenshots — no stock imagery
- *   - Numeric proof + credentials strip to beat Webfleet / Tranzaura
- *   - Sticky CTA appears after 400px scroll to lift mobile conversion
- *   - "Spreadsheets vs Quick Wing" table sidesteps enterprise price wars
- *
- * Preserved intentionally:
- *   - All existing #section anchors (features, roi-calculator, contact, demo)
- *   - All existing data-testids used by e2e tests
- *   - Full footer legal link set (Legal / Terms / Privacy / DPA / Cookies /
- *     Security / Franchise Login)
- */
-
-const MAILTO_DEMO = 'mailto:Lee.quickwing@gmail.com?subject=Quick Wing Demo';
-const MAILTO_ENQUIRY = 'mailto:Lee.quickwing@gmail.com?subject=Quick Wing Enquiry';
-const INSTAGRAM_URL = 'https://www.instagram.com/quick.wing2025';
-
-/* ============================================================
-   Nav
-   ============================================================ */
-const Nav = ({ mobileOpen, onToggleMobile, onCloseMobile }) => (
-  <header>
-    <nav
-      className="fixed top-0 left-0 right-0 bg-white/85 backdrop-blur-md z-50 border-b border-slate-200/70"
-      aria-label="Main navigation"
-    >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-14">
-          <a href="/" aria-label="Quick Wing home" className="flex items-center">
-            <img
-              src="/quick-wing-logo-nav.png"
-              alt="Quick Wing"
-              className="h-10 w-auto"
-              width="150"
-              height="40"
-            />
-          </a>
-
-          <div className="hidden md:flex items-center gap-8 text-sm">
-            <a href="#features" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">Features</a>
-            <a href="#demo" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">Demo</a>
-            <a href="#roi-calculator" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">ROI Calculator</a>
-            <a href="#compare" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">Compare</a>
-            <a href="#founder" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">Our story</a>
-            <a href="#contact" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">Contact</a>
-            <a
-              href={MAILTO_DEMO}
-              className="px-4 py-2 bg-slate-900 text-white rounded-lg font-semibold text-sm hover:bg-slate-800 transition-colors"
-              data-testid="nav-try-btn"
-            >
-              Book a demo
-            </a>
-          </div>
-
-          <button
-            className="md:hidden p-2 text-slate-700"
-            onClick={onToggleMobile}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-      </div>
-
-      {mobileOpen && (
-        <div className="md:hidden bg-white border-t border-slate-200/70">
-          <div className="px-4 py-3 space-y-1">
-            {[
-              ['Features', '#features'],
-              ['Demo', '#demo'],
-              ['ROI Calculator', '#roi-calculator'],
-              ['Compare', '#compare'],
-              ['Our story', '#founder'],
-              ['Contact', '#contact'],
-            ].map(([label, href]) => (
-              <a
-                key={href}
-                href={href}
-                onClick={onCloseMobile}
-                className="block py-2.5 text-slate-700 text-sm font-medium"
-              >
-                {label}
-              </a>
-            ))}
-            <a
-              href={MAILTO_DEMO}
-              className="block text-center px-4 py-2.5 mt-2 bg-slate-900 text-white rounded-lg font-semibold text-sm"
-              onClick={onCloseMobile}
-            >
-              Book a demo
-            </a>
-          </div>
-        </div>
-      )}
-    </nav>
-  </header>
-);
-
-/* ============================================================
-   Sticky CTA — appears after user scrolls 400px. Keeps the
-   demo booking action within thumb reach on mobile without
-   getting in the way of the initial hero read.
-   ============================================================ */
-const StickyCTA = () => {
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > 400);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-  return (
-    <a
-      href={MAILTO_DEMO}
-      data-testid="sticky-cta"
-      aria-hidden={!visible}
-      tabIndex={visible ? 0 : -1}
-      className={`fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-full font-semibold shadow-lg shadow-blue-600/30 transition-all duration-300 hover:bg-blue-700 md:bottom-6 md:right-6 ${
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
-      }`}
-    >
-      <ArrowRight size={16} /> Book a demo
-    </a>
-  );
-};
-
-/* ============================================================
-   Hero — headline + product screenshot on desktop
-   ============================================================ */
-const Hero = () => (
-  <section id="hero" className="pt-28 pb-14 sm:pt-32 sm:pb-16 px-4 sm:px-6">
-    <div className="max-w-6xl mx-auto">
-      <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-        {/* Left: copy */}
-        <div className="lg:col-span-6">
-          <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-3 py-1 mb-6">
-            <MapPin size={12} /> Fleet management for Irish businesses
-          </span>
-          <h1
-            id="hero-heading"
-            className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-slate-900 leading-[1.05]"
-          >
-            Run your fleet from{' '}
-            <span className="text-blue-600">one calm screen.</span>
-          </h1>
-          <p className="mt-6 text-lg sm:text-xl text-slate-600 leading-relaxed max-w-2xl">
-            Replace 3 hours of daily admin — spreadsheets, group chats and
-            post-it notes — with one dashboard your team actually enjoys using.
-          </p>
-          <div className="mt-9 flex flex-wrap items-center gap-3">
-            <a
-              href={MAILTO_DEMO}
-              data-testid="hero-demo-btn"
-              className="inline-flex items-center gap-2 px-5 py-3 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-800 transition-colors"
-            >
-              Book a free demo <ArrowRight size={16} />
-            </a>
-            <a
-              href="#features"
-              data-testid="hero-tour-btn"
-              className="inline-flex items-center gap-2 px-5 py-3 text-slate-700 font-semibold hover:text-slate-900 transition-colors"
-            >
-              See it in action →
-            </a>
-          </div>
-          <p className="mt-5 text-sm text-slate-500 flex items-center gap-4 flex-wrap">
-            <span className="inline-flex items-center gap-1.5">
-              <Check size={14} className="text-emerald-600" /> No credit card
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Check size={14} className="text-emerald-600" /> 20-min setup
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Check size={14} className="text-emerald-600" /> Built in Ireland
-            </span>
-          </p>
-        </div>
-
-        {/* Right: product screenshot in browser frame */}
-        <div id="demo" className="lg:col-span-6">
-          <div
-            className="relative rounded-xl overflow-hidden border border-slate-200 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.4)] bg-white"
-            data-testid="hero-screenshot"
-          >
-            <div className="hidden sm:flex items-center gap-1.5 h-7 px-3 bg-slate-100 border-b border-slate-200">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
-              <span className="h-2.5 w-2.5 rounded-full bg-yellow-400/70" />
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
-              <span className="ml-4 text-[10px] text-slate-500 truncate font-mono">
-                quick-wing.com / dashboard
-              </span>
-            </div>
-            <img
-              src="/marketing/booking-intelligence.jpg"
-              alt="Quick Wing Booking Intelligence dashboard showing 0 vehicle clashes, 0 driver clashes, 0 compliance risks and 6 idle vehicles"
-              className="w-full h-auto block"
-              loading="eager"
-              width="1200"
-              height="700"
-            />
-          </div>
-          {/* Small brand-mark tucked under the screenshot */}
-          <p className="mt-4 text-xs text-slate-500 text-center lg:text-left">
-            A product of QuickFleet Limited — proudly built in Ireland 🇮🇪
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-);
-
-/* ============================================================
-   Numeric Proof Strip — three inline stats visitors see just
-   below the fold. Directly mirrors Webfleet/Tranzaura's numeric
-   proof but tailored to SMB operator pain points.
-   ============================================================ */
-const ProofStrip = () => (
-  <section
-    className="border-t border-slate-200 bg-slate-50 py-10 px-4 sm:px-6"
-    aria-label="Impact by the numbers"
-  >
-    <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6 text-center">
-      {[
-        { stat: '10 hrs', label: 'saved per week on admin', sub: 'per operator, on average' },
-        { stat: '100%', label: 'compliance visibility', sub: 'tax, NCT, insurance, service' },
-        { stat: '1', label: 'dashboard replaces', sub: 'spreadsheets · WhatsApp · post-its' },
-      ].map((item, i) => (
-        <div key={i} className="flex flex-col items-center" data-testid={`proof-stat-${i}`}>
-          <p className="text-4xl sm:text-5xl font-semibold text-slate-900 tracking-tight tabular-nums">
-            {item.stat}
-          </p>
-          <p className="mt-2 text-sm font-semibold text-slate-800">{item.label}</p>
-          <p className="mt-1 text-xs text-slate-500">{item.sub}</p>
-        </div>
-      ))}
-    </div>
-  </section>
-);
-
-/* ============================================================
-   Trust Bar — customer marquee-style strip + credentials
-   Even with one flagship customer, the layout scales as more
-   logos come in without a redesign.
-   ============================================================ */
-const TrustBar = () => (
-  <section
-    className="border-t border-slate-200 bg-white py-12 px-4 sm:px-6"
-    aria-label="Trusted by"
-  >
-    <div className="max-w-6xl mx-auto text-center">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 mb-5">
-        Trusted by Irish operators
-      </p>
-      <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-        <p
-          className="text-2xl sm:text-3xl font-semibold text-slate-800 tracking-tight"
-          data-testid="trustbar-brand"
-        >
-          Bluebird Care Ireland
-        </p>
-        <span className="hidden sm:inline text-slate-300">·</span>
-        <p className="text-sm text-slate-500 italic">
-          …and a growing list of operators across Ireland.
-        </p>
-      </div>
-
-      {/* Credentials strip */}
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5">
-        {[
-          { icon: MapPin, label: 'Built in Ireland' },
-          { icon: Shield, label: 'GDPR Ready' },
-          { icon: ShieldCheck, label: 'ISO-27001-aligned hosting' },
-          { icon: Activity, label: '99.9% Uptime' },
-          { icon: Award, label: 'Founder-led support' },
-        ].map(({ icon: Icon, label }) => (
-          <span
-            key={label}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5"
-          >
-            <Icon size={13} className="text-blue-600" />
-            {label}
-          </span>
-        ))}
-      </div>
-    </div>
-  </section>
-);
-
-/* ============================================================
-   Why Quick Wing — one-liner differentiator strip.
-   Positions vs. spreadsheets (real competitor for SMBs), not
-   vs. the enterprise incumbents.
-   ============================================================ */
-const WhyStrip = () => (
-  <section
-    className="py-16 sm:py-20 px-4 sm:px-6 bg-slate-900 text-white"
-    aria-label="Why Quick Wing"
-  >
-    <div className="max-w-4xl mx-auto text-center">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-300">
-        Why Quick Wing
-      </span>
-      <p
-        className="mt-4 text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight leading-tight"
-        data-testid="why-strip-tagline"
-      >
-        Fleet spreadsheets tell you{' '}
-        <span className="text-slate-400 line-through decoration-2">what happened</span>.<br />
-        Quick Wing tells you <span className="text-blue-400">what to do next.</span>
-      </p>
-      <p className="mt-6 text-slate-400 leading-relaxed max-w-2xl mx-auto">
-        Built by an Irish operator, for Irish operators. Because generic global
-        SaaS doesn&apos;t know a Cert of Roadworthiness from an NCT — and your team
-        shouldn&apos;t have to translate.
-      </p>
-    </div>
-  </section>
-);
-
-/* ============================================================
-   Feature Icon Grid — quick scan of scope before the carousel
-   deep-dive.
-   ============================================================ */
-const FEATURE_ICONS = [
-  { icon: CalendarCheck, title: 'Bookings', body: 'Day, week and month views. Recurring, admin-assigned, and secondary drivers.' },
-  { icon: ShieldCheck, title: 'Compliance Alerts', body: 'Tax, NCT, insurance, service and licence — never missed again.' },
-  { icon: Sparkles, title: 'Booking Intelligence', body: 'AI catches clashes, idle vehicles and risks 48 hrs ahead.' },
-  { icon: Activity, title: 'Live Fleet Sheet', body: 'Every vehicle status at a glance, updated in real time.' },
-  { icon: LineChart, title: 'Reports', body: 'Utilisation, availability, most-booked cars, CSV export.' },
-  { icon: Users, title: 'Multi-Tenant', body: 'Franchise-ready with tenant branding, roles and login tracking.' },
-];
-
-const FeatureGrid = () => (
-  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-14 sm:mb-16" data-testid="feature-icon-grid">
-    {FEATURE_ICONS.map(({ icon: Icon, title, body }) => (
-      <div
-        key={title}
-        className="p-5 bg-white border border-slate-200 rounded-xl hover:border-blue-200 hover:shadow-sm transition-all"
-      >
-        <div className="h-9 w-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center mb-3">
-          <Icon size={18} className="text-blue-600" strokeWidth={2} />
-        </div>
-        <h3 className="text-base font-semibold text-slate-900 mb-1">{title}</h3>
-        <p className="text-sm text-slate-600 leading-relaxed">{body}</p>
-      </div>
-    ))}
-  </div>
-);
-
-/* ============================================================
-   Features — icon grid + carousel of real product screenshots
-   ============================================================ */
-const Features = () => (
-  <section
-    id="features"
-    className="py-24 sm:py-32 px-4 sm:px-6 bg-slate-50 border-t border-slate-200"
-    aria-labelledby="features-heading"
-  >
-    <div className="max-w-6xl mx-auto">
-      <div className="max-w-2xl mb-14 sm:mb-16">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700">
-          What you get
-        </span>
-        <h2
-          id="features-heading"
-          className="mt-3 text-3xl sm:text-5xl font-semibold tracking-tight text-slate-900"
-        >
-          Everything a fleet manager wishes their spreadsheet did.
-        </h2>
-        <p className="mt-5 text-slate-600 leading-relaxed text-base sm:text-lg">
-          Real screens from Quick Wing running today — not stock imagery, not concept art.
-          Scan the six pillars, then swipe through the live product below.
-        </p>
-      </div>
-
-      <FeatureGrid />
-
-      <FeatureCarousel />
-    </div>
-  </section>
-);
-
-/* ============================================================
-   Comparison — Spreadsheets vs Quick Wing.
-   Sidesteps enterprise price wars by comparing to what SMBs
-   actually use today.
-   ============================================================ */
-const COMPARISON_ROWS = [
-  ['Real-time booking clashes', false, true],
-  ['Compliance alerts before deadlines', false, true],
-  ['Idle vehicle detection (next 48 hrs)', false, true],
-  ['Login & audit history', false, true],
-  ['Mobile access for drivers', false, true],
-  ['One live dashboard, no version chaos', false, true],
-  ['Backups & GDPR built-in', false, true],
-  ['Cost per week', '5+ hrs of admin', 'Under €1/vehicle/day'],
-];
-
-const Compare = () => (
-  <section
-    id="compare"
-    className="py-20 sm:py-24 px-4 sm:px-6 border-t border-slate-200 bg-white"
-    aria-labelledby="compare-heading"
-  >
-    <div className="max-w-4xl mx-auto">
-      <div className="text-center mb-10">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">
-          Side-by-side
-        </span>
-        <h2
-          id="compare-heading"
-          className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900"
-        >
-          The spreadsheet vs. Quick Wing
-        </h2>
-        <p className="mt-4 text-slate-600 leading-relaxed max-w-2xl mx-auto">
-          We don&apos;t pretend enterprise fleet suites don&apos;t exist. But your real competitor
-          today isn&apos;t Webfleet — it&apos;s the Excel file everyone edits at once.
-        </p>
-      </div>
-
-      <div className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm" data-testid="compare-table">
-        <div className="grid grid-cols-[1fr_auto_auto] sm:grid-cols-[1.5fr_1fr_1fr] bg-slate-50 border-b border-slate-200">
-          <div className="px-4 sm:px-6 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-            Feature
-          </div>
-          <div className="px-4 sm:px-6 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 text-center border-l border-slate-200">
-            Spreadsheets
-          </div>
-          <div className="px-4 sm:px-6 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-blue-700 text-center bg-blue-50/40 border-l border-slate-200">
-            Quick Wing
-          </div>
-        </div>
-        {COMPARISON_ROWS.map(([feature, ss, qw], i) => (
-          <div
-            key={feature}
-            className={`grid grid-cols-[1fr_auto_auto] sm:grid-cols-[1.5fr_1fr_1fr] items-center ${
-              i !== COMPARISON_ROWS.length - 1 ? 'border-b border-slate-100' : ''
-            }`}
-          >
-            <div className="px-4 sm:px-6 py-3.5 text-sm font-medium text-slate-800">{feature}</div>
-            <div className="px-4 sm:px-6 py-3.5 text-center border-l border-slate-100 text-sm">
-              {typeof ss === 'boolean' ? (
-                ss ? <Check size={18} className="text-emerald-600 mx-auto" /> : <XCircle size={18} className="text-slate-300 mx-auto" />
-              ) : (
-                <span className="text-slate-500 text-xs sm:text-sm">{ss}</span>
-              )}
-            </div>
-            <div className="px-4 sm:px-6 py-3.5 text-center border-l border-slate-100 bg-blue-50/30 text-sm">
-              {typeof qw === 'boolean' ? (
-                qw ? <Check size={18} className="text-emerald-600 mx-auto" /> : <XCircle size={18} className="text-slate-300 mx-auto" />
-              ) : (
-                <span className="font-semibold text-blue-700 text-xs sm:text-sm">{qw}</span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-);
-
-/* ============================================================
-   ROI section
-   ============================================================ */
-const ROI = () => (
-  <section
-    id="roi-calculator"
-    className="py-20 sm:py-24 px-4 sm:px-6 bg-slate-50 border-t border-slate-200"
-  >
-    <div className="max-w-6xl mx-auto">
-      <div className="max-w-2xl mb-10">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">
-          Do the maths
-        </span>
-        <h2 className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
-          See your return in 30 seconds
-        </h2>
-        <p className="mt-4 text-slate-600 leading-relaxed">
-          Move the sliders. See exactly what Quick Wing could save your team this year.
-        </p>
-      </div>
-      <ROICalculator />
-    </div>
-  </section>
-);
-
-/* ============================================================
-   Founder note
-   ============================================================ */
-const FounderNote = () => (
-  <section
-    id="founder"
-    className="py-20 sm:py-24 px-4 sm:px-6 border-t border-slate-200 bg-white"
-    aria-labelledby="founder-heading"
-  >
-    <div className="max-w-5xl mx-auto grid md:grid-cols-12 gap-10 md:gap-14 items-center">
-      <div className="md:col-span-4 flex justify-center md:justify-start">
-        <div className="relative">
-          <div
-            className="absolute -inset-3 bg-blue-600/8 rounded-3xl rotate-2"
-            aria-hidden="true"
-          />
-          <img
-            src="/marketing/founder-lee.jpg"
-            alt="Lee Walker, Founder of Quick Wing"
-            className="relative rounded-2xl shadow-xl w-56 h-56 sm:w-64 sm:h-64 object-cover border-4 border-white"
-            width="256"
-            height="256"
-            loading="lazy"
-          />
-        </div>
-      </div>
-
-      <div className="md:col-span-8">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">
-          A note from the founder
-        </span>
-        <h2
-          id="founder-heading"
-          className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900"
-        >
-          Built from real experience.
-        </h2>
-
-        <Quote size={28} className="text-blue-600/25 mt-6 mb-3" aria-hidden="true" />
-        <div className="space-y-4 text-slate-700 leading-relaxed">
-          <p className="text-lg font-medium text-slate-900">
-            I&apos;m proud to announce the launch of Quick Wing, my fleet management software.
-          </p>
-          <p>
-            I built Quick Wing to help businesses manage vehicle bookings,
-            track compliance, and gain clear visibility over their fleet in one place.
-          </p>
-          <p className="italic text-slate-600">
-            Built from real operational experience. Designed for real working teams.
-          </p>
-          <p>
-            If you&apos;re interested in a demonstration or would like to use Quick Wing
-            in your company, please get in touch.
-          </p>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-slate-200 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p
-              className="text-2xl text-slate-900"
-              style={{ fontFamily: '"Dancing Script", "Great Vibes", cursive', fontWeight: 600 }}
-            >
-              Lee Walker
-            </p>
-            <p className="text-sm text-slate-500 mt-1">Founder, Quick Wing</p>
-          </div>
-          <div className="flex flex-wrap gap-2 text-[11px] font-medium text-blue-700">
-            {['#QuickWing', '#FleetManagement', '#SaaS', '#Operations', '#BusinessInnovation'].map((tag) => (
-              <span
-                key={tag}
-                className="bg-blue-50 border border-blue-100 rounded-full px-2.5 py-0.5"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-);
-
-/* ============================================================
-   CTA + contact
-   ============================================================ */
-const CTA = () => (
-  <section
-    id="contact"
-    className="py-20 sm:py-24 px-4 sm:px-6 border-t border-slate-200"
-    aria-labelledby="contact-heading"
-  >
-    <div className="max-w-3xl mx-auto text-center">
-      <h2
-        id="contact-heading"
-        className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900"
-      >
-        Ready to give your team their time back?
-      </h2>
-      <p className="mt-4 text-slate-600 leading-relaxed">
-        Book a 20-minute demo, or drop us a line with your questions — no sales script, promise.
-      </p>
-      <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-        <a
-          href={MAILTO_ENQUIRY}
-          data-testid="contact-email-btn"
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-800 transition-colors"
-        >
-          <Mail size={16} /> Lee.quickwing@gmail.com
-        </a>
-        <a
-          href={INSTAGRAM_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 text-slate-700 font-semibold border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-        >
-          <Instagram size={16} /> @quick.wing2025
-        </a>
-      </div>
-    </div>
-  </section>
-);
-
-/* ============================================================
-   Footer
-   ============================================================ */
-const Footer = ({ onFranchiseLogin }) => (
-  <footer className="bg-slate-900 text-slate-300 py-12 px-4 sm:px-6" role="contentinfo">
-    <div className="max-w-6xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <img
-            src="/quick-wing-logo-nav.png"
-            alt="Quick Wing"
-            className="h-9 w-auto mb-3 opacity-90"
-            width="140"
-            height="36"
-          />
-          <p className="text-xs text-slate-500">Fleet management software for Irish businesses.</p>
-        </div>
-
-        <nav className="flex flex-wrap gap-x-5 gap-y-2 text-xs" aria-label="Footer navigation">
-          <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
-          <Link to="/legal" className="hover:text-white transition-colors">Legal</Link>
-          <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
-          <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy</Link>
-          <Link to="/dpa" className="hover:text-white transition-colors">DPA</Link>
-          <Link to="/cookies" className="hover:text-white transition-colors">Cookies</Link>
-          <Link to="/security" className="hover:text-white transition-colors">Security</Link>
-          <button
-            onClick={onFranchiseLogin}
-            className="hover:text-white transition-colors"
-            data-testid="footer-login-btn"
-          >
-            Franchise Login
-          </button>
-        </nav>
-      </div>
-
-      <div className="border-t border-slate-800 mt-10 pt-6 text-center">
-        <p className="text-[11px] text-slate-500">
-          © 2026 QuickFleet Limited. Quick Wing is a product of QuickFleet Limited. All rights reserved.
-        </p>
-      </div>
-    </div>
-  </footer>
-);
-
-/* ============================================================
-   Page
-   ============================================================ */
 const LandingPage = () => {
-  const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [contactType, setContactType] = useState('pricing');
+  const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
-    document.title = 'Quick Wing | Fleet management for Irish businesses';
+    const interval = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % 3);
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
+  const openPricingForm = () => {
+    setContactType('pricing');
+    setContactOpen(true);
+  };
+
+  const openContactForm = () => {
+    setContactType('general');
+    setContactOpen(true);
+  };
+
+  const features = [
+    { icon: Calendar, label: "Vehicle Bookings", desc: "See availability, assign vehicles instantly" },
+    { icon: Bell, label: "Compliance Tracking", desc: "Tax, NCT, insurance alerts before deadlines" },
+    { icon: BarChart3, label: "Fleet Reports", desc: "Usage data and exportable records" },
+    { icon: Car, label: "Full Fleet Control", desc: "Manage vehicles, staff access, and maintenance" },
+  ];
+
+  const slides = [
+    { src: "/bookings-screenshot.jpg", label: "Booking Calendar" },
+    { src: "/compliance-screenshot.jpg", label: "Compliance Dashboard" },
+    { src: "/reports-screenshot.jpg", label: "Fleet Reports" },
+  ];
+
   return (
-    <main className="min-h-screen bg-white text-slate-900 antialiased" role="main">
-      <Nav
-        mobileOpen={mobileOpen}
-        onToggleMobile={() => setMobileOpen((v) => !v)}
-        onCloseMobile={() => setMobileOpen(false)}
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-14">
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-slate-900 rounded-lg flex items-center justify-center">
+                <Truck className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-lg font-bold text-slate-900">QuickWing Directors Suite</span>
+            </Link>
+
+            <div className="hidden sm:flex items-center gap-6">
+              <a href="#features" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">Features</a>
+              <a href="#how-it-works" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">How It Works</a>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Link to="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900 hidden sm:block">
+                Login
+              </Link>
+              <Button
+                onClick={openPricingForm}
+                className="bg-slate-900 hover:bg-slate-800 text-white font-medium px-4 h-9 text-sm"
+              >
+                Get Started
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero + Product Section */}
+      <section className="pt-16 sm:pt-20 pb-10 sm:pb-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-center lg:min-h-[calc(100vh-180px)]">
+            {/* Left - Content */}
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm font-medium mb-5">
+                <Shield className="h-3.5 w-3.5" />
+                Fleet Management & Compliance
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-[1.1] tracking-tight mb-4 sm:mb-5">
+                Stay compliant.<br />
+                Reduce downtime.<br />
+                <span className="text-blue-600">Control your fleet.</span>
+              </h1>
+
+              <p className="text-base sm:text-lg text-slate-600 mb-6 sm:mb-8 max-w-md">
+                One system for vehicle bookings, compliance tracking, and operational visibility.
+                Built for care providers and service teams.
+              </p>
+
+              {/* Quick Features */}
+              <div id="features" className="grid grid-cols-2 gap-2 sm:gap-3 mb-6 sm:mb-8">
+                {features.map((f, i) => (
+                  <div key={i} className="flex items-start gap-2 sm:gap-2.5">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                      <f.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-700" />
+                    </div>
+                    <div>
+                      <p className="text-xs sm:text-sm font-semibold text-slate-900">{f.label}</p>
+                      <p className="text-[10px] sm:text-xs text-slate-500 leading-tight">{f.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  size="lg"
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-6 h-11"
+                  onClick={openPricingForm}
+                >
+                  Get QuickWing
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-slate-300 text-slate-700 hover:bg-slate-50 font-medium h-11"
+                  onClick={openContactForm}
+                >
+                  Talk to Us
+                </Button>
+              </div>
+            </div>
+
+            {/* Right - Product Screenshot */}
+            <div className="relative">
+              <div className="bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
+                {/* Browser Chrome */}
+                <div className="h-9 bg-slate-100 border-b border-slate-200 flex items-center px-3 gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+                  <div className="flex-1 mx-3">
+                    <div className="bg-white rounded px-2 py-0.5 text-xs text-slate-400 border border-slate-200 max-w-[200px]">
+                      app.quickwing.com
+                    </div>
+                  </div>
+                </div>
+
+                {/* Screenshots */}
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  {slides.map((slide, index) => (
+                    <div
+                      key={index}
+                      className={`absolute inset-0 transition-opacity duration-500 ${
+                        activeSlide === index ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    >
+                      <img
+                        src={slide.src}
+                        alt={slide.label}
+                        className="w-full h-full object-cover object-top"
+                      />
+                    </div>
+                  ))}
+
+                  {/* Label */}
+                  <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur rounded-lg px-3 py-1.5 shadow-lg border border-slate-200">
+                    <p className="text-xs font-semibold text-slate-900">{slides[activeSlide].label}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Slide Indicators */}
+              <div className="flex justify-center gap-1.5 mt-4">
+                {slides.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveSlide(i)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      activeSlide === i ? 'w-6 bg-slate-900' : 'w-1.5 bg-slate-300'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Authority Bar */}
+      <section className="py-8 bg-slate-50 border-y border-slate-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 opacity-60">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-slate-400">As seen in</span>
+            <div className="flex items-center gap-8 sm:gap-12 flex-wrap justify-center">
+               <div className="flex items-center gap-2">
+                 <div className="w-6 h-6 bg-slate-200 rounded-full flex items-center justify-center text-slate-600">
+                   <Clock className="h-3 w-3" />
+                 </div>
+                 <span className="text-sm font-bold text-slate-900 tracking-tight">AI SIX PODCAST</span>
+               </div>
+               <div className="flex items-center gap-2">
+                 <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                   <Check className="h-3 w-3" />
+                 </div>
+                 <span className="text-sm font-bold text-slate-900 tracking-tight uppercase">Bluebird Care</span>
+               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Compact Value Props */}
+      <section className="py-8 sm:py-10 bg-slate-900 text-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
+            <div className="flex items-center gap-4 sm:gap-8 flex-wrap justify-center md:justify-start">
+              {[
+                "Built from real operational experience",
+                "Irish compliance workflows",
+                "Setup in minutes"
+              ].map((text, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-blue-400" />
+                  <span className="text-xs sm:text-sm font-medium">{text}</span>
+                </div>
+              ))}
+            </div>
+            <div className="text-xs sm:text-sm text-slate-400">
+              For fleets of 5-50+ vehicles
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Success Story / Social Proof */}
+      <section className="py-16 sm:py-24 bg-white overflow-hidden">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="bg-slate-900 rounded-3xl p-8 sm:p-12 md:p-16 relative">
+            <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
+
+            <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold mb-6">
+                  <BarChart3 className="h-3 w-3" />
+                  Real-world Impact
+                </div>
+
+                <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6 leading-tight">
+                  &ldquo;The app has saved us <span className="text-blue-400">70% of our working time.</span>&rdquo;
+                </h2>
+
+                <p className="text-slate-400 text-lg mb-8 leading-relaxed">
+                  One leading Irish care agency recently moved their fleet onto QuickWing.
+                  By automating 60% of their vehicle monitoring, they stopped chasing paper
+                  and started focusing on operations.
+                </p>
+
+                <div className="flex items-center gap-4 border-t border-white/10 pt-8">
+                  <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-lg font-bold text-white uppercase">
+                    CO
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold">Carly O&apos;Donovan</p>
+                    <p className="text-slate-500 text-sm">Operations Manager, Bluebird Care</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative">
+                <a
+                  href="https://youtu.be/_oR2ROeUOp4"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block relative aspect-video bg-slate-800 rounded-2xl border border-white/10 overflow-hidden group shadow-2xl"
+                >
+                  <img
+                    src="https://img.youtube.com/vi/_oR2ROeUOp4/maxresdefault.jpg"
+                    alt="AI Six Podcast Interview"
+                    className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                    <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 group-hover:scale-110 transition-transform">
+                      <Play className="h-8 w-8 fill-current" />
+                    </div>
+                  </div>
+                  <div className="absolute bottom-4 left-4 right-4 text-center">
+                    <p className="text-white/80 text-xs font-medium backdrop-blur-sm bg-black/20 py-2 rounded-lg px-2">
+                      Lee Walker discusses the future of fleet intelligence on AI Six
+                    </p>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-12 sm:py-16 bg-white border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 text-center mb-8 sm:mb-10">
+            How It Works
+          </h2>
+          <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
+            {[
+              { num: "1", title: "Add your fleet", desc: "Enter vehicles, compliance dates, and create staff accounts" },
+              { num: "2", title: "Manage bookings", desc: "Staff book vehicles, admins see availability at a glance" },
+              { num: "3", title: "Stay compliant", desc: "Track renewals, get alerts, and keep records in one place" }
+            ].map((step, i) => (
+              <div key={i} className="text-center">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-900 text-white rounded-full flex items-center justify-center text-lg sm:text-xl font-bold mx-auto mb-3">
+                  {step.num}
+                </div>
+                <h3 className="font-semibold text-slate-900 mb-1 text-sm sm:text-base">{step.title}</h3>
+                <p className="text-xs sm:text-sm text-slate-600">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Simple CTA */}
+      <section className="py-16 bg-slate-50">
+        <div className="max-w-2xl mx-auto px-6 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">
+            Ready to run your fleet properly?
+          </h2>
+          <p className="text-slate-600 mb-6">
+            Get pricing tailored to your fleet size. Setup and onboarding support included.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button
+              size="lg"
+              className="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-8"
+              onClick={openPricingForm}
+            >
+              Get Pricing
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-slate-300 text-slate-700 hover:bg-white"
+              onClick={openContactForm}
+            >
+              Contact Us
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Minimal Footer */}
+      <footer className="py-8 bg-white border-t border-slate-200">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-slate-200 rounded flex items-center justify-center text-slate-600">
+                <Truck className="h-3.5 w-3.5" />
+              </div>
+              <span className="text-sm font-medium text-slate-600">QuickWing Directors Suite</span>
+            </div>
+
+            <div className="flex items-center gap-6 text-sm text-slate-500">
+              <button onClick={openContactForm} className="hover:text-slate-900">Contact</button>
+              <Link to="/login" className="hover:text-slate-900 flex items-center gap-1">
+                <Settings className="h-3 w-3" />
+                Login
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-slate-100 text-center text-xs text-slate-400">
+            © {new Date().getFullYear()} QuickWing Directors Suite. All rights reserved.
+          </div>
+        </div>
+      </footer>
+
+      {/* Contact Form Modal */}
+      <ContactFormModal
+        open={contactOpen}
+        onOpenChange={setContactOpen}
+        type={contactType}
       />
-      <Hero />
-      <ProofStrip />
-      <TrustBar />
-      <WhyStrip />
-      <Features />
-      <Compare />
-      <ROI />
-      <FounderNote />
-      <CTA />
-      <Footer onFranchiseLogin={() => navigate('/login')} />
-      <StickyCTA />
-    </main>
+    </div>
   );
 };
 

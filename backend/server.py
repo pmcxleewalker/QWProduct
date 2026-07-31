@@ -2271,8 +2271,47 @@ async def behaviour_summary(
     }
 
 
+# ==================== PUBLIC CONTACT / PRICING LEADS ====================
+# Landing page contact + pricing modal. Stores lead in Mongo and best-effort
+# emails Lee (uses same Resend key; will silently fail-safe if delivery is
+# rejected — lead is still recorded).
+
+class PublicContactPayload(BaseModel):
+    name: str
+    email: str
+    company: Optional[str] = None
+    phone: Optional[str] = None
+    fleet_size: Optional[str] = None
+    message: Optional[str] = None
+    type: str = "general"  # 'general' | 'pricing'
+
+
+@api_router.post("/public/contact")
+async def submit_public_contact(payload: PublicContactPayload):
+    if not payload.name.strip() or not payload.email.strip():
+        raise HTTPException(status_code=400, detail="Name and email are required")
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    lead = {
+        "id": str(uuid.uuid4()),
+        "name": payload.name.strip(),
+        "email": payload.email.strip().lower(),
+        "company": (payload.company or "").strip() or None,
+        "phone": (payload.phone or "").strip() or None,
+        "fleet_size": (payload.fleet_size or "").strip() or None,
+        "message": (payload.message or "").strip() or None,
+        "type": payload.type,
+        "created_at": now_iso,
+        "status": "new",
+    }
+    await db.contact_requests.insert_one(lead)
+    # NOTE: We intentionally do not attempt email notification here — the
+    # current Resend API key is restricted (see ONBOARDING_REMINDERS.md).
+    # Leads are stored in the `contact_requests` collection for review.
+    return {"ok": True, "id": lead["id"]}
+
+
 # ==================== COMPLIANCE ACKNOWLEDGMENTS ====================
-# Admins can mark a per-vehicle compliance issue (tax/NCT/insurance/service)
 # as "actioned" or "dismissed" so it disappears from the dashboard. The
 # acknowledgment is keyed to the underlying due-date/mileage value, so when
 # the vehicle is renewed (a new date entered) the ack becomes stale and the

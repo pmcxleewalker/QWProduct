@@ -240,32 +240,50 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Success Story & Video */}
+      {/* Success Story */}
       <section className="py-20 px-6 bg-slate-900 text-white mb-20">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-          <div>
-            <div className="text-blue-400 font-bold mb-4 uppercase tracking-widest text-xs">Success Story</div>
-            <h2 className="text-3xl md:text-5xl font-bold leading-tight mb-8">
-              &ldquo;The app has saved us <span className="text-blue-400">70% of our working time.</span>&rdquo;
-            </h2>
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center font-bold text-xl border border-slate-700 text-white">CO</div>
-              <div>
-                <p className="font-bold text-lg">Carly O&apos;Donovan</p>
-                <p className="text-slate-400">Operations Manager, Bluebird Care</p>
-              </div>
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="text-blue-400 font-bold mb-6 uppercase tracking-widest text-xs">Success Story</div>
+
+          <blockquote className="text-2xl md:text-4xl font-semibold leading-tight md:leading-tight mb-10 text-white">
+            <span className="text-blue-400 text-5xl leading-none align-top mr-1">&ldquo;</span>
+            Quick Wing has completely changed how we run our fleet. Compliance is under control, downtime is down,
+            and my team finally have visibility of every vehicle without chasing spreadsheets. It&apos;s the kind of
+            tool you didn&apos;t know you needed until you can&apos;t imagine working without it.
+            <span className="text-blue-400 text-5xl leading-none align-top ml-1">&rdquo;</span>
+          </blockquote>
+
+          <div className="inline-flex items-center gap-5 pt-6 border-t border-white/10">
+            {/* Inline Bluebird Care mark — current brand blue #0F73DB */}
+            <svg
+              viewBox="0 0 50 63"
+              className="h-14 w-auto shrink-0"
+              aria-label="Bluebird Care logo"
+              role="img"
+            >
+              <path
+                fill="#0F73DB"
+                d="M44.0458207,0 C47.3320227,0 50,2.66697983 50,5.95195322 L50,57.0474713 C50,60.3327603 47.3317658,63 44.045245,63 L5.95495309,63 C2.66832396,63 0,60.3326737 0,57.0472733 L0,5.95272667 C0,2.66732633 2.66832396,0 5.95495309,0 L44.0458207,0 Z M15.0297478,8.21382415 L7.64431603,8.21382415 L7.64431603,44.8958811 C10.9958589,43.9238264 13.7860624,41.6353147 15.4214616,38.6280969 C15.7375825,38.070037 17.7093036,33.5983321 18.8725353,30.8676636 C19.8844577,28.2777813 22.4031991,26.4422706 25.3525764,26.4422706 C27.7942131,26.4422706 29.9402283,27.7007528 31.1812334,29.6032506 L34.8391372,29.6032506 L30.5319632,32.0636261 C32.7629351,33.7357097 34.206654,36.4004558 34.206654,39.4023028 C34.206654,44.4651153 30.1009403,48.569294 25.0363271,48.569294 C22.9332731,48.569294 20.9968765,47.8599713 19.4497858,46.6697539 L19.4497858,46.6833636 C18.0665765,45.4955439 16.269122,44.7760674 14.3024227,44.7760674 C11.5054133,44.7760674 9.0495832,46.2294035 7.64431603,48.4205284 L7.64431603,54.0476415 L14.5989169,54.0476415 L14.5989169,50.1102343 C16.9991336,53.1247535 20.9995598,54.7858974 25.5538449,54.7858974 C35.03178,54.7858974 42.3556499,47.2802481 42.3556499,37.4982551 C42.3556499,27.6547263 34.9702181,20.1490801 25.6154036,20.1490801 C21.1226836,20.1490801 17.3684027,21.7485954 15.0297478,24.5171386 L15.0297478,8.21382415 Z"
+              />
+            </svg>
+            <div className="text-left">
+              <p className="font-bold text-lg text-white">Director</p>
+              <p className="text-slate-400 text-sm">Bluebird Care · Kerry &amp; West Cork</p>
             </div>
           </div>
-          <div className="space-y-6">
-            <a href="https://youtu.be/_oR2ROeUOp4" target="_blank" rel="noreferrer" className="group block relative overflow-hidden rounded-3xl shadow-2xl">
-              <img src="https://img.youtube.com/vi/_oR2ROeUOp4/maxresdefault.jpg" className="w-full aspect-video object-cover opacity-60 group-hover:scale-105 transition-transform duration-500" alt="Founder Interview" />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center shadow-2xl">
-                  <Play className="fill-current text-white ml-1" size={32} />
-                </div>
-              </div>
+
+          <div className="mt-10">
+            <a
+              href="https://youtu.be/_oR2ROeUOp4"
+              target="_blank"
+              rel="noreferrer"
+              className="group inline-flex items-center gap-3 text-sm text-blue-300 hover:text-white transition-colors"
+            >
+              <span className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Play className="fill-current text-white ml-0.5" size={14} />
+              </span>
+              Watch our founder discuss fleet intelligence on AI Six Podcast
             </a>
-            <p className="text-center text-slate-400 font-medium">An interview with our founder on the future of fleet intelligence</p>
           </div>
         </div>
       </section>

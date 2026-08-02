@@ -4,6 +4,22 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - Feb 2026 — Landing Page Tabs + Quick Wing Plus Tier
+
+**Restructure**: Landing Page split from one long scroll into four tabs (hero-embedded, sticky under nav): **Home**, **Features**, **ROI Calculator**, **Pricing**. State-based tab switching (no routing change), scroll-to-top on tab change.
+
+- **Home**: Hero + "As featured in" (AI Six + Bluebird) + Founder message + Success Story + Final CTA
+- **Features**: Split into "Included in every plan" (3 screenshot cards) and "Only on Plus" (4 icon cards: Live GPS, Journey Playback, Driver Behaviour, Smart Alerts), each Plus card carries a gold "Plus" pill
+- **ROI Calculator**: The full interactive 5-slider calculator with live totals, moved to its own tab
+- **Pricing**: Two-tier card layout — Quick Wing Standard from **€6.50/car/mo** (bookings + compliance) vs Quick Wing Plus from **€8.50/car/mo** (adds GPS + behaviour + alerts + playback). Plus card has gold gradient border, dark navy background, gold CTA button, "Recommended" pill
+
+**Quick Wing Plus logo**: Generated one-off via Nano Banana (`gemini-3.1-flash-image-preview`) using the existing Quick Wing logo as a reference — brushed gold + champagne finish, dark navy accents, gold PLUS pill badge under the wordmark, transparent background. Saved to `/app/frontend/public/quick-wing-plus-logo.png`. Generation script: `/app/scripts/gen_plus_logo.py`.
+
+**Files touched**: `frontend/src/pages/LandingPage.js` (full rewrite with tab system), `frontend/public/quick-wing-plus-logo.png` (new asset), `scripts/gen_plus_logo.py` (new).
+
+**Verified**: Screenshot tool confirmed all 4 tabs render, ROI totals correct (€27,000 on defaults), pricing shows €6.50 / €8.50, gold Plus logo displays crisp.
+
+
 ### Feature - Feb 2026 — Landing Page "As Featured In" AI Six Logo
 
 **What was built**: Replaced the placeholder AI Six wordmark in the Landing Page "As featured in" bar with the real AI Six Podcast logo artwork (from user-uploaded artifact `IMG_7448.jpeg`). The logo is now an anchor tag linking to the founder's interview at `https://youtu.be/_oR2ROeUOp4` (opens in new tab). Hover state fades ring to blue and title text turns blue. Bluebird Care mark preserved next to it. Verified visually via screenshot tool.

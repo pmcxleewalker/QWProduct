@@ -272,11 +272,14 @@ const FeaturesTab = ({ openPricingForm }) => (
       </div>
 
       <div className="flex items-center gap-4 mb-5">
-        <img src="/quick-wing-plus-logo.png" alt="Quick Wing Plus" className="h-10 w-auto" data-testid="features-plus-logo" />
+        <img src="/quick-wing-logo.png" alt="Quick Wing" className="h-9 w-auto" />
+        <span className="text-2xl font-black tracking-tight bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-600 bg-clip-text text-transparent" data-testid="features-plus-wordmark">
+          PLUS
+        </span>
         <span className="text-xs font-black uppercase tracking-[0.25em] text-amber-600">Only on Plus</span>
       </div>
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <IconFeatureCard Icon={MapPin} tier="plus" title="Live GPS Tracking" body="See every vehicle on a live map, powered by SinoTrack. Speed, ignition, satellites — all live." />
+        <IconFeatureCard Icon={MapPin} tier="plus" title="Live GPS Tracking" body="See every vehicle on a live map. Speed, ignition, satellites — all live." />
         <IconFeatureCard Icon={RouteIcon} tier="plus" title="Journey Playback" body="Replay any trip from any day. Speed and route timeline for audits and staff coaching." />
         <IconFeatureCard Icon={Activity} tier="plus" title="Driver Behaviour" body="Log harsh braking, rapid acceleration and speeding events, linked to the driver on shift." />
         <IconFeatureCard Icon={BellRing} tier="plus" title="Smart Alerts" body="Speeding, tracker unplug, offline vehicles and geofence breaches — instantly to your inbox." />
@@ -372,7 +375,7 @@ const STANDARD_FEATURES = [
 
 const PLUS_FEATURES = [
   'Everything in Standard',
-  'Live GPS tracking (SinoTrack)',
+  'Live GPS tracking',
   'Journey playback with speed timeline',
   'Driver behaviour events (harsh brake, speeding)',
   'Smart alerts (speeding, unplug, offline, geofence)',
@@ -419,7 +422,12 @@ const PricingTab = ({ openPricingForm }) => (
         <div className="relative rounded-3xl p-[2px] bg-gradient-to-br from-yellow-400 via-amber-500 to-yellow-600 shadow-xl shadow-amber-100" data-testid="pricing-plus-card">
           <div className="bg-slate-900 text-white rounded-[calc(1.5rem-2px)] p-8 h-full flex flex-col">
             <div className="flex items-center justify-between gap-3 mb-6">
-              <img src="/quick-wing-plus-logo.png" alt="Quick Wing Plus" className="h-10 w-auto drop-shadow-lg" data-testid="pricing-plus-logo" />
+              <div className="flex items-center gap-3">
+                <img src="/quick-wing-logo.png" alt="Quick Wing" className="h-10 w-auto bg-white/95 rounded-lg px-2 py-1 shadow" data-testid="pricing-plus-logo" />
+                <span className="text-3xl font-black tracking-tight bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 bg-clip-text text-transparent drop-shadow" data-testid="pricing-plus-wordmark">
+                  PLUS
+                </span>
+              </div>
               <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 text-[10px] font-black uppercase tracking-widest shadow">
                 Recommended
               </span>

@@ -4,6 +4,22 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - Feb 2026 — Contact Form + Thank-You Page (Google Ads conversion URL)
+
+**What was built**: A proper marketing contact flow at `/contact` (form) and `/thank-you` (conversion page).
+
+- `/contact` (rewritten `pages/Contact.js`): Full name, Company name, Email, Phone (all required, client-side validated) + Message (optional). POSTs to existing `/api/public/contact`. On success → `navigate('/thank-you')`. Two-column layout with left pitch + right form card, matches the light Quick Wing aesthetic.
+- `/thank-you` (new `pages/ThankYou.js`): Green check + "Thanks for getting in touch! Lee will be in touch with you shortly." + "Back to homepage" button. Purpose-built to be used as the Google Ads conversion tracking URL.
+- **Nav link**: Added "Contact" link to Landing Page nav (top-right, between logo and Login).
+- **Email notification** (`services/email_service.py::send_contact_lead_email`): Attempts to send to `lee@quick-wing.com` from the branded `invites@send.quick-wing.com` sender, falls back to `pmcxleewalker@gmail.com` (Resend account owner) via `onboarding@resend.dev` so the lead always reaches Lee even while the custom domain is unverified. Delivery status persisted on the `contact_requests` doc (`email_sent`, `email_delivered_to`, `email_error`).
+
+**Action required (not code)**: Verify `send.quick-wing.com` DNS in Resend dashboard so primary delivery to `lee@quick-wing.com` works.
+
+**Files touched**: `frontend/src/pages/Contact.js` (rewrite), `frontend/src/pages/ThankYou.js` (new), `frontend/src/pages/LandingPage.js` (nav Contact link), `frontend/src/App.js` (import + route), `backend/services/email_service.py` (new function), `backend/server.py` (endpoint fires email + records delivery).
+
+**Verified**: Playwright E2E — empty-form validation blocks submit, filled form redirects to /thank-you, DB record shows `email_sent=true`, `email_delivered_to=pmcxleewalker@gmail.com`. Console-log confirmed fallback delivery ID from Resend.
+
+
 ### Feature - Feb 2026 — Landing Page Tabs + Quick Wing Plus Tier
 
 **Restructure**: Landing Page split from one long scroll into four tabs (hero-embedded, sticky under nav): **Home**, **Features**, **ROI Calculator**, **Pricing**. State-based tab switching (no routing change), scroll-to-top on tab change.

@@ -34,6 +34,7 @@ const LandingPage = () => {
             <img src="/quick-wing-logo.png" alt="Quick Wing" className="h-10 w-auto" />
           </button>
           <div className="flex items-center gap-6">
+            <Link to="/contact" className="text-sm font-medium hover:text-blue-600 transition-colors" data-testid="nav-contact">Contact</Link>
             <Link to="/login" className="text-sm font-medium hover:text-blue-600 transition-colors" data-testid="nav-login">Login</Link>
             <Button onClick={openPricingForm} className="bg-slate-900 text-white rounded-full px-6" data-testid="nav-get-started">Get Started</Button>
           </div>

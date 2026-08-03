@@ -2305,9 +2305,21 @@ async def submit_public_contact(payload: PublicContactPayload):
         "status": "new",
     }
     await db.contact_requests.insert_one(lead)
-    # NOTE: We intentionally do not attempt email notification here — the
-    # current Resend API key is restricted (see ONBOARDING_REMINDERS.md).
-    # Leads are stored in the `contact_requests` collection for review.
+    # Fire off the notification email to Lee. Never let email failure break
+    # the form submission — the lead is safely stored regardless.
+    try:
+        from services.email_service import send_contact_lead_email
+        email_result = await send_contact_lead_email(lead)
+        await db.contact_requests.update_one(
+            {"id": lead["id"]},
+            {"$set": {
+                "email_sent": bool(email_result.get("success")),
+                "email_delivered_to": email_result.get("delivered_to"),
+                "email_error": email_result.get("error"),
+            }},
+        )
+    except Exception as exc:  # noqa: BLE001
+        logging.getLogger(__name__).error("Contact lead email dispatch crashed: %s", exc)
     return {"ok": True, "id": lead["id"]}
 
 

@@ -308,3 +308,114 @@ async def send_staff_invitation_email(
     except Exception as exc:  # noqa: BLE001 — Resend SDK raises various error classes
         logger.error("Failed to send staff invite email to %s: %s", recipient_email, exc)
         return {"success": False, "email_id": None, "error": str(exc)}
+
+
+# --- Public contact form: notify Lee when a lead lands -----------------------
+
+CONTACT_LEAD_INBOX = os.environ.get("CONTACT_LEAD_INBOX", "lee@quick-wing.com").strip()
+# Fallback inbox = the Resend account owner email (guaranteed deliverable
+# even when the API key is restricted / sending domain is unverified).
+CONTACT_LEAD_FALLBACK = os.environ.get("CONTACT_LEAD_FALLBACK", "pmcxleewalker@gmail.com").strip()
+
+
+def _build_contact_lead_html(lead: dict) -> str:
+    def row(label: str, value: Optional[str]) -> str:
+        if not value:
+            return ""
+        return (
+            f"<tr><td style='padding:6px 12px;color:#64748b;font-size:12px;text-transform:uppercase;"
+            f"letter-spacing:0.08em;'>{label}</td>"
+            f"<td style='padding:6px 12px;color:#0f172a;font-size:15px;font-weight:600;'>{value}</td></tr>"
+        )
+
+    message_block = ""
+    if lead.get("message"):
+        message_block = (
+            "<div style='margin-top:18px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;"
+            "border-radius:10px;font-size:14px;line-height:1.6;color:#0f172a;white-space:pre-wrap;'>"
+            f"{lead['message']}</div>"
+        )
+
+    return f"""
+<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="padding:32px 16px;">
+  <tr><td align="center">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
+      <tr><td style="background:linear-gradient(135deg,#0f172a 0%,#1e40af 100%);color:#fff;padding:24px 28px;">
+        <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#93c5fd;font-weight:700;">New Lead · Quick Wing</div>
+        <div style="font-size:20px;font-weight:800;margin-top:4px;">Someone filled in the contact form</div>
+      </td></tr>
+      <tr><td style="padding:24px 28px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px;">
+          {row("Name", lead.get("name"))}
+          {row("Company", lead.get("company"))}
+          {row("Email", lead.get("email"))}
+          {row("Phone", lead.get("phone"))}
+          {row("Fleet size", lead.get("fleet_size"))}
+          {row("Type", lead.get("type"))}
+        </table>
+        {message_block}
+        <p style="margin:24px 0 0 0;font-size:12px;color:#64748b;">
+          Lead id: <code>{lead.get('id')}</code> · Received {lead.get('created_at')}
+        </p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table></body></html>
+""".strip()
+
+
+async def send_contact_lead_email(lead: dict) -> dict:
+    """Notify Lee when a new public contact form is submitted.
+
+    Tries CONTACT_LEAD_INBOX first (lee@quick-wing.com). If Resend rejects it
+    because the sender domain isn't verified for that recipient, retries against
+    the fallback owner inbox so the lead always reaches Lee.
+    """
+    if not RESEND_API_KEY:
+        return {"success": False, "email_id": None, "error": "RESEND_API_KEY not configured"}
+
+    html_body = _build_contact_lead_html(lead)
+    subject = f"New Quick Wing lead — {lead.get('name') or 'no name'}"
+    base_params = {
+        "from": f"{SENDER_NAME} <{SENDER_EMAIL}>",
+        "reply_to": lead.get("email") or REPLY_TO_EMAIL,
+        "subject": subject,
+        "html": html_body,
+    }
+
+    # 1) Try preferred inbox
+    try:
+        params = {**base_params, "to": [CONTACT_LEAD_INBOX]}
+        result = await asyncio.to_thread(resend.Emails.send, params)
+        email_id = result.get("id") if isinstance(result, dict) else None
+        logger.info("Contact lead email sent to %s (id=%s)", CONTACT_LEAD_INBOX, email_id)
+        return {"success": True, "email_id": email_id, "delivered_to": CONTACT_LEAD_INBOX, "error": None}
+    except Exception as exc:  # noqa: BLE001
+        primary_err = str(exc)
+        logger.warning("Primary contact email to %s failed: %s", CONTACT_LEAD_INBOX, primary_err)
+
+    # 2) Fallback to gmail via Resend's default sender (always works even with
+    # restricted keys / unverified custom domain).
+    if CONTACT_LEAD_FALLBACK and CONTACT_LEAD_FALLBACK != CONTACT_LEAD_INBOX:
+        try:
+            params = {
+                **base_params,
+                "from": f"{SENDER_NAME} <onboarding@resend.dev>",
+                "to": [CONTACT_LEAD_FALLBACK],
+                "subject": f"[Fallback] {subject}",
+            }
+            result = await asyncio.to_thread(resend.Emails.send, params)
+            email_id = result.get("id") if isinstance(result, dict) else None
+            logger.info("Contact lead email sent to fallback %s (id=%s)", CONTACT_LEAD_FALLBACK, email_id)
+            return {
+                "success": True,
+                "email_id": email_id,
+                "delivered_to": CONTACT_LEAD_FALLBACK,
+                "error": f"primary_failed: {primary_err}",
+            }
+        except Exception as exc2:  # noqa: BLE001
+            logger.error("Fallback contact email to %s also failed: %s", CONTACT_LEAD_FALLBACK, exc2)
+            return {"success": False, "email_id": None, "error": f"{primary_err} | fallback: {exc2}"}
+
+    return {"success": False, "email_id": None, "error": primary_err}

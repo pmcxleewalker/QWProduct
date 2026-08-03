@@ -29,6 +29,7 @@ import DataProcessingAgreement from './pages/DataProcessingAgreement';
 import CookiePolicy from './pages/CookiePolicy';
 import SecurityCompliance from './pages/SecurityCompliance';
 import Contact from './pages/Contact';
+import ThankYou from './pages/ThankYou';
 import ActivateAccount from './pages/ActivateAccount';
 import TenantSelector from './pages/TenantSelector';
 import PlatformAdmin from './pages/PlatformAdmin';
@@ -417,6 +418,7 @@ const AppContent = () => {
         <Route path="/cookies" element={<CookiePolicy />} />
         <Route path="/security" element={<SecurityCompliance />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/thank-you" element={<ThankYou />} />
         <Route path="/status-update" element={<StatusUpdateRedirect />} />
         
         {/* Tenant Selection */}

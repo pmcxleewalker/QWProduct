@@ -4,6 +4,22 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - Feb 2026 — Fleet Board replaces "Car Calendars" in Tenant Dashboard
+
+**What was built**: Replaced the old per-car "Car Bookings" (Free/Booked/Recurring hour-cell grid) sub-tab with the modern `FleetBoard` component in the Tenant Dashboard's Fleet section.
+
+- Renamed the `car-calendars` sub-tab label from "Car Calendars" → "Fleet Board" (both admin and staff-user tab lists).
+- Sub-tab now renders `<FleetBoard>` from `components/FleetBoard.js` — same component used on `/bookings`.
+- Live Map explicitly excluded per user request ("not needed yet"); the tenant dashboard Fleet section now has: Live Status · Manage Vehicles · **Fleet Board** · All Cars Calendar.
+- Search bar + brand chips preserved on top for large fleets.
+- `Quick Book` and booking-pill clicks navigate to the tenant's `/bookings` page (with `?car=` or `?booking=` query) where the full new-booking form / booking preview modal lives — avoiding duplicated form state on the dashboard.
+- `onCarsChanged` is wired to `fetchData` so drop-off updates from FleetBoard refresh dashboard state.
+
+**Files touched**: `frontend/src/pages/TenantDashboard.js` (import FleetBoard, rename sub-tab, replace old sub-tab content with FleetBoard render).
+
+**Verified**: Playwright screenshot as master_admin — Fleet Board renders inside dashboard with header, date nav (Today), counters (6 Available / 0 In Use / 0 Blocked / 6 cars), brand chips, and vehicle cards each showing timeline + Quick Book / Drop-off actions.
+
+
 ### Feature - Feb 2026 — Contact Form + Thank-You Page (Google Ads conversion URL)
 
 **What was built**: A proper marketing contact flow at `/contact` (form) and `/thank-you` (conversion page).

@@ -16,6 +16,7 @@ import {
 import AdminTraining from '../components/AdminTraining';
 import CarBookingCalendar from '../components/CarBookingCalendar';
 import AllCarsCalendar from '../components/AllCarsCalendar';
+import FleetBoard from '../components/FleetBoard';
 import RequestLiftButton from '../components/RequestLiftButton';
 import QRScanner from '../components/QRScanner';
 import VehicleQRCode from '../components/VehicleQRCode';
@@ -694,7 +695,7 @@ const TenantDashboard = () => {
   const tabs = isStaffUser 
     ? [
         { id: 'fleet-status', label: 'Live Fleet', icon: Car },
-        { id: 'car-calendars', label: 'Car Calendars', icon: CalendarDays },
+        { id: 'car-calendars', label: 'Fleet Board', icon: CalendarDays },
         { id: 'bookings', label: 'My Bookings', icon: Calendar },
       ]
     : [
@@ -706,7 +707,7 @@ const TenantDashboard = () => {
           subTabs: [
             { id: 'live-fleet', label: 'Live Status' },
             { id: 'vehicles', label: 'Manage Vehicles' },
-            { id: 'car-calendars', label: 'Car Calendars' },
+            { id: 'car-calendars', label: 'Fleet Board' },
             { id: 'all-cars', label: 'All Cars Calendar' }
           ]
         },
@@ -1377,62 +1378,28 @@ const TenantDashboard = () => {
               </div>
             )}
 
-            {/* Car Calendars Tab - Individual car booking calendars */}
-            {/* Car Calendars Tab */}
+            {/* Fleet Board Tab - modern per-vehicle day view (replaces old Car Calendars) */}
             {(activeTab === 'car-calendars' || (activeTab === 'fleet' && activeSubTab === 'car-calendars')) && (
-              <div className="space-y-6">
+              <div className="space-y-4" data-testid="fleet-board-container">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Car Bookings</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Fleet Board</h2>
                     <p className="text-xs text-gray-500">
-                      {lastUpdated ? `Updated: ${lastUpdated.toLocaleTimeString('en-IE')}` : ''} 
+                      {lastUpdated ? `Updated: ${lastUpdated.toLocaleTimeString('en-IE')}` : ''}
                       <span className="ml-2 text-green-600">● Auto-updates every 30s</span>
                     </p>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => fetchData()}
-                      className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 flex items-center space-x-2"
-                    >
-                      <RefreshCw size={16} />
-                      <span>Refresh</span>
-                    </button>
-                    {!showAllCars && vehicles.length > 6 && (
-                      <button
-                        onClick={() => setShowAllCars(true)}
-                        className="px-3 py-2 bg-blue-100 text-blue-700 text-sm rounded-lg hover:bg-blue-200"
-                      >
-                        Show All {vehicles.length} Cars
-                      </button>
-                    )}
-                    {showAllCars && (
-                      <button
-                        onClick={() => setShowAllCars(false)}
-                        className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200"
-                      >
-                        Show Less
-                      </button>
-                    )}
-                  </div>
+                  <button
+                    onClick={() => fetchData()}
+                    className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 flex items-center space-x-2"
+                    data-testid="fleet-board-refresh"
+                  >
+                    <RefreshCw size={16} />
+                    <span>Refresh</span>
+                  </button>
                 </div>
 
-                {/* Legend */}
-                <div className="flex items-center justify-center space-x-6 px-4 py-3 bg-white rounded-lg border text-sm">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded bg-green-200 border border-green-400"></div>
-                    <span className="text-gray-600">Free</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded bg-red-200 border border-red-400"></div>
-                    <span className="text-gray-600">Booked</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded bg-purple-200 border border-purple-400"></div>
-                    <span className="text-gray-600">Recurring</span>
-                  </div>
-                </div>
-
-                {/* Search bar + brand chips */}
+                {/* Search bar + brand chips (still handy on large fleets) */}
                 {vehicles.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
@@ -1444,7 +1411,7 @@ const TenantDashboard = () => {
                           onChange={(e) => setVehicleSearch(e.target.value)}
                           placeholder="Search by name, reg, status or location..."
                           className="w-full pl-9 pr-9 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
-                          data-testid="car-calendars-search-input"
+                          data-testid="fleet-board-search-input"
                         />
                         {vehicleSearch && (
                           <button
@@ -1461,7 +1428,7 @@ const TenantDashboard = () => {
                       vehicles={vehicles}
                       selected={brandFilter}
                       onSelect={setBrandFilter}
-                      testid="car-calendars-brand-chips"
+                      testid="fleet-board-brand-chips"
                     />
                   </div>
                 )}
@@ -1485,28 +1452,31 @@ const TenantDashboard = () => {
                     : afterBrand;
                   if ((q || brandFilter) && filtered.length === 0) {
                     return (
-                      <div className="bg-white border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500 text-sm" data-testid="car-calendars-search-empty">
+                      <div className="bg-white border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500 text-sm" data-testid="fleet-board-search-empty">
                         {q
                           ? <>No {brandFilter ? `${brandFilter} ` : ''}vehicles match &ldquo;<span className="font-semibold">{vehicleSearch}</span>&rdquo;.</>
                           : <>No {brandFilter} vehicles in your fleet.</>}
                       </div>
                     );
                   }
-                  const visible = showAllCars ? filtered : filtered.slice(0, 6);
                   return (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {visible.map(vehicle => (
-                        <CarBookingCalendar
-                          key={vehicle.id}
-                          vehicle={vehicle}
-                          bookings={bookings}
-                          onBookingCreated={() => fetchData()}
-                          isAdmin={isAdmin}
-                          tenantSlug={activeTenant?.tenant_slug}
-                          redirectToBookings={true}
-                        />
-                      ))}
-                    </div>
+                    <FleetBoard
+                      cars={filtered}
+                      bookings={bookings}
+                      onQuickBook={(car) => {
+                        // Full booking form lives on /bookings — jump there
+                        // with the car pre-selected via query param.
+                        const slug = activeTenant?.tenant_slug || '';
+                        const base = slug ? `/${slug}/bookings` : '/bookings';
+                        navigate(`${base}?car=${encodeURIComponent(car.id)}&quick=1`);
+                      }}
+                      onOpenBooking={(booking) => {
+                        const slug = activeTenant?.tenant_slug || '';
+                        const base = slug ? `/${slug}/bookings` : '/bookings';
+                        navigate(`${base}?booking=${encodeURIComponent(booking.id)}`);
+                      }}
+                      onCarsChanged={fetchData}
+                    />
                   );
                 })()}
               </div>

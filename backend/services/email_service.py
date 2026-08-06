@@ -300,14 +300,48 @@ async def send_staff_invitation_email(
         "html": html_body,
     }
 
+    # 1) Try the branded sender first
     try:
         result = await asyncio.to_thread(resend.Emails.send, params)
         email_id = result.get("id") if isinstance(result, dict) else None
         logger.info("Staff invite email sent to %s (id=%s)", recipient_email, email_id)
         return {"success": True, "email_id": email_id, "error": None}
     except Exception as exc:  # noqa: BLE001 — Resend SDK raises various error classes
-        logger.error("Failed to send staff invite email to %s: %s", recipient_email, exc)
-        return {"success": False, "email_id": None, "error": str(exc)}
+        primary_err = str(exc)
+        logger.warning(
+            "Primary staff invite email to %s failed: %s", recipient_email, primary_err
+        )
+
+    # 2) Fallback: retry from Resend's default sender. Only works when the
+    # recipient is the Resend account owner (which is the case for the
+    # QuickFleet owner mailbox during preview / when the custom domain
+    # hasn't been verified yet). Anything else will fail again but the
+    # attempt is safe and always logged.
+    try:
+        fallback_params = {
+            **params,
+            "from": f"{SENDER_NAME} <onboarding@resend.dev>",
+            "subject": "Welcome to Quick Wing",
+        }
+        result = await asyncio.to_thread(resend.Emails.send, fallback_params)
+        email_id = result.get("id") if isinstance(result, dict) else None
+        logger.info(
+            "Staff invite email sent via fallback sender to %s (id=%s)",
+            recipient_email,
+            email_id,
+        )
+        return {
+            "success": True,
+            "email_id": email_id,
+            "error": f"primary_failed: {primary_err}",
+        }
+    except Exception as exc2:  # noqa: BLE001
+        logger.error(
+            "Fallback staff invite email to %s also failed: %s",
+            recipient_email,
+            exc2,
+        )
+        return {"success": False, "email_id": None, "error": f"{primary_err} | fallback: {exc2}"}
 
 
 # --- Public contact form: notify Lee when a lead lands -----------------------

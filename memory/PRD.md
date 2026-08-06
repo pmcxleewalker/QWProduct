@@ -2087,3 +2087,24 @@ recommendations to beat them, then approved building the full P0+P1 stack.
 
 **Verified end-to-end:** `PUT /api/vehicles/{id}` with `inspection_frequency_days=7` returns updated vehicle; `/vehicles/inspection-status` correctly flags "Ford Focus never inspected · every 7 days · OVERDUE"; card renders on Overview; "Open Documents" navigates to Reports → Documents; edit modal shows the persisted value.
 
+
+---
+
+## 2026-02-06 — Invite-email failure investigation & UX fix
+
+**Reported:** admin added a new team member but the invited user never got an email.
+
+**Root cause (confirmed from backend logs):**
+- Every staff invite is rejected by Resend with `"The associated domain with your API key is not verified. Please, create a new API key with full access or with a verified domain."`
+- Sender `invites@send.quick-wing.com` sits on a domain that has NOT been verified in Resend, and the current `RESEND_API_KEY` is a restricted / testing key.
+- User creation still succeeds (record + activation token are written) — only the actual Resend send fails, silently in the old UI.
+
+**Not a bug in our code — a Resend account/config issue.** The permanent fix is user action:
+1. Verify `send.quick-wing.com` (or another domain) at https://resend.com/domains, or
+2. Replace `RESEND_API_KEY` with a full-access key on a verified domain.
+
+**What we shipped in code:**
+- `services/email_service.py::send_staff_invitation_email` now mirrors the contact-form fallback: on Resend failure it retries from `onboarding@resend.dev`. This only delivers to the Resend account owner mailbox but is safe and matches the existing pattern.
+- `TenantDashboard.js` — the "Team Member Added" credentials modal now surfaces `email_sent` / `email_error` from the API. When the email fails, it shows a red banner "⚠ Invitation email could NOT be sent. Please share the credentials below with X directly (WhatsApp, SMS, in person)." with a collapsible "Why? (technical detail)" showing the raw Resend message and the fix (verify domain / new API key).
+- Verified end-to-end: POST `/api/tenant/users` for a fresh `@example.com` user returns `email_sent=false` with the Resend error string, and the UI banner renders correctly.
+

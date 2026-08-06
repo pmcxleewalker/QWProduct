@@ -466,7 +466,9 @@ const TenantDashboard = () => {
           name: userForm.name,
           role: userForm.role,
           password: response.data.temporary_password,
-          loginUrl: response.data.login_url || `https://quick-wing.com/${activeTenant?.tenant_slug}/login`
+          loginUrl: response.data.login_url || `https://quick-wing.com/${activeTenant?.tenant_slug}/login`,
+          emailSent: response.data.email_sent === true,
+          emailError: response.data.email_error || null
         });
         setShowUserCredentials(true);
       } else {
@@ -2915,6 +2917,34 @@ const TenantDashboard = () => {
               <h3 className="text-lg font-bold text-green-600">✓ Team Member Added!</h3>
             </div>
             <div className="p-4 space-y-4">
+              {/* Invitation email status — makes it obvious when Resend fails */}
+              {newUserCredentials.emailSent ? (
+                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-lg" data-testid="invite-email-sent">
+                  <p className="text-sm text-emerald-800">
+                    <strong>✓ Invitation email sent</strong> to <span className="font-mono">{newUserCredentials.email}</span>.
+                    They&apos;ll receive login instructions shortly.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-rose-50 border border-rose-200 p-3 rounded-lg" data-testid="invite-email-failed">
+                  <p className="text-sm text-rose-800">
+                    <strong>⚠ Invitation email could NOT be sent.</strong> Please share the credentials below with{' '}
+                    <strong>{newUserCredentials.name}</strong> directly (WhatsApp, SMS, in person).
+                  </p>
+                  {newUserCredentials.emailError && (
+                    <details className="mt-2">
+                      <summary className="text-xs text-rose-700 cursor-pointer">Why? (technical detail)</summary>
+                      <p className="text-xs text-rose-700 mt-1 font-mono break-all">
+                        {newUserCredentials.emailError}
+                      </p>
+                      <p className="text-xs text-rose-700 mt-2">
+                        Fix: verify your sending domain in Resend (resend.com/domains) or use a full-access API key.
+                      </p>
+                    </details>
+                  )}
+                </div>
+              )}
+
               <p className="text-sm text-gray-600">Share these credentials with <strong>{newUserCredentials.name}</strong>:</p>
               
               <div className="bg-gray-50 p-4 rounded-lg space-y-3">

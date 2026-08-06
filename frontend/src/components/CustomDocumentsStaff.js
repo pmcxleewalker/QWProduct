@@ -46,12 +46,17 @@ const SubmitDocumentForm = ({ template, vehicles, onClose, onSubmitted }) => {
 
   const setField = (key, value) => setData((prev) => ({ ...prev, [key]: value }));
 
-  const handleImage = async (key, fileList, multiple = false) => {
+  const handleImage = async (key, fileList, multiple = false, cap = 1) => {
     const files = Array.from(fileList || []).filter((f) => f.type.startsWith('image/'));
     if (files.length === 0) return;
     try {
       const urls = await Promise.all(files.map((f) => fileToCompressedDataUrl(f)));
-      setField(key, multiple ? [...((data[key] || [])), ...urls] : urls[0]);
+      if (multiple) {
+        const current = Array.isArray(data[key]) ? data[key] : (data[key] ? [data[key]] : []);
+        setField(key, [...current, ...urls].slice(0, cap));
+      } else {
+        setField(key, urls[0]);
+      }
     } catch (err) {
       toast.error('Failed to read image');
     }
@@ -188,34 +193,59 @@ const SubmitDocumentForm = ({ template, vehicles, onClose, onSubmitted }) => {
                     ))}
                   </select>
                 )}
-                {field.type === 'image' && (
-                  <div className="flex flex-col gap-2">
-                    <label className="inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-dashed border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">
-                      <Camera size={16} />
-                      {v ? 'Change image' : 'Take or upload photo'}
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/jpg,image/webp"
-                        capture="environment"
-                        className="hidden"
-                        onChange={(e) => handleImage(field.key, e.target.files)}
-                        data-testid={`field-${field.key}-input`}
-                      />
-                    </label>
-                    {v && (
-                      <div className="relative">
-                        <img src={v} alt="preview" className="w-full h-40 object-cover rounded-lg border border-slate-200" />
-                        <button
-                          onClick={() => setField(field.key, null)}
-                          className="absolute top-2 right-2 p-1 bg-white/90 rounded-md hover:bg-white"
-                          title="Remove"
-                        >
-                          <X size={14} className="text-slate-700" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {field.type === 'image' && (() => {
+                  const cap = Math.max(1, Math.min(5, parseInt(field.max_images ?? 1, 10) || 1));
+                  const multi = cap > 1;
+                  const imgs = multi
+                    ? (Array.isArray(v) ? v : (v ? [v] : []))
+                    : (v ? [v] : []);
+                  const canAddMore = imgs.length < cap;
+                  return (
+                    <div className="flex flex-col gap-2">
+                      {canAddMore && (
+                        <label className="inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-dashed border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">
+                          <Camera size={16} />
+                          {imgs.length === 0
+                            ? (multi ? `Take or upload photo (up to ${cap})` : 'Take or upload photo')
+                            : `Add another photo (${imgs.length}/${cap})`}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/jpg,image/webp"
+                            capture="environment"
+                            multiple={multi}
+                            className="hidden"
+                            onChange={(e) => handleImage(field.key, e.target.files, multi, cap)}
+                            data-testid={`field-${field.key}-input`}
+                          />
+                        </label>
+                      )}
+                      {imgs.length > 0 && (
+                        <div className={multi ? 'grid grid-cols-2 gap-2' : ''}>
+                          {imgs.map((src, i) => (
+                            <div key={i} className="relative">
+                              <img src={src} alt="preview" className={multi ? 'w-full h-28 object-cover rounded-lg border border-slate-200' : 'w-full h-40 object-cover rounded-lg border border-slate-200'} />
+                              <button
+                                onClick={() => {
+                                  if (multi) {
+                                    const next = imgs.filter((_, j) => j !== i);
+                                    setField(field.key, next);
+                                  } else {
+                                    setField(field.key, null);
+                                  }
+                                }}
+                                className="absolute top-1.5 right-1.5 p-1 bg-white/90 rounded-md hover:bg-white shadow"
+                                title="Remove"
+                                data-testid={`field-${field.key}-remove-${i}`}
+                              >
+                                <X size={12} className="text-slate-700" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}

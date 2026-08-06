@@ -12378,11 +12378,16 @@ async def delete_document_template(
 async def list_document_submissions(
     template_id: Optional[str] = None,
     vehicle_id: Optional[str] = None,
+    q: Optional[str] = None,
     limit: int = 200,
     skip: int = 0,
     context: TenantContext = Depends(require_tenant_context),
 ):
-    """List submissions. Admins see all; staff see only their own."""
+    """List submissions. Admins see all; staff see only their own.
+
+    Optional `q` performs a case-insensitive search across template name,
+    submitted-by (name + email) and vehicle registration.
+    """
     query: dict = {"tenant_id": context.tenant_id}
     if template_id:
         query["template_id"] = template_id
@@ -12392,6 +12397,17 @@ async def list_document_submissions(
     is_admin = context.role in (UserRole.ADMIN, UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
     if not is_admin:
         query["submitted_by_user_id"] = context.user_id
+
+    if q:
+        needle = str(q).strip()
+        if needle:
+            regex = {"$regex": re.escape(needle), "$options": "i"}
+            query["$or"] = [
+                {"template_name": regex},
+                {"submitted_by_name": regex},
+                {"submitted_by_email": regex},
+                {"vehicle_registration": regex},
+            ]
 
     cursor = db.document_submissions.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit)
     items = await cursor.to_list(length=limit)
@@ -12434,6 +12450,39 @@ async def create_document_submission(
 
     await db.document_submissions.insert_one(doc)
     doc.pop("_id", None)
+
+    # Notify all admins/master-admins of this tenant (skip the submitter).
+    try:
+        admin_memberships = await db.memberships.find(
+            {"tenant_id": context.tenant_id, "role": {"$in": ["admin", "master_admin"]}},
+            {"_id": 0, "user_id": 1},
+        ).to_list(500)
+        reporter_name = doc.get("submitted_by_name") or context.user_email or "A staff member"
+        tpl_name = doc.get("template_name") or "a document"
+        for m in admin_memberships:
+            if m["user_id"] == context.user_id:
+                continue
+            await db.notifications.insert_one({
+                "id": str(uuid.uuid4()),
+                "tenant_id": context.tenant_id,
+                "user_id": m["user_id"],
+                "type": "document_submitted",
+                "title": f"New {tpl_name} submitted",
+                "message": f"{reporter_name} submitted a {tpl_name}.",
+                "link": "/dashboard?tab=reports&sub=documents",
+                "read": False,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "meta": {
+                    "submission_id": doc.get("id"),
+                    "template_id": doc.get("template_id"),
+                    "template_name": tpl_name,
+                    "submitted_by_user_id": context.user_id,
+                    "submitted_by_name": reporter_name,
+                },
+            })
+    except Exception:
+        pass
+
     return doc
 
 

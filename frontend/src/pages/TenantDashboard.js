@@ -2165,20 +2165,6 @@ const TenantDashboard = () => {
                   vehicles={vehicles}
                   complianceSettings={complianceSettings}
                 />
-                
-                {/* Cost Analytics Dashboard */}
-                <CostAnalyticsDashboard
-                  settings={{
-                    mileage_rate: settingsForm.mileage_rate || 0.35,
-                    fuel_cost_per_km: settingsForm.fuel_cost_per_km || 0.12,
-                    maintenance_cost_per_km: settingsForm.maintenance_cost_per_km || 0.08,
-                    currency: settingsForm.currency || 'EUR',
-                    distance_unit: settingsForm.distance_unit || 'km'
-                  }}
-                  vehicles={vehicles}
-                  mileageLogs={[]}
-                  onResetSettings={handleResetCostAnalytics}
-                />
               </div>
             )}
 

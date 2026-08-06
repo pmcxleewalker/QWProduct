@@ -4,6 +4,36 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - Feb 2026 — Documents Inbox + Multi-photo Fields + Admin Notifications; Removed Cost Analytics/Fuel Insights
+
+**Removals**:
+- **Fleet Reports**: dropped the `<CostAnalyticsDashboard>` render — the "Cost Analytics Dashboard" and "Cost by vehicle" cards no longer appear on the Reports tab.
+- **Documents (admin)**: removed the `<FuelAnalyticsWidget />` "Fuel insights" panel — same data is now accessible via the Inbox filtered by "Fuel Log".
+
+**Custom Documents — form builder upgrades**:
+- **Multi-photo per image field**: new `max_images` (1-5) config on the `image` field type. Backend `TemplateField` model + `validate_fields` clamps to [1, 5]; `build_submission_doc` caps the accepted photo list to `max_images`; existing single-image behaviour preserved (default 1).
+- **Template editor UI** (`CustomDocumentsAdmin.js`): when a field's type is `Image upload`, a `Max photos (1–5)` numeric input is shown with helper copy. Value persists via `PUT/POST /api/documents/templates`.
+- **Staff form** (`CustomDocumentsStaff.js`): image field rendering now respects `max_images`. When cap > 1, staff can add multiple photos (multi-select + accumulate), each with its own remove button, all in a 2-col preview grid. Cap enforced client-side and server-side.
+- **Admin notifications**: `POST /api/documents/submissions` now writes a `document_submitted` notification to every admin/master-admin of the tenant (skipping the submitter). Notification payload includes template name, submitter name and submission id — surfaces via the existing dashboard notification bell.
+- **Documents Inbox** (`CustomDocumentsAdmin.js → DocumentsInbox`): brand-new global inbox above the templates grid. Lists ALL submissions across ALL templates, newest first, grouped by date bucket (Today · Yesterday · Earlier this week · Earlier this month · Older by month). Includes:
+  - Debounced search across template name, submitter name/email and vehicle registration (server-side via new `?q=` query param on `GET /api/documents/submissions`).
+  - Template filter dropdown (`All document types` + one entry per template).
+  - Photo count badge per row, submitter and vehicle reg subline, time + date column, chevron detail.
+  - Clicking a row opens the existing `SubmissionDetailModal` — reads image fields as arrays so multi-photo submissions render as a 2-col image grid; delete action wired.
+
+**Files touched**:
+- `backend/services/documents.py`: `TemplateField.max_images`, `validate_fields` clamp, `build_submission_doc` cap.
+- `backend/server.py`: `GET /documents/submissions` accepts `q=`; `POST /documents/submissions` writes admin notifications after insert.
+- `frontend/src/components/CustomDocumentsAdmin.js`: new `DocumentsInbox`, template editor gets max_images control, dropped FuelAnalyticsWidget import.
+- `frontend/src/components/CustomDocumentsStaff.js`: multi-photo capture with per-photo remove.
+- `frontend/src/pages/TenantDashboard.js`: removed CostAnalyticsDashboard render from Fleet Reports.
+
+**Verified**:
+- Backend curl: creating template with `max_images:5` persists; submitting 3 photos → 3 stored; submitting 8 photos → capped to 5.
+- Playwright screenshots: Documents Inbox renders with date buckets and search, template editor shows Max photos (1-5) control, Fleet Reports no longer shows Cost Analytics Dashboard, Fuel insights widget is gone.
+- Notification write is best-effort (wrapped in try/except so submission never fails).
+
+
 ### Feature - Feb 2026 — Fleet Board replaces "Car Calendars" in Tenant Dashboard
 
 **What was built**: Replaced the old per-car "Car Bookings" (Free/Booked/Recurring hour-cell grid) sub-tab with the modern `FleetBoard` component in the Tenant Dashboard's Fleet section.

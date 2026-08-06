@@ -6,7 +6,6 @@ import {
   Save, FileDown, Image as ImageIcon, Loader2, AlertCircle, Search, ChevronRight,
   Power, PowerOff
 } from 'lucide-react';
-import FuelAnalyticsWidget from './FuelAnalyticsWidget';
 import EmptyState from './EmptyState';
 import { useConfirm } from './ConfirmDialog';
 import { useEscapeClose } from '../hooks/useEscapeClose';
@@ -91,6 +90,9 @@ const TemplateEditorModal = ({ template, onClose, onSaved }) => {
       options: f.type === 'select'
         ? (Array.isArray(f.options) ? f.options : (f.options || '').split(',').map((s) => s.trim()).filter(Boolean))
         : [],
+      max_images: f.type === 'image'
+        ? Math.max(1, Math.min(5, parseInt(f.max_images ?? 1, 10) || 1))
+        : undefined,
     }));
 
     try {
@@ -192,7 +194,7 @@ const TemplateEditorModal = ({ template, onClose, onSaved }) => {
 
             {fields.length === 0 && (
               <div className="text-center py-8 border border-dashed border-slate-300 rounded-xl">
-                <p className="text-sm text-slate-500">No fields yet. Click "Add field" to start.</p>
+                <p className="text-sm text-slate-500">No fields yet. Click &ldquo;Add field&rdquo; to start.</p>
               </div>
             )}
 
@@ -238,6 +240,28 @@ const TemplateEditorModal = ({ template, onClose, onSaved }) => {
                             placeholder="Option 1, Option 2, Option 3"
                             className="w-full px-2.5 py-1.5 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                           />
+                        </div>
+                      )}
+                      {f.type === 'image' && (
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs font-medium text-slate-600 mb-1">
+                            Max photos (1–5)
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={5}
+                            value={f.max_images ?? 1}
+                            onChange={(e) => {
+                              const n = Math.max(1, Math.min(5, parseInt(e.target.value, 10) || 1));
+                              updateField(idx, { max_images: n });
+                            }}
+                            className="w-24 px-2.5 py-1.5 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                            data-testid={`template-field-max-images-${idx}`}
+                          />
+                          <p className="text-[11px] text-slate-500 mt-1">
+                            Staff can attach up to this many photos for this field.
+                          </p>
                         </div>
                       )}
                       {!['checkbox', 'vehicle', 'image'].includes(f.type) && (
@@ -479,6 +503,168 @@ const SubmissionDetailModal = ({ submission, template, onClose, onDelete }) => {
   );
 };
 
+// ============== Documents Inbox (all submissions, all templates) ==============
+
+const dateBucket = (iso) => {
+  const d = new Date(iso);
+  const now = new Date();
+  const t = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const y = new Date(t.getTime() - 24 * 60 * 60 * 1000);
+  const weekStart = new Date(t.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const dOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  if (dOnly.getTime() === t.getTime()) return { key: 'today', label: 'Today' };
+  if (dOnly.getTime() === y.getTime()) return { key: 'yesterday', label: 'Yesterday' };
+  if (dOnly >= weekStart) return { key: 'this-week', label: 'Earlier this week' };
+  const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (dOnly >= thisMonth) return { key: 'this-month', label: 'Earlier this month' };
+  const y2 = d.getFullYear();
+  return { key: `older-${y2}-${d.getMonth()}`, label: d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) };
+};
+
+const DocumentsInbox = ({ templates, onOpen }) => {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [templateFilter, setTemplateFilter] = useState(''); // template_id
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const params = { limit: 200 };
+      if (templateFilter) params.template_id = templateFilter;
+      if (search.trim()) params.q = search.trim();
+      const res = await axios.get(`${API}/documents/submissions`, {
+        headers: getAuthHeaders(),
+        params,
+      });
+      setItems(res.data.items || []);
+    } catch (err) {
+      // silent — inbox is best-effort
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templateFilter]);
+
+  // Debounced search
+  useEffect(() => {
+    const h = setTimeout(load, 250);
+    return () => clearTimeout(h);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  const grouped = React.useMemo(() => {
+    const map = new Map();
+    for (const it of items) {
+      const b = dateBucket(it.created_at);
+      if (!map.has(b.key)) map.set(b.key, { label: b.label, rows: [] });
+      map.get(b.key).rows.push(it);
+    }
+    return Array.from(map.entries()); // preserves insertion order (newest first)
+  }, [items]);
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden" data-testid="documents-inbox">
+      <div className="p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+            <FileText size={16} className="text-blue-600" /> Documents Inbox
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5">Every submission from your team, newest first.</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={templateFilter}
+            onChange={(e) => setTemplateFilter(e.target.value)}
+            className="px-2.5 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
+            data-testid="inbox-template-filter"
+          >
+            <option value="">All document types</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+          <div className="relative">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search staff, vehicle, doc…"
+              className="pl-8 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 w-56"
+              data-testid="inbox-search-input"
+            />
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="p-10 text-center text-sm text-slate-500">
+          <Loader2 className="animate-spin inline mr-2" size={14} /> Loading inbox…
+        </div>
+      ) : items.length === 0 ? (
+        <div className="p-10 text-center text-sm text-slate-500" data-testid="inbox-empty">
+          {search || templateFilter
+            ? 'No submissions match your filter.'
+            : 'No submissions yet. Staff submissions will land here.'}
+        </div>
+      ) : (
+        <div className="divide-y divide-slate-100">
+          {grouped.map(([key, group]) => (
+            <div key={key} data-testid={`inbox-group-${key}`}>
+              <div className="px-4 py-2 bg-slate-50/60 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                {group.label} · {group.rows.length}
+              </div>
+              <ul>
+                {group.rows.map((s) => {
+                  const time = new Date(s.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                  const dateShort = new Date(s.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+                  const photos = Array.isArray(s.photos) ? s.photos.length : 0;
+                  return (
+                    <li key={s.id}>
+                      <button
+                        onClick={() => onOpen(s)}
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50/40 transition-colors flex items-center gap-3"
+                        data-testid={`inbox-item-${s.id}`}
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center flex-shrink-0">
+                          <FileText size={16} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="font-semibold text-sm text-slate-900 truncate">{s.template_name || 'Document'}</span>
+                            {photos > 0 && (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">
+                                <ImageIcon size={10} /> {photos}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-600 truncate">
+                            {(s.submitted_by_name || s.submitted_by_email || 'Someone')}
+                            {s.vehicle_registration ? <> · <span className="font-mono">{s.vehicle_registration}</span></> : null}
+                          </div>
+                        </div>
+                        <div className="text-xs text-slate-500 flex-shrink-0 text-right">
+                          <div>{time}</div>
+                          <div className="text-[10px] text-slate-400">{dateShort}</div>
+                        </div>
+                        <ChevronRight size={14} className="text-slate-300 flex-shrink-0" />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ============== Top-level Admin Component ==============
 const CustomDocumentsAdmin = () => {
   const [templates, setTemplates] = useState([]);
@@ -486,6 +672,7 @@ const CustomDocumentsAdmin = () => {
   const [editing, setEditing] = useState(null);
   const [creating, setCreating] = useState(false);
   const [viewingSubmissionsFor, setViewingSubmissionsFor] = useState(null);
+  const [selectedInboxSubmission, setSelectedInboxSubmission] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -548,8 +735,14 @@ const CustomDocumentsAdmin = () => {
         </button>
       </div>
 
-      {/* Fuel insights — auto-pulled from Fuel Log submissions */}
-      <FuelAnalyticsWidget />
+      {/* Documents Inbox — all recent submissions across all templates */}
+      <DocumentsInbox
+        templates={templates}
+        onOpen={(s) => setSelectedInboxSubmission(s)}
+      />
+
+      {/* Fuel insights widget removed — was pulling from Fuel Log submissions.
+          Admins now see all submissions via the Documents Inbox below. */}
 
       {loading ? (
         <div className="text-center py-10 text-sm text-slate-500"><Loader2 className="animate-spin inline mr-2" size={14} />Loading…</div>
@@ -634,6 +827,34 @@ const CustomDocumentsAdmin = () => {
           onSaved={load}
         />
       )}
+
+      {/* Inbox item detail — reuse the existing detail modal */}
+      {selectedInboxSubmission && (() => {
+        const tpl = templates.find((t) => t.id === selectedInboxSubmission.template_id) || {
+          name: selectedInboxSubmission.template_name || 'Document',
+          fields: [],
+        };
+        return (
+          <SubmissionDetailModal
+            submission={selectedInboxSubmission}
+            template={tpl}
+            onClose={() => setSelectedInboxSubmission(null)}
+            onDelete={async () => {
+              try {
+                await axios.delete(
+                  `${API}/documents/submissions/${selectedInboxSubmission.id}`,
+                  { headers: getAuthHeaders() }
+                );
+                toast.success('Submission deleted');
+                setSelectedInboxSubmission(null);
+                load();
+              } catch (err) {
+                toast.error('Failed to delete');
+              }
+            }}
+          />
+        );
+      })()}
     </div>
   );
 };

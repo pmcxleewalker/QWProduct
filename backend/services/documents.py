@@ -63,6 +63,7 @@ class TemplateField(BaseModel):
     placeholder: Optional[str] = None
     help_text: Optional[str] = None
     options: List[str] = Field(default_factory=list)  # only for type=select
+    max_images: Optional[int] = None  # only for type=image (1-5, default 1)
 
 
 class TemplateCreate(BaseModel):
@@ -148,6 +149,15 @@ def validate_fields(fields: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             if not options:
                 raise ValueError(f"Field '{label}' is a dropdown but has no options")
 
+        # Clamp image field max_images to 1..5, default 1.
+        max_images: Optional[int] = None
+        if ftype == "image":
+            try:
+                mi = int(raw.get("max_images") or 1)
+            except (TypeError, ValueError):
+                mi = 1
+            max_images = max(1, min(5, mi))
+
         cleaned.append({
             "key": key,
             "label": label,
@@ -156,6 +166,7 @@ def validate_fields(fields: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             "placeholder": (raw.get("placeholder") or "") or None,
             "help_text": (raw.get("help_text") or "") or None,
             "options": options if ftype == "select" else [],
+            "max_images": max_images,
         })
 
     return cleaned
@@ -240,6 +251,10 @@ def build_submission_doc(
         elif ftype == "image":
             # Expect a base64 data URL or string. Single value or list.
             values = value if isinstance(value, list) else ([value] if value else [])
+            # Enforce per-field cap (default 1, max 5).
+            cap = int(field.get("max_images") or 1)
+            cap = max(1, min(5, cap))
+            values = values[:cap]
             cleaned_imgs: List[str] = []
             for v in values:
                 if not v:

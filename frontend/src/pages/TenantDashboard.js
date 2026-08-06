@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -17,6 +17,7 @@ import AdminTraining from '../components/AdminTraining';
 import CarBookingCalendar from '../components/CarBookingCalendar';
 import AllCarsCalendar from '../components/AllCarsCalendar';
 import FleetBoard from '../components/FleetBoard';
+import EditBookingModal from '../components/EditBookingModal';
 import RequestLiftButton from '../components/RequestLiftButton';
 import QRScanner from '../components/QRScanner';
 import VehicleQRCode from '../components/VehicleQRCode';
@@ -136,6 +137,23 @@ const TenantDashboard = () => {
   
   // Staff default to bookings tab, admins to overview
   const [activeTab, setActiveTab] = useState(isStaffUser ? 'bookings' : 'overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Honor deep-link query params (?tab=&sub=) — used by the nav bell's
+  // "Review submissions" button and other quick links.
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const subParam = searchParams.get('sub');
+    if (!tabParam) return;
+    setActiveTab(tabParam);
+    if (subParam) setActiveSubTab(subParam);
+    // Strip the params so refreshes don't force the same tab forever.
+    const next = new URLSearchParams(searchParams);
+    next.delete('tab');
+    next.delete('sub');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -158,6 +176,7 @@ const TenantDashboard = () => {
   const [serviceAlert, setServiceAlert] = useState(null);
   const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0);
   const [docsInboxUnread, setDocsInboxUnread] = useState(0);
+  const [fleetBoardBooking, setFleetBoardBooking] = useState(null);
   const [activeSubTab, setActiveSubTab] = useState(null); // For nested tabs
   const [vehicleSearch, setVehicleSearch] = useState(''); // Fleet list filter
   const [brandFilter, setBrandFilter] = useState(null); // Click-to-filter brand chip
@@ -1516,9 +1535,10 @@ const TenantDashboard = () => {
                         navigate(`${base}?car=${encodeURIComponent(car.id)}&quick=1`);
                       }}
                       onOpenBooking={(booking) => {
-                        const slug = activeTenant?.tenant_slug || '';
-                        const base = slug ? `/${slug}/bookings` : '/bookings';
-                        navigate(`${base}?booking=${encodeURIComponent(booking.id)}`);
+                        // Open the compact edit modal inline — admin can
+                        // approve / reject / edit / swap car / delete
+                        // without leaving the Fleet Board.
+                        setFleetBoardBooking(booking);
                       }}
                       onCarsChanged={fetchData}
                     />
@@ -3643,6 +3663,18 @@ const TenantDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Fleet Board — booking preview / edit modal (opened when admin
+          clicks a driver-name pill on the timeline) */}
+      <EditBookingModal
+        isOpen={!!fleetBoardBooking}
+        booking={fleetBoardBooking}
+        onClose={() => setFleetBoardBooking(null)}
+        onSuccess={() => {
+          setFleetBoardBooking(null);
+          fetchData();
+        }}
+      />
     </div>
   );
 };

@@ -4,6 +4,33 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - Feb 2026 — Global Nav Bell for Document Submissions + Fleet Board Pill → Edit Modal
+
+**Global Unread Bell (Navigation.js)**:
+- Reuses `GET /api/documents/inbox/unread-count` — now polled by the top nav bell every 30s (admins only).
+- Two bells wired: mobile top bar (`data-testid="nav-bell-mobile"`) and a newly-added desktop nav bell (`data-testid="nav-bell-desktop"`), both showing a red badge with `liftRequestCount + docsUnread`. Desktop badge is rose-500 with pulse animation; mobile stays red-500.
+- Rebuilt `NotificationDropdown` — now a two-panel layout:
+  1. **Document Submissions block** (rendered only when `docsUnread > 0`) — icon, "N new document submission(s)", "Review submissions →" CTA that navigates to `getTenantPath('/')?tab=reports&sub=documents`.
+  2. **Lift Requests section** — kept as-is with existing accept/dismiss actions.
+- Added `FileText` to `lucide-react` imports.
+
+**Deep-link support (TenantDashboard.js)**:
+- New `useSearchParams` hook reads `?tab=` and `?sub=` on mount, sets `activeTab` and `activeSubTab` accordingly, then strips the params via `setSearchParams(..., { replace: true })` so refreshing doesn't lock the tab.
+
+**Fleet Board pill → Edit Booking modal (TenantDashboard.js)**:
+- Imported existing `EditBookingModal` (already handles Swap Car, edit times, Delete/Cancel).
+- New `fleetBoardBooking` state; `<FleetBoard onOpenBooking={setFleetBoardBooking}>` replaces the previous `/bookings` navigation.
+- Modal renders unconditionally at the end of the dashboard render; `onSuccess` closes the modal and refetches vehicles/bookings so the Fleet Board updates instantly.
+
+**Files touched**:
+- `frontend/src/components/Navigation.js`: docsUnread state + poller, mobile bell badge sum, new desktop bell, new dropdown layout with Document Submissions block, FileText import.
+- `frontend/src/pages/TenantDashboard.js`: useSearchParams deep-link, EditBookingModal import + state + render, replaced pill onOpenBooking handler.
+
+**Verified**:
+- Playwright end-to-end: desktop bell shows `2` badge; dropdown shows "2 new document submissions" block with red button; "Review submissions" navigates to `/test-fleet/` (query cleared) with Documents Inbox visible; Fleet Board pill "Sarah OBrien" click opens Edit Booking modal in-place, URL stays on dashboard.
+- Post-verify cleanup removed seeded booking + notifications.
+
+
 ### Feature - Feb 2026 — Documents Inbox Unread Dot + Fleet Board Driver-name Pills
 
 **Documents Inbox unread badge (red dot on sub-tab)**:

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Crown, Building2, Eye, Shield, BarChart3, Scale, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Home, Calendar, PhoneCall, Settings, LogOut, FileSpreadsheet, Bell, X, Check, MapPin, Clock, Calendar as CalendarIcon, User, Key, Fish, BellRing, BellOff, Crown, Building2, Eye, Shield, BarChart3, Scale, AlertTriangle, ShieldAlert, FileText } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { liftRequestAPI, trackerAPI } from '../api/api';
@@ -15,6 +15,7 @@ const Navigation = ({ tenantSlug }) => {
   const { user, logout, isTenantAdmin, isPlatformAdmin, isImpersonating, stopImpersonation, activeTenant } = useAuth();
   const [liftRequestCount, setLiftRequestCount] = useState(0);
   const [liftRequests, setLiftRequests] = useState([]);
+  const [docsUnread, setDocsUnread] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showPushSettings, setShowPushSettings] = useState(false);
@@ -183,6 +184,27 @@ const Navigation = ({ tenantSlug }) => {
     return () => clearInterval(interval);
   }, [user, activeTenant]);
 
+  // Poll unread Documents Inbox count (admins only) so the nav bell shows
+  // a badge for new staff submissions from anywhere in the app.
+  useEffect(() => {
+    if (!activeTenant?.tenant_id || !isTenantAdmin()) {
+      setDocsUnread(0);
+      return undefined;
+    }
+    let cancelled = false;
+    const fetchDocs = async () => {
+      try {
+        const res = await axios.get(`${API}/documents/inbox/unread-count`);
+        if (!cancelled) setDocsUnread(res.data?.count || 0);
+      } catch {
+        /* silent — endpoint may 403 for platform admins mid tenant flip */
+      }
+    };
+    fetchDocs();
+    const id = setInterval(fetchDocs, 30000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [user, activeTenant, isTenantAdmin]);
+
   const handleAcceptLift = async (requestId) => {
     // For navigation dropdown, we'll just accept without message modal
     // The full modal experience is on the Dashboard
@@ -240,13 +262,16 @@ const Navigation = ({ tenantSlug }) => {
   };
 
   // Notification Dropdown Component
-  const NotificationDropdown = () => (
-    <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-96 overflow-hidden">
+  const NotificationDropdown = () => {
+    const dashPath = getTenantPath('/');
+    const reviewDocsHref = `${dashPath}${dashPath.endsWith('/') ? '' : '/'}?tab=reports&sub=documents`.replace('//?', '/?');
+    return (
+    <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[32rem] overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-2">
-          <span className="text-xl">🙋‍♂️</span>
-          <span className="text-white font-bold">Lift Requests ({liftRequestCount})</span>
+          <span className="text-xl">🔔</span>
+          <span className="text-white font-bold">Notifications</span>
         </div>
         <button
           onClick={() => setShowNotifications(false)}
@@ -256,32 +281,56 @@ const Navigation = ({ tenantSlug }) => {
         </button>
       </div>
 
-      {/* Content */}
-      <div className="overflow-y-auto max-h-72">
+      <div className="overflow-y-auto flex-1">
+        {/* Document Submissions block (admins only) */}
+        {isTenantAdmin() && docsUnread > 0 && (
+          <div className="p-3 border-b border-gray-100 bg-rose-50/40" data-testid="nav-docs-unread-block">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
+                <FileText size={16} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900">
+                  {docsUnread} new document submission{docsUnread === 1 ? '' : 's'}
+                </p>
+                <p className="text-xs text-gray-500">Waiting for your review</p>
+              </div>
+            </div>
+            <Link
+              to={reviewDocsHref}
+              onClick={() => setShowNotifications(false)}
+              className="block w-full text-center px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg transition-colors"
+              data-testid="nav-docs-review-btn"
+            >
+              Review submissions →
+            </Link>
+          </div>
+        )}
+
+        {/* Lift Requests section */}
+        <div className="p-3 border-b border-gray-100 flex items-center gap-2">
+          <span className="text-lg">🙋‍♂️</span>
+          <span className="text-sm font-semibold text-gray-900 flex-1">Lift Requests</span>
+          <span className="text-xs font-semibold text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">{liftRequestCount}</span>
+        </div>
         {liftRequests.length === 0 ? (
           <div className="p-6 text-center text-gray-500">
             <Bell size={32} className="mx-auto mb-2 text-gray-300" />
-            <p>No active lift requests</p>
+            <p className="text-sm">No active lift requests</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
             {liftRequests.map((request) => {
               const isOwnRequest = request.requester_email === user?.email;
-              
               return (
                 <div key={request.id} className="p-3 hover:bg-gray-50">
-                  {/* Requester */}
                   <div className="flex items-center space-x-2 mb-2">
                     <User size={14} className="text-blue-500" />
                     <span className="font-medium text-gray-900 text-sm">{request.requester_name}</span>
                     {isOwnRequest && (
-                      <span className="bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 rounded">
-                        You
-                      </span>
+                      <span className="bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 rounded">You</span>
                     )}
                   </div>
-
-                  {/* Locations */}
                   <div className="space-y-1 text-xs text-gray-600 mb-2">
                     <div className="flex items-center space-x-1">
                       <MapPin size={12} className="text-green-500" />
@@ -301,8 +350,6 @@ const Navigation = ({ tenantSlug }) => {
                       </div>
                     </div>
                   </div>
-
-                  {/* Actions */}
                   <div className="flex space-x-2">
                     {!isOwnRequest && (
                       <button
@@ -330,9 +377,9 @@ const Navigation = ({ tenantSlug }) => {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-gray-200 px-4 py-2 bg-gray-50">
+      <div className="border-t border-gray-200 px-4 py-2 bg-gray-50 flex-shrink-0">
         <Link
-          to="/"
+          to={getTenantPath('/')}
           onClick={() => setShowNotifications(false)}
           className="text-sm text-blue-600 hover:text-blue-700 font-medium"
         >
@@ -340,7 +387,8 @@ const Navigation = ({ tenantSlug }) => {
         </Link>
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <>
@@ -371,14 +419,21 @@ const Navigation = ({ tenantSlug }) => {
               <button
                 onClick={toggleNotifications}
                 className="relative flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                title="Lift Requests"
+                title="Notifications"
+                data-testid="nav-bell-mobile"
               >
                 <Bell size={20} />
-                {liftRequestCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
-                    {liftRequestCount > 9 ? '9+' : liftRequestCount}
-                  </span>
-                )}
+                {(() => {
+                  const total = (liftRequestCount || 0) + (isTenantAdmin() ? docsUnread : 0);
+                  return total > 0 ? (
+                    <span
+                      className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold"
+                      data-testid="nav-bell-mobile-badge"
+                    >
+                      {total > 9 ? '9+' : total}
+                    </span>
+                  ) : null;
+                })()}
               </button>
               {showNotifications && <NotificationDropdown />}
             </div>
@@ -561,6 +616,30 @@ const Navigation = ({ tenantSlug }) => {
                   <span className="hidden lg:inline">{isSubscribed ? 'Push On' : 'Push Off'}</span>
                 </button>
               )}
+
+              {/* Notification Bell — Desktop (all tenant users, badge total = lifts + docs) */}
+              <div className="relative" ref={notificationRef}>
+                <button
+                  onClick={toggleNotifications}
+                  className="relative flex items-center justify-center w-10 h-10 rounded-lg text-white/85 hover:text-white hover:bg-white/10 transition-colors"
+                  title="Notifications"
+                  data-testid="nav-bell-desktop"
+                >
+                  <Bell size={20} />
+                  {(() => {
+                    const total = (liftRequestCount || 0) + (isTenantAdmin() ? docsUnread : 0);
+                    return total > 0 ? (
+                      <span
+                        className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold text-white flex items-center justify-center bg-rose-500 ring-2 ring-purple-900 animate-pulse"
+                        data-testid="nav-bell-desktop-badge"
+                      >
+                        {total > 99 ? '99+' : total}
+                      </span>
+                    ) : null;
+                  })()}
+                </button>
+                {showNotifications && <NotificationDropdown />}
+              </div>
 
               <div className="flex items-center space-x-3 pl-4 border-l border-white/25">
                 {/* Show email only for staff */}

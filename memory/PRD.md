@@ -4,6 +4,35 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - Feb 2026 — Documents Inbox Unread Dot + Fleet Board Driver-name Pills
+
+**Documents Inbox unread badge (red dot on sub-tab)**:
+- New endpoints:
+  - `GET /api/documents/inbox/unread-count` → returns `{count: int}` of unread `document_submitted` notifications for the current admin (returns 0 for non-admins).
+  - `POST /api/documents/inbox/mark-read` → marks every unread `document_submitted` notification for the current admin as read, sets `read_at` timestamp. Returns `{marked: int}`.
+- `TenantDashboard.js`:
+  - New `docsInboxUnread` state, fetched on mount + polled every 60s (admins only).
+  - When `activeTab==='reports' && activeSubTab==='documents'`, fires `POST /documents/inbox/mark-read` and clears the local count → dot disappears instantly.
+  - Sub-tab pill row: rendered as a per-item lambda that adds an absolute-positioned 10px rose-500 dot (with white ring) top-right on the "Documents" pill when `docsInboxUnread > 0`. `data-testid="subtab-documents-unread-dot"`.
+
+**Fleet Board driver-name pills**:
+- `components/FleetBoard.js → Timeline`:
+  - Track bumped from `h-3` → `h-8` to accommodate a proper pill height.
+  - Each booking pill now `h-6`, rounded-full, blue-500, contains the driver name (`p.booking.user_name || .customer_name`) as an inline truncated label.
+  - Label is only rendered when `widthPct >= 8` — so ultra-narrow slots keep just a colour bar without visual clutter. `data-testid="fleet-timeline-pill-label-<id>"` when shown.
+  - Hover state: `h-7` + shadow — still clickable, still fires `onPillClick(booking)` to open the booking preview modal.
+
+**Files touched**:
+- `backend/server.py`: new unread-count + mark-read endpoints (before the existing `GET /documents/submissions`).
+- `frontend/src/pages/TenantDashboard.js`: state, poller, mark-read effect, sub-tab dot rendering.
+- `frontend/src/components/FleetBoard.js`: taller track + driver-name pill rendering.
+
+**Verified**:
+- Backend curl: baseline 0 → seed 3 notifications → count 3 → mark-read (marked=3) → count 0.
+- Playwright: red dot rendered on Documents sub-tab (count 1), disappears after opening the tab (mark-read fired, count 0). Fleet Board pills show "Aswathy Mani…" and "Margaret O…" for two seeded bookings on the Ford Focus card, both truncated cleanly.
+- Post-verify cleanup removed the seeded bookings and notifications.
+
+
 ### Feature - Feb 2026 — Documents Inbox + Multi-photo Fields + Admin Notifications; Removed Cost Analytics/Fuel Insights
 
 **Removals**:

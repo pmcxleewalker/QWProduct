@@ -157,6 +157,7 @@ const TenantDashboard = () => {
   const [selectedVehicleForEdit, setSelectedVehicleForEdit] = useState(null);
   const [serviceAlert, setServiceAlert] = useState(null);
   const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0);
+  const [docsInboxUnread, setDocsInboxUnread] = useState(0);
   const [activeSubTab, setActiveSubTab] = useState(null); // For nested tabs
   const [vehicleSearch, setVehicleSearch] = useState(''); // Fleet list filter
   const [brandFilter, setBrandFilter] = useState(null); // Click-to-filter brand chip
@@ -743,6 +744,40 @@ const TenantDashboard = () => {
     fetchUnreadCount();
   }, [activeTab]);
 
+  // Fetch unread Documents Inbox count (admin only) — powers the red dot on
+  // the Documents sub-tab. Poll every 60s so new submissions surface without
+  // needing a manual refresh.
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+    let cancelled = false;
+    const fetchDocsUnread = async () => {
+      try {
+        const res = await axios.get(`${API}/documents/inbox/unread-count`);
+        if (!cancelled) setDocsInboxUnread(res.data?.count || 0);
+      } catch (err) {
+        // best-effort; missing endpoint or 403 → treat as zero
+      }
+    };
+    fetchDocsUnread();
+    const id = setInterval(fetchDocsUnread, 60_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [isAdmin]);
+
+  // When admin opens the Documents Inbox sub-tab, mark everything read.
+  useEffect(() => {
+    if (!isAdmin) return;
+    const isOnDocsInbox = activeTab === 'reports' && activeSubTab === 'documents';
+    if (!isOnDocsInbox || docsInboxUnread === 0) return;
+    (async () => {
+      try {
+        await axios.post(`${API}/documents/inbox/mark-read`);
+        setDocsInboxUnread(0);
+      } catch (err) {
+        // silent — badge will refresh on next poll
+      }
+    })();
+  }, [isAdmin, activeTab, activeSubTab, docsInboxUnread]);
+
   // Staff default to fleet-status tab
   useEffect(() => {
     if (isStaffUser && activeTab === 'overview') {
@@ -972,20 +1007,30 @@ const TenantDashboard = () => {
         <div className="bg-gray-50 border-b">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex space-x-1 overflow-x-auto py-2">
-              {tabs.find(t => t.id === activeTab).subTabs.map(subTab => (
-                <button
-                  key={subTab.id}
-                  onClick={() => setActiveSubTab(subTab.id)}
-                  className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
-                    activeSubTab === subTab.id
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-600 hover:bg-gray-100 border'
-                  }`}
-                  data-testid={`subtab-${subTab.id}`}
-                >
-                  {subTab.label}
-                </button>
-              ))}
+              {tabs.find(t => t.id === activeTab).subTabs.map(subTab => {
+                const showDot = subTab.id === 'documents' && docsInboxUnread > 0;
+                return (
+                  <button
+                    key={subTab.id}
+                    onClick={() => setActiveSubTab(subTab.id)}
+                    className={`relative px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
+                      activeSubTab === subTab.id
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-600 hover:bg-gray-100 border'
+                    }`}
+                    data-testid={`subtab-${subTab.id}`}
+                  >
+                    {subTab.label}
+                    {showDot && (
+                      <span
+                        className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white"
+                        aria-label={`${docsInboxUnread} new submission${docsInboxUnread === 1 ? '' : 's'}`}
+                        data-testid="subtab-documents-unread-dot"
+                      />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

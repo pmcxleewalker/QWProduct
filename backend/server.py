@@ -12374,6 +12374,46 @@ async def delete_document_template(
     return {"success": True}
 
 
+@api_router.get("/documents/inbox/unread-count")
+async def documents_inbox_unread_count(
+    context: TenantContext = Depends(require_tenant_context),
+):
+    """Return the number of `document_submitted` notifications the current
+    admin hasn't marked as read yet. Powers the red dot on the Documents
+    sub-tab.
+    """
+    if context.role not in (UserRole.ADMIN, UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN):
+        return {"count": 0}
+    count = await db.notifications.count_documents({
+        "tenant_id": context.tenant_id,
+        "user_id": context.user_id,
+        "type": "document_submitted",
+        "read": False,
+    })
+    return {"count": int(count)}
+
+
+@api_router.post("/documents/inbox/mark-read")
+async def documents_inbox_mark_read(
+    context: TenantContext = Depends(require_tenant_context),
+):
+    """Mark every unread `document_submitted` notification for the current
+    admin as read. Called when the admin opens the Documents Inbox tab.
+    """
+    if context.role not in (UserRole.ADMIN, UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN):
+        return {"marked": 0}
+    res = await db.notifications.update_many(
+        {
+            "tenant_id": context.tenant_id,
+            "user_id": context.user_id,
+            "type": "document_submitted",
+            "read": False,
+        },
+        {"$set": {"read": True, "read_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    return {"marked": int(res.modified_count)}
+
+
 @api_router.get("/documents/submissions")
 async def list_document_submissions(
     template_id: Optional[str] = None,

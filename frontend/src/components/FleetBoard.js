@@ -159,21 +159,33 @@ const Timeline = ({ pills, onPillClick, isToday, now }) => {
       </div>
 
       {/* Track */}
-      <div className="relative h-3 rounded-full bg-slate-100">
+      <div className="relative h-8 rounded-full bg-slate-100">
         <div className="absolute inset-y-0 right-0 w-[3%] rounded-r-full bg-emerald-100/70" />
 
-        {pills.map((p) => (
-          <button
-            key={p.booking.id}
-            type="button"
-            onClick={() => onPillClick(p.booking)}
-            data-testid={`fleet-timeline-pill-${p.booking.id}`}
-            title={`${p.startHM} – ${p.endHM} · ${p.booking.user_name || 'Booking'} · Click to open`}
-            aria-label={`Open booking ${p.startHM} to ${p.endHM}${p.booking.user_name ? ' for ' + p.booking.user_name : ''}`}
-            className="absolute top-1/2 -translate-y-1/2 h-3 rounded-full bg-blue-500 hover:bg-blue-600 hover:h-4 hover:-translate-y-2 transition-all cursor-pointer"
-            style={{ left: `${p.leftPct}%`, width: `${p.widthPct}%` }}
-          />
-        ))}
+        {pills.map((p) => {
+          const label = p.booking.user_name || p.booking.customer_name || '';
+          // Only show the driver name inline when the pill is wide enough
+          // to actually fit ~5 chars — otherwise the label would be squashed.
+          const showLabel = p.widthPct >= 8 && !!label;
+          return (
+            <button
+              key={p.booking.id}
+              type="button"
+              onClick={() => onPillClick(p.booking)}
+              data-testid={`fleet-timeline-pill-${p.booking.id}`}
+              title={`${p.startHM} – ${p.endHM} · ${label || 'Booking'} · Click to open`}
+              aria-label={`Open booking ${p.startHM} to ${p.endHM}${label ? ' for ' + label : ''}`}
+              className="absolute top-1/2 -translate-y-1/2 h-6 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-semibold flex items-center justify-center px-1.5 shadow-sm hover:shadow-md hover:h-7 transition-all cursor-pointer overflow-hidden"
+              style={{ left: `${p.leftPct}%`, width: `${p.widthPct}%` }}
+            >
+              {showLabel && (
+                <span className="truncate whitespace-nowrap leading-none" data-testid={`fleet-timeline-pill-label-${p.booking.id}`}>
+                  {label}
+                </span>
+              )}
+            </button>
+          );
+        })}
 
         {nowPct !== null && (
           <div

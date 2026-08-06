@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Car, Calendar, Clock, MapPin, User, Phone,
   RefreshCw, X, ChevronRight, ChevronLeft, Send, CheckCircle,
-  LogOut, Navigation, Plus, Users, Home, FileText
+  LogOut, Navigation, Plus, Users, Home, FileText, Lock, Unlock
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -156,13 +156,27 @@ const StaffMobileView = ({ tenantSlug }) => {
   });
   const [isSubmittingLift, setIsSubmittingLift] = useState(false);
   const [liftSuccess, setLiftSuccess] = useState(false);
+  const [screenLocked, setScreenLocked] = useState(() => {
+    return localStorage.getItem('staff_screen_locked') !== '0';
+  });
 
-  // Lock viewport for mobile app experience
+  // Lock viewport for mobile app experience. When unlocked, pinch-to-zoom
+  // is allowed so staff can zoom in on small screens.
   useEffect(() => {
     const viewport = document.querySelector('meta[name="viewport"]');
     if (viewport) {
-      viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
+      viewport.setAttribute(
+        'content',
+        screenLocked
+          ? 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'
+          : 'width=device-width, initial-scale=1, viewport-fit=cover'
+      );
     }
+    localStorage.setItem('staff_screen_locked', screenLocked ? '1' : '0');
+  }, [screenLocked]);
+
+  // Prevent page-level scroll bleed while the staff app is mounted.
+  useEffect(() => {
     const originalStyle = document.body.style.cssText;
     document.body.style.cssText = 'overflow: hidden; position: fixed; width: 100%; height: 100%; margin: 0; padding: 0; overscroll-behavior: none;';
     document.documentElement.style.cssText = 'overflow: hidden; height: 100%; overscroll-behavior: none;';
@@ -330,32 +344,44 @@ const StaffMobileView = ({ tenantSlug }) => {
 
   return (
     <div
-      className="fixed inset-0 flex flex-col bg-gray-50 w-full"
-      style={{ height: '100dvh', overscrollBehavior: 'none' }}
+      className="fixed inset-0 flex flex-col bg-gray-50 w-full mx-auto"
+      style={{ height: '100dvh', maxWidth: '640px', left: '50%', transform: 'translateX(-50%)', overscrollBehavior: 'none' }}
       data-testid="staff-mobile-view"
     >
       <PushNotificationPrompt user={profile || user} />
 
       {/* Header — admin-style gradient */}
       <header
-        className="flex-shrink-0 flex items-center justify-between px-4 py-3 text-white shadow-md"
+        className="flex-shrink-0 flex items-center justify-between px-3 py-2.5 text-white shadow-md"
         style={{
-          paddingTop: 'max(12px, env(safe-area-inset-top))',
+          paddingTop: 'max(10px, env(safe-area-inset-top))',
           background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%)'
         }}
       >
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
-            <Car size={18} className="text-white" />
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+            <Car size={16} className="text-white" />
           </div>
-          <span className="text-lg font-bold tracking-tight">Quick Wing</span>
+          <span className="text-base font-bold tracking-tight truncate">Quick Wing</span>
         </div>
-        <div className="flex items-center gap-2.5">
-          <span className="text-xs font-semibold bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-full" data-testid="staff-user-badge">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="text-[11px] font-semibold bg-white/15 backdrop-blur-sm px-2.5 py-1 rounded-full" data-testid="staff-user-badge">
             {user?.name?.split(' ')[0] || 'Staff'}
           </span>
-          <button onClick={logout} className="p-2 rounded-lg bg-white/10 active:bg-white/25 text-white" data-testid="logout-btn">
-            <LogOut size={17} />
+          <button
+            onClick={() => {
+              const next = !screenLocked;
+              setScreenLocked(next);
+              toast.success(next ? 'Screen locked' : 'Zoom unlocked');
+            }}
+            className="p-1.5 rounded-lg bg-white/10 active:bg-white/25 text-white"
+            data-testid="screen-lock-btn"
+            title={screenLocked ? 'Unlock zoom' : 'Lock screen'}
+          >
+            {screenLocked ? <Lock size={16} /> : <Unlock size={16} />}
+          </button>
+          <button onClick={logout} className="p-1.5 rounded-lg bg-white/10 active:bg-white/25 text-white" data-testid="logout-btn">
+            <LogOut size={16} />
           </button>
         </div>
       </header>
@@ -478,36 +504,6 @@ const StaffMobileView = ({ tenantSlug }) => {
               <Plus size={18} />
               New Booking
             </button>
-
-            {/* Availability now — compact strip */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 mb-4" data-testid="availability-strip">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                <h3 className="text-sm font-semibold text-slate-800">Availability right now</h3>
-              </div>
-              <div className="space-y-2">
-                {vehicles.map(v => {
-                  const status = getVehicleStatus(v);
-                  return (
-                    <div key={v.id} className="flex items-center justify-between gap-2" data-testid={`availability-row-${v.id}`}>
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Car size={14} className="text-slate-400 flex-shrink-0" />
-                        <span className="text-sm text-slate-700 font-medium truncate">{v.name}</span>
-                        <span className="text-xs text-slate-400 flex-shrink-0">{v.registration}</span>
-                      </div>
-                      <span className={`flex-shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full ${
-                        status === 'available' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                        status === 'in-use' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                        'bg-slate-100 text-slate-500 border border-slate-200'
-                      }`}>
-                        {status === 'available' ? 'Free' : status === 'in-use' ? 'In use' : 'Blocked'}
-                      </span>
-                    </div>
-                  );
-                })}
-                {vehicles.length === 0 && <p className="text-sm text-slate-400">No vehicles yet</p>}
-              </div>
-            </div>
 
             {/* Month calendar of my bookings */}
             <MyBookingsCalendar
@@ -807,7 +803,7 @@ const StaffMobileView = ({ tenantSlug }) => {
           <div className="p-4 pb-28" data-testid="documents-tab">
             <div className="mb-4">
               <h1 className="text-xl font-bold text-slate-900">Documents</h1>
-              <p className="text-sm text-slate-500">Submit fuel logs, checks and reports</p>
+              <p className="text-sm text-slate-500">Submit inspections, checks and reports</p>
             </div>
             <CustomDocumentsStaff />
           </div>

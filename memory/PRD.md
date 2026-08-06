@@ -2037,3 +2037,21 @@ recommendations to beat them, then approved building the full P0+P1 stack.
 - Live map with plotted positions (Phase 3)
 - Journey playback (Phase 4)
 - Testing-agent-flagged nits: per-tenant `poll_interval_seconds` currently informational only; verify_error hint on POST /tracker/devices; server.py should be split into routers; `_db` singleton in poller should become class-based.
+
+
+---
+
+## 2026-02-06 — Documents: Car Inspection Sheet + Staff mobile fit
+
+**Docs tab — Fuel Log removed:**
+- `services/documents.py`: `DEFAULT_FUEL_LOG_TEMPLATE` replaced with `DEFAULT_CAR_INSPECTION_TEMPLATE` (14 fields: vehicle, date, odometer, overall condition, exterior/tyres/lights/fluids/brakes/wipers/interior checkboxes, warning-lights text, damage photos (up to 5), notes).
+- `server.py` `_seed_builtin_templates_if_missing()` now also **deletes any legacy "Fuel Log" template + its submissions** for the tenant on next docs open — clean cutover, no stragglers.
+- `CustomDocumentsAdmin.js` / `CustomDocumentsStaff.js`: removed `Fuel` icon import + option; added `ClipboardCheck` icon; copy updated ("e.g. Car Inspection Sheet, Pre-trip check").
+- Verified: 0 Fuel Log docs left in DB; new template renders correctly on staff docs tab.
+
+**Staff mobile app — fit & lock:**
+- `StaffMobileView.js`:
+  - Removed the big "Availability right now" list from Bookings tab (duplicated Home fleet grid).
+  - Added **screen lock toggle** in header — persists in `localStorage` (`staff_screen_locked`). Locked = `user-scalable=no`; unlocked = pinch-to-zoom enabled so staff can zoom on small screens.
+  - Container capped at `max-width: 640px` and centred so it doesn't stretch on tablets/wide phones.
+  - Header padding tightened (px-3/py-2.5) so header + main content fit small screens without zoom-in feel.

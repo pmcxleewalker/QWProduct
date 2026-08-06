@@ -12277,9 +12277,23 @@ async def resend_user_invitation(
 
 
 async def _seed_builtin_templates_if_missing(tenant_id: str) -> None:
-    """Create the built-in templates (e.g. Fuel Log) for a tenant if they
-    don't already have one with the same name. Safe to call repeatedly.
+    """Create the built-in templates (e.g. Car Inspection Sheet) for a tenant
+    if they don't already have one with the same name. Also cleans up any
+    legacy 'Fuel Log' built-in template so it stops appearing to admins/staff.
+    Safe to call repeatedly.
     """
+    # Cleanup: remove legacy built-in Fuel Log template and its submissions.
+    legacy = await db.document_templates.find_one(
+        {"tenant_id": tenant_id, "name": "Fuel Log"}, {"_id": 0, "id": 1}
+    )
+    if legacy and legacy.get("id"):
+        await db.document_submissions.delete_many(
+            {"tenant_id": tenant_id, "template_id": legacy["id"]}
+        )
+        await db.document_templates.delete_one(
+            {"tenant_id": tenant_id, "id": legacy["id"]}
+        )
+
     for tpl in BUILTIN_TEMPLATES:
         existing = await db.document_templates.find_one(
             {"tenant_id": tenant_id, "name": tpl.name}, {"_id": 0, "id": 1}

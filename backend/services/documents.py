@@ -315,29 +315,41 @@ def build_submission_doc(
 
 # ===== Built-in templates =====
 
-DEFAULT_FUEL_LOG_TEMPLATE = TemplateCreate(
-    name="Fuel Log",
-    description="Track fuel purchases per vehicle. Staff log each fill-up; admins see total spend and litres per car.",
-    icon="Fuel",
+DEFAULT_CAR_INSPECTION_TEMPLATE = TemplateCreate(
+    name="Car Inspection Sheet",
+    description="Pre-trip vehicle safety check. Staff walk around the car, tick each item, flag issues and attach photos of any damage.",
+    icon="ClipboardList",
     fields=[
         TemplateField(key="vehicle", label="Vehicle", type="vehicle", required=True),
-        TemplateField(key="fuel_date", label="Date", type="date", required=True),
+        TemplateField(key="inspection_date", label="Inspection date", type="date", required=True),
         TemplateField(key="odometer_km", label="Odometer (km)", type="number", required=True, placeholder="e.g. 84210"),
-        TemplateField(key="litres", label="Litres", type="number", required=True, placeholder="e.g. 42.50"),
         TemplateField(
-            key="fuel_type",
-            label="Fuel type",
+            key="overall_condition",
+            label="Overall condition",
             type="select",
-            required=False,
-            options=["Diesel", "Petrol", "Electric (kWh)", "Hybrid"],
+            required=True,
+            options=["Roadworthy", "Roadworthy with issues", "Not roadworthy"],
         ),
-        TemplateField(key="cost_eur", label="Total cost (€)", type="number", required=True, placeholder="e.g. 65.00"),
-        TemplateField(key="station", label="Fuel station", type="text", required=False, placeholder="e.g. Circle K Naas"),
-        TemplateField(key="receipt", label="Receipt photo", type="image", required=False, help_text="JPG or PNG"),
-        TemplateField(key="notes", label="Notes", type="textarea", required=False),
+        TemplateField(key="exterior_ok", label="Exterior clean and undamaged", type="checkbox", required=False),
+        TemplateField(key="tyres_ok", label="Tyres inflated with legal tread", type="checkbox", required=False),
+        TemplateField(key="lights_ok", label="All lights and indicators working", type="checkbox", required=False),
+        TemplateField(key="fluids_ok", label="Oil, coolant and washer fluid topped up", type="checkbox", required=False),
+        TemplateField(key="brakes_ok", label="Brakes feel firm and responsive", type="checkbox", required=False),
+        TemplateField(key="wipers_ok", label="Wipers and mirrors in good order", type="checkbox", required=False),
+        TemplateField(key="interior_ok", label="Interior clean, seatbelts working", type="checkbox", required=False),
+        TemplateField(key="warning_lights", label="Any dashboard warning lights?", type="text", required=False, placeholder="e.g. None / Engine light on"),
+        TemplateField(
+            key="damage_photos",
+            label="Damage / defect photos",
+            type="image",
+            required=False,
+            help_text="Attach up to 5 photos of any damage or issues",
+            max_images=5,
+        ),
+        TemplateField(key="issues_notes", label="Issues / defects noted", type="textarea", required=False, placeholder="Describe anything that needs attention"),
     ],
     is_active=True,
 )
 
 
-BUILTIN_TEMPLATES = [DEFAULT_FUEL_LOG_TEMPLATE]
+BUILTIN_TEMPLATES = [DEFAULT_CAR_INSPECTION_TEMPLATE]

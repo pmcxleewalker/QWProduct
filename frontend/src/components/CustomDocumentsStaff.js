@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import {
-  FileText, Fuel, ClipboardList, ChevronRight, X, Loader2, Camera, Send,
+  FileText, ClipboardList, ClipboardCheck, ChevronRight, X, Loader2, Camera, Send,
   Upload, AlertCircle, CheckCircle2
 } from 'lucide-react';
 import IncidentReportsSection from './IncidentReportsSection';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-const ICON_MAP = { FileText, Fuel, ClipboardList };
+const ICON_MAP = { FileText, ClipboardList, ClipboardCheck };
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');

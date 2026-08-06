@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import {
-  FileText, Fuel, ClipboardList, Plus, Edit2, Trash2, Eye, X, GripVertical,
+  FileText, ClipboardList, ClipboardCheck, Plus, Edit2, Trash2, Eye, X, GripVertical,
   Save, FileDown, Image as ImageIcon, Loader2, AlertCircle, Search, ChevronRight,
   Power, PowerOff
 } from 'lucide-react';
@@ -11,7 +11,7 @@ import { useConfirm } from './ConfirmDialog';
 import { useEscapeClose } from '../hooks/useEscapeClose';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-const ICON_MAP = { FileText, Fuel, ClipboardList };
+const ICON_MAP = { FileText, ClipboardList, ClipboardCheck };
 const FIELD_TYPES = [
   { value: 'text', label: 'Single line text' },
   { value: 'textarea', label: 'Multi-line text' },
@@ -151,8 +151,8 @@ const TemplateEditorModal = ({ template, onClose, onSaved }) => {
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
               >
                 <option value="FileText">Document</option>
-                <option value="Fuel">Fuel</option>
                 <option value="ClipboardList">Checklist</option>
+                <option value="ClipboardCheck">Inspection</option>
               </select>
             </div>
             <div className="sm:col-span-2">
@@ -724,7 +724,7 @@ const CustomDocumentsAdmin = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Custom Documents</h2>
-          <p className="text-sm text-slate-500">Design forms for your staff to submit (e.g. Fuel Log, Pre-trip check).</p>
+          <p className="text-sm text-slate-500">Design forms for your staff to submit (e.g. Car Inspection Sheet, Pre-trip check).</p>
         </div>
         <button
           onClick={() => setCreating(true)}
@@ -740,9 +740,6 @@ const CustomDocumentsAdmin = () => {
         templates={templates}
         onOpen={(s) => setSelectedInboxSubmission(s)}
       />
-
-      {/* Fuel insights widget removed — was pulling from Fuel Log submissions.
-          Admins now see all submissions via the Documents Inbox below. */}
 
       {loading ? (
         <div className="text-center py-10 text-sm text-slate-500"><Loader2 className="animate-spin inline mr-2" size={14} />Loading…</div>

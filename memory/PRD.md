@@ -2070,3 +2070,20 @@ recommendations to beat them, then approved building the full P0+P1 stack.
 - NEW module — **GPS Trackers**: covers SinoTrack tracker registration, live map, journey playback, driver behaviour, alerts, and tenant isolation.
 - Advanced Features: added a "Staff Mobile App" block explaining the monthly calendar, in-app inspection/incident submission and the screen-lock button.
 
+
+---
+
+## 2026-02-06 — Inspection Reminders (per-vehicle cadence)
+
+**Backend:**
+- `models/resources.py` — added `inspection_frequency_days: Optional[int]` to `VehicleBase` and `VehicleUpdate`. `0` or `null` disables reminders.
+- `server.py` — new `GET /api/vehicles/inspection-status` (tenant-scoped): returns every vehicle with `inspection_frequency_days > 0`, finds the latest Car Inspection Sheet submission per vehicle, computes `days_since`, `is_overdue`, `next_due` (ISO date). Sorted overdue-first with never-inspected at the top. Response also includes `overdue_count` and `due_soon_count` (within 24h). Placed BEFORE the `/vehicles/{vehicle_id}` route to avoid path capture.
+
+**Frontend:**
+- `EditVehicleModal.js` — new "Inspection Reminder (days)" number input (0–365). Sends `inspection_frequency_days` on save; `0` / blank turns reminders off.
+- New `InspectionRemindersCard.js` (admin-only widget). Polls `/api/vehicles/inspection-status` every 60s, renders nothing when nothing is overdue, otherwise shows a collapsible card listing each vehicle with tone (overdue / due soon), days since last check, and cadence. Includes an "Open Documents →" button that switches the dashboard to Reports → Documents.
+- `TenantDashboard.js` — mounted the new card into the "Action Required" section alongside Compliance Alerts.
+- `AdminTraining.js` — Documents & Inspections module now documents the reminder cadence setting.
+
+**Verified end-to-end:** `PUT /api/vehicles/{id}` with `inspection_frequency_days=7` returns updated vehicle; `/vehicles/inspection-status` correctly flags "Ford Focus never inspected · every 7 days · OVERDUE"; card renders on Overview; "Open Documents" navigates to Reports → Documents; edit modal shows the persisted value.
+

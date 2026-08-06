@@ -6496,6 +6496,137 @@ async def list_vehicles(
     return vehicles
 
 
+# ==================== INSPECTION REMINDERS ====================
+# Admins configure `inspection_frequency_days` per vehicle. This endpoint
+# returns each configured vehicle's inspection status (last submitted,
+# days_since, is_overdue) so the dashboard can surface overdue cars.
+
+
+@api_router.get("/vehicles/inspection-status")
+async def get_inspection_status(
+    context: TenantContext = Depends(require_tenant_context),
+):
+    """Return inspection status for every vehicle with a configured
+    `inspection_frequency_days`. Requires an active Car Inspection Sheet
+    template (auto-seeded on first Documents visit).
+
+    Response shape:
+      {
+        "template_id": "...",  # None if no Car Inspection template yet
+        "vehicles": [
+          {
+            "vehicle_id": "...",
+            "name": "Ford Focus",
+            "registration": "FF12AB",
+            "frequency_days": 7,
+            "last_inspection_at": "2026-02-01T09:30:00+00:00",  # or None
+            "days_since": 5,           # None if never inspected
+            "is_overdue": false,
+            "next_due": "2026-02-08"
+          }
+        ],
+        "overdue_count": 2,
+        "due_soon_count": 1,   # due within 24 hours
+      }
+    """
+    await _seed_builtin_templates_if_missing(context.tenant_id)
+
+    template = await db.document_templates.find_one(
+        {"tenant_id": context.tenant_id, "name": "Car Inspection Sheet"},
+        {"_id": 0, "id": 1},
+    )
+    template_id = template.get("id") if template else None
+
+    vehicles_cursor = db.vehicles.find(
+        {
+            "tenant_id": context.tenant_id,
+            "inspection_frequency_days": {"$gt": 0},
+        },
+        {"_id": 0, "id": 1, "name": 1, "registration": 1,
+         "inspection_frequency_days": 1},
+    )
+    vehicles = await vehicles_cursor.to_list(length=500)
+
+    now = datetime.now(timezone.utc)
+    out = []
+    overdue_count = 0
+    due_soon_count = 0
+
+    for v in vehicles:
+        frequency = int(v.get("inspection_frequency_days") or 0)
+        if frequency <= 0:
+            continue
+
+        last_submission = None
+        if template_id:
+            last_submission = await db.document_submissions.find_one(
+                {
+                    "tenant_id": context.tenant_id,
+                    "template_id": template_id,
+                    "vehicle_id": v["id"],
+                },
+                {"_id": 0, "created_at": 1},
+                sort=[("created_at", -1)],
+            )
+
+        last_at = last_submission.get("created_at") if last_submission else None
+        days_since = None
+        is_overdue = True  # never inspected = overdue
+        next_due_iso = None
+        hours_to_due = None
+
+        if last_at:
+            try:
+                last_dt = last_at if isinstance(last_at, datetime) else datetime.fromisoformat(
+                    str(last_at).replace("Z", "+00:00")
+                )
+                if last_dt.tzinfo is None:
+                    last_dt = last_dt.replace(tzinfo=timezone.utc)
+                delta = now - last_dt
+                days_since = delta.days
+                next_due_dt = last_dt + timedelta(days=frequency)
+                next_due_iso = next_due_dt.date().isoformat()
+                is_overdue = now >= next_due_dt
+                hours_to_due = (next_due_dt - now).total_seconds() / 3600.0
+            except Exception:
+                is_overdue = True
+        else:
+            next_due_iso = now.date().isoformat()
+
+        if is_overdue:
+            overdue_count += 1
+        elif hours_to_due is not None and 0 <= hours_to_due <= 24:
+            due_soon_count += 1
+
+        out.append({
+            "vehicle_id": v["id"],
+            "name": v.get("name"),
+            "registration": v.get("registration"),
+            "frequency_days": frequency,
+            "last_inspection_at": (
+                last_at.isoformat() if isinstance(last_at, datetime) else last_at
+            ),
+            "days_since": days_since,
+            "is_overdue": is_overdue,
+            "next_due": next_due_iso,
+        })
+
+    def _sort_key(row):
+        if row["is_overdue"]:
+            days = row["days_since"]
+            return (0, -(days if days is not None else 9999))
+        return (1, row.get("next_due") or "")
+
+    out.sort(key=_sort_key)
+
+    return {
+        "template_id": template_id,
+        "vehicles": out,
+        "overdue_count": overdue_count,
+        "due_soon_count": due_soon_count,
+    }
+
+
 @api_router.get("/vehicles/{vehicle_id}")
 async def get_vehicle(
     vehicle_id: str,

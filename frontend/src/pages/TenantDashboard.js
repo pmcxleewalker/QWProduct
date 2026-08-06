@@ -40,6 +40,7 @@ import GpsSettingsModal from '../components/GpsSettingsModal';
 import TrackerDevicesModal from '../components/TrackerDevicesModal';
 import { computeLicenceStatus } from '../components/DriverLicenceCard';
 import StaffLicenceAlerts from '../components/StaffLicenceAlerts';
+import InspectionRemindersCard from '../components/InspectionRemindersCard';
 import Greeting from '../components/Greeting';
 import BrandChips, { filterByBrand } from '../components/BrandChips';
 import CostAnalyticsDashboard from '../components/CostAnalyticsDashboard';
@@ -1099,6 +1100,14 @@ const TenantDashboard = () => {
                           onSettingsClick={() => setShowComplianceSettings(true)}
                         />
                       )}
+
+                      {/* Inspection Reminders — surfaces overdue Car Inspection Sheets */}
+                      <InspectionRemindersCard
+                        onViewDocuments={() => {
+                          setActiveTab('reports');
+                          setActiveSubTab('documents');
+                        }}
+                      />
 
                       {/* Driver's Licence expiry alerts — 30-day rolling window */}
                       <StaffLicenceAlerts

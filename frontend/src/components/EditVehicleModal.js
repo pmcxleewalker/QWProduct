@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Car, Calendar, Gauge, MapPin, Wrench, CheckCircle, FileText } from 'lucide-react';
+import { X, Car, Calendar, Gauge, MapPin, Wrench, CheckCircle, FileText, ClipboardCheck } from 'lucide-react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -14,7 +14,8 @@ const EditVehicleModal = ({ vehicle, isOpen, onClose, onSaved }) => {
     tax_due_date: '',
     nct_due_date: '',
     insurance_due_date: '',
-    base_location: ''
+    base_location: '',
+    inspection_frequency_days: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,7 +38,8 @@ const EditVehicleModal = ({ vehicle, isOpen, onClose, onSaved }) => {
         tax_due_date: vehicle.tax_due_date ? vehicle.tax_due_date.split('T')[0] : '',
         nct_due_date: vehicle.nct_due_date ? vehicle.nct_due_date.split('T')[0] : '',
         insurance_due_date: vehicle.insurance_due_date ? vehicle.insurance_due_date.split('T')[0] : '',
-        base_location: vehicle.base_location || ''
+        base_location: vehicle.base_location || '',
+        inspection_frequency_days: vehicle.inspection_frequency_days?.toString() || ''
       });
     }
   }, [vehicle, isOpen]);
@@ -60,6 +62,9 @@ const EditVehicleModal = ({ vehicle, isOpen, onClose, onSaved }) => {
     setError('');
 
     try {
+      const freqParsed = form.inspection_frequency_days
+        ? parseInt(form.inspection_frequency_days, 10)
+        : 0;
       const updateData = {
         name: form.name,
         registration: form.registration,
@@ -69,7 +74,8 @@ const EditVehicleModal = ({ vehicle, isOpen, onClose, onSaved }) => {
         tax_due_date: form.tax_due_date || null,
         nct_due_date: form.nct_due_date || null,
         insurance_due_date: form.insurance_due_date || null,
-        base_location: form.base_location || null
+        base_location: form.base_location || null,
+        inspection_frequency_days: freqParsed > 0 ? freqParsed : 0
       };
 
       await axios.put(`${API}/vehicles/${vehicle.id}`, updateData);
@@ -247,6 +253,29 @@ const EditVehicleModal = ({ vehicle, isOpen, onClose, onSaved }) => {
               data-testid="vehicle-insurance-due-date"
             />
             <p className="text-xs text-gray-500 mt-1">Annual policy renewal — alerts surface as the date approaches</p>
+          </div>
+
+          {/* Inspection Frequency */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="flex items-center space-x-1">
+                <ClipboardCheck size={14} />
+                <span>Inspection Reminder (days)</span>
+              </div>
+            </label>
+            <input
+              type="number"
+              value={form.inspection_frequency_days}
+              onChange={(e) => setForm({ ...form, inspection_frequency_days: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g., 7 for weekly (leave blank to disable)"
+              min="0"
+              max="365"
+              data-testid="vehicle-inspection-frequency"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              How often staff should submit a Car Inspection Sheet for this vehicle. Leave blank or 0 to turn reminders off.
+            </p>
           </div>
 
           {/* Base Location */}

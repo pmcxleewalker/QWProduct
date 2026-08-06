@@ -33,6 +33,9 @@ class VehicleBase(BaseModel):
     geofence_center_lon: Optional[float] = None
     geofence_radius_km: Optional[float] = None
     geofence_label: Optional[str] = None
+    # Inspection reminder cadence — how often admin wants a Car Inspection
+    # Sheet submitted for this vehicle. `None` or 0 = no reminder.
+    inspection_frequency_days: Optional[int] = None
 
 
 class VehicleCreate(VehicleBase):
@@ -58,6 +61,7 @@ class VehicleUpdate(BaseModel):
     geofence_center_lon: Optional[float] = None
     geofence_radius_km: Optional[float] = None
     geofence_label: Optional[str] = None
+    inspection_frequency_days: Optional[int] = None
 
 
 class GeofenceUpdate(BaseModel):

@@ -323,6 +323,16 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
             ]
           },
           {
+            title: 'Inspection Reminders (per-vehicle)',
+            items: [
+              'Open Fleet → Manage Vehicles → Edit and set "Inspection Reminder (days)"',
+              'e.g. 7 = weekly walk-around; 1 = daily pre-trip check',
+              'Leave blank or 0 to disable reminders for a specific vehicle',
+              'Any vehicle whose next check is overdue (or due within 24h) appears in "Inspection Reminders" on the Overview dashboard',
+              'Staff can still book overdue vehicles — the reminder is just a nudge for admins'
+            ]
+          },
+          {
             title: 'Reviewing Submissions',
             steps: [
               'Go to Dashboard → Documents tab',

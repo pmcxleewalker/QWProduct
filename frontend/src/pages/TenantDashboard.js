@@ -909,21 +909,6 @@ const TenantDashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              {/* Plan Usage Indicator */}
-              {planData && (
-                <div className="hidden md:flex items-center space-x-4 mr-4 px-4 py-2 bg-white/10 rounded-lg backdrop-blur-sm">
-                  <div className="text-center">
-                    <p className="text-xs text-white/70">Vehicles</p>
-                    <p className="text-sm font-bold">{planData.usage?.vehicles || 0}/{planData.limits?.max_vehicles || 10}</p>
-                  </div>
-                  <div className="w-px h-8 bg-white/20" />
-                  <div className="text-center">
-                    <p className="text-xs text-white/70">Users</p>
-                    <p className="text-sm font-bold">{planData.usage?.users || 0}/{planData.limits?.max_users || 20}</p>
-                  </div>
-                </div>
-              )}
-
               <button
                 onClick={fetchData}
                 className="flex items-center space-x-2 px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 backdrop-blur-sm"

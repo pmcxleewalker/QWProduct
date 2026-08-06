@@ -2055,3 +2055,18 @@ recommendations to beat them, then approved building the full P0+P1 stack.
   - Added **screen lock toggle** in header — persists in `localStorage` (`staff_screen_locked`). Locked = `user-scalable=no`; unlocked = pinch-to-zoom enabled so staff can zoom on small screens.
   - Container capped at `max-width: 640px` and centred so it doesn't stretch on tablets/wide phones.
   - Header padding tightened (px-3/py-2.5) so header + main content fit small screens without zoom-in feel.
+
+---
+
+## 2026-02-06 — Header cleanup + Help manual refresh
+
+**Tenant dashboard header:**
+- Removed the "Vehicles X/max · Users X/max" plan-usage strip from `TenantDashboard.js` header. Info is still visible on the Admin → Team / Fleet tabs; the header now just shows greeting + Refresh + Help + user menu.
+
+**Help manual (`AdminTraining.js`) refreshed:**
+- Fleet Management module: added mention of pairing compliance with the Car Inspection Sheet.
+- Reports & Analytics module: expanded "Available Reports" (now lists Incident Reports + Inspection Log) and rewrote "Key Metrics to Track" to include utilisation %, idle days, peak-hour heatmap, cost per km / per booking, compliance countdown, inspection compliance %, incident rate, cancellation/no-show rate, downtime days, top drivers, booked-vs-actual km.
+- NEW module — **Documents & Inspections**: covers the built-in Car Inspection Sheet, Documents Inbox review flow, custom template builder and Incident Reports.
+- NEW module — **GPS Trackers**: covers SinoTrack tracker registration, live map, journey playback, driver behaviour, alerts, and tenant isolation.
+- Advanced Features: added a "Staff Mobile App" block explaining the monthly calendar, in-app inspection/incident submission and the screen-lock button.
+

@@ -127,7 +127,8 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
               'Set tax expiry dates - alerts appear when due within 30 days',
               'Track service intervals - get notified when service is due',
               'Monitor current mileage for each vehicle',
-              'Compliance alerts show on your main dashboard'
+              'Compliance alerts show on your main dashboard',
+              'Pair with the Car Inspection Sheet (see Documents) to log the walk-around each morning'
             ]
           },
           {
@@ -256,10 +257,12 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
           {
             title: 'Available Reports',
             items: [
-              'Executive Summary: Overview of franchise performance',
-              'Fleet Reports: Vehicle utilization and history',
+              'Executive Summary: Overview of fleet performance',
+              'Fleet Reports: Vehicle utilisation and history',
               'Booking Reports: Booking patterns and statistics',
-              'User Activity: Staff performance tracking'
+              'User Activity: Staff performance tracking',
+              'Incident Reports: Damage, accidents and near-misses (Documents tab)',
+              'Inspection Log: Daily Car Inspection Sheet submissions per vehicle'
             ]
           },
           {
@@ -283,14 +286,113 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
           {
             title: 'Key Metrics to Track',
             items: [
-              'Vehicle utilization percentage',
-              'Booking frequency by day/week',
-              'Most popular vehicles',
-              'Staff booking activity'
+              'Utilisation % — hours booked ÷ hours available, per vehicle',
+              'Idle days — days since each vehicle was last used',
+              'Peak hours & day-of-week heatmap — spot where you\'re short of cars',
+              'Cost per km — from Cost Analytics (running cost × distance)',
+              'Cost per booking — average spend per journey',
+              'Compliance countdown — tax, service, insurance and driver licence expiries in the next 30/60 days',
+              'Inspection compliance % — vehicles inspected in the last 7 days',
+              'Incident rate — incidents per 1,000 km, split by type and vehicle',
+              'Cancellation / no-show rate — bookings cancelled vs completed',
+              'Downtime days — days in "Blocked" or "Needs Repair" per month',
+              'Top drivers — most km / most bookings this month',
+              'Booked vs actual km — planned mileage vs odometer readings from inspections'
             ]
           }
         ],
-        tip: 'Run weekly reports to identify trends and optimize your fleet allocation.'
+        tip: 'Run a weekly Utilisation + Compliance report every Monday. If any vehicle is under 40% utilised for two weeks running, consider reallocating or downsizing.'
+      }
+    },
+    {
+      id: 'documents',
+      title: 'Documents & Inspections',
+      icon: FileText,
+      color: 'blue',
+      content: {
+        heading: 'Custom Documents, Inspections & Incidents',
+        description: 'Design forms for your team to submit from their phone. Everything lands in the Documents Inbox for you to review.',
+        sections: [
+          {
+            title: 'Built-in Car Inspection Sheet',
+            items: [
+              '14-point pre-trip check (tyres, lights, fluids, brakes, wipers, interior, etc.)',
+              'Records odometer reading and overall condition',
+              'Staff can attach up to 5 photos of damage or defects',
+              'Free-text field for any issues noted'
+            ]
+          },
+          {
+            title: 'Reviewing Submissions',
+            steps: [
+              'Go to Dashboard → Documents tab',
+              'Documents Inbox lists every submission newest-first, grouped by day',
+              'Filter by document type or search by staff/vehicle',
+              'Click any row to see the full submission with photos',
+              'Delete a submission if it was entered in error'
+            ]
+          },
+          {
+            title: 'Creating Your Own Templates',
+            steps: [
+              'Click "New template" on the Documents tab',
+              'Give it a name and description (e.g. "Weekly Deep Clean")',
+              'Add fields — text, number, date, dropdown, checkbox, vehicle picker, or photo (up to 5 per field)',
+              'Toggle "Visible to staff" when you\'re ready to go live',
+              'Staff see it instantly on their mobile Docs tab'
+            ]
+          },
+          {
+            title: 'Incident Reports',
+            items: [
+              'Staff tap "Report Incident" from their Docs tab to flag damage, accidents, breakdowns or near-misses',
+              'Photos are compressed and attached automatically',
+              'Admins get a red-badge notification on the Documents tab',
+              'Every incident is timestamped, vehicle-linked and driver-linked for audit'
+            ]
+          }
+        ],
+        tip: 'Make the Car Inspection Sheet part of the morning routine. It creates a paper trail if damage is disputed later.'
+      }
+    },
+    {
+      id: 'gps',
+      title: 'GPS Trackers',
+      icon: QrCode,
+      color: 'teal',
+      content: {
+        heading: 'SinoTrack GPS Bridge',
+        description: 'Link a SinoTrack tracker to any vehicle to see its live position, journey history and driver behaviour.',
+        sections: [
+          {
+            title: 'Adding a Tracker',
+            steps: [
+              'Go to Admin Panel → Trackers',
+              'Click "Add Tracker" and enter the IMEI number (printed on the device)',
+              'Assign it to a vehicle from the dropdown',
+              'Save — the system verifies with SinoTrack and starts polling every 30 seconds'
+            ]
+          },
+          {
+            title: 'What You Get',
+            items: [
+              'Live map with every tracked vehicle plotted in real time',
+              'Journey playback — replay any trip from the last 30 days',
+              'Driver behaviour — harsh braking, harsh acceleration and speeding events',
+              'Alerts — SOS, low battery, geofence exit',
+              'Strict tenant isolation — trackers only visible inside your franchise'
+            ]
+          },
+          {
+            title: 'Tips',
+            items: [
+              'Pair GPS data with the Car Inspection Sheet for a full daily audit',
+              'Use journey playback to resolve customer or staff disputes',
+              'Set geofences around your depot to spot vehicles leaving out of hours'
+            ]
+          }
+        ],
+        tip: 'One active tracker per car. If you swap devices, deactivate the old one first so history stays clean.'
       }
     },
     {
@@ -317,6 +419,15 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
               'Enable browser notifications for real-time alerts',
               'Get notified of new bookings, lift requests, updates',
               'Toggle on/off from the navigation bar'
+            ]
+          },
+          {
+            title: 'Staff Mobile App',
+            items: [
+              'Staff log in on their phone and get a dedicated mobile view',
+              'Monthly calendar shows their bookings with a blue dot on booked days',
+              'They can submit inspections and incident reports directly from the Docs tab',
+              'A lock icon in the header pins the zoom level so the screen never accidentally scales — tap once to unlock pinch-to-zoom on small phones'
             ]
           },
           {

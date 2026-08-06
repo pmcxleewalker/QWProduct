@@ -4,6 +4,18 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature - Jun 2026 — Staff Mobile App Redesign (admin style, calendar, dropdown booking)
+
+**Full rewrite of `frontend/src/components/StaffMobileView.js`** (styled-string CSS → Tailwind, admin visual language):
+- **Removed** yellow per-car time-slot grids, car chips selector and date navigator from the Bookings tab.
+- **New Bookings tab layout**: "New Booking" button (blue-600 rounded-xl) → full form with car dropdown (blocked vehicles filtered out); compact "Availability right now" strip (one row per vehicle with Free/In use/Blocked pill); **month calendar** (`MyBookingsCalendar`, Monday start, prev/next month nav) showing blue dots on days with the staff member's bookings; tapping a day lists that day's bookings below (vehicle, reg, time range, status badge, purpose).
+- **My bookings** = bookings where staff is the driver whether self-created or admin-created (`user_id`/`user_name`/`created_by_email` match).
+- **Admin style match**: blue gradient header (matching tenant dashboard), white cards + slate-200 borders + rounded-xl + border-l-4 status colors (like FleetBoard cards), blue-600 accents, bottom nav with active indicator bar.
+- **Mobile stability**: `100dvh` fixed shell, `overscroll-behavior: none` on body/html, `overscroll-behavior: contain` + `-webkit-overflow-scrolling: touch` on the scroll area, safe-area insets kept for header/bottom nav.
+- Test creds: `teststaff@quickwing.com` / `Staff123` on `test-fleet` (added to test_credentials.md).
+- Verified via Playwright at 390×844: login → home (admin-styled), bookings tab (availability strip + calendar dot), day tap shows admin-created booking, form dropdown shows 7 options.
+
+
 ### Feature - Feb 2026 — Global Nav Bell for Document Submissions + Fleet Board Pill → Edit Modal
 
 **Global Unread Bell (Navigation.js)**:

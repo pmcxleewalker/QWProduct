@@ -10,6 +10,11 @@
 - Password: `QuickWing123!`
 - Access: has memberships on demo tenants (test-fleet, test-iso-e6c7af)
 
+## Staff user (test-fleet tenant — for staff mobile app testing)
+- Email: `teststaff@quickwing.com`
+- Password: `Staff123`
+- Login at `/test-fleet/login` — on mobile viewport renders StaffMobileView
+
 ## Master admin (per-tenant, auto-created for REAL tenants)
 - Email: `admin.<slug>@quickwing.com`
 - Password: `admin123`

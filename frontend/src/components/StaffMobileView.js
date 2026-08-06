@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
   Car, Calendar, Clock, MapPin, User, Phone,
   RefreshCw, X, ChevronRight, ChevronLeft, Send, CheckCircle,
-  Bell, LogOut, Navigation, Plus, Users, Home, FileText
+  LogOut, Navigation, Plus, Users, Home, FileText
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -15,25 +15,124 @@ import PushNotificationPrompt from './PushNotificationPrompt';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+const dateKey = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const formatTime = (dateStr) => {
+  if (!dateStr) return '-';
+  return new Date(dateStr).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' });
+};
+
+const formatDayLabel = (d) =>
+  d.toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long' });
+
+/* ---- Month calendar of the staff member's own bookings ---- */
+const MyBookingsCalendar = ({ myBookings, selectedDay, onSelectDay }) => {
+  const [viewMonth, setViewMonth] = useState(() => {
+    const n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), 1);
+  });
+
+  const bookingDays = useMemo(() => {
+    const set = new Set();
+    myBookings.forEach(b => {
+      if (b.start_time) set.add(b.start_time.split('T')[0]);
+    });
+    return set;
+  }, [myBookings]);
+
+  const cells = useMemo(() => {
+    const year = viewMonth.getFullYear();
+    const month = viewMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const startOffset = (firstDay.getDay() + 6) % 7; // Monday start
+    const arr = [];
+    for (let i = 0; i < startOffset; i++) arr.push(null);
+    for (let d = 1; d <= daysInMonth; d++) arr.push(new Date(year, month, d));
+    return arr;
+  }, [viewMonth]);
+
+  const todayKey = dateKey(new Date());
+  const selectedKey = selectedDay ? dateKey(selectedDay) : null;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4" data-testid="my-bookings-calendar">
+      <div className="flex items-center justify-between mb-3">
+        <button
+          onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}
+          className="p-2 rounded-lg border border-slate-200 text-slate-600 active:bg-slate-100"
+          data-testid="calendar-prev-month"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <span className="text-sm font-bold text-slate-800" data-testid="calendar-month-label">
+          {viewMonth.toLocaleDateString('en-IE', { month: 'long', year: 'numeric' })}
+        </span>
+        <button
+          onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}
+          className="p-2 rounded-lg border border-slate-200 text-slate-600 active:bg-slate-100"
+          data-testid="calendar-next-month"
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-7 mb-1">
+        {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => (
+          <div key={d} className="text-center text-[11px] font-semibold text-slate-400 py-1">{d}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-y-1">
+        {cells.map((d, i) => {
+          if (!d) return <div key={`e-${i}`} />;
+          const k = dateKey(d);
+          const hasBooking = bookingDays.has(k);
+          const isSelected = k === selectedKey;
+          const isToday = k === todayKey;
+          return (
+            <button
+              key={k}
+              onClick={() => onSelectDay(d)}
+              data-testid={`calendar-day-${k}`}
+              className={`relative mx-auto flex flex-col items-center justify-center w-9 h-9 rounded-full text-sm transition-colors
+                ${isSelected ? 'bg-blue-600 text-white font-bold' :
+                  isToday ? 'border border-blue-500 text-blue-700 font-semibold' :
+                  'text-slate-700 active:bg-slate-100'}`}
+            >
+              {d.getDate()}
+              {hasBooking && (
+                <span
+                  className={`absolute bottom-0.5 w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-blue-500'}`}
+                  data-testid={`calendar-dot-${k}`}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const StaffMobileView = ({ tenantSlug }) => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Self profile (carries driver_licence_expiry — refreshed after edits)
   const [profile, setProfile] = useState(user || null);
-  
-  // Data states
   const [vehicles, setVehicles] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [myBookings, setMyBookings] = useState([]);
-  
-  // Booking states
-  const [bookingView, setBookingView] = useState('all');
-  const [selectedVehicle, setSelectedVehicle] = useState(null);
+
   const [showBookingForm, setShowBookingForm] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(new Date());
   const [bookingForm, setBookingForm] = useState({
     car_id: '',
     user_name: user?.name || '',
@@ -46,8 +145,7 @@ const StaffMobileView = ({ tenantSlug }) => {
     is_recurring: false
   });
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
-  
-  // Lift request form state
+
   const [liftForm, setLiftForm] = useState({
     name: user?.name || '',
     phone: '',
@@ -66,38 +164,32 @@ const StaffMobileView = ({ tenantSlug }) => {
       viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
     }
     const originalStyle = document.body.style.cssText;
-    document.body.style.cssText = 'overflow: hidden; position: fixed; width: 100%; height: 100%; margin: 0; padding: 0;';
-    document.documentElement.style.cssText = 'overflow: hidden; height: 100%;';
+    document.body.style.cssText = 'overflow: hidden; position: fixed; width: 100%; height: 100%; margin: 0; padding: 0; overscroll-behavior: none;';
+    document.documentElement.style.cssText = 'overflow: hidden; height: 100%; overscroll-behavior: none;';
     return () => {
       document.body.style.cssText = originalStyle;
       document.documentElement.style.cssText = '';
     };
   }, []);
 
-  // Fetch data
   const fetchData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     else setRefreshing(true);
-    
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      
       const [vehiclesRes, bookingsRes] = await Promise.all([
         axios.get(`${API}/vehicles`, { headers }),
         axios.get(`${API}/bookings`, { headers })
       ]);
-      
       setVehicles(vehiclesRes.data || []);
       setBookings(bookingsRes.data || []);
-      
-      const userBookings = (bookingsRes.data || []).filter(b => 
-        b.user_id === user?.id || 
+      const userBookings = (bookingsRes.data || []).filter(b =>
+        b.user_id === user?.id ||
         b.user_name === user?.name ||
         b.created_by_email === user?.email
       );
       setMyBookings(userBookings);
-      
     } catch (err) {
       if (!silent) toast.error('Failed to load data');
     } finally {
@@ -112,22 +204,17 @@ const StaffMobileView = ({ tenantSlug }) => {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Fetch latest /auth/me so we always have the freshest driver_licence_expiry
   const refreshProfile = useCallback(async () => {
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const res = await axios.get(`${API}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data?.user) setProfile(res.data.user);
     } catch (err) {
-      // Non-fatal — staff can still use the app without licence info
+      // Non-fatal
     }
   }, []);
 
-  useEffect(() => {
-    refreshProfile();
-  }, [refreshProfile]);
+  useEffect(() => { refreshProfile(); }, [refreshProfile]);
 
   useEffect(() => {
     if (user?.name) {
@@ -136,25 +223,15 @@ const StaffMobileView = ({ tenantSlug }) => {
     }
   }, [user]);
 
-  // Get vehicle status
   const getVehicleStatus = (vehicle) => {
     if (vehicle.is_blocked) return 'blocked';
     const now = new Date();
-    const currentBooking = bookings.find(b => 
-      b.car_id === vehicle.id && 
-      new Date(b.start_time) <= now && 
+    const currentBooking = bookings.find(b =>
+      b.car_id === vehicle.id &&
+      new Date(b.start_time) <= now &&
       new Date(b.end_time) >= now
     );
     return currentBooking ? 'in-use' : 'available';
-  };
-
-  const formatTime = (dateStr) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const formatDate = (date) => {
-    return date.toLocaleDateString('en-IE', { weekday: 'short', day: 'numeric', month: 'short' });
   };
 
   const getVehicleName = (carId) => {
@@ -162,29 +239,11 @@ const StaffMobileView = ({ tenantSlug }) => {
     return vehicle?.name || 'Vehicle';
   };
 
-  // Generate time slots
-  const generateTimeSlots = () => {
-    const slots = [];
-    for (let h = 7; h <= 22; h++) {
-      slots.push(`${h.toString().padStart(2, '0')}:00`);
-    }
-    return slots;
+  const getVehicleReg = (carId) => {
+    const vehicle = vehicles.find(v => v.id === carId);
+    return vehicle?.registration || '';
   };
 
-  // Check if slot is booked
-  const isSlotBooked = (vehicleId, hour) => {
-    const dateStr = selectedDate.toISOString().split('T')[0];
-    return bookings.some(b => {
-      if (b.car_id !== vehicleId) return false;
-      const startDate = b.start_time?.split('T')[0];
-      if (startDate !== dateStr) return false;
-      const startHour = parseInt(b.start_time?.split('T')[1]?.split(':')[0] || 0);
-      const endHour = parseInt(b.end_time?.split('T')[1]?.split(':')[0] || 0);
-      return hour >= startHour && hour < endHour;
-    });
-  };
-
-  // Submit booking
   const handleSubmitBooking = async (e) => {
     e.preventDefault();
     if (!bookingForm.car_id || !bookingForm.start_time || !bookingForm.end_time) {
@@ -198,7 +257,6 @@ const StaffMobileView = ({ tenantSlug }) => {
         ...bookingForm,
         user_name: user?.name || 'Staff'
       }, { headers: { Authorization: `Bearer ${token}` } });
-
       toast.success('Booking created!');
       setShowBookingForm(false);
       setBookingForm({
@@ -220,19 +278,6 @@ const StaffMobileView = ({ tenantSlug }) => {
     }
   };
 
-  // Book a slot
-  const handleBookSlot = (vehicleId, hour) => {
-    const dateStr = selectedDate.toISOString().split('T')[0];
-    setBookingForm({
-      ...bookingForm,
-      car_id: vehicleId,
-      start_time: `${dateStr}T${hour.toString().padStart(2, '0')}:00:00`,
-      end_time: `${dateStr}T${(hour + 1).toString().padStart(2, '0')}:00:00`
-    });
-    setShowBookingForm(true);
-  };
-
-  // Submit lift request
   const handleSubmitLiftRequest = async (e) => {
     e.preventDefault();
     if (!liftForm.from_location || !liftForm.to_location || !liftForm.time || !liftForm.phone) {
@@ -266,416 +311,393 @@ const StaffMobileView = ({ tenantSlug }) => {
   const inUseVehicles = vehicles.filter(v => getVehicleStatus(v) === 'in-use');
   const today = new Date().toISOString().split('T')[0];
 
+  const selectedDayKey = dateKey(selectedDay);
+  const selectedDayBookings = myBookings
+    .filter(b => b.start_time?.split('T')[0] === selectedDayKey)
+    .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+
+  const inputCls = 'w-full px-4 py-3 border border-slate-300 rounded-lg text-base bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+  const labelCls = 'flex items-center gap-1.5 text-sm font-medium text-slate-700 mb-1.5';
+
   if (loading) {
     return (
-      <div className="staff-app" data-testid="staff-mobile-loading">
-        <div className="loading-screen">
-          <div className="spinner"></div>
-          <p>Loading...</p>
-        </div>
-        <style>{styles}</style>
+      <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 bg-gray-50" data-testid="staff-mobile-loading" style={{ height: '100dvh' }}>
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-slate-500">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="staff-app" data-testid="staff-mobile-view">
-      {/* First-login push permission prompt — encourages staff to enable
-          notifications for announcements + lift requests. Self-throttles
-          (14-day cooldown after "Not now"). */}
+    <div
+      className="fixed inset-0 flex flex-col bg-gray-50 w-full"
+      style={{ height: '100dvh', overscrollBehavior: 'none' }}
+      data-testid="staff-mobile-view"
+    >
       <PushNotificationPrompt user={profile || user} />
 
-      {/* Header */}
-      <header className="app-header">
-        <div className="header-brand">
-          <span className="logo-text">Quick Wing</span>
+      {/* Header — admin-style gradient */}
+      <header
+        className="flex-shrink-0 flex items-center justify-between px-4 py-3 text-white shadow-md"
+        style={{
+          paddingTop: 'max(12px, env(safe-area-inset-top))',
+          background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%)'
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
+            <Car size={18} className="text-white" />
+          </div>
+          <span className="text-lg font-bold tracking-tight">Quick Wing</span>
         </div>
-        <div className="header-actions">
-          <button className="icon-btn" data-testid="notifications-btn">
-            <Bell size={20} />
-          </button>
-          <span className="user-badge">{user?.name?.split(' ')[0] || 'Staff'}</span>
-          <button onClick={logout} className="icon-btn logout" data-testid="logout-btn">
-            <LogOut size={18} />
+        <div className="flex items-center gap-2.5">
+          <span className="text-xs font-semibold bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-full" data-testid="staff-user-badge">
+            {user?.name?.split(' ')[0] || 'Staff'}
+          </span>
+          <button onClick={logout} className="p-2 rounded-lg bg-white/10 active:bg-white/25 text-white" data-testid="logout-btn">
+            <LogOut size={17} />
           </button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="app-content">
-        {/* HOME TAB - Dashboard */}
+      <main className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+        {/* HOME TAB */}
         {activeTab === 'home' && (
-          <div className="tab-page" data-testid="home-tab">
-            <div className="page-header">
-              <div>
-                <Greeting
-                  user={profile || user}
-                  className="page-title"
-                  subtitleClassName="page-subtitle"
-                  testid="staff-greeting"
-                />
-              </div>
-              <p className="current-time">
+          <div className="p-4 pb-28" data-testid="home-tab">
+            <div className="flex items-start justify-between mb-4">
+              <Greeting
+                user={profile || user}
+                className="text-xl font-bold text-slate-900"
+                subtitleClassName="text-sm text-slate-500"
+                testid="staff-greeting"
+              />
+              <p className="flex items-center gap-1 text-sm text-slate-500 mt-1">
                 <Clock size={14} />
                 {new Date().toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
 
-            {/* Stats Cards */}
-            <div className="stats-grid">
-              <div className="stat-card available">
-                <div className="stat-icon">
-                  <Car size={24} />
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <Car size={22} />
                 </div>
-                <div className="stat-info">
-                  <span className="stat-value">{availableVehicles.length}</span>
-                  <span className="stat-label">Available</span>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900 leading-none" data-testid="stat-available">{availableVehicles.length}</p>
+                  <p className="text-xs text-slate-500 mt-1">Available</p>
                 </div>
               </div>
-              <div className="stat-card in-use">
-                <div className="stat-icon">
-                  <Car size={24} />
+              <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                  <Car size={22} />
                 </div>
-                <div className="stat-info">
-                  <span className="stat-value">{inUseVehicles.length}</span>
-                  <span className="stat-label">In Use</span>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900 leading-none" data-testid="stat-in-use">{inUseVehicles.length}</p>
+                  <p className="text-xs text-slate-500 mt-1">In Use</p>
                 </div>
               </div>
             </div>
 
-            {/* Driver's Licence — self-service expiry tracking */}
-            <div style={{ marginTop: 16 }}>
+            <div className="mb-4">
               <DriverLicenceCard user={profile} onUpdated={refreshProfile} />
             </div>
 
-            {/* Refresh Button */}
-            <button 
-              onClick={() => fetchData(true)} 
-              className="refresh-btn" 
+            <button
+              onClick={() => fetchData(true)}
               disabled={refreshing}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white text-sm font-semibold rounded-xl active:bg-blue-700 disabled:opacity-60 mb-5 shadow-sm"
               data-testid="refresh-btn"
             >
-              <RefreshCw size={18} className={refreshing ? 'spinning' : ''} />
+              <RefreshCw size={17} className={refreshing ? 'animate-spin' : ''} />
               {refreshing ? 'Refreshing...' : 'Refresh'}
             </button>
 
-            {/* Live Fleet Status Section */}
-            <div className="section">
-              <div className="section-header">
-                <span className="live-indicator"></span>
-                <h2>Live Fleet Status</h2>
-                <span className="update-info">Auto-updates every 15s</span>
-              </div>
+            {/* Live Fleet Status */}
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+              <h2 className="text-base font-semibold text-slate-900">Live Fleet Status</h2>
+              <span className="ml-auto text-[11px] text-slate-400">Auto-updates every 15s</span>
+            </div>
 
-              {/* Vehicle Grid - 2 Column */}
-              <div className="vehicle-grid">
-                {vehicles.map(vehicle => {
-                  const status = getVehicleStatus(vehicle);
-                  const currentBooking = bookings.find(b => 
-                    b.car_id === vehicle.id && 
-                    new Date(b.start_time) <= new Date() && 
-                    new Date(b.end_time) >= new Date()
-                  );
-                  
-                  return (
-                    <div 
-                      key={vehicle.id} 
-                      className={`vehicle-card ${status}`}
-                      data-testid={`vehicle-card-${vehicle.id}`}
-                    >
-                      <div className="vehicle-header">
-                        <span className="vehicle-name">{vehicle.name}</span>
-                        <div className={`status-toggle ${status}`}>
-                          <span className="toggle-knob"></span>
-                        </div>
-                      </div>
-                      <p className="vehicle-reg">{vehicle.registration}</p>
-                      
-                      {currentBooking && (
-                        <div className="vehicle-booking">
-                          <p className="booking-user">
-                            <User size={12} />
-                            {currentBooking.user_name}
-                          </p>
-                          <p className="booking-time">
-                            <Clock size={12} />
-                            Until {formatTime(currentBooking.end_time)}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {!currentBooking && status === 'available' && (
-                        <p className="available-text">Available Now</p>
-                      )}
-                      
-                      {status === 'blocked' && (
-                        <p className="blocked-text">Blocked</p>
-                      )}
+            <div className="grid grid-cols-2 gap-3">
+              {vehicles.map(vehicle => {
+                const status = getVehicleStatus(vehicle);
+                const currentBooking = bookings.find(b =>
+                  b.car_id === vehicle.id &&
+                  new Date(b.start_time) <= new Date() &&
+                  new Date(b.end_time) >= new Date()
+                );
+                const borderCls = status === 'available' ? 'border-l-emerald-500' : status === 'in-use' ? 'border-l-rose-500' : 'border-l-slate-400';
+                return (
+                  <div
+                    key={vehicle.id}
+                    className={`bg-white border border-slate-200 border-l-4 ${borderCls} rounded-xl shadow-sm p-3.5`}
+                    data-testid={`vehicle-card-${vehicle.id}`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-sm font-semibold text-slate-900 truncate">{vehicle.name}</span>
+                      <span className={`flex-shrink-0 w-2.5 h-2.5 rounded-full ${status === 'available' ? 'bg-emerald-500' : status === 'in-use' ? 'bg-rose-500' : 'bg-slate-400'}`} />
                     </div>
-                  );
-                })}
-              </div>
+                    <p className="text-xs text-slate-500 mb-2">{vehicle.registration}</p>
+                    {currentBooking ? (
+                      <div className="pt-2 border-t border-slate-100 space-y-0.5">
+                        <p className="flex items-center gap-1 text-xs text-rose-600 font-medium truncate">
+                          <User size={11} className="flex-shrink-0" />{currentBooking.user_name}
+                        </p>
+                        <p className="flex items-center gap-1 text-xs text-slate-500">
+                          <Clock size={11} className="flex-shrink-0" />Until {formatTime(currentBooking.end_time)}
+                        </p>
+                      </div>
+                    ) : status === 'blocked' ? (
+                      <p className="text-xs font-medium text-slate-400 pt-1.5">Blocked</p>
+                    ) : (
+                      <p className="text-xs font-medium text-emerald-600 pt-1.5">Available Now</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
         {/* BOOKINGS TAB */}
         {activeTab === 'bookings' && !showBookingForm && (
-          <div className="tab-page" data-testid="bookings-tab">
-            <div className="page-header">
-              <h1 className="page-title">Car Bookings</h1>
-              <p className="page-subtitle">Auto-updates every 15 seconds</p>
+          <div className="p-4 pb-28" data-testid="bookings-tab">
+            <div className="mb-4">
+              <h1 className="text-xl font-bold text-slate-900">My Bookings</h1>
+              <p className="text-sm text-slate-500">Bookings made by you or your admin</p>
             </div>
 
-            {/* New Booking Button */}
-            <button 
-              onClick={() => setShowBookingForm(true)} 
-              className="primary-btn full-width"
+            <button
+              onClick={() => setShowBookingForm(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-blue-600 text-white text-sm font-semibold rounded-xl active:bg-blue-700 shadow-sm mb-4"
               data-testid="new-booking-btn"
             >
               <Plus size={18} />
               New Booking
             </button>
 
-            {/* Booking View Tabs */}
-            <div className="tab-pills">
-              <button 
-                className={`pill ${bookingView === 'all' ? 'active' : ''}`}
-                onClick={() => setBookingView('all')}
-                data-testid="all-bookings-tab"
-              >
-                <Users size={16} />
-                All Bookings
-              </button>
-              <button 
-                className={`pill ${bookingView === 'my' ? 'active' : ''}`}
-                onClick={() => setBookingView('my')}
-                data-testid="my-bookings-tab"
-              >
-                <User size={16} />
-                My Bookings
-                {myBookings.length > 0 && <span className="pill-badge">{myBookings.length}</span>}
-              </button>
-            </div>
-
-            {/* Car Selection */}
-            <div className="car-selector">
-              <p className="selector-label">Select a car to view slots:</p>
-              <div className="car-chips">
-                <button 
-                  className={`car-chip ${!selectedVehicle ? 'active' : ''}`}
-                  onClick={() => setSelectedVehicle(null)}
-                >
-                  <Calendar size={14} />
-                  All Cars
-                </button>
-                {vehicles.map(v => (
-                  <button 
-                    key={v.id}
-                    className={`car-chip ${selectedVehicle?.id === v.id ? 'active' : ''}`}
-                    onClick={() => setSelectedVehicle(v)}
-                  >
-                    <Car size={14} />
-                    {v.name}
-                  </button>
-                ))}
+            {/* Availability now — compact strip */}
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 mb-4" data-testid="availability-strip">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                <h3 className="text-sm font-semibold text-slate-800">Availability right now</h3>
               </div>
-            </div>
-
-            {/* Date Navigation */}
-            <div className="date-navigator">
-              <button 
-                className="nav-arrow"
-                onClick={() => setSelectedDate(new Date(selectedDate.setDate(selectedDate.getDate() - 1)))}
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <span className="date-display">
-                <Calendar size={16} />
-                {formatDate(selectedDate)}
-              </span>
-              <button 
-                className="nav-arrow"
-                onClick={() => setSelectedDate(new Date(selectedDate.setDate(selectedDate.getDate() + 1)))}
-              >
-                <ChevronRight size={20} />
-              </button>
-            </div>
-
-            {/* Time Slots for Selected Vehicle(s) */}
-            {(selectedVehicle ? [selectedVehicle] : vehicles.slice(0, 2)).map(vehicle => (
-              <div key={vehicle.id} className="vehicle-schedule-card">
-                <div className="schedule-header">
-                  <Car size={20} />
-                  <div className="schedule-info">
-                    <span className="schedule-name">{vehicle.name}</span>
-                    <span className="schedule-reg">{vehicle.registration}</span>
-                  </div>
-                </div>
-
-                <div className="time-slots-grid">
-                  {generateTimeSlots().map(slot => {
-                    const hour = parseInt(slot.split(':')[0]);
-                    const isBooked = isSlotBooked(vehicle.id, hour);
-                    return (
-                      <button 
-                        key={slot}
-                        className={`time-slot ${isBooked ? 'booked' : 'free'}`}
-                        onClick={() => !isBooked && handleBookSlot(vehicle.id, hour)}
-                        disabled={isBooked}
-                        data-testid={`slot-${vehicle.id}-${hour}`}
-                      >
-                        {slot}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="slot-legend">
-                  <span><span className="dot green"></span> Free</span>
-                  <span><span className="dot red"></span> Booked</span>
-                </div>
-              </div>
-            ))}
-
-            {/* My Bookings List */}
-            {bookingView === 'my' && myBookings.length > 0 && (
-              <div className="bookings-list">
-                <h3>My Upcoming Bookings</h3>
-                {myBookings.map(b => (
-                  <div key={b.id} className="booking-item">
-                    <div className="booking-item-header">
-                      <strong>{getVehicleName(b.car_id)}</strong>
-                      <span className={`status-badge ${b.status || 'pending'}`}>
-                        {b.status || 'Pending'}
+              <div className="space-y-2">
+                {vehicles.map(v => {
+                  const status = getVehicleStatus(v);
+                  return (
+                    <div key={v.id} className="flex items-center justify-between gap-2" data-testid={`availability-row-${v.id}`}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Car size={14} className="text-slate-400 flex-shrink-0" />
+                        <span className="text-sm text-slate-700 font-medium truncate">{v.name}</span>
+                        <span className="text-xs text-slate-400 flex-shrink-0">{v.registration}</span>
+                      </div>
+                      <span className={`flex-shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full ${
+                        status === 'available' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                        status === 'in-use' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                        'bg-slate-100 text-slate-500 border border-slate-200'
+                      }`}>
+                        {status === 'available' ? 'Free' : status === 'in-use' ? 'In use' : 'Blocked'}
                       </span>
                     </div>
-                    <p className="booking-item-time">
-                      {formatDate(new Date(b.start_time))} | {formatTime(b.start_time)} - {formatTime(b.end_time)}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
+                {vehicles.length === 0 && <p className="text-sm text-slate-400">No vehicles yet</p>}
               </div>
-            )}
+            </div>
+
+            {/* Month calendar of my bookings */}
+            <MyBookingsCalendar
+              myBookings={myBookings}
+              selectedDay={selectedDay}
+              onSelectDay={setSelectedDay}
+            />
+
+            {/* Selected day bookings */}
+            <div className="mt-4" data-testid="selected-day-bookings">
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">{formatDayLabel(selectedDay)}</h3>
+              {selectedDayBookings.length === 0 ? (
+                <div className="bg-white border border-slate-200 rounded-xl p-6 text-center text-sm text-slate-400" data-testid="no-bookings-day">
+                  No bookings on this day
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {selectedDayBookings.map(b => (
+                    <div
+                      key={b.id}
+                      className="bg-white border border-slate-200 border-l-4 border-l-blue-500 rounded-xl shadow-sm p-3.5"
+                      data-testid={`my-booking-${b.id}`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-sm font-semibold text-slate-900 truncate">
+                          {getVehicleName(b.car_id)}
+                        </span>
+                        <span className={`flex-shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize ${
+                          (b.status === 'approved' || b.status === 'confirmed') ? 'bg-emerald-50 text-emerald-700' :
+                          b.status === 'rejected' ? 'bg-rose-50 text-rose-700' :
+                          'bg-amber-50 text-amber-700'
+                        }`}>
+                          {b.status || 'Pending'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 mb-1.5">{getVehicleReg(b.car_id)}</p>
+                      <p className="flex items-center gap-1.5 text-sm text-slate-600">
+                        <Clock size={13} className="text-blue-500" />
+                        {formatTime(b.start_time)} – {formatTime(b.end_time)}
+                      </p>
+                      {b.purpose && (
+                        <p className="text-xs text-slate-500 mt-1 truncate">{b.purpose}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* BOOKING FORM */}
         {activeTab === 'bookings' && showBookingForm && (
-          <div className="tab-page form-page" data-testid="booking-form">
-            <div className="page-header">
-              <h1 className="page-title">New Booking</h1>
-              <button className="close-btn" onClick={() => setShowBookingForm(false)}>
-                <X size={24} />
+          <div className="p-4 pb-28 bg-white min-h-full" data-testid="booking-form">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-xl font-bold text-slate-900">New Booking</h1>
+              <button
+                className="p-2 rounded-lg text-slate-500 active:bg-slate-100"
+                onClick={() => setShowBookingForm(false)}
+                data-testid="close-booking-form"
+              >
+                <X size={22} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitBooking} className="booking-form">
-              <div className="form-field">
-                <label>Select Car *</label>
-                <select 
+            <form onSubmit={handleSubmitBooking} className="space-y-4">
+              <div>
+                <label className={labelCls}>Select Car *</label>
+                <select
                   value={bookingForm.car_id}
-                  onChange={e => setBookingForm({...bookingForm, car_id: e.target.value})}
+                  onChange={e => setBookingForm({ ...bookingForm, car_id: e.target.value })}
                   required
+                  className={inputCls}
                   data-testid="car-select"
                 >
                   <option value="">Choose a car...</option>
-                  {vehicles.map(v => (
+                  {vehicles.filter(v => !v.is_blocked).map(v => (
                     <option key={v.id} value={v.id}>{v.name} ({v.registration})</option>
                   ))}
                 </select>
               </div>
 
-              <div className="form-field">
-                <label>Booked By</label>
-                <input type="text" value={user?.name || ''} disabled className="disabled-input" />
-                <span className="field-hint">Auto-filled from your account</span>
+              <div>
+                <label className={labelCls}>Booked By</label>
+                <input type="text" value={user?.name || ''} disabled className={`${inputCls} bg-slate-100 text-slate-500`} />
+                <span className="text-xs text-slate-400 mt-1 block">Auto-filled from your account</span>
               </div>
 
-              <div className="form-row">
-                <div className="form-field">
-                  <label>Start Time *</label>
-                  <input 
-                    type="datetime-local" 
-                    value={bookingForm.start_time?.replace(':00Z', '').replace('Z', '')} 
-                    onChange={e => setBookingForm({...bookingForm, start_time: e.target.value})}
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className={labelCls}>Start Time *</label>
+                  <input
+                    type="datetime-local"
+                    value={bookingForm.start_time?.replace(':00Z', '').replace('Z', '')}
+                    onChange={e => setBookingForm({ ...bookingForm, start_time: e.target.value })}
                     required
+                    className={inputCls}
                     data-testid="start-time"
                   />
                 </div>
-                <div className="form-field">
-                  <label>End Time *</label>
-                  <input 
-                    type="datetime-local" 
-                    value={bookingForm.end_time?.replace(':00Z', '').replace('Z', '')} 
-                    onChange={e => setBookingForm({...bookingForm, end_time: e.target.value})}
+                <div>
+                  <label className={labelCls}>End Time *</label>
+                  <input
+                    type="datetime-local"
+                    value={bookingForm.end_time?.replace(':00Z', '').replace('Z', '')}
+                    onChange={e => setBookingForm({ ...bookingForm, end_time: e.target.value })}
                     required
+                    className={inputCls}
                     data-testid="end-time"
                   />
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-field">
-                  <label>Start Eircode</label>
-                  <input 
-                    type="text" 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Start Eircode</label>
+                  <input
+                    type="text"
                     value={bookingForm.start_eircode}
-                    onChange={e => setBookingForm({...bookingForm, start_eircode: e.target.value})}
+                    onChange={e => setBookingForm({ ...bookingForm, start_eircode: e.target.value })}
                     placeholder="e.g. V92 H6TP"
+                    className={inputCls}
                   />
                 </div>
-                <div className="form-field">
-                  <label>End Eircode</label>
-                  <input 
-                    type="text" 
+                <div>
+                  <label className={labelCls}>End Eircode</label>
+                  <input
+                    type="text"
                     value={bookingForm.end_eircode}
-                    onChange={e => setBookingForm({...bookingForm, end_eircode: e.target.value})}
+                    onChange={e => setBookingForm({ ...bookingForm, end_eircode: e.target.value })}
                     placeholder="e.g. V23 KV29"
+                    className={inputCls}
                   />
                 </div>
               </div>
 
-              <div className="form-field">
-                <label>Purpose / Notes</label>
-                <input 
-                  type="text" 
+              <div>
+                <label className={labelCls}>Purpose / Notes</label>
+                <input
+                  type="text"
                   value={bookingForm.purpose}
-                  onChange={e => setBookingForm({...bookingForm, purpose: e.target.value})}
+                  onChange={e => setBookingForm({ ...bookingForm, purpose: e.target.value })}
                   placeholder="e.g. Client visit"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="checkbox-card highlight">
-                <label className="checkbox-label">
-                  <input 
-                    type="checkbox" 
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3.5">
+                <label className="flex items-center gap-2.5 text-sm font-medium text-blue-900 cursor-pointer">
+                  <input
+                    type="checkbox"
                     checked={bookingForm.is_double_up_call}
-                    onChange={e => setBookingForm({...bookingForm, is_double_up_call: e.target.checked})}
+                    onChange={e => setBookingForm({ ...bookingForm, is_double_up_call: e.target.checked })}
+                    className="w-4.5 h-4.5 accent-blue-600"
+                    style={{ width: 18, height: 18 }}
                   />
-                  <Users size={18} />
+                  <Users size={17} />
                   Double up call?
                 </label>
-                <span className="checkbox-hint">Check if this is a shared visit</span>
+                <span className="block text-xs text-blue-700 mt-1 ml-8">Check if this is a shared visit</span>
               </div>
 
-              <div className="checkbox-card">
-                <label className="checkbox-label">
-                  <input 
-                    type="checkbox" 
+              <div className="bg-white border border-slate-200 rounded-xl p-3.5">
+                <label className="flex items-center gap-2.5 text-sm font-medium text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
                     checked={bookingForm.is_recurring}
-                    onChange={e => setBookingForm({...bookingForm, is_recurring: e.target.checked})}
+                    onChange={e => setBookingForm({ ...bookingForm, is_recurring: e.target.checked })}
+                    style={{ width: 18, height: 18 }}
+                    className="accent-blue-600"
                   />
-                  <RefreshCw size={18} />
+                  <RefreshCw size={17} />
                   Make recurring
                 </label>
               </div>
 
-              <div className="form-actions">
-                <button type="submit" className="primary-btn" disabled={isSubmittingBooking} data-testid="submit-booking">
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="submit"
+                  disabled={isSubmittingBooking}
+                  className="flex-1 px-4 py-3.5 bg-blue-600 text-white text-sm font-semibold rounded-xl active:bg-blue-700 disabled:opacity-60 shadow-sm"
+                  data-testid="submit-booking"
+                >
                   {isSubmittingBooking ? 'Creating...' : 'Create Booking'}
                 </button>
-                <button type="button" className="secondary-btn" onClick={() => setShowBookingForm(false)}>
+                <button
+                  type="button"
+                  onClick={() => setShowBookingForm(false)}
+                  className="flex-1 px-4 py-3.5 bg-white border border-slate-300 text-slate-700 text-sm font-medium rounded-xl active:bg-slate-50"
+                >
                   Cancel
                 </button>
               </div>
@@ -683,90 +705,96 @@ const StaffMobileView = ({ tenantSlug }) => {
           </div>
         )}
 
-        {/* REQUEST LIFT TAB */}
+        {/* LIFT TAB */}
         {activeTab === 'lift' && (
-          <div className="tab-page" data-testid="lift-tab">
+          <div className="p-4 pb-28" data-testid="lift-tab">
             {liftSuccess ? (
-              <div className="success-state">
+              <div className="flex flex-col items-center justify-center text-center py-20 text-emerald-500">
                 <CheckCircle size={64} />
-                <h2>Request Sent!</h2>
-                <p>Staff members have been notified</p>
+                <h2 className="mt-5 mb-2 text-xl font-bold text-slate-900">Request Sent!</h2>
+                <p className="text-slate-500">Staff members have been notified</p>
               </div>
             ) : (
               <>
-                <div className="page-header">
-                  <h1 className="page-title">Request a Lift</h1>
-                  <p className="page-subtitle">Ask a colleague for a ride</p>
+                <div className="mb-4">
+                  <h1 className="text-xl font-bold text-slate-900">Request a Lift</h1>
+                  <p className="text-sm text-slate-500">Ask a colleague for a ride</p>
                 </div>
 
-                <form onSubmit={handleSubmitLiftRequest} className="lift-form">
-                  <div className="form-field">
-                    <label><User size={14} /> Your Name</label>
-                    <input 
-                      type="text" 
+                <form onSubmit={handleSubmitLiftRequest} className="space-y-4">
+                  <div>
+                    <label className={labelCls}><User size={14} /> Your Name</label>
+                    <input
+                      type="text"
                       value={liftForm.name}
-                      onChange={e => setLiftForm({...liftForm, name: e.target.value})}
+                      onChange={e => setLiftForm({ ...liftForm, name: e.target.value })}
                       required
+                      className={inputCls}
                     />
                   </div>
-
-                  <div className="form-field">
-                    <label><Phone size={14} /> Phone Number *</label>
-                    <input 
-                      type="tel" 
+                  <div>
+                    <label className={labelCls}><Phone size={14} /> Phone Number *</label>
+                    <input
+                      type="tel"
                       value={liftForm.phone}
-                      onChange={e => setLiftForm({...liftForm, phone: e.target.value})}
+                      onChange={e => setLiftForm({ ...liftForm, phone: e.target.value })}
                       placeholder="Your contact number"
                       required
+                      className={inputCls}
                     />
                   </div>
-
-                  <div className="form-field">
-                    <label><MapPin size={14} className="icon-green" /> Where are you? *</label>
-                    <input 
-                      type="text" 
+                  <div>
+                    <label className={labelCls}><MapPin size={14} className="text-emerald-500" /> Where are you? *</label>
+                    <input
+                      type="text"
                       value={liftForm.from_location}
-                      onChange={e => setLiftForm({...liftForm, from_location: e.target.value})}
+                      onChange={e => setLiftForm({ ...liftForm, from_location: e.target.value })}
                       placeholder="Current location"
                       required
+                      className={inputCls}
                     />
                   </div>
-
-                  <div className="form-field">
-                    <label><MapPin size={14} className="icon-red" /> Where to? *</label>
-                    <input 
-                      type="text" 
+                  <div>
+                    <label className={labelCls}><MapPin size={14} className="text-rose-500" /> Where to? *</label>
+                    <input
+                      type="text"
                       value={liftForm.to_location}
-                      onChange={e => setLiftForm({...liftForm, to_location: e.target.value})}
+                      onChange={e => setLiftForm({ ...liftForm, to_location: e.target.value })}
                       placeholder="Destination"
                       required
+                      className={inputCls}
                     />
                   </div>
-
-                  <div className="form-row">
-                    <div className="form-field">
-                      <label><Calendar size={14} /> Date *</label>
-                      <input 
-                        type="date" 
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={labelCls}><Calendar size={14} /> Date *</label>
+                      <input
+                        type="date"
                         value={liftForm.date}
-                        onChange={e => setLiftForm({...liftForm, date: e.target.value})}
+                        onChange={e => setLiftForm({ ...liftForm, date: e.target.value })}
                         min={today}
                         required
+                        className={inputCls}
                       />
                     </div>
-                    <div className="form-field">
-                      <label><Clock size={14} /> Time *</label>
-                      <input 
-                        type="time" 
+                    <div>
+                      <label className={labelCls}><Clock size={14} /> Time *</label>
+                      <input
+                        type="time"
                         value={liftForm.time}
-                        onChange={e => setLiftForm({...liftForm, time: e.target.value})}
+                        onChange={e => setLiftForm({ ...liftForm, time: e.target.value })}
                         required
+                        className={inputCls}
                       />
                     </div>
                   </div>
-
-                  <button type="submit" className="primary-btn full-width" disabled={isSubmittingLift} data-testid="submit-lift">
-                    {isSubmittingLift ? 'Sending...' : <><Send size={18} /> Send Request</>}
+                  <button
+                    type="submit"
+                    disabled={isSubmittingLift}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-blue-600 text-white text-sm font-semibold rounded-xl active:bg-blue-700 disabled:opacity-60 shadow-sm"
+                    data-testid="submit-lift"
+                  >
+                    {isSubmittingLift ? 'Sending...' : <><Send size={17} /> Send Request</>}
                   </button>
                 </form>
               </>
@@ -776,10 +804,10 @@ const StaffMobileView = ({ tenantSlug }) => {
 
         {/* DOCUMENTS TAB */}
         {activeTab === 'documents' && (
-          <div className="tab-page" data-testid="documents-tab">
-            <div className="page-header">
-              <h1 className="page-title">Documents</h1>
-              <p className="page-subtitle">Submit fuel logs, checks and reports</p>
+          <div className="p-4 pb-28" data-testid="documents-tab">
+            <div className="mb-4">
+              <h1 className="text-xl font-bold text-slate-900">Documents</h1>
+              <p className="text-sm text-slate-500">Submit fuel logs, checks and reports</p>
             </div>
             <CustomDocumentsStaff />
           </div>
@@ -787,805 +815,34 @@ const StaffMobileView = ({ tenantSlug }) => {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="bottom-nav" data-testid="bottom-nav">
-        <button 
-          onClick={() => setActiveTab('home')} 
-          className={`nav-item ${activeTab === 'home' ? 'active' : ''}`}
-          data-testid="nav-home"
-        >
-          <Home size={22} />
-          <span>Home</span>
-        </button>
-        <button 
-          onClick={() => { setActiveTab('bookings'); setShowBookingForm(false); }} 
-          className={`nav-item ${activeTab === 'bookings' ? 'active' : ''}`}
-          data-testid="nav-bookings"
-        >
-          <Calendar size={22} />
-          <span>Bookings</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab('documents')} 
-          className={`nav-item ${activeTab === 'documents' ? 'active' : ''}`}
-          data-testid="nav-documents"
-        >
-          <FileText size={22} />
-          <span>Docs</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab('lift')} 
-          className={`nav-item ${activeTab === 'lift' ? 'active' : ''}`}
-          data-testid="nav-lift"
-        >
-          <Navigation size={22} />
-          <span>Lift</span>
-        </button>
+      <nav
+        className="flex-shrink-0 flex bg-white border-t border-slate-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]"
+        style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))', paddingTop: 6 }}
+        data-testid="bottom-nav"
+      >
+        {[
+          { key: 'home', icon: Home, label: 'Home', testid: 'nav-home' },
+          { key: 'bookings', icon: Calendar, label: 'Bookings', testid: 'nav-bookings' },
+          { key: 'documents', icon: FileText, label: 'Docs', testid: 'nav-documents' },
+          { key: 'lift', icon: Navigation, label: 'Lift', testid: 'nav-lift' }
+        ].map(({ key, icon: Icon, label, testid }) => {
+          const active = activeTab === key;
+          return (
+            <button
+              key={key}
+              onClick={() => { setActiveTab(key); if (key === 'bookings') setShowBookingForm(false); }}
+              className={`relative flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium transition-colors ${active ? 'text-blue-600' : 'text-slate-400'}`}
+              data-testid={testid}
+            >
+              {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-blue-600 rounded-b" />}
+              <Icon size={22} />
+              <span>{label}</span>
+            </button>
+          );
+        })}
       </nav>
-
-      <style>{styles}</style>
     </div>
   );
 };
-
-const styles = `
-  /* Reset & Base */
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  
-  .staff-app {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    background: #F8F9FA;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    overflow: hidden;
-    height: 100dvh;
-    width: 100vw;
-  }
-  
-  /* Loading */
-  .loading-screen {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    color: #6B7280;
-  }
-  
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #007BFF;
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinning { animation: spin 1s linear infinite; }
-  
-  /* Header */
-  .app-header {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    padding-top: max(12px, env(safe-area-inset-top));
-    background: #FFFFFF;
-    border-bottom: 1px solid #E5E7EB;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  }
-  
-  .header-brand { display: flex; align-items: center; gap: 8px; }
-  
-  .logo-text {
-    font-size: 20px;
-    font-weight: 700;
-    color: #007BFF;
-  }
-  
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  
-  .icon-btn {
-    background: none;
-    border: none;
-    color: #6B7280;
-    padding: 6px;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: background 0.2s;
-  }
-  
-  .icon-btn:hover { background: #F3F4F6; }
-  .icon-btn.logout { color: #DC2626; }
-  
-  .user-badge {
-    font-size: 13px;
-    font-weight: 500;
-    color: #374151;
-    background: #F3F4F6;
-    padding: 4px 10px;
-    border-radius: 12px;
-  }
-  
-  /* Main Content */
-  .app-content {
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .tab-page {
-    padding: 16px;
-    padding-bottom: 100px;
-  }
-  
-  .form-page { background: #FFFFFF; }
-  
-  /* Page Header */
-  .page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-  
-  .page-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: #111827;
-  }
-  
-  .page-subtitle {
-    font-size: 13px;
-    color: #6B7280;
-  }
-  
-  .current-time {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 14px;
-    color: #6B7280;
-  }
-  
-  .close-btn {
-    background: none;
-    border: none;
-    color: #6B7280;
-    padding: 4px;
-    cursor: pointer;
-  }
-  
-  /* Stats Grid */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  
-  .stat-card {
-    background: #FFFFFF;
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  }
-  
-  .stat-card.available .stat-icon { background: #DCFCE7; color: #22C55E; }
-  .stat-card.in-use .stat-icon { background: #FEE2E2; color: #EF4444; }
-  
-  .stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .stat-info { display: flex; flex-direction: column; }
-  .stat-value { font-size: 28px; font-weight: 700; color: #111827; }
-  .stat-label { font-size: 13px; color: #6B7280; }
-  
-  /* Refresh Button */
-  .refresh-btn {
-    width: 100%;
-    padding: 14px;
-    background: #007BFF;
-    color: #FFFFFF;
-    border: none;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    cursor: pointer;
-    margin-bottom: 20px;
-    transition: background 0.2s;
-  }
-  
-  .refresh-btn:hover { background: #0056b3; }
-  .refresh-btn:disabled { opacity: 0.7; cursor: not-allowed; }
-  
-  /* Section */
-  .section { margin-bottom: 20px; }
-  
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-  
-  .section-header h2 {
-    font-size: 16px;
-    font-weight: 600;
-    color: #111827;
-  }
-  
-  .live-indicator {
-    width: 10px;
-    height: 10px;
-    background: #22C55E;
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-  }
-  
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-  
-  .update-info {
-    font-size: 12px;
-    color: #9CA3AF;
-    margin-left: auto;
-  }
-  
-  /* Vehicle Grid - 2 Column */
-  .vehicle-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-  
-  .vehicle-card {
-    background: #FFFFFF;
-    border-radius: 12px;
-    padding: 14px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    border: 1px solid #E5E7EB;
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-  
-  .vehicle-card:active { transform: scale(0.98); }
-  
-  .vehicle-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 6px;
-  }
-  
-  .vehicle-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: #111827;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 70%;
-  }
-  
-  /* Toggle Switch Style */
-  .status-toggle {
-    width: 36px;
-    height: 20px;
-    border-radius: 10px;
-    position: relative;
-    transition: background 0.2s;
-  }
-  
-  .status-toggle.available { background: #22C55E; }
-  .status-toggle.in-use { background: #EF4444; }
-  .status-toggle.blocked { background: #9CA3AF; }
-  
-  .toggle-knob {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    background: #FFFFFF;
-    border-radius: 50%;
-    top: 2px;
-    transition: left 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  }
-  
-  .status-toggle.available .toggle-knob { left: 18px; }
-  .status-toggle.in-use .toggle-knob,
-  .status-toggle.blocked .toggle-knob { left: 2px; }
-  
-  .vehicle-reg {
-    font-size: 12px;
-    color: #6B7280;
-    margin-bottom: 8px;
-  }
-  
-  .vehicle-booking {
-    padding-top: 8px;
-    border-top: 1px solid #F3F4F6;
-  }
-  
-  .booking-user, .booking-time {
-    font-size: 12px;
-    color: #6B7280;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  
-  .booking-user { color: #DC2626; margin-bottom: 2px; }
-  
-  .available-text {
-    font-size: 12px;
-    font-weight: 500;
-    color: #22C55E;
-    padding-top: 8px;
-  }
-  
-  .blocked-text {
-    font-size: 12px;
-    font-weight: 500;
-    color: #9CA3AF;
-    padding-top: 8px;
-  }
-  
-  /* Primary Button */
-  .primary-btn {
-    padding: 14px 24px;
-    background: #007BFF;
-    color: #FFFFFF;
-    border: none;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  
-  .primary-btn:hover { background: #0056b3; }
-  .primary-btn:disabled { opacity: 0.7; cursor: not-allowed; }
-  .primary-btn.full-width { width: 100%; margin-bottom: 16px; }
-  
-  .secondary-btn {
-    padding: 14px 24px;
-    background: #FFFFFF;
-    color: #374151;
-    border: 1px solid #D1D5DB;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  
-  .secondary-btn:hover { background: #F9FAFB; }
-  
-  /* Tab Pills */
-  .tab-pills {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-  
-  .pill {
-    flex: 1;
-    padding: 10px 12px;
-    background: #FFFFFF;
-    border: 2px solid #E5E7EB;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #007BFF;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .pill.active {
-    background: #007BFF;
-    border-color: #007BFF;
-    color: #FFFFFF;
-  }
-  
-  .pill-badge {
-    background: rgba(255,255,255,0.3);
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 12px;
-  }
-  
-  .pill:not(.active) .pill-badge {
-    background: #E5E7EB;
-    color: #374151;
-  }
-  
-  /* Car Selector */
-  .car-selector { margin-bottom: 16px; }
-  
-  .selector-label {
-    font-size: 13px;
-    color: #6B7280;
-    margin-bottom: 8px;
-  }
-  
-  .car-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  
-  .car-chip {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 8px 12px;
-    background: #FFFFFF;
-    border: 1px solid #E5E7EB;
-    border-radius: 20px;
-    font-size: 13px;
-    color: #374151;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .car-chip.active {
-    background: #FEF3C7;
-    border-color: #FCD34D;
-    color: #92400E;
-    font-weight: 600;
-  }
-  
-  /* Date Navigator */
-  .date-navigator {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #FFFFFF;
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  }
-  
-  .nav-arrow {
-    background: none;
-    border: none;
-    color: #6B7280;
-    padding: 4px;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: background 0.2s;
-  }
-  
-  .nav-arrow:hover { background: #F3F4F6; }
-  
-  .date-display {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 15px;
-    font-weight: 500;
-    color: #111827;
-  }
-  
-  /* Vehicle Schedule Card */
-  .vehicle-schedule-card {
-    background: #FEF9C3;
-    border: 2px solid #FCD34D;
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 12px;
-  }
-  
-  .schedule-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    color: #92400E;
-  }
-  
-  .schedule-info { flex: 1; }
-  .schedule-name { font-weight: 600; color: #111827; display: block; }
-  .schedule-reg { font-size: 12px; color: #6B7280; }
-  
-  /* Time Slots Grid */
-  .time-slots-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-    margin-bottom: 12px;
-  }
-  
-  .time-slot {
-    padding: 10px 4px;
-    border: 1px solid #E5E7EB;
-    border-radius: 8px;
-    background: #FFFFFF;
-    font-size: 13px;
-    font-weight: 500;
-    color: #374151;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .time-slot.free:hover {
-    background: #DCFCE7;
-    border-color: #22C55E;
-    color: #16A34A;
-  }
-  
-  .time-slot.booked {
-    background: #FEE2E2;
-    color: #DC2626;
-    cursor: not-allowed;
-  }
-  
-  /* Slot Legend */
-  .slot-legend {
-    display: flex;
-    gap: 16px;
-    font-size: 12px;
-    color: #6B7280;
-  }
-  
-  .slot-legend span {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-  
-  .dot.green { background: #22C55E; }
-  .dot.red { background: #EF4444; }
-  
-  /* Bookings List */
-  .bookings-list {
-    margin-top: 20px;
-  }
-  
-  .bookings-list h3 {
-    font-size: 16px;
-    font-weight: 600;
-    color: #111827;
-    margin-bottom: 12px;
-  }
-  
-  .booking-item {
-    background: #FFFFFF;
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    border: 1px solid #E5E7EB;
-  }
-  
-  .booking-item-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-  }
-  
-  .booking-item-header strong { color: #111827; }
-  
-  .status-badge {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 10px;
-    text-transform: capitalize;
-  }
-  
-  .status-badge.approved, .status-badge.confirmed { background: #DCFCE7; color: #16A34A; }
-  .status-badge.pending { background: #FEF3C7; color: #D97706; }
-  .status-badge.rejected { background: #FEE2E2; color: #DC2626; }
-  
-  .booking-item-time { font-size: 13px; color: #6B7280; }
-  
-  /* Form Styles */
-  .booking-form, .lift-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  
-  .form-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  
-  .form-field label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #374151;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  
-  .form-field input, .form-field select {
-    padding: 14px;
-    border: 1px solid #D1D5DB;
-    border-radius: 10px;
-    font-size: 16px;
-    background: #FFFFFF;
-    transition: border-color 0.2s;
-  }
-  
-  .form-field input:focus, .form-field select:focus {
-    outline: none;
-    border-color: #007BFF;
-  }
-  
-  .disabled-input {
-    background: #F3F4F6 !important;
-    color: #6B7280 !important;
-  }
-  
-  .field-hint {
-    font-size: 12px;
-    color: #9CA3AF;
-  }
-  
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-  
-  /* Checkbox Card */
-  .checkbox-card {
-    background: #FFFFFF;
-    border: 1px solid #E5E7EB;
-    border-radius: 10px;
-    padding: 14px;
-  }
-  
-  .checkbox-card.highlight {
-    background: #FEF9C3;
-    border-color: #FCD34D;
-  }
-  
-  .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #374151;
-    cursor: pointer;
-  }
-  
-  .checkbox-card.highlight .checkbox-label { color: #92400E; }
-  
-  .checkbox-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: #007BFF;
-  }
-  
-  .checkbox-hint {
-    display: block;
-    font-size: 12px;
-    color: #B45309;
-    margin-top: 4px;
-    margin-left: 28px;
-  }
-  
-  /* Form Actions */
-  .form-actions {
-    display: flex;
-    gap: 12px;
-    margin-top: 8px;
-  }
-  
-  .form-actions .primary-btn,
-  .form-actions .secondary-btn { flex: 1; }
-  
-  /* Icons */
-  .icon-green { color: #22C55E; }
-  .icon-red { color: #DC2626; }
-  
-  /* Success State */
-  .success-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 80px 20px;
-    color: #22C55E;
-  }
-  
-  .success-state h2 {
-    margin: 20px 0 8px;
-    color: #111827;
-    font-size: 24px;
-  }
-  
-  .success-state p { color: #6B7280; }
-  
-  /* Bottom Navigation */
-  .bottom-nav {
-    flex-shrink: 0;
-    display: flex;
-    background: #FFFFFF;
-    border-top: 1px solid #E5E7EB;
-    padding: 8px 0;
-    padding-bottom: max(8px, env(safe-area-inset-bottom));
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-  }
-  
-  .nav-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    background: none;
-    border: none;
-    padding: 10px 8px;
-    color: #9CA3AF;
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: color 0.2s;
-  }
-  
-  .nav-item.active {
-    color: #007BFF;
-  }
-  
-  .nav-item.active::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 32px;
-    height: 3px;
-    background: #007BFF;
-    border-radius: 0 0 3px 3px;
-  }
-`;
 
 export default StaffMobileView;

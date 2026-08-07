@@ -346,7 +346,7 @@ async def send_staff_invitation_email(
 
 # --- Public contact form: notify Lee when a lead lands -----------------------
 
-CONTACT_LEAD_INBOX = os.environ.get("CONTACT_LEAD_INBOX", "lee@quick-wing.com").strip()
+CONTACT_LEAD_INBOX = os.environ.get("CONTACT_LEAD_INBOX", "Lee.quickwing@gmail.com").strip()
 # Fallback inbox = the Resend account owner email (guaranteed deliverable
 # even when the API key is restricted / sending domain is unverified).
 CONTACT_LEAD_FALLBACK = os.environ.get("CONTACT_LEAD_FALLBACK", "pmcxleewalker@gmail.com").strip()

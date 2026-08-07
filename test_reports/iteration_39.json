@@ -1,0 +1,18 @@
+{
+  "summary": "Verified end-to-end that the Resend-based staff invitation email send is now working for the Test Fleet tenant. Backend API (POST /api/tenant/users) returns email_sent=true and email_error=null. Backend log shows 'Staff invite email sent to <email> (id=<uuid>)' for both a curl-driven send and a UI-driven send. UI credentials modal renders the GREEN [data-testid=invite-email-sent] banner with the recipient email and does NOT render the RED [data-testid=invite-email-failed] banner. Regression checks pass: user record is created (visible in GET /api/tenant/users), temporary_password is returned, login_url is returned, DELETE /api/tenant/users/{id} succeeds for cleanup.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Field naming discrepancy vs. review_request: the request stated the endpoint should return 'activation_url', but POST /api/tenant/users actually returns 'login_url' (value: https://quick-wing.com/test-fleet/login). Not a bug per se — the UI modal already reads login_url — but worth confirming naming is intentional and documenting so downstream consumers don't look for a non-existent 'activation_url' field."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin.test-fleet@quickwing.com / admin123 (tenant slug: test-fleet). Recipient aliases used: pmcxleewalker+testing-agent-1786088311@gmail.com (curl), pmcxleewalker+testing-agent-ui-1786088414@gmail.com (UI). Resend send IDs captured in backend log: 532cbdb8-15aa-4a1d-b5f7-96413d90591d (curl send).",
+  "seed_data_creation": "Created 2 temporary tenant users during test; both DELETEd via /api/tenant/users/{id} at end of run — Team list is clean.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Invite email flow is fully working. Backend send path: services/email_service.py::send_staff_invitation_email() -> Resend from invites@send.quick-wing.com (verified domain). If future tests need to verify the RED failure banner, force a failure by temporarily invalidating RESEND_API_KEY — do NOT test with @example.com because Resend rejects it as a hard bounce which is a legitimate email_sent=false path but pollutes real send metrics. Always use pmcxleewalker+<label>@gmail.com aliases. Always DELETE created users after test.",
+  "rca of the issue": "Original bug: Resend rejected sends because SENDER_EMAIL domain was not verified in the Resend account. Mitigation applied by user (outside this test iteration): (a) verified send.quick-wing.com in Resend, (b) provisioned a working Resend API key in backend/.env. This iteration confirms both fixes end-to-end; email_sent=true and Resend returns message IDs. No further action required."
+}

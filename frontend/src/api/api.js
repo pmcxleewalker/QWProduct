@@ -158,7 +158,13 @@ export const userAPI = {
   getAll: () => axios.get(`${API}/tenant/users`),
   create: (data, role = 'staff') => axios.post(`${API}/tenant/users`, data, { params: { role } }),
   updateRole: (userId, role) => axios.put(`${API}/tenant/users/${userId}/role`, null, { params: { role } }),
+  updateProfile: (userId, data) => axios.patch(`${API}/tenant/users/${userId}`, data),
+  setActive: (userId, isActive) =>
+    axios.post(`${API}/tenant/users/${userId}/set-active`, { is_active: !!isActive }),
   remove: (userId) => axios.delete(`${API}/tenant/users/${userId}`),
+  // Aliases kept for legacy callers (Admin.js was using these names).
+  delete: (userId) => axios.delete(`${API}/tenant/users/${userId}`),
+  deleteAdmin: (userId) => axios.delete(`${API}/tenant/users/${userId}`),
   resetPassword: (userId, adminPassword, newPassword) => 
     axios.post(`${API}/tenant/users/${userId}/reset-password`, { admin_password: adminPassword, new_password: newPassword }),
 };

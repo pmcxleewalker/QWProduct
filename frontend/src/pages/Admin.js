@@ -791,21 +791,21 @@ const Admin = () => {
 
   const handleToggleUserStatus = async (user) => {
     try {
-      await userAPI.update(user.id, { is_active: !user.is_active });
+      await userAPI.setActive(user.id, !user.is_active);
       setSuccess(`User ${user.is_active ? 'deactivated' : 'activated'} successfully`);
       fetchData();
     } catch (err) {
-      setError('Failed to update user status');
+      setError(err.response?.data?.detail || 'Failed to update user status');
     }
   };
 
   const handleChangeUserRole = async (user, newRole) => {
     try {
-      await userAPI.update(user.id, { role: newRole });
+      await userAPI.updateRole(user.id, newRole);
       setSuccess(`User role updated to ${newRole}`);
       fetchData();
     } catch (err) {
-      setError('Failed to update user role');
+      setError(err.response?.data?.detail || 'Failed to update user role');
     }
   };
 

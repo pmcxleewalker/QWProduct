@@ -4803,6 +4803,62 @@ async def remove_user_from_tenant(
     return {"message": "User removed from tenant"}
 
 
+class TenantUserActiveToggle(BaseModel):
+    is_active: bool
+
+
+@api_router.post("/tenant/users/{user_id}/set-active")
+async def set_tenant_user_active(
+    user_id: str,
+    payload: TenantUserActiveToggle,
+    context: TenantContext = Depends(require_admin),
+    request: Request = None,
+):
+    """Activate or deactivate a tenant user. Deactivating flips
+    `users.is_active` to false so the account can no longer log in,
+    but keeps the membership + audit trail intact.
+
+    Admins cannot deactivate themselves — that would immediately lock
+    them out of the tenant they're managing.
+    """
+    if user_id == context.user_id:
+        raise HTTPException(
+            status_code=400, detail="You cannot deactivate your own account"
+        )
+
+    membership = await db.memberships.find_one(
+        {"user_id": user_id, "tenant_id": context.tenant_id}, {"_id": 0}
+    )
+    if not membership:
+        raise HTTPException(status_code=404, detail="User not found in tenant")
+
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            "is_active": bool(payload.is_active),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }},
+    )
+
+    try:
+        await audit_service.log_user_action(
+            actor_user_id=context.user_id,
+            actor_email=context.user_email,
+            action=AuditAction.USER_UPDATED,
+            target_user_id=user_id,
+            tenant_id=context.tenant_id,
+            meta={"is_active": bool(payload.is_active)},
+            ip_address=request.client.host if request and request.client else None,
+        )
+    except Exception:
+        pass
+
+    updated = await db.users.find_one(
+        {"id": user_id}, {"_id": 0, "password_hash": 0}
+    )
+    return {"message": "User status updated", "user": updated}
+
+
 class TenantResetPasswordRequest(BaseModel):
     admin_password: str
     new_password: str

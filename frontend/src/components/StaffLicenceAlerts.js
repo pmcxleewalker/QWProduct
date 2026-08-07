@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { AlertTriangle, IdCard, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { computeLicenceStatus } from './DriverLicenceCard';
+import useCollapseState from '../hooks/useCollapseState';
 
 /**
  * Admin-only banner shown in the dashboard "Action Required" section.
@@ -11,7 +12,7 @@ import { computeLicenceStatus } from './DriverLicenceCard';
  * amber = warning) so admins read both panels the same way.
  */
 const StaffLicenceAlerts = ({ teamMembers = [], onManageClick }) => {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useCollapseState('qw:panel:licence-reminders', true);
   const { expired, warning, missing } = useMemo(() => {
     const exp = [];
     const warn = [];

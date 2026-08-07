@@ -8829,6 +8829,13 @@ async def startup():
         gps_poller.start(db)
     except Exception as e:
         logger.error(f"Failed to start SinoTrack bridge: {e}")
+
+    # Start the daily driver's licence reminder scheduler. Also idempotent.
+    try:
+        from services import licence_reminder_service
+        licence_reminder_service.start(db)
+    except Exception as e:
+        logger.error(f"Failed to start licence reminder scheduler: {e}")
     
     # Fix any stale absolute logo URLs ('http://localhost:8001/...') left in
     # the DB from before the upload endpoint was switched to relative URLs.
@@ -12900,6 +12907,23 @@ async def update_legal_records(
         upsert=True
     )
     return {"success": True, "record": data}
+
+
+@api_router.post("/tenant/licence-reminders/run-now")
+async def run_licence_reminders_now(
+    context: TenantContext = Depends(require_admin),
+):
+    """Manually kick off the daily licence-reminder job. Useful right after
+    setup so admins can prove the plumbing works without waiting until 08:00
+    UTC. Idempotent — a user who has already had today's reminder won't get
+    a second one thanks to the `licence_reminder_sends` dedupe key.
+    """
+    try:
+        from services import licence_reminder_service
+        summaries = await licence_reminder_service.run_now()
+        return {"success": True, "summaries": summaries}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Licence reminder run failed: {exc}") from exc
 
 
 # Include router - MUST be after all routes are defined

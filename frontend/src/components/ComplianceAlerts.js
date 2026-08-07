@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import useCollapseState from '../hooks/useCollapseState';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -39,7 +40,7 @@ const refFor = (vehicle, type) => {
 const ackKey = (vehicleId, type, ref) => `${vehicleId}|${type}|${ref}`;
 
 const ComplianceAlerts = ({ vehicles, onSettingsClick, complianceSettings, isAdmin = true }) => {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useCollapseState('qw:panel:compliance-alerts', true);
   const [acks, setAcks] = useState([]);          // Active acknowledgments
   const [showCleared, setShowCleared] = useState(false);
   const [busyKey, setBusyKey] = useState(null);  // Per-card spinner

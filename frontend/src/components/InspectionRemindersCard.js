@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ClipboardCheck, ChevronDown, ChevronUp, AlertTriangle, Clock } from 'lucide-react';
+import useCollapseState from '../hooks/useCollapseState';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -11,7 +12,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const InspectionRemindersCard = ({ onViewDocuments }) => {
   const [data, setData] = useState({ vehicles: [], overdue_count: 0, due_soon_count: 0 });
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useCollapseState('qw:panel:inspection-reminders', true);
 
   useEffect(() => {
     let cancelled = false;

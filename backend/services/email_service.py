@@ -453,3 +453,152 @@ async def send_contact_lead_email(lead: dict) -> dict:
             return {"success": False, "email_id": None, "error": f"{primary_err} | fallback: {exc2}"}
 
     return {"success": False, "email_id": None, "error": primary_err}
+
+
+# --- Driver's licence expiry reminders ----------------------------------------
+
+
+def _build_licence_reminder_html(
+    *,
+    staff_name: str,
+    days_before: int,
+    expiry_date_iso: str,
+    tenant_name: str,
+    login_url: str,
+) -> str:
+    safe_name = staff_name or "there"
+    try:
+        from datetime import datetime as _dt
+        pretty_date = _dt.fromisoformat(expiry_date_iso).strftime("%A %-d %B %Y")
+    except Exception:
+        pretty_date = expiry_date_iso
+
+    urgency = (
+        "in a couple of days" if days_before <= 3
+        else f"in {days_before} days"
+    )
+    lead = (
+        "Your driver's licence expires soon — please renew before it lapses so you can keep driving for the team."
+        if days_before > 3
+        else "This is a final reminder — your licence expires in a few days. Please renew and update the date on your account."
+    )
+    accent = "#dc2626" if days_before <= 3 else "#d97706"
+
+    return f"""
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="padding:32px 16px;">
+  <tr><td align="center">
+    <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+      <tr><td style="background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 60%,#3b82f6 100%);color:#fff;padding:22px 28px;">
+        <div style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;color:#bfdbfe;">
+          {tenant_name} · Quick Wing
+        </div>
+        <div style="font-size:22px;font-weight:800;margin-top:4px;">Driver&rsquo;s Licence Expiring {urgency}</div>
+      </td></tr>
+      <tr><td style="padding:24px 28px;font-size:15px;line-height:1.6;">
+        <p style="margin:0 0 12px 0;">Hi {safe_name},</p>
+        <p style="margin:0 0 16px 0;">{lead}</p>
+        <div style="padding:14px 16px;border:1px solid #e2e8f0;border-left:4px solid {accent};background:#f8fafc;border-radius:8px;margin:16px 0;">
+          <div style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#64748b;font-weight:700;">Expiry date</div>
+          <div style="font-size:18px;font-weight:800;color:#0f172a;margin-top:2px;">{pretty_date}</div>
+        </div>
+        <p style="margin:0 0 20px 0;">Once you've renewed, log in and update the expiry date on your driver&rsquo;s licence card so admins know you&rsquo;re still on the road.</p>
+        <p style="margin:0;text-align:center;">
+          <a href="{login_url}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:700;">
+            Update your licence
+          </a>
+        </p>
+      </td></tr>
+      <tr><td style="padding:14px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;">
+        Automated reminder from Quick Wing — you're receiving this because your licence expiry is on file with {tenant_name}.
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>
+""".strip()
+
+
+async def send_licence_reminder_email(
+    *,
+    recipient_email: str,
+    staff_name: Optional[str],
+    days_before: int,
+    expiry_date_iso: str,
+    tenant_name: str,
+    login_url: str,
+) -> dict:
+    """Send a driver's licence renewal reminder via Resend.
+
+    Includes the same primary+fallback pattern used by staff invites so a
+    single restricted API key still reaches the account owner during
+    preview / while a custom domain is being verified.
+    """
+    if not RESEND_API_KEY:
+        logger.warning(
+            "RESEND_API_KEY not configured — skipping licence reminder to %s",
+            recipient_email,
+        )
+        return {"success": False, "email_id": None, "error": "RESEND_API_KEY not configured"}
+
+    html_body = _build_licence_reminder_html(
+        staff_name=staff_name or "",
+        days_before=days_before,
+        expiry_date_iso=expiry_date_iso,
+        tenant_name=tenant_name or "Your team",
+        login_url=login_url,
+    )
+    safe_tenant = (tenant_name or "").strip()
+    display_name = f"{safe_tenant} via {SENDER_NAME}" if safe_tenant else SENDER_NAME
+    subject = (
+        f"Your driver's licence expires in {days_before} day{'s' if days_before != 1 else ''}"
+    )
+
+    params = {
+        "from": f"{display_name} <{SENDER_EMAIL}>",
+        "to": [recipient_email],
+        "reply_to": REPLY_TO_EMAIL,
+        "subject": subject,
+        "html": html_body,
+    }
+
+    # 1) Branded sender
+    try:
+        result = await asyncio.to_thread(resend.Emails.send, params)
+        email_id = result.get("id") if isinstance(result, dict) else None
+        logger.info(
+            "Licence reminder (%dd) sent to %s (id=%s)",
+            days_before, recipient_email, email_id,
+        )
+        return {"success": True, "email_id": email_id, "error": None}
+    except Exception as exc:  # noqa: BLE001
+        primary_err = str(exc)
+        logger.warning(
+            "Primary licence reminder to %s failed: %s", recipient_email, primary_err
+        )
+
+    # 2) Fallback via Resend's default sender
+    try:
+        fallback_params = {
+            **params,
+            "from": f"{SENDER_NAME} <onboarding@resend.dev>",
+        }
+        result = await asyncio.to_thread(resend.Emails.send, fallback_params)
+        email_id = result.get("id") if isinstance(result, dict) else None
+        logger.info(
+            "Licence reminder (%dd) sent via fallback to %s (id=%s)",
+            days_before, recipient_email, email_id,
+        )
+        return {
+            "success": True,
+            "email_id": email_id,
+            "error": f"primary_failed: {primary_err}",
+        }
+    except Exception as exc2:  # noqa: BLE001
+        logger.error(
+            "Fallback licence reminder to %s also failed: %s",
+            recipient_email, exc2,
+        )
+        return {"success": False, "email_id": None, "error": f"{primary_err} | fallback: {exc2}"}

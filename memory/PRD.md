@@ -2108,3 +2108,23 @@ recommendations to beat them, then approved building the full P0+P1 stack.
 - `TenantDashboard.js` — the "Team Member Added" credentials modal now surfaces `email_sent` / `email_error` from the API. When the email fails, it shows a red banner "⚠ Invitation email could NOT be sent. Please share the credentials below with X directly (WhatsApp, SMS, in person)." with a collapsible "Why? (technical detail)" showing the raw Resend message and the fix (verify domain / new API key).
 - Verified end-to-end: POST `/api/tenant/users` for a fresh `@example.com` user returns `email_sent=false` with the Resend error string, and the UI banner renders correctly.
 
+
+---
+
+## 2026-02-07 — Licence reminder cron + persistent panel collapse
+
+**Backend — automated licence reminders:**
+- New `services/licence_reminder_service.py`. AsyncIOScheduler cron runs daily at **08:00 UTC** and emails every staff/admin whose `driver_licence_expiry` matches `today + 14 days` or `today + 3 days`.
+- Idempotent: each send is logged in a new `licence_reminder_sends` collection keyed by `user_id|expiry|days_before`, so repeat runs on the same day short-circuit.
+- Reuses `send_licence_reminder_email` (added to `services/email_service.py`) which has the same primary-then-fallback Resend pattern as staff invites.
+- New endpoint `POST /api/tenant/licence-reminders/run-now` (admin only) fires the whole job on demand — useful for smoke-testing without waiting for 08:00.
+- Verified end-to-end: setting a staff licence to `today+14`, then hitting run-now returned `{sent: 1, skipped: 0, failed: 0}`; second call returned `{sent: 0, skipped: 1}` proving dedupe works. Resend accepted the message with a real ID.
+
+**Frontend — remember panel collapse state:**
+- New `hooks/useCollapseState.js` — 25-line hook that mirrors `useState` but reads/writes a boolean flag in `localStorage`.
+- Applied to the three Action Required panels:
+  - `qw:panel:compliance-alerts`
+  - `qw:panel:inspection-reminders`
+  - `qw:panel:licence-reminders`
+- Each admin's dashboard now opens in the exact expand/collapse state they last used. Verified via reload: collapsed licence panel stayed collapsed after full page refresh.
+

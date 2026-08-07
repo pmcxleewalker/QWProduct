@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, ChevronRight, ChevronLeft, CheckCircle, Users, Car, Calendar, 
-  BarChart3, Settings, FileText, QrCode, Shield, Bell, HelpCircle,
+  BarChart3, Settings, FileText, Shield, Bell, HelpCircle,
   Play, BookOpen, Lightbulb, Crown, Star, Lock
 } from 'lucide-react';
 
@@ -92,13 +92,14 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
             title: 'Managing Existing Users',
             items: [
               'View all users in Admin Panel → Team tab',
-              'Change user roles using the dropdown',
-              'Reset passwords for staff members (requires your admin password)',
-              'Remove users who no longer need access'
+              'Change any user\'s role on the fly with the role dropdown',
+              'Reset a password (a fresh temporary one is generated — share it privately)',
+              'Deactivate a user to instantly block login without deleting their history (you cannot deactivate yourself)',
+              'Delete removes them from the tenant entirely — use only when they\'ve left the team'
             ]
           }
         ],
-        tip: `You're using ${planData?.usage?.users || 0} of ${planData?.limits?.max_users || 20} available user slots.`
+        tip: `You're using ${planData?.usage?.users || 0} of ${planData?.limits?.max_users || 20} available user slots. Invited users receive a branded "Welcome to Quick Wing" email — if it fails to send, the credentials modal shows a red warning so you can share the password directly.`
       }
     },
     {
@@ -124,11 +125,11 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
           {
             title: 'Vehicle Compliance Tracking',
             items: [
-              'Set tax expiry dates - alerts appear when due within 30 days',
-              'Track service intervals - get notified when service is due',
-              'Monitor current mileage for each vehicle',
-              'Compliance alerts show on your main dashboard',
-              'Pair with the Car Inspection Sheet (see Documents) to log the walk-around each morning'
+              'Set tax, NCT/service and insurance expiry dates — alerts appear when each is due within 30 days',
+              'Set an "Inspection Reminder (days)" per vehicle to schedule regular Car Inspection Sheet check-ins (blank/0 disables it)',
+              'Track service intervals by mileage — get notified when service is due',
+              'Compliance and inspection alerts show on your main dashboard, in a collapsible "Action Required" section',
+              'Each panel remembers whether you had it expanded or collapsed the last time you visited'
             ]
           },
           {
@@ -366,46 +367,6 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
       }
     },
     {
-      id: 'gps',
-      title: 'GPS Trackers',
-      icon: QrCode,
-      color: 'teal',
-      content: {
-        heading: 'SinoTrack GPS Bridge',
-        description: 'Link a SinoTrack tracker to any vehicle to see its live position, journey history and driver behaviour.',
-        sections: [
-          {
-            title: 'Adding a Tracker',
-            steps: [
-              'Go to Admin Panel → Trackers',
-              'Click "Add Tracker" and enter the IMEI number (printed on the device)',
-              'Assign it to a vehicle from the dropdown',
-              'Save — the system verifies with SinoTrack and starts polling every 30 seconds'
-            ]
-          },
-          {
-            title: 'What You Get',
-            items: [
-              'Live map with every tracked vehicle plotted in real time',
-              'Journey playback — replay any trip from the last 30 days',
-              'Driver behaviour — harsh braking, harsh acceleration and speeding events',
-              'Alerts — SOS, low battery, geofence exit',
-              'Strict tenant isolation — trackers only visible inside your franchise'
-            ]
-          },
-          {
-            title: 'Tips',
-            items: [
-              'Pair GPS data with the Car Inspection Sheet for a full daily audit',
-              'Use journey playback to resolve customer or staff disputes',
-              'Set geofences around your depot to spot vehicles leaving out of hours'
-            ]
-          }
-        ],
-        tip: 'One active tracker per car. If you swap devices, deactivate the old one first so history stays clean.'
-      }
-    },
-    {
       id: 'advanced',
       title: 'Advanced Features',
       icon: Settings,
@@ -424,11 +385,12 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
             ]
           },
           {
-            title: 'Push Notifications',
+            title: 'Push & Email Notifications',
             items: [
-              'Enable browser notifications for real-time alerts',
-              'Get notified of new bookings, lift requests, updates',
-              'Toggle on/off from the navigation bar'
+              'Enable browser push notifications to be alerted about new bookings and lift requests in real time',
+              'Toggle push on/off from the navigation bar',
+              'Automatic driver\'s licence renewal emails go out 14 days and 3 days before a staff member\'s licence expires — no admin action needed',
+              'Invitation emails are sent automatically when you add a team member; the credentials modal tells you whether Resend accepted it'
             ]
           },
           {

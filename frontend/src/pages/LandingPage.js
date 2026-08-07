@@ -106,7 +106,7 @@ const HomeTab = ({ openPricingForm, goTab }) => (
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 h-14 rounded-xl shadow-lg shadow-blue-200" onClick={openPricingForm} data-testid="home-cta-trial">
-            Start Your Free Trial <ArrowRight className="ml-2" />
+            Get Started <ArrowRight className="ml-2" />
           </Button>
           <Button size="lg" variant="outline" className="text-lg px-10 h-14 rounded-xl" onClick={() => goTab('features')} data-testid="home-cta-features">
             See features
@@ -210,10 +210,10 @@ const HomeTab = ({ openPricingForm, goTab }) => (
     <section className="py-20 px-6 bg-white">
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to control your fleet?</h2>
-        <p className="text-slate-500 mb-8">Free trial, no card required. Set up in a single afternoon.</p>
+        <p className="text-slate-500 mb-8">Set up in a single afternoon. Talk to us to get started.</p>
         <div className="flex flex-col sm:flex-row justify-center gap-3">
           <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 h-14 rounded-xl shadow-lg shadow-blue-200" onClick={openPricingForm} data-testid="home-cta-final">
-            Start Your Free Trial <ArrowRight className="ml-2" />
+            Get Started <ArrowRight className="ml-2" />
           </Button>
           <Button size="lg" variant="outline" className="text-lg px-10 h-14 rounded-xl" onClick={() => goTab('pricing')} data-testid="home-cta-pricing">
             See pricing
@@ -288,7 +288,7 @@ const FeaturesTab = ({ openPricingForm }) => (
 
       <div className="text-center mt-16">
         <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 h-14 rounded-xl shadow-lg shadow-blue-200" onClick={openPricingForm} data-testid="features-cta">
-          Start Your Free Trial <ArrowRight className="ml-2" />
+          Get Started <ArrowRight className="ml-2" />
         </Button>
       </div>
     </div>

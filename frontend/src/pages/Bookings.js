@@ -1404,12 +1404,10 @@ const Bookings = () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           onCarsChanged={fetchData}
-          onGoToLive={(car) => {
-            if (gpsEnabled) {
-              setFocusCarId(car.id);
-              setMainView('map');
-            }
-          }}
+          onGoToLive={gpsEnabled ? (car) => {
+            setFocusCarId(car.id);
+            setMainView('map');
+          } : null}
           onOpenJourney={(car) => {
             if (trackedCarIds.has(car.id)) setJourneyCar(car);
           }}

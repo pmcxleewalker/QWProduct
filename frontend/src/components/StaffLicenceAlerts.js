@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { AlertTriangle, IdCard, ChevronRight } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { AlertTriangle, IdCard, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { computeLicenceStatus } from './DriverLicenceCard';
 
 /**
@@ -11,6 +11,7 @@ import { computeLicenceStatus } from './DriverLicenceCard';
  * amber = warning) so admins read both panels the same way.
  */
 const StaffLicenceAlerts = ({ teamMembers = [], onManageClick }) => {
+  const [expanded, setExpanded] = useState(true);
   const { expired, warning, missing } = useMemo(() => {
     const exp = [];
     const warn = [];
@@ -62,7 +63,11 @@ const StaffLicenceAlerts = ({ teamMembers = [], onManageClick }) => {
       }`}
       data-testid="staff-licence-alerts"
     >
-      <div className={`p-4 ${isCritical ? 'bg-red-100' : 'bg-amber-100'}`}>
+      <div
+        className={`p-4 cursor-pointer ${isCritical ? 'bg-red-100' : 'bg-amber-100'}`}
+        onClick={() => setExpanded((v) => !v)}
+        data-testid="staff-licence-alerts-toggle"
+      >
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div
@@ -96,24 +101,28 @@ const StaffLicenceAlerts = ({ teamMembers = [], onManageClick }) => {
               </p>
             </div>
           </div>
-          {onManageClick && (
-            <button
-              onClick={onManageClick}
-              className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg flex-shrink-0 ${
-                isCritical
-                  ? 'bg-red-600 text-white hover:bg-red-700'
-                  : 'bg-amber-600 text-white hover:bg-amber-700'
-              }`}
-              data-testid="staff-licence-manage-btn"
-            >
-              Manage Team
-              <ChevronRight size={14} />
-            </button>
-          )}
+          <div className="flex items-center space-x-2 flex-shrink-0">
+            {onManageClick && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onManageClick(); }}
+                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg ${
+                  isCritical
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-amber-600 text-white hover:bg-amber-700'
+                }`}
+                data-testid="staff-licence-manage-btn"
+              >
+                Manage Team
+                <ChevronRight size={14} />
+              </button>
+            )}
+            {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </div>
         </div>
       </div>
 
-      <div className="p-4 space-y-2">
+      {expanded && (
+        <div className="p-4 space-y-2">
         {expired.map(({ member, status }) => (
           <div
             key={member.id}
@@ -172,7 +181,8 @@ const StaffLicenceAlerts = ({ teamMembers = [], onManageClick }) => {
             </span>
           </div>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

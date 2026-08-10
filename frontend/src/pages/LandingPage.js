@@ -457,7 +457,7 @@ const PricingTab = ({ openPricingForm }) => (
       </div>
 
       <p className="text-center text-slate-400 text-xs mt-10">
-        Prices exclude VAT. GPS hardware sold separately for Plus plans. Volume discounts available for 20+ vehicles.
+        Prices exclude VAT. GPS hardware sold separately for Plus plans.
       </p>
     </div>
   </section>

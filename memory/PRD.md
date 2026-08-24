@@ -4,6 +4,15 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Hardening Pass — Jun 2026 — Pass 2a: Premium typography + Booking Intelligence "Conflict Engine" retreatment
+Global, code-only visual polish (NO tenant data touched — Bluebird Care Dublin South untouched):
+- **Typography**: `index.css` now loads Manrope (headings) + IBM Plex Sans (body) with Inter fallback; body font → IBM Plex Sans, h1–h5 → Manrope. Instant premium lift across the whole app.
+- **Booking Intelligence de-slopped**: rewrote `components/BookingIntelligence.css` from the dark purple/neon/particles/gradient-text/glow "AI toy" look into a clean, high-contrast enterprise light module — white surface, 1px slate-200 borders, blue accent rail, colour-coded left rails on conflict cards (rose/amber), calm green "Live" dot, subtle scan bar. JS untouched (particles/sparkles hidden via CSS), so all conflict detection + fix suggestions still work. Directly targets the "AI-built, don't trust it" objection.
+- Kept the purple brand header (user brand identity) — slate command-centre header still available on request.
+- New-look screenshots in `frontend/public/pitch-shots/new-01/02/03*.png`. Verified compile clean + rendered via Playwright.
+REMAINING (Pass 2b): full emoji purge across TenantDashboard.js/Bookings.js/PlatformAdmin.js; replace `window.prompt/alert` in PlatformAdmin.js; optional KPI card / table restyle; header colour decision; full testing_agent regression.
+
+
 ### Hardening Pass (Enterprise Ireland readiness) — Jun 2026 — Pass 1: Functional robustness + AI-slop purge (core surface)
 Context: Product being reviewed by Enterprise Ireland (skeptical of crowded market + "AI-built"). Goal: every button/feature works 100%, no half-built sections, no AI-slop tells, premium feel.
 Fixed & VERIFIED (playwright, superadmin impersonating test-fleet):

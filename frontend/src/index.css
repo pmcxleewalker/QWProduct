@@ -6,7 +6,10 @@
    QUICK WING POLISH PASS (Feb 2026) — Linear/Notion/Stripe-style cleanup
    ======================================================================== */
 
-/* 1) Modern font stack — system fonts preferred, but use Inter where available */
+/* 1) Premium enterprise type system — Manrope for headings (geometric,
+   corporate-safe character), IBM Plex Sans for body/data (built-in tabular
+   numerals, excellent at small sizes). Inter kept as a fallback. */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 @import url('https://rsms.me/inter/inter.css');
 
 /* Handwritten cursive used for the founder's signature on the landing page.
@@ -14,41 +17,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap');
 
 body {
-	margin: 0;
-	padding: 0;
-	font-family: 'Inter', ui-sans-serif, system-ui, -apple-system,
-		BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-		Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
-	font-feature-settings: 'cv11', 'ss01', 'ss03';
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	-webkit-text-size-adjust: 100%;
-	overflow-x: hidden;
-	width: 100%;
-	color: #0f172a; /* slate-900 default text */
-	background-color: #f8fafc; /* slate-50 default canvas */
+        margin: 0;
+        padding: 0;
+        font-family: 'IBM Plex Sans', 'Inter', ui-sans-serif, system-ui, -apple-system,
+                BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+                Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+        font-feature-settings: 'cv11', 'ss01', 'ss03';
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-text-size-adjust: 100%;
+        overflow-x: hidden;
+        width: 100%;
+        color: #0f172a; /* slate-900 default text */
+        background-color: #f8fafc; /* slate-50 default canvas */
 }
 
 @supports (font-variation-settings: normal) {
-	body { font-family: 'Inter var', 'Inter', ui-sans-serif, system-ui, sans-serif; }
+        body { font-family: 'IBM Plex Sans', 'Inter var', 'Inter', ui-sans-serif, system-ui, sans-serif; }
 }
 
 /* 2) Tighter heading defaults — no need to add classes everywhere */
 h1, h2, h3, h4 {
-	letter-spacing: -0.015em;
-	color: #0f172a;
+        font-family: 'Manrope', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: -0.015em;
+        color: #0f172a;
 }
 
 /* 3) Soften the harsh blue focus ring everywhere — replaces dated default
    browser/Tailwind focus styles with Linear/Stripe-style subtle slate ring. */
 *:focus-visible {
-	outline: 2px solid rgba(15, 23, 42, 0.55) !important;
-	outline-offset: 2px !important;
+        outline: 2px solid rgba(15, 23, 42, 0.55) !important;
+        outline-offset: 2px !important;
 }
 input:focus, select:focus, textarea:focus {
-	outline: none;
-	box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.25);
-	border-color: #cbd5e1;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.25);
+        border-color: #cbd5e1;
 }
 
 /* 4) Kill the heavy '2018-shaped' shadows. We override `shadow-md` and
@@ -56,60 +60,60 @@ input:focus, select:focus, textarea:focus {
    uses it). Anything that needs a heavy shadow can use `shadow-2xl`. */
 .shadow,
 .shadow-sm {
-	box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.04) !important;
+        box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.04) !important;
 }
 .shadow-md {
-	box-shadow: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.04) !important;
+        box-shadow: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.04) !important;
 }
 .shadow-lg {
-	box-shadow: 0 4px 12px -2px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.04) !important;
+        box-shadow: 0 4px 12px -2px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.04) !important;
 }
 .shadow-xl {
-	box-shadow: 0 10px 24px -4px rgb(15 23 42 / 0.10), 0 4px 8px -4px rgb(15 23 42 / 0.05) !important;
+        box-shadow: 0 10px 24px -4px rgb(15 23 42 / 0.10), 0 4px 8px -4px rgb(15 23 42 / 0.05) !important;
 }
 
 /* 5) Slightly nicer scrollbars (Mac-style) */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-	background: #cbd5e1;
-	border-radius: 8px;
-	border: 2px solid #f8fafc;
+        background: #cbd5e1;
+        border-radius: 8px;
+        border: 2px solid #f8fafc;
 }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* 6) Tactile button feel — applies to ALL <button> elements that don't
    already have a custom transition class. Subtle press-down on click. */
 button {
-	transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+        transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
 }
 button:active:not(:disabled) {
-	transform: translateY(0.5px);
+        transform: translateY(0.5px);
 }
 
 /* 7) Cleaner native form controls (selects/inputs) baseline */
 input, select, textarea {
-	font-family: inherit;
+        font-family: inherit;
 }
 input::placeholder, textarea::placeholder { color: #94a3b8; }
 
 /* 8) Smoother table row hover for any tables we haven't already styled */
 table tbody tr {
-	transition: background-color 100ms ease;
+        transition: background-color 100ms ease;
 }
 
 code {
-	font-family: 'JetBrains Mono', source-code-pro, Menlo, Monaco, Consolas,
-		"Courier New", monospace;
+        font-family: 'JetBrains Mono', source-code-pro, Menlo, Monaco, Consolas,
+                "Courier New", monospace;
 }
 
 @layer base {
-	:root {
-		--background: 0 0% 100%;
-		--foreground: 0 0% 3.9%;
-		--card: 0 0% 100%;
-		--card-foreground: 0 0% 3.9%;
-		--popover: 0 0% 100%;
+        :root {
+                --background: 0 0% 100%;
+                --foreground: 0 0% 3.9%;
+                --card: 0 0% 100%;
+                --card-foreground: 0 0% 3.9%;
+                --popover: 0 0% 100%;
         --popover-foreground: 0 0% 3.9%;
         --primary: 0 0% 9%;
         --primary-foreground: 0 0% 98%;

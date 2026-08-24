@@ -220,6 +220,12 @@ const TenantRoutes = () => {
         return;
       }
 
+      // We're about to (re)select a tenant asynchronously — keep the loading
+      // gate up so TenantDashboard doesn't mount and fire fetchData before the
+      // tenant-scoped token exists (that produced a "Failed to load dashboard
+      // data" flash on first open for platform/master admins).
+      setTenantLoading(true);
+
       // Super Admins and Master Admins have access to ALL franchises
       const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager' || user?.role === 'bot';
 

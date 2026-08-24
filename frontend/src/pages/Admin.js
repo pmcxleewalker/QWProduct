@@ -3316,20 +3316,21 @@ const Admin = () => {
                 {/* Multi-tab navigation */}
                 <div className="flex flex-wrap gap-1 mb-4 bg-gray-100 rounded-lg p-1">
                   {[
-                    { id: 'overview', label: '📊 Overview', icon: PieChart },
-                    { id: 'by-location', label: '📍 By Location', icon: MapPin },
-                    { id: 'timeline', label: '⏰ Timeline', icon: Clock },
-                    { id: 'details', label: '📋 Details', icon: List },
+                    { id: 'overview', label: 'Overview', icon: PieChart },
+                    { id: 'by-location', label: 'By Location', icon: MapPin },
+                    { id: 'timeline', label: 'Timeline', icon: Clock },
+                    { id: 'details', label: 'Details', icon: List },
                   ].map(tab => (
                     <button
                       key={tab.id}
                       onClick={() => setDailyAvailabilityTab(tab.id)}
-                      className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         dailyAvailabilityTab === tab.id
                           ? 'bg-white text-blue-600 shadow-sm'
                           : 'text-gray-600 hover:text-gray-800'
                       }`}
                     >
+                      <tab.icon size={14} />
                       <span>{tab.label}</span>
                     </button>
                   ))}
@@ -3366,7 +3367,7 @@ const Admin = () => {
                         {/* Pie Chart Visualization */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           <div className="border rounded-lg p-4">
-                            <h4 className="font-bold text-gray-900 mb-4">🥧 Fleet Availability</h4>
+                            <h4 className="font-bold text-gray-900 mb-4">Fleet Availability</h4>
                             <div className="flex items-center justify-center">
                               <div className="relative w-48 h-48">
                                 {/* Simple CSS pie chart */}
@@ -3420,7 +3421,7 @@ const Admin = () => {
 
                           {/* Location Summary */}
                           <div className="border rounded-lg p-4">
-                            <h4 className="font-bold text-gray-900 mb-4">📍 By Location Summary</h4>
+                            <h4 className="font-bold text-gray-900 mb-4">By Location Summary</h4>
                             <div className="space-y-3">
                               {carsWithoutBookings.location_summaries && Object.entries(carsWithoutBookings.location_summaries).map(([loc, stats]) => (
                                 <div key={loc} className="p-3 bg-gray-50 rounded-lg">
@@ -3429,9 +3430,9 @@ const Admin = () => {
                                     <span className="text-xs bg-gray-200 px-2 py-0.5 rounded">{stats.total_cars} cars</span>
                                   </div>
                                   <div className="flex gap-2 text-xs">
-                                    <span className="text-green-600">✓ {stats.fully_free} free</span>
-                                    <span className="text-amber-600">◐ {stats.partially_free} partial</span>
-                                    <span className="text-red-600">✗ {stats.fully_booked} booked</span>
+                                    <span className="text-green-600">{stats.fully_free} free</span>
+                                    <span className="text-amber-600">{stats.partially_free} partial</span>
+                                    <span className="text-red-600">{stats.fully_booked} booked</span>
                                   </div>
                                   <div className="mt-2 flex items-center gap-2">
                                     <span className="text-xs text-gray-500">Utilization:</span>
@@ -3451,9 +3452,11 @@ const Admin = () => {
                     {/* By Location Tab */}
                     {dailyAvailabilityTab === 'by-location' && (
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {['Tralee', 'Bantry', 'Unassigned'].map(location => {
+                        {(Object.keys(carsWithoutBookings.cars_by_location || {}).length
+                          ? Object.keys(carsWithoutBookings.cars_by_location)
+                          : ['Unassigned']).map(location => {
                           const locationCars = carsWithoutBookings.cars_by_location?.[location] || [];
-                          const colorClass = location === 'Tralee' ? 'green' : location === 'Bantry' ? 'blue' : 'gray';
+                          const colorClass = 'blue';
                           
                           return (
                             <div key={location} className={`border rounded-lg p-4 ${location === 'Unassigned' && locationCars.length > 0 ? 'lg:col-span-2' : ''}`}>
@@ -3496,7 +3499,7 @@ const Admin = () => {
                     {/* Timeline Tab - Hourly Availability */}
                     {dailyAvailabilityTab === 'timeline' && carsWithoutBookings.time_slots && (
                       <div>
-                        <h4 className="font-bold text-gray-900 mb-4">⏰ Hourly Availability (8am - 6pm)</h4>
+                        <h4 className="font-bold text-gray-900 mb-4">Hourly Availability (8am – 6pm)</h4>
                         <div className="overflow-x-auto">
                           <div className="flex gap-1 min-w-max">
                             {Object.entries(carsWithoutBookings.time_slots).map(([time, data]) => {
@@ -3774,7 +3777,7 @@ const Admin = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           {/* Bookings by Status */}
                           <div className="border rounded-lg p-4">
-                            <h4 className="font-bold text-gray-900 mb-4">📊 Bookings by Status</h4>
+                            <h4 className="font-bold text-gray-900 mb-4">Bookings by Status</h4>
                             <div className="space-y-3">
                               {bookingChartsData.by_status.map((item, idx) => (
                                 <div key={idx} className="flex items-center justify-between">
@@ -3806,7 +3809,7 @@ const Admin = () => {
 
                           {/* Double Up Calls */}
                           <div className="border rounded-lg p-4">
-                            <h4 className="font-bold text-gray-900 mb-4">👥 Double Up Calls</h4>
+                            <h4 className="font-bold text-gray-900 mb-4">Double Up Calls</h4>
                             <div className="flex items-center justify-center space-x-8">
                               <div className="text-center">
                                 <div className="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
@@ -3825,7 +3828,7 @@ const Admin = () => {
 
                           {/* Recurring vs One-time */}
                           <div className="border rounded-lg p-4">
-                            <h4 className="font-bold text-gray-900 mb-4">🔄 Recurring vs One-time</h4>
+                            <h4 className="font-bold text-gray-900 mb-4">Recurring vs One-time</h4>
                             <div className="flex items-center justify-center space-x-8">
                               <div className="text-center">
                                 <div className="w-20 h-20 rounded-full bg-purple-100 flex items-center justify-center mx-auto">
@@ -3844,7 +3847,7 @@ const Admin = () => {
 
                           {/* Bookings by Day of Week */}
                           <div className="border rounded-lg p-4">
-                            <h4 className="font-bold text-gray-900 mb-4">📅 Bookings by Day of Week</h4>
+                            <h4 className="font-bold text-gray-900 mb-4">Bookings by Day of Week</h4>
                             <div className="space-y-2">
                               {bookingChartsData.by_day_of_week.map((item, idx) => {
                                 const maxCount = Math.max(...bookingChartsData.by_day_of_week.map(d => d.count));
@@ -3867,7 +3870,7 @@ const Admin = () => {
 
                           {/* Top Users */}
                           <div className="border rounded-lg p-4">
-                            <h4 className="font-bold text-gray-900 mb-4">👤 Top Bookers</h4>
+                            <h4 className="font-bold text-gray-900 mb-4">Top Bookers</h4>
                             <div className="space-y-2 max-h-48 overflow-y-auto">
                               {bookingChartsData.by_user.slice(0, 10).map((item, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded">
@@ -3887,7 +3890,7 @@ const Admin = () => {
 
                           {/* Top Cars */}
                           <div className="border rounded-lg p-4">
-                            <h4 className="font-bold text-gray-900 mb-4">🚗 Top Booked Cars</h4>
+                            <h4 className="font-bold text-gray-900 mb-4">Top Booked Cars</h4>
                             <div className="space-y-2 max-h-48 overflow-y-auto">
                               {bookingChartsData.by_car.slice(0, 10).map((item, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded">

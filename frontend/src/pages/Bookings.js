@@ -3,6 +3,8 @@ import { useSearchParams, useLocation } from 'react-router-dom';
 import { bookingAPI, carAPI, userAPI, settingsAPI, trackerAPI } from '../api/api';
 import { Calendar as CalendarIcon, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Car, X, Clock, User, MapPin, Edit, Minus, AlertTriangle, Users, CheckCircle, UserCheck, LayoutGrid, Map as MapIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
+import { useConfirm } from '../components/ConfirmDialog';
 import EditBookingModal from '../components/EditBookingModal';
 import BookingIntelligence from '../components/BookingIntelligence';
 import ErrorBoundary from '../components/ErrorBoundary';
@@ -13,6 +15,7 @@ import GeofenceModal from '../components/GeofenceModal';
 
 const Bookings = () => {
   const { user } = useAuth();
+  const confirm = useConfirm();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const carFromQR = searchParams.get('car'); // Get car ID from QR code URL
@@ -199,7 +202,6 @@ const Bookings = () => {
         requests.map((p) => p.catch((e) => ({ data: [], _err: e })))
       );
       const [bookingsRes, carsRes, suggestionsRes, usersRes] = responses;
-      console.log('Fetched bookings:', bookingsRes.data?.length, 'Cars:', carsRes.data?.length);
       setBookings(bookingsRes.data || []);
       setCars(carsRes.data || []);
       setSuggestions(suggestionsRes.data || []);
@@ -310,22 +312,18 @@ const Bookings = () => {
     // Validate required fields
     if (!formData.car_id) {
       setError('Please select a car');
-      alert('Please select a car');
       return;
     }
     if (!formData.user_name) {
       setError('Please enter your name');
-      alert('Please enter your name');
       return;
     }
     if (!formData.start_time) {
       setError('Please select a start time');
-      alert('Please select a start time');
       return;
     }
     if (!formData.end_time) {
       setError('Please select an end time');
-      alert('Please select an end time');
       return;
     }
 
@@ -336,17 +334,14 @@ const Bookings = () => {
       // Validate dates
       if (isNaN(startDate.getTime())) {
         setError('Invalid start time');
-        alert('Invalid start time');
         return;
       }
       if (isNaN(endDate.getTime())) {
         setError('Invalid end time');
-        alert('Invalid end time');
         return;
       }
       if (endDate <= startDate) {
         setError('End time must be after start time');
-        alert('End time must be after start time');
         return;
       }
 
@@ -380,7 +375,6 @@ const Bookings = () => {
         }
       }
       
-      console.log('Submitting booking:', bookingData);
       await bookingAPI.create(bookingData);
       
       const isRecurring = formData.is_recurring && formData.recurrence_type;
@@ -391,7 +385,7 @@ const Bookings = () => {
         : 'Booking created successfully!';
       
       setSuccess(successMsg);
-      alert(successMsg); // Immediate feedback
+      toast.success(successMsg);
       window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to show message
       
       setShowForm(false);
@@ -442,20 +436,28 @@ const Bookings = () => {
         errorMsg = err.message;
       }
       setError(errorMsg);
-      alert('Booking failed: ' + errorMsg); // Immediate feedback
+      toast.error(errorMsg);
       window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to show error
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this booking?')) return;
+    const ok = await confirm({
+      title: 'Delete booking?',
+      description: 'This will permanently remove this booking. This action cannot be undone.',
+      confirmLabel: 'Delete booking',
+      tone: 'danger',
+    });
+    if (!ok) return;
     
     try {
       await bookingAPI.delete(id);
       setSuccess('Booking deleted successfully');
+      toast.success('Booking deleted');
       fetchData(); // Auto-refresh calendar
     } catch (err) {
       setError('Failed to delete booking');
+      toast.error('Failed to delete booking');
     }
   };
 
@@ -463,16 +465,22 @@ const Bookings = () => {
   const handleDeleteSeries = async (recurringGroupId) => {
     // Count bookings in series
     const seriesBookings = bookings.filter(b => b.recurring_group_id === recurringGroupId);
-    const confirmMsg = `This will delete ALL ${seriesBookings.length} bookings in this recurring series. Are you sure?`;
-    
-    if (!window.confirm(confirmMsg)) return;
+    const ok = await confirm({
+      title: 'Delete entire recurring series?',
+      description: `This will delete ALL ${seriesBookings.length} bookings in this recurring series. This action cannot be undone.`,
+      confirmLabel: 'Delete series',
+      tone: 'danger',
+    });
+    if (!ok) return;
     
     try {
       const result = await bookingAPI.deleteSeries(recurringGroupId);
       setSuccess(`Deleted ${result.data.deleted_count} bookings in the series`);
+      toast.success(`Deleted ${result.data.deleted_count} bookings in the series`);
       fetchData();
     } catch (err) {
       setError('Failed to delete booking series');
+      toast.error('Failed to delete booking series');
     }
   };
 

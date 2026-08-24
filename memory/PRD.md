@@ -4,6 +4,18 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Hardening Pass (Enterprise Ireland readiness) — Jun 2026 — Pass 1: Functional robustness + AI-slop purge (core surface)
+Context: Product being reviewed by Enterprise Ireland (skeptical of crowded market + "AI-built"). Goal: every button/feature works 100%, no half-built sections, no AI-slop tells, premium feel.
+Fixed & VERIFIED (playwright, superadmin impersonating test-fleet):
+- **P1 tenant-context race** — platform/master admin opening `/{slug}` no longer flashes "Failed to load dashboard data". Fix: `App.js` sets `setTenantLoading(true)` before async `selectTenant`; `TenantDashboard.js` fetchData effect now depends on `activeTenant?.tenant_id` so it retries once the tenant token is ready.
+- **P1 dead Reports sections** — `reportsAPI.getBookingCharts / getCarsWithoutBookings / getBookingsDetail / clearBookings` were stubs (empty/NaN/throw). Reimplemented as real client-side builders in `api/api.js` computing from `/vehicles` + `/bookings`. Reports now show real Daily Availability (pie + by-location + timeline + details), Booking Charts (status/day/user/car), full Booking Details table, and a working Clear Bookings (deletes in range).
+- **Hardcoded relic** — Admin By-Location tab hardcoded `['Tralee','Bantry','Unassigned']` → now dynamic from real `cars_by_location` keys.
+- **Unprofessional dialogs** — booking create/delete flow used `alert()`/`window.confirm()`; replaced with `sonner` toasts + `useConfirm()` dialog. Removed debug `console.log`s.
+- **AI-slop emoji** — removed ✅/❌ from customer-facing Admin Training Guide; removed 📊📍⏰📋🥧👥🔄📅👤🚗 from Admin Reports tab labels & section headings (now lucide icons / clean text).
+Seed: `backend/seed_pitch_demo.py` populated test-fleet as "Bluebird Care — Dublin Fleet" (8 vehicles, ~177 bookings, deliberate conflicts for Booking Intelligence). Pitch screenshots in `frontend/public/pitch-shots/`.
+REMAINING (Pass 2, not yet done): full enterprise VISUAL rebrand per `/app/design_guidelines.json` (Manrope/IBM Plex fonts, slate-900 header vs purple, Booking Intelligence "Conflict Engine" retreatment, card/table restyle); emoji purge across TenantDashboard.js/Bookings.js/PlatformAdmin.js; replace `window.prompt/alert` in PlatformAdmin.js; investigate residual 400s on impersonated report calls; surface Booking Charts sub-view. Full testing_agent regression pending.
+
+
 ### Feature - Jun 2026 — Staff Mobile App Redesign (admin style, calendar, dropdown booking)
 
 **Full rewrite of `frontend/src/components/StaffMobileView.js`** (styled-string CSS → Tailwind, admin visual language):

@@ -38,10 +38,10 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
             items: [
               `Up to ${planData?.limits?.max_vehicles || 10} vehicles`,
               `Up to ${planData?.limits?.max_users || 20} team members`,
-              features.enhanced_reports ? '✅ Enhanced Reports' : '❌ Enhanced Reports (upgrade to Essential)',
-              features.detailed_reports ? '✅ Detailed Analytics' : '❌ Detailed Analytics (upgrade to Professional)',
-              features.cost_analytics ? '✅ Cost Analytics (customizable rates)' : '❌ Cost Analytics (Professional only)',
-              features.priority_support ? '✅ Priority Support' : '❌ Priority Support (Professional only)'
+              features.enhanced_reports ? 'Enhanced Reports — included' : 'Enhanced Reports — available on Essential',
+              features.detailed_reports ? 'Detailed Analytics — included' : 'Detailed Analytics — available on Professional',
+              features.cost_analytics ? 'Cost Analytics with customisable rates — included' : 'Cost Analytics — available on Professional',
+              features.priority_support ? 'Priority Support — included' : 'Priority Support — available on Professional'
             ]
           },
           {

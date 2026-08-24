@@ -129,15 +129,131 @@ export const reportsAPI = {
   // — it does its own fetch() so we just need a URL string here.
   exportCSV: () => `${API}/tenant/fleet-reports/csv`,
 
-  // Optional charts/detail endpoints — no backend route exists yet so we
-  // resolve with empty payloads. The Admin UI gracefully renders "no data"
-  // for these sections rather than erroring out. Will be implemented as
-  // proper endpoints in a follow-up.
-  getBookingCharts: async () => ({ data: null }),
-  getCarsWithoutBookings: async () => ({ data: { cars: [] } }),
-  getBookingsDetail: async () => ({ data: { rows: [], total_records: 0 } }),
-  clearBookings: async () => {
-    throw new Error('Clear bookings is not yet available.');
+  // Charts / detail / daily-availability breakdowns. There is no dedicated
+  // backend route for these, so we compute them from the canonical
+  // /vehicles + /bookings data. Every Reports sub-section therefore shows
+  // real, accurate numbers rather than an empty/"no data" placeholder.
+  getBookingCharts: async (startDate = null, endDate = null) => {
+    const params = {};
+    if (startDate) params.from = startDate;
+    if (endDate) params.to = endDate;
+    const [vehiclesRes, bookingsRes] = await Promise.all([
+      axios.get(`${API}/vehicles`),
+      axios.get(`${API}/bookings`, { params }),
+    ]);
+    const carName = {};
+    (vehiclesRes.data || []).forEach((v) => { carName[v.id] = v.name || v.registration || 'Vehicle'; });
+    const bookings = (bookingsRes.data || []).filter((b) => b.status !== 'cancelled');
+    const total_bookings = bookings.length;
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const jsDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const statusCounts = {}, dayCounts = {}, userCounts = {}, carCounts = {};
+    dayOrder.forEach((d) => { dayCounts[d] = 0; });
+    let doubleUp = 0, recurring = 0;
+    bookings.forEach((b) => {
+      const st = b.status || 'approved';
+      statusCounts[st] = (statusCounts[st] || 0) + 1;
+      if (b.is_double_up_call) doubleUp += 1;
+      if (b.is_recurring || b.recurring_group_id) recurring += 1;
+      const d = new Date(b.start_time);
+      if (!isNaN(d.getTime())) dayCounts[jsDay[d.getDay()]] += 1;
+      const u = b.user_name || 'Unknown';
+      userCounts[u] = (userCounts[u] || 0) + 1;
+      const c = carName[b.car_id] || 'Unassigned';
+      carCounts[c] = (carCounts[c] || 0) + 1;
+    });
+    return { data: {
+      total_bookings,
+      by_status: Object.entries(statusCounts).map(([status, count]) => ({ status, count })),
+      double_up_calls: { double_up: doubleUp, single: total_bookings - doubleUp },
+      recurring_vs_onetime: { recurring, one_time: total_bookings - recurring },
+      by_day_of_week: dayOrder.map((day) => ({ day, count: dayCounts[day] })),
+      by_user: Object.entries(userCounts).map(([user, count]) => ({ user, count })).sort((a, b) => b.count - a.count),
+      by_car: Object.entries(carCounts).map(([car, count]) => ({ car, count })).sort((a, b) => b.count - a.count),
+    } };
+  },
+
+  getCarsWithoutBookings: async (date = null) => {
+    const day = date || new Date().toISOString().slice(0, 10);
+    const [vehiclesRes, bookingsRes] = await Promise.all([
+      axios.get(`${API}/vehicles`),
+      axios.get(`${API}/bookings`, { params: { from: day, to: day } }),
+    ]);
+    const vehicles = vehiclesRes.data || [];
+    const bookings = (bookingsRes.data || []).filter((b) => !['cancelled', 'rejected'].includes(b.status));
+    const WIN_START = 8 * 60, WIN_END = 18 * 60, WIN = WIN_END - WIN_START;
+    const hourLabel = (h) => { const p = h >= 12 ? 'pm' : 'am'; const hh = h % 12 === 0 ? 12 : h % 12; return `${hh}${p}`; };
+    const hours = []; for (let h = 8; h < 18; h++) hours.push(h);
+    const time_slots = {}; hours.forEach((h) => { time_slots[hourLabel(h)] = { free: 0, total: vehicles.length }; });
+    const all_cars = [], cars_by_location = {}, location_summaries = {};
+    let total_available = 0, total_partially_free = 0, total_fully_booked = 0;
+    vehicles.forEach((v) => {
+      const segs = bookings.filter((b) => b.car_id === v.id).map((b) => {
+        const s = new Date(b.start_time), e = new Date(b.end_time);
+        if (isNaN(s.getTime()) || isNaN(e.getTime())) return null;
+        return [Math.max(WIN_START, s.getHours() * 60 + s.getMinutes()), Math.min(WIN_END, e.getHours() * 60 + e.getMinutes())];
+      }).filter((seg) => seg && seg[1] > seg[0]).sort((a, b) => a[0] - b[0]);
+      let coveredMin = 0, cursor = WIN_START;
+      segs.forEach(([s, e]) => { const start = Math.max(s, cursor); if (e > start) { coveredMin += (e - start); cursor = Math.max(cursor, e); } });
+      const free_minutes = Math.max(0, WIN - coveredMin);
+      const free_hours = Math.round((free_minutes / 60) * 10) / 10;
+      const is_fully_free = coveredMin === 0 && !v.is_blocked;
+      const utilization_percent = Math.round((coveredMin / WIN) * 100);
+      if (is_fully_free) total_available += 1;
+      else if (free_minutes === 0) total_fully_booked += 1;
+      else total_partially_free += 1;
+      hours.forEach((h) => {
+        const hs = h * 60, he = (h + 1) * 60;
+        const busy = segs.some(([s, e]) => s < he && e > hs);
+        if (!busy && !v.is_blocked) time_slots[hourLabel(h)].free += 1;
+      });
+      const loc = v.base_location || 'Unassigned';
+      const carObj = { id: v.id, name: v.name, registration: v.registration, location: loc, free_hours, free_minutes, is_fully_free, utilization_percent, total_bookings: segs.length };
+      all_cars.push(carObj);
+      (cars_by_location[loc] = cars_by_location[loc] || []).push(carObj);
+      const ls = (location_summaries[loc] = location_summaries[loc] || { total_cars: 0, fully_free: 0, partially_free: 0, fully_booked: 0, _util: 0 });
+      ls.total_cars += 1;
+      if (is_fully_free) ls.fully_free += 1; else if (free_minutes === 0) ls.fully_booked += 1; else ls.partially_free += 1;
+      ls._util += utilization_percent;
+    });
+    Object.values(location_summaries).forEach((ls) => { ls.avg_utilization = ls.total_cars ? Math.round(ls._util / ls.total_cars) : 0; delete ls._util; });
+    return { data: { date: day, total_cars: vehicles.length, total_available, total_partially_free, total_fully_booked, all_cars, cars_by_location, location_summaries, time_slots } };
+  },
+
+  getBookingsDetail: async (startDate = null, endDate = null) => {
+    const params = {};
+    if (startDate) params.from = startDate;
+    if (endDate) params.to = endDate;
+    const [vehiclesRes, bookingsRes] = await Promise.all([
+      axios.get(`${API}/vehicles`),
+      axios.get(`${API}/bookings`, { params }),
+    ]);
+    const vmap = {};
+    (vehiclesRes.data || []).forEach((v) => { vmap[v.id] = { name: v.name, reg: v.registration }; });
+    const raw = (bookingsRes.data || []).filter((b) => b.status !== 'cancelled');
+    raw.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+    const bookings = raw.map((b) => ({
+      id: b.id,
+      vehicle_name: vmap[b.car_id]?.name || 'Vehicle',
+      vehicle_registration: vmap[b.car_id]?.reg || '',
+      booked_by: b.user_name || '',
+      start_time: b.start_time,
+      end_time: b.end_time,
+      location: b.location || '',
+      purpose: b.purpose || '',
+      status: b.status || 'approved',
+      is_double_up_call: !!b.is_double_up_call,
+      is_recurring: !!(b.is_recurring || b.recurring_group_id),
+    }));
+    return { data: { bookings, total_records: bookings.length, double_up_calls: bookings.filter((b) => b.is_double_up_call).length } };
+  },
+
+  clearBookings: async (startDate, endDate) => {
+    const res = await axios.get(`${API}/bookings`, { params: { from: startDate, to: endDate } });
+    const ids = (res.data || []).map((b) => b.id);
+    const results = await Promise.allSettled(ids.map((id) => axios.delete(`${API}/bookings/${id}`)));
+    const deleted = results.filter((r) => r.status === 'fulfilled').length;
+    return { data: { message: `Deleted ${deleted} booking${deleted === 1 ? '' : 's'} between ${startDate} and ${endDate}.` } };
   },
 };
 

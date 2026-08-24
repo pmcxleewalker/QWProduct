@@ -302,7 +302,7 @@ const TenantDashboard = () => {
 
   useEffect(() => {
     fetchData();
-  }, [activeTab]);
+  }, [activeTab, activeTenant?.tenant_id]);
 
   // Auto-refresh for live fleet status (every 30 seconds)
   useEffect(() => {

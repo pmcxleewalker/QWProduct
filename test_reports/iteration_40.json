@@ -1,0 +1,35 @@
+{
+  "summary": "Regression sweep after hardening/polish pass on tenant-facing Quick Wing app. All 9 requested regression areas verified end-to-end against the /test-fleet tenant (superadmin + tenant master admin + staff). Tenant dashboard race-condition FIXED (no 'Failed to load dashboard data' when superadmin opens /test-fleet directly). Reports tab fully populated with REAL data — Daily Availability with real depot names (Dublin North/South/West), Timeline, Booking Details (177 records), Booking Charts (Bookings by Status 175/2, Day of Week Mon28/Tue39/Wed27/Thu19/Fri19/Sat22/Sun23, Top Bookers Liam Kelly 29 / Sean Murphy 23 / Niamh O'Connor 23 / Darragh Nolan 22, Top Booked Cars Ford Transit Custom 32 / Nissan Leaf 28 / Renault Kangoo 26 / Hyundai Tucson 23). Export CSV/PDF buttons present and clickable, no console error. Booking creation flow (New Booking modal): fills fields correctly, submitting shows sonner toast + inline error box on compliance failure (NCT/Tax expired), never uses browser alert(); successful create shows 'Booking created successfully!' toast and increments count 177→178. Booking deletion path verified by code review: pages/Bookings.js uses useConfirm() + toast.success/error (grep shows NO window.confirm / alert() calls). Booking Intelligence panel renders Conflict Engine perfectly — 4 stat tiles (1 Vehicle Clashes, 1 Driver Clashes, 1 Compliance Risk, 4 Idle Vehicles), filter tabs (All 3 / Vehicle 1 / Driver 1 / Compliance 1), Suggested Fixes buttons active; no console errors. Fleet Board renders 8 vehicles with status pills (7 Available / 0 In Use / 1 Blocked), Quick Book / Live / Drop-off buttons per card. Admin > Fleet renders vehicle cards with mileage/tax/NCT/insurance/service, QR/Edit/Delete/Block for Appointment buttons all present; Admin Training Guide modal closable via data-testid=close-training. Click-through of Overview / Live Sheet / Alerts / Team / Todos — all load, no white-screen. Staff login at /test-fleet/login (mobile viewport) — teststaff@quickwing.com renders StaffMobileView with Home/Bookings/Docs/Lift bottom nav, Live Fleet Status listing all 8 cars, Driver's Licence expiry warning; Bookings tab shows calendar picker + 'New Booking' button (create flow accessible). No visible emoji-as-icons in headings.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/bookings/pending", "issue": "Endpoint does not exist on backend (backend only exposes /api/bookings/pending-approval). Frontend api.js line 37 calls the wrong path — catch() suppresses the failure so no functional break, but produces recurring 404 spam in browser console on Bookings page and Dashboard. Fix: either rename frontend call to '/bookings/pending-approval' or add an alias route."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "reportsAPI.getPending (bookings/pending)", "issue": "Client-side reportsAPI helper hits missing endpoint /api/bookings/pending, always returns [] via .catch. Non-blocking but noisy in console.", "affected_selectors": []}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Minor: Align frontend api.js getPending() path with backend — change to '/bookings/pending-approval' (or add a backend alias) to eliminate the recurring 404 in the console.",
+    "Cosmetic: A React warning 'Received true for a non-boolean attribute jsx' surfaces on almost every page (likely a stray <style jsx> from a Next.js-style block used in a plain React app). Non-breaking but should be cleaned up before Enterprise Ireland demo — reviewers open devtools."
+  ],
+  "critical_code_review_comments": [
+    "Bookings.js: window.confirm and alert() correctly removed (grep confirmed only useConfirm + toast.* remain — 0 hits for window.confirm/alert).",
+    "TenantDashboard.js: fetchData effect now correctly gated on activeTenant?.tenant_id — verified no 'Failed to load dashboard data' when superadmin opens /test-fleet directly.",
+    "BookingIntelligence.js: renders Conflict Engine with light enterprise styling; interactive stat tiles + Suggested Fixes buttons work; no console errors triggered by the panel.",
+    "Admin.js is very large (~4100+ lines with many tabs) — consider splitting into ReportsTab / UsersTab / FleetTab modules for maintainability; not a blocker for release."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "99% (only /bookings/pending is 404, all other endpoints tested returned 200)", "frontend": "100% (all 9 requested regression items pass)"},
+  "test_credentials": "admin.test-fleet@quickwing.com / admin123 ; teststaff@quickwing.com / Staff123 ; superadmin@quickwing.com / Super123",
+  "seed_data_creation": "Created 1 test booking (TEST_AGENT_BOOKING, Nissan Leaf, 2026-11-05 09:00-11:00, id 59ca80be-7c15-4420-8ccf-64639674c848) during create-flow verification and DELETED it via DELETE /api/bookings/{id} at end of run (HTTP 200). Test-fleet booking count restored — no residual test data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All requested regression items pass. Only two non-blocking issues: (1) frontend api.js:37 getPending() calls wrong path /api/bookings/pending (should be /api/bookings/pending-approval) — silent 404; (2) stray 'jsx' non-boolean-attribute React warning on all pages. Neither affects functionality. Booking Intelligence conflict tiles (1/1/1/4) rely on date-relative seeded conflicts (currently around Aug 25 2026); if those conflict bookings roll out of window they may show 0/0/0/N — that is expected per review request note. Admin Training Guide modal auto-opens on first Admin page visit — use data-testid='close-training' to dismiss.",
+  "rca of the issue": "N/A — no bugs required RCA this iteration; all previously reported fixes verified as working. Only new minor find is the /bookings/pending 404 which is caught client-side and is a stale endpoint name."
+}

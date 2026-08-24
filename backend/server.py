@@ -7639,6 +7639,22 @@ async def list_bookings(
     return bookings
 
 
+@api_router.get("/bookings/pending-approval")
+async def get_pending_approval_bookings(
+    context: TenantContext = Depends(require_admin)
+):
+    """Get bookings that require admin approval (recurring > 4 weeks).
+    Declared BEFORE /bookings/{booking_id} so the literal path is not
+    captured by the parameterised route."""
+    query = {
+        "tenant_id": context.tenant_id,
+        "requires_approval": True,
+        "status": "pending"
+    }
+    bookings = await db.bookings.find(query, {"_id": 0}).to_list(100)
+    return bookings
+
+
 @api_router.get("/bookings/{booking_id}")
 async def get_booking(
     booking_id: str,
@@ -7724,20 +7740,6 @@ async def delete_booking(
     await db.bookings.delete_one(query)
     
     return {"message": "Booking deleted"}
-
-
-@api_router.get("/bookings/pending-approval")
-async def get_pending_approval_bookings(
-    context: TenantContext = Depends(require_admin)
-):
-    """Get bookings that require admin approval (recurring > 4 weeks)"""
-    query = {
-        "tenant_id": context.tenant_id,
-        "requires_approval": True,
-        "status": "pending"
-    }
-    bookings = await db.bookings.find(query, {"_id": 0}).to_list(100)
-    return bookings
 
 
 @api_router.post("/bookings/{booking_id}/approve")

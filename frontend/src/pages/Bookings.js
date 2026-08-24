@@ -693,7 +693,7 @@ const Bookings = () => {
                   title={isPending ? "Pending admin approval" : isRecurring ? "Recurring booking - Click to view" : "Click to view details"}
                 >
                   {isPending && <span className="mr-1">⏳</span>}
-                  {isRecurring && !isPending && <span className="mr-1">🔄</span>}
+                  {isRecurring && !isPending && <span className="mr-1 text-blue-600">↻</span>}
                   <span className="hidden sm:inline">{formatTime(booking.start_time)} </span>
                   {selectedCar === 'all' ? getCarName(booking.car_id) : booking.user_name}
                 </div>
@@ -776,7 +776,7 @@ const Bookings = () => {
             </button>
             <div className="text-center">
               <h2 className="text-xl font-bold">
-                {viewMode === 'my' ? '👤 My Bookings - ' : ''}{selectedCarInfo ? `${selectedCarInfo.name} - ` : ''}{monthNames[month]} {year}
+                {viewMode === 'my' ? 'My Bookings - ' : ''}{selectedCarInfo ? `${selectedCarInfo.name} - ` : ''}{monthNames[month]} {year}
               </h2>
               {selectedCarInfo && (
                 <p className="text-sm opacity-80">{selectedCarInfo.registration}</p>
@@ -825,7 +825,7 @@ const Bookings = () => {
             </div>
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 rounded bg-purple-500"></div>
-              <span className="text-xs text-gray-600">🔄 Recurring</span>
+              <span className="text-xs text-gray-600">↻ Recurring</span>
             </div>
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 rounded bg-gray-400"></div>
@@ -958,7 +958,7 @@ const Bookings = () => {
           <div className="flex items-center space-x-3">
             <Car size={24} />
             <div>
-              <p className="font-bold text-lg">📱 Booking: {qrCarName}</p>
+              <p className="font-bold text-lg">Booking: {qrCarName}</p>
               <p className="text-blue-100 text-sm">Scanned from QR code - Fill in the form below to book this car</p>
             </div>
           </div>
@@ -1048,7 +1048,7 @@ const Bookings = () => {
               <div className="flex items-start space-x-3">
                 <AlertTriangle className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
                 <div className="flex-1">
-                  <h4 className="font-semibold text-orange-800">⚠️ Booking Conflict Detected</h4>
+                  <h4 className="font-semibold text-orange-800">Booking Conflict Detected</h4>
                   <p className="text-sm text-orange-700 mt-1">
                     <strong>{conflictWarning.carName}</strong> has overlapping booking(s) for this time:
                   </p>
@@ -1101,7 +1101,7 @@ const Bookings = () => {
                   {/* No cars available message */}
                   {conflictWarning.recommendedCars && conflictWarning.recommendedCars.length === 0 && conflictWarning.totalAvailable === 0 && (
                     <p className="text-xs text-red-600 mt-3 pt-2 border-t border-orange-200">
-                      ⚠️ No other cars are available at this time. Please choose a different time slot.
+                      No other cars are available at this time. Please choose a different time slot.
                     </p>
                   )}
                 </div>
@@ -1267,7 +1267,7 @@ const Bookings = () => {
                 className="w-5 h-5 text-amber-600 rounded focus:ring-amber-500"
               />
               <label htmlFor="is_double_up_call" className="text-sm font-medium text-amber-800">
-                👥 Double up call?
+                Double up call?
               </label>
               <span className="text-xs text-amber-600">(Check if this is a shared/double up visit)</span>
             </div>
@@ -1283,7 +1283,7 @@ const Bookings = () => {
                   className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                 />
                 <label htmlFor="is_recurring" className="text-sm font-medium text-gray-700">
-                  🔄 Make this a recurring booking
+                  Make this a recurring booking
                 </label>
                 {user?.role !== 'admin' && formData.is_recurring && (
                   <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
@@ -1680,7 +1680,7 @@ const Bookings = () => {
             {/* Header */}
             <div className="p-4 border-b flex justify-between items-center bg-blue-50 rounded-t-lg">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">📅 {selectedDateStr}</h3>
+                <h3 className="text-lg font-bold text-gray-900">{selectedDateStr}</h3>
                 <p className="text-sm text-gray-600">{selectedDateBookings.length} booking(s)</p>
               </div>
               <button
@@ -1726,7 +1726,7 @@ const Bookings = () => {
                           )}
                           {isRecurring && !isPending && (
                             <span className="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded">
-                              🔄 Recurring
+                              ↻ Recurring
                             </span>
                           )}
                         </div>

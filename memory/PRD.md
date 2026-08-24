@@ -4,6 +4,18 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Hardening Pass — Jun 2026 — Pass 2b: Tenant-facing slop sweep + full QA regression + 3 bug fixes
+Global code-only changes (NO tenant data touched; Bluebird Care Dublin South untouched; nothing live until user redeploys).
+- **Emoji purge (tenant-facing)**: removed pictographic emoji used as UI icons from `TenantDashboard.js` (💡📍👑✓⚠) and `Bookings.js` (👤📱📅👥🔄→ cleaned to text/lucide/↻). (Earlier passes cleaned Admin.js + AdminTraining.js.) Legacy tier-icon strings 🚐◆♛ in TenantDashboard config left intact (rendered as string icons — deferred).
+- **Full QA regression** via testing_agent → `/app/test_reports/iteration_40.json`: frontend 100%, backend 99%. All 9 core flows pass (dashboard load, reports real data, booking create/delete with toasts+confirm, Booking Intelligence, Fleet Board, Manage Vehicles, staff mobile). Confirmed alert()/window.confirm fully removed from Bookings.
+- **Bug fixes found & VERIFIED**:
+  1. `<style jsx>` in `CookieConsent.js` caused a React "non-boolean attribute jsx" warning on every page → moved keyframe to `index.css`, removed the block (console warning now 0).
+  2. **Admin page tenant-context race** — first Admin load fired a burst of red 400s (vehicles/todos/providers/messages/pending-approval) before the tenant token was ready. Fixed: `Admin.js` fetchData/report effects now gate on `activeTenant?.tenant_id` + early-return guard (verified 0×400 on cold load).
+  3. **`/bookings/pending-approval` returned 404** — route was shadowed by `/bookings/{booking_id}` (declared earlier). Relocated the literal route above the parameterised one in `server.py`; now returns 200 (curl-verified). The pending-approvals feature works for the first time; also fixed `api.js` getPending path.
+DECISION LOCKED: purple brand header stays.
+REMAINING (Pass 3): Command Centre (`PlatformAdmin.js`) polish — 7 `window.prompt/alert/confirm` calls (incl. password-gated destructive tenant actions) need proper confirmation modals; plus emoji cleanup there. Super-admin-only tooling, deferred to a dedicated careful pass. Optional KPI-card/table restyle.
+
+
 ### Hardening Pass — Jun 2026 — Pass 2a: Premium typography + Booking Intelligence "Conflict Engine" retreatment
 Global, code-only visual polish (NO tenant data touched — Bluebird Care Dublin South untouched):
 - **Typography**: `index.css` now loads Manrope (headings) + IBM Plex Sans (body) with Inter fallback; body font → IBM Plex Sans, h1–h5 → Manrope. Instant premium lift across the whole app.

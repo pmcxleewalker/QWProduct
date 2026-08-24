@@ -34,7 +34,7 @@ export const bookingAPI = {
   approve: (id) => axios.post(`${API}/bookings/${id}/approve`),
   reject: (id, reason = '') => axios.post(`${API}/bookings/${id}/reject`, null, { params: { reason } }),
   getSuggestions: () => Promise.resolve({ data: [] }), // Booking suggestions - placeholder
-  getPending: () => axios.get(`${API}/bookings/pending`).catch(() => ({ data: [] })), // Pending bookings
+  getPending: () => axios.get(`${API}/bookings/pending-approval`).catch(() => ({ data: [] })), // Pending approval bookings
   // Return cars that have no overlapping booking in the requested window.
   // Used by the EditBookingModal "Swap Car" flow. Implemented client-side
   // because the backend doesn't (yet) expose a dedicated availability search

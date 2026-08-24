@@ -181,16 +181,16 @@ const Admin = () => {
 
   useEffect(() => {
     fetchData();
-  }, [activeTab]);
+  }, [activeTab, activeTenant?.tenant_id]);
 
   useEffect(() => {
-    if (activeTab === 'reports') {
+    if (activeTab === 'reports' && activeTenant?.tenant_id) {
       fetchReportData(reportStartDate, reportEndDate);
       fetchBookingsDetailReport(reportStartDate, reportEndDate);
       fetchBookingChartsData(reportStartDate, reportEndDate);
       fetchCarsWithoutBookings(dailyReportDate);
     }
-  }, [activeTab]);
+  }, [activeTab, activeTenant?.tenant_id]);
 
   const fetchReportData = async (startDate, endDate) => {
     setReportLoading(true);
@@ -393,6 +393,7 @@ const Admin = () => {
   };
 
   const fetchData = async () => {
+    if (!activeTenant?.tenant_id) return; // wait until tenant context (token) is ready
     try {
       const promises = [
         carAPI.getAll(),

@@ -1392,7 +1392,7 @@ const TenantDashboard = () => {
                             )}
                             {vehicle.location && (
                               <p className="text-xs text-gray-500 mb-2">
-                                📍 {vehicle.location}
+                                {vehicle.location}
                               </p>
                             )}
                             <p className="text-xs text-gray-400">
@@ -1855,7 +1855,7 @@ const TenantDashboard = () => {
                 {planData?.features?.detailed_reports && bookings.length > 0 && (
                   <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-200">
                     <div className="flex items-center mb-4">
-                      <span className="text-lg mr-2">👑</span>
+                      <span className="text-lg mr-2"></span>
                       <h3 className="font-bold text-purple-900">Booking Intelligence</h3>
                       <span className="ml-2 px-2 py-0.5 bg-purple-600 text-white text-xs rounded-full">Pro</span>
                     </div>
@@ -2629,7 +2629,7 @@ const TenantDashboard = () => {
                         
                         <div className="mt-4 p-3 bg-teal-100 rounded-lg">
                           <p className="text-xs text-teal-800">
-                            <strong>💡 Essential Insight:</strong> Your fleet utilization is {tenantReports.summary.utilization_rate_percent}%. 
+                            <strong>Essential Insight:</strong> Your fleet utilization is {tenantReports.summary.utilization_rate_percent}%. 
                             {tenantReports.summary.utilization_rate_percent < 50 
                               ? ' Consider promoting off-peak hours to maximize vehicle usage.'
                               : tenantReports.summary.utilization_rate_percent < 75 
@@ -2750,7 +2750,7 @@ const TenantDashboard = () => {
                         
                         <div className="mt-4 p-3 bg-purple-100 rounded-lg">
                           <p className="text-xs text-purple-800">
-                            <strong>💡 Pro Tip:</strong> Click "Configure Rates" to set your own mileage, fuel, and maintenance rates. 
+                            <strong>Pro Tip:</strong> Click "Configure Rates" to set your own mileage, fuel, and maintenance rates. 
                             Your costs are calculated based on recorded vehicle mileage.
                           </p>
                         </div>
@@ -2914,21 +2914,21 @@ const TenantDashboard = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-md">
             <div className="p-4 border-b">
-              <h3 className="text-lg font-bold text-green-600">✓ Team Member Added!</h3>
+              <h3 className="text-lg font-bold text-green-600">Team Member Added!</h3>
             </div>
             <div className="p-4 space-y-4">
               {/* Invitation email status — makes it obvious when Resend fails */}
               {newUserCredentials.emailSent ? (
                 <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-lg" data-testid="invite-email-sent">
                   <p className="text-sm text-emerald-800">
-                    <strong>✓ Invitation email sent</strong> to <span className="font-mono">{newUserCredentials.email}</span>.
+                    <strong>Invitation email sent</strong> to <span className="font-mono">{newUserCredentials.email}</span>.
                     They&apos;ll receive login instructions shortly.
                   </p>
                 </div>
               ) : (
                 <div className="bg-rose-50 border border-rose-200 p-3 rounded-lg" data-testid="invite-email-failed">
                   <p className="text-sm text-rose-800">
-                    <strong>⚠ Invitation email could NOT be sent.</strong> Please share the credentials below with{' '}
+                    <strong>Invitation email could NOT be sent.</strong> Please share the credentials below with{' '}
                     <strong>{newUserCredentials.name}</strong> directly (WhatsApp, SMS, in person).
                   </p>
                   {newUserCredentials.emailError && (

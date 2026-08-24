@@ -4,6 +4,13 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Fix — Jun 2026 — Live Map discoverability ("no live map" report, production)
+User (on PRODUCTION) saw no live map with GPS/trackers on. RCA: the Live Map is a tab under Car Bookings, gated on `settings.gps.enabled`; it works (verified in preview) but was buried, and production runs an older build + a tenant's GPS must actually be ENABLED (registering trackers ≠ enabling GPS).
+- **Fix (preview)**: added a prominent green **"Live Map"** button in the tenant dashboard HEADER (visible on all tabs incl. Overview) when `gps.available && gps.enabled`, navigating to `/{slug}/bookings?view=map`; Bookings now honours `?view=map` to open the Live Map tab directly. Old Fleet>Vehicles button kept as `live-map-btn-manage`.
+- **Verified**: testing_agent iterations 42 + 43 — header button visible on Overview for GPS-on tenant, opens Leaflet map (data-testid live-map); hidden for GPS-off tenant; deep-link works; no regressions/console errors.
+- **User action**: REDEPLOY production to get this, and ensure the tenant's GPS is actually enabled (Command Centre → Activate). Cannot fix production from preview.
+
+
 ### Feature — Jun 2026 — GPS two-tier activation (offer → request → enable)
 User flow: platform admin OFFERS GPS when generating a tenant → tenant REQUESTS it from their dashboard → platform admin ACTIVATES it from the Command Centre. Tenants can no longer self-enable. Hardware: SinoTrack 4G trackers + 1NCE SIMs, device password default 123456.
 - **Model** (`models/tenant.py`): added `gps_available` (offered) + `gps_requested` (tenant asked); kept `gps_enabled` (live). TenantCreate offers via `gps_available`; TenantUpdate carries all three.

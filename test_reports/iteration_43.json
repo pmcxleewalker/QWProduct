@@ -1,0 +1,20 @@
+{
+  "summary": "Frontend-only retest of the header-placed 'Live Map' button. Verified on GPS-ENABLED tenant (test-fleet) that the green Live Map header button (data-testid='live-map-btn') is visible on Overview WITHOUT navigating away, is also present on the Bookings and other tabs (shared header), and clicking it navigates to /test-fleet/bookings?view=map where the Leaflet Live Map (data-testid='live-map') renders. Regression on GPS-OFF tenant (test-iso-e6c7af) confirms the header button is NOT rendered, no 'Live Map' tab appears in Car Bookings, and the deep-link ?view=map does not render the map. No red console errors on tenant-admin session on test-fleet.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "test_credentials": "admin.test-fleet@quickwing.com / admin123 (GPS-ON); support@quickwing.com / QuickWing123! used to reach test-iso-e6c7af (GPS-OFF).",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Live Map header button feature verified end-to-end on GPS-ON tenant (Overview + other tabs + click navigation + map render) and negative regression on GPS-OFF tenant (test-iso-e6c7af) all pass. Note: support@quickwing.com is prompted with a 'Change Your Password' modal on first login for demo tenants; ignore for feature-level assertions.",
+  "rca of the issue": "n/a - all iteration_43 assertions passed."
+}

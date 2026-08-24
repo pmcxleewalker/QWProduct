@@ -101,6 +101,14 @@ const Bookings = () => {
     return () => { cancelled = true; };
   }, []);
 
+  // Deep-link support: /bookings?view=map opens the Live Map directly (used by
+  // the dashboard "Live Map" button). Only honoured once GPS is confirmed on.
+  useEffect(() => {
+    if (gpsEnabled && searchParams.get('view') === 'map') {
+      setMainView('map');
+    }
+  }, [gpsEnabled, searchParams]);
+
   // Fetch tracker devices once GPS is enabled so we know which cars have
   // an active tracker (Journey Playback button only appears on tracked cars).
   useEffect(() => {

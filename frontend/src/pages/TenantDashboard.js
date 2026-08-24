@@ -11,7 +11,7 @@ import {
   ArrowRight, MoreVertical, BookOpen, HelpCircle, PieChart,
   Activity, TrendingDown, CalendarDays, QrCode, Camera, Gauge,
   ClipboardList, Bell, Megaphone, Crown, Star, Zap, Palette, DollarSign,
-  Save, X, Sparkles, Search, Satellite, Radio
+  Save, X, Sparkles, Search, Satellite, Radio, MapPin
 } from 'lucide-react';
 import AdminTraining from '../components/AdminTraining';
 import CarBookingCalendar from '../components/CarBookingCalendar';
@@ -923,6 +923,17 @@ const TenantDashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              {gpsSettings.available && gpsSettings.enabled && (
+                <button
+                  onClick={() => navigate(`/${activeTenant?.tenant_slug}/bookings?view=map`)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 font-medium shadow-sm"
+                  data-testid="live-map-btn"
+                  title="Open the live GPS map of your fleet"
+                >
+                  <MapPin size={18} />
+                  <span>Live Map</span>
+                </button>
+              )}
               <button
                 onClick={fetchData}
                 className="flex items-center space-x-2 px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 backdrop-blur-sm"
@@ -1684,6 +1695,17 @@ const TenantDashboard = () => {
                         >
                           <Satellite size={18} />
                           <span className="hidden sm:inline">Add GPS Tracking</span>
+                        </button>
+                      )}
+                      {gpsSettings.available && gpsSettings.enabled && (
+                        <button
+                          onClick={() => navigate(`/${activeTenant?.tenant_slug}/bookings?view=map`)}
+                          className="flex items-center space-x-2 px-3 py-2 border border-blue-600 text-white bg-blue-600 hover:bg-blue-700 rounded-lg"
+                          title="Open the live GPS map"
+                          data-testid="live-map-btn-manage"
+                        >
+                          <MapPin size={18} />
+                          <span className="hidden sm:inline">Live Map</span>
                         </button>
                       )}
                       {gpsSettings.available && gpsSettings.enabled && (

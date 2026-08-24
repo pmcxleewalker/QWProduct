@@ -1,0 +1,36 @@
+{
+  "summary": "Verified Quick Wing Live Map deep-link + button work end-to-end for GPS-enabled tenant test-fleet, and correctly stays hidden for GPS-off tenant test-iso-e6c7af. HOWEVER: the 'prominent Live Map button on the tenant dashboard header' promised in the change is NOT actually in the tenant header/Overview tab — it lives inside Fleet > Manage Vehicles sub-tab (same row as GPS On / Trackers / Add Vehicle). Users landing on Overview still see NO GPS/Live Map affordance, which does not fully resolve the original 'no live map' discoverability complaint. All other behaviour is correct.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "pages/TenantDashboard.js", "issue": "'Live Map' button (data-testid=live-map-btn) is placed inside the Fleet > Manage Vehicles sub-tab (block guarded by `activeTab==='vehicles' || (activeTab==='fleet' && activeSubTab==='vehicles')` around line 1641). It is NOT in the tenant dashboard header nor on the Overview tab. Overview tab shows no GPS On / Live Map / Trackers indicator at all — reproduces original user complaint of 'no live map' on landing.", "selector": "[data-testid=live-map-btn]", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_working": [
+    "Deep-link /test-fleet/bookings?view=map opens Live Map view directly; Leaflet map (.leaflet-container) and data-testid=live-map both render (count=1).",
+    "Bookings page shows all 3 tabs for test-fleet: Fleet Board, All Cars Calendar, Live Map.",
+    "Clicking data-testid=live-map-btn (from Fleet > Manage Vehicles) navigates to /test-fleet/bookings?view=map and renders the map.",
+    "GPS-OFF tenant test-iso-e6c7af: live-map-btn=0, gps-settings-btn=0, tracker-devices-btn=0 on Fleet > Manage Vehicles; Live Map tab absent on Bookings; deep link ?view=map does NOT render live-map — no regression.",
+    "Command Centre (/platform) tenant cards show correct GPS state: test-fleet 'GPS Fleet Tracking Active' with Deactivate; test-iso-e6c7af 'Not offered' with Offer add-on.",
+    "No console errors on tenant-admin session (admin.test-fleet). Some 400s on notifications 'unread count' endpoint appear only under superadmin impersonation — pre-existing, unrelated to this change."
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "Move the Live Map button (and ideally a compact 'GPS On • N tracked' indicator) to the tenant dashboard *header* (next to Refresh/Help) or to the Overview tab so it is visible on the default landing view. Current placement inside Fleet > Manage Vehicles is exactly where users were already failing to find GPS — the fix has not addressed the discoverability problem described in the request.",
+    "Consider surfacing a small 'Live Map' quick-link in the top nav bar (next to Live Sheet) when gps.enabled, since Live Sheet is already promoted there."
+  ],
+  "critical_code_review_comments": [
+    "TenantDashboard.js line 1656–1710: GPS On / GPS Requested / Add GPS Tracking / Live Map / Trackers buttons all share the same guard (Fleet-Vehicles subtab + isAdmin). If the intent was header-level surfacing, live-map-btn (and the GPS badge) should be rendered in the tenant header render block, not the Vehicles tab toolbar.",
+    "Bookings.js `?view=map` handling works and reads gps.enabled from settingsAPI.get() correctly (verified for both enabled & disabled tenants)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (frontend-only request)", "frontend": "Deep-link + tab + gating: 100%. Header placement of Live Map button: 0% (button exists but not in header/Overview)."},
+  "test_credentials": "admin.test-fleet@quickwing.com / admin123 ; superadmin@quickwing.com / Super123",
+  "seed_data_creation": "None.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The live-map-btn currently lives ONLY inside Fleet > Manage Vehicles sub-tab (TenantDashboard.js ~line 1689–1699), NOT in the header. To reproduce: login as admin.test-fleet, land on Overview, scan for [data-testid=live-map-btn] -> 0. Click Fleet -> Manage Vehicles sub-tab -> becomes 1. Deep link /test-fleet/bookings?view=map works standalone. GPS-off tenant slug for regression: test-iso-e6c7af.",
+  "rca of the issue": "The Live Map button conditional (gpsSettings.available && gpsSettings.enabled) is nested inside `{((activeTab === 'vehicles') || (activeTab === 'fleet' && activeSubTab === 'vehicles')) && (…)}` at TenantDashboard.js:1641. To make it 'header-prominent' as the request describes, the button (or a mirror of it) must be lifted out of that block into the header/Overview render location. Deep-link + LiveMap themselves function correctly; only the placement is wrong."
+}

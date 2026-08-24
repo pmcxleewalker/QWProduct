@@ -4,7 +4,15 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
-### Hardening Pass — Jun 2026 — Pass 2b: Tenant-facing slop sweep + full QA regression + 3 bug fixes
+### Feature — Jun 2026 — Auditor Pack PDF (one-click tenant compliance & usage report)
+User pick (Enterprise Ireland credibility play). Branded, auditor-ready PDF built on the existing reportlab `services/pdf_service.py`.
+- **Backend**: `PDFGenerator.generate_compliance_pack_pdf(...)` + endpoint `GET /api/tenant/reports/compliance-pack/pdf` (`require_admin`). Cover page (tenant name, company-settings contact block, reporting period, generated on/by, fleet size); Section 1 = Vehicle Compliance Register (Tax/NCT/Insurance/Service with colour-coded VALID/EXPIRING/EXPIRED + N/A, status key, summary counts); Section 2 = Booking & Usage Log for the **last 12 months** (date, vehicle, driver, purpose, location, status; capped at 500 most-recent with a note, headers repeat across pages). Service uses `service_due_date` or falls back to mileage vs `service_due_mileage`.
+- **Frontend**: "Auditor Pack (PDF)" button (blue, ShieldCheck) on the Admin **Reports** tab next to Export CSV; `handleDownloadAuditorPack` streams the blob download with a sonner toast; `data-testid="download-auditor-pack-button"`.
+- **Verified**: endpoint HTTP 200, valid 7-page PDF (20KB), rendered pages look premium; button renders. Sample hosted at `/pitch-shots/auditor-pack-sample.pdf`.
+- **Bonus slop cleanup on Reports tab**: tier badge 👑⭐🚗 → Crown/Star/Car icons; feature indicators ✅🔒 → Check/Lock icons; ⬆️/📅/⭐/👑/👥/🔄/⚠️ across the reports header, analytics section titles, booking-detail badges and Clear Bookings → lucide icons/clean text. Reports tab is now emoji-free.
+REMAINING slop (deferred): Admin Fleet cards + Team + booking form still have emoji (📋📍🔧⚠️👑🔒👤💡); Command Centre `window.prompt/alert`.
+
+
 Global code-only changes (NO tenant data touched; Bluebird Care Dublin South untouched; nothing live until user redeploys).
 - **Emoji purge (tenant-facing)**: removed pictographic emoji used as UI icons from `TenantDashboard.js` (💡📍👑✓⚠) and `Bookings.js` (👤📱📅👥🔄→ cleaned to text/lucide/↻). (Earlier passes cleaned Admin.js + AdminTraining.js.) Legacy tier-icon strings 🚐◆♛ in TenantDashboard config left intact (rendered as string icons — deferred).
 - **Full QA regression** via testing_agent → `/app/test_reports/iteration_40.json`: frontend 100%, backend 99%. All 9 core flows pass (dashboard load, reports real data, booking create/delete with toasts+confirm, Booking Intelligence, Fleet Board, Manage Vehicles, staff mobile). Confirmed alert()/window.confirm fully removed from Bookings.

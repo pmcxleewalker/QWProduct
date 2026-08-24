@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { carAPI, assistanceAPI, userAPI, bookingAPI, messageAPI, todoAPI, reportsAPI, planAPI } from '../api/api';
 import { toast } from 'sonner';
-import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlock, Clock, Check, X, MessageSquare, ListTodo, Settings, Key, BarChart3, Download, TrendingUp, TrendingDown, Calendar as CalendarIcon, PieChart, List, MapPin, AlertCircle, AlertTriangle, Crown, ShieldAlert, ChevronDown, ChevronUp, Activity, Map, BookOpen, HelpCircle, Upload, Search } from 'lucide-react';
+import { Car, Phone, Plus, Trash2, Edit2, QrCode, Users, CheckCircle, Lock, Unlock, Clock, Check, X, MessageSquare, ListTodo, Settings, Key, BarChart3, Download, TrendingUp, TrendingDown, Calendar as CalendarIcon, PieChart, List, MapPin, AlertCircle, AlertTriangle, Crown, ShieldAlert, ChevronDown, ChevronUp, Activity, Map, BookOpen, HelpCircle, Upload, Search, FileText, Star, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AdminTraining from '../components/AdminTraining';
 import BulkImportVehiclesModal from '../components/BulkImportVehiclesModal';
@@ -303,6 +303,30 @@ const Admin = () => {
     fetchReportData(reportStartDate, reportEndDate);
     fetchBookingsDetailReport(reportStartDate, reportEndDate);
     fetchBookingChartsData(reportStartDate, reportEndDate);
+  };
+
+  const [downloadingPack, setDownloadingPack] = useState(false);
+  const handleDownloadAuditorPack = async () => {
+    setDownloadingPack(true);
+    try {
+      const res = await axios.get(`${API}/tenant/reports/compliance-pack/pdf`, { responseType: 'blob' });
+      const disposition = res.headers['content-disposition'] || '';
+      const match = disposition.match(/filename=([^;]+)/);
+      const filename = match ? match[1].trim() : 'compliance_pack.pdf';
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success('Auditor pack downloaded');
+    } catch (err) {
+      toast.error('Could not generate the auditor pack. Please try again.');
+    } finally {
+      setDownloadingPack(false);
+    }
   };
 
   const handleDailyReportDateChange = (date) => {
@@ -2970,8 +2994,8 @@ const Admin = () => {
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <span className="text-2xl">
-                  {planData?.plan?.id === 'professional' ? '👑' : planData?.plan?.id === 'essential' ? '⭐' : '🚗'}
+                <span className="text-2xl text-blue-700">
+                  {planData?.plan?.id === 'professional' ? <Crown size={26} /> : planData?.plan?.id === 'essential' ? <Star size={26} /> : <Car size={26} />}
                 </span>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">Fleet Reports & Analytics</h2>
@@ -2986,9 +3010,10 @@ const Admin = () => {
                 </div>
               </div>
               {planData?.plan?.id === 'standard' && (
-                <div className="hidden md:block px-4 py-2 bg-amber-100 rounded-lg">
+                <div className="hidden md:flex items-center gap-1.5 px-4 py-2 bg-amber-100 rounded-lg">
+                  <TrendingUp size={14} className="text-amber-800" />
                   <p className="text-xs text-amber-800 font-medium">
-                    ⬆️ Upgrade to Essential for Enhanced Reports
+                    Upgrade to Essential for Enhanced Reports
                   </p>
                 </div>
               )}
@@ -2999,19 +3024,19 @@ const Admin = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <div className={`p-3 rounded-lg text-center ${planData?.features?.basic_reports ? 'bg-green-50 border border-green-200' : 'bg-gray-100'}`}>
               <p className="text-xs font-medium text-gray-600">Basic Stats</p>
-              <p className="text-lg">{planData?.features?.basic_reports ? '✅' : '🔒'}</p>
+              <p className="mt-1 flex justify-center">{planData?.features?.basic_reports ? <Check size={18} className="text-green-600" /> : <Lock size={16} className="text-gray-400" />}</p>
             </div>
             <div className={`p-3 rounded-lg text-center ${planData?.features?.enhanced_reports ? 'bg-green-50 border border-green-200' : 'bg-gray-100'}`}>
               <p className="text-xs font-medium text-gray-600">Utilization</p>
-              <p className="text-lg">{planData?.features?.enhanced_reports ? '✅' : '🔒'}</p>
+              <p className="mt-1 flex justify-center">{planData?.features?.enhanced_reports ? <Check size={18} className="text-green-600" /> : <Lock size={16} className="text-gray-400" />}</p>
             </div>
             <div className={`p-3 rounded-lg text-center ${planData?.features?.detailed_reports ? 'bg-green-50 border border-green-200' : 'bg-gray-100'}`}>
               <p className="text-xs font-medium text-gray-600">Predictive</p>
-              <p className="text-lg">{planData?.features?.detailed_reports ? '✅' : '🔒'}</p>
+              <p className="mt-1 flex justify-center">{planData?.features?.detailed_reports ? <Check size={18} className="text-green-600" /> : <Lock size={16} className="text-gray-400" />}</p>
             </div>
             <div className={`p-3 rounded-lg text-center ${planData?.features?.api_access ? 'bg-green-50 border border-green-200' : 'bg-gray-100'}`}>
               <p className="text-xs font-medium text-gray-600">API Export</p>
-              <p className="text-lg">{planData?.features?.api_access ? '✅' : '🔒'}</p>
+              <p className="mt-1 flex justify-center">{planData?.features?.api_access ? <Check size={18} className="text-green-600" /> : <Lock size={16} className="text-gray-400" />}</p>
             </div>
           </div>
 
@@ -3050,14 +3075,24 @@ const Admin = () => {
                 <Download size={16} />
                 <span>Export CSV</span>
               </button>
+              <button
+                onClick={handleDownloadAuditorPack}
+                disabled={downloadingPack}
+                data-testid="download-auditor-pack-button"
+                title="Branded PDF: vehicle compliance register + 12-month usage log, ready for an auditor"
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 disabled:opacity-60 text-sm shadow-sm"
+              >
+                {downloadingPack ? <Clock size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
+                <span>{downloadingPack ? 'Preparing…' : 'Auditor Pack (PDF)'}</span>
+              </button>
             </div>
           </div>
 
           {/* Date Range Indicator */}
           {(reportStartDate || reportEndDate) && (
             <div className="mb-4 p-2 bg-indigo-50 rounded-lg text-sm text-indigo-700 flex items-center justify-between">
-              <span>
-                📅 Showing data from <strong>{reportStartDate || 'beginning'}</strong> to <strong>{reportEndDate || 'present'}</strong>
+              <span className="flex items-center gap-1.5">
+                <CalendarIcon size={14} /> Showing data from <strong>{reportStartDate || 'beginning'}</strong> to <strong>{reportEndDate || 'present'}</strong>
               </span>
               <button
                 onClick={() => {
@@ -3105,7 +3140,7 @@ const Admin = () => {
               {planData?.features?.enhanced_reports && (
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
                   <div className="flex items-center mb-4">
-                    <span className="text-xl mr-2">⭐</span>
+                    <Star size={20} className="mr-2 text-blue-700" />
                     <h3 className="text-lg font-bold text-blue-900">Enhanced Analytics</h3>
                     <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">Essential+</span>
                   </div>
@@ -3150,7 +3185,7 @@ const Admin = () => {
               {planData?.features?.detailed_reports && (
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
                   <div className="flex items-center mb-4">
-                    <span className="text-xl mr-2">👑</span>
+                    <Crown size={20} className="mr-2 text-blue-700" />
                     <h3 className="text-lg font-bold text-purple-900">Professional Analytics</h3>
                     <span className="ml-2 px-2 py-0.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs rounded-full">Pro</span>
                   </div>
@@ -3611,7 +3646,7 @@ const Admin = () => {
                   <div className="flex items-center gap-4">
                     {bookingsDetailReport?.double_up_calls > 0 && (
                       <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded">
-                        👥 {bookingsDetailReport.double_up_calls} Double-up calls
+                        {bookingsDetailReport.double_up_calls} Double-up calls
                       </span>
                     )}
                     {bookingDetailsCollapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
@@ -3727,10 +3762,10 @@ const Admin = () => {
                                 <td className="p-3 text-gray-600 max-w-xs truncate" title={booking.purpose}>{booking.purpose || '-'}</td>
                                 <td className="p-3 text-center">
                                   {booking.is_double_up_call && (
-                                    <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs mr-1" title="Double up call">👥</span>
+                                    <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs mr-1" title="Double up call"><Users size={11} className="inline" /></span>
                                   )}
                                   {booking.is_recurring && (
-                                    <span className="text-purple-600" title="Recurring booking">🔄</span>
+                                    <span className="text-purple-600" title="Recurring booking">↻</span>
                                   )}
                                   {!booking.is_double_up_call && !booking.is_recurring && '-'}
                                 </td>
@@ -4056,7 +4091,7 @@ const Admin = () => {
       {showClearBookingsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4 text-red-600">⚠️ Clear Bookings</h3>
+            <h3 className="text-lg font-bold mb-4 text-red-600">Clear Bookings</h3>
             <p className="text-sm text-gray-600 mb-4">
               This will permanently delete ALL bookings within the selected date range. This action cannot be undone.
             </p>

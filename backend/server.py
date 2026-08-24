@@ -3854,6 +3854,127 @@ async def download_audit_log_pdf(
     )
 
 
+@api_router.get("/tenant/reports/compliance-pack/pdf")
+async def download_compliance_pack_pdf(
+    context: TenantContext = Depends(require_admin)
+):
+    """Auditor-ready Fleet Compliance & Usage pack (PDF) for the current tenant."""
+    from services.pdf_service import pdf_generator
+    from datetime import date, timedelta
+
+    tid = context.tenant_id
+    tenant = await db.tenants.find_one({"id": tid}, {"_id": 0, "name": 1})
+    tenant_name = (tenant or {}).get("name", "Fleet")
+    settings = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0}) or {}
+
+    today = date.today()
+    warn = today + timedelta(days=30)
+
+    def status_for(dstr):
+        if not dstr:
+            return {"text": "—", "status": "N/A"}
+        try:
+            d = datetime.strptime(str(dstr)[:10], "%Y-%m-%d").date()
+        except Exception:
+            return {"text": "—", "status": "N/A"}
+        disp = d.strftime("%d/%m/%Y")
+        if d < today:
+            return {"text": disp, "status": "EXPIRED"}
+        if d <= warn:
+            return {"text": disp, "status": "EXPIRING"}
+        return {"text": disp, "status": "VALID"}
+
+    rank = {"EXPIRED": 3, "EXPIRING": 2, "VALID": 1, "N/A": 0}
+    label = {3: "EXPIRED", 2: "EXPIRING", 1: "VALID", 0: "N/A"}
+
+    vehicles = await db.vehicles.find({"tenant_id": tid}, {"_id": 0}).sort("name", 1).to_list(500)
+    compliance_rows = []
+    summary = {"vehicles": len(vehicles), "valid": 0, "expiring": 0, "expired": 0}
+    for v in vehicles:
+        svc = status_for(v.get("service_due_date"))
+        if svc["status"] == "N/A" and v.get("service_due_mileage"):
+            cur = v.get("current_mileage") or 0
+            due = v.get("service_due_mileage")
+            remaining = due - cur
+            svc_status = "EXPIRED" if remaining <= 0 else ("EXPIRING" if remaining <= 1000 else "VALID")
+            svc = {"text": f"{due:,} km", "status": svc_status}
+        cells = [
+            status_for(v.get("tax_due_date")),
+            status_for(v.get("nct_due_date")),
+            status_for(v.get("insurance_due_date")),
+            svc,
+        ]
+        worst = max((rank[c["status"]] for c in cells if c["status"] != "N/A"), default=0)
+        overall = label[worst]
+        if overall == "EXPIRED":
+            summary["expired"] += 1
+        elif overall == "EXPIRING":
+            summary["expiring"] += 1
+        elif overall == "VALID":
+            summary["valid"] += 1
+        compliance_rows.append({
+            "name": v.get("name"),
+            "registration": v.get("registration"),
+            "cells": cells,
+            "overall": overall,
+        })
+
+    cutoff = (today - timedelta(days=365)).strftime("%Y-%m-%d")
+    booking_query = {
+        "tenant_id": tid,
+        "start_time": {"$gte": cutoff},
+        "status": {"$ne": "cancelled"},
+    }
+    total_bookings = await db.bookings.count_documents(booking_query)
+    raw = await db.bookings.find(booking_query, {"_id": 0}).sort("start_time", -1).limit(500).to_list(500)
+    vmap = {v.get("id"): (v.get("name"), v.get("registration")) for v in vehicles}
+
+    def fmt_when(s):
+        if not s:
+            return ""
+        try:
+            dt = datetime.fromisoformat(str(s).replace("Z", "+00:00"))
+            return dt.strftime("%d/%m/%Y %H:%M")
+        except Exception:
+            return str(s)[:16].replace("T", " ")
+
+    bookings = []
+    for b in raw:
+        vn = vmap.get(b.get("car_id"), (None, None))
+        vehicle_disp = vn[0] or vn[1] or "—"
+        bookings.append({
+            "when": fmt_when(b.get("start_time")),
+            "vehicle": vehicle_disp,
+            "driver": b.get("user_name"),
+            "purpose": b.get("purpose"),
+            "location": b.get("location"),
+            "status": b.get("status", "approved"),
+        })
+
+    start_lbl = (today - timedelta(days=365)).strftime("%b %Y")
+    end_lbl = today.strftime("%b %Y")
+    period_label = f"Last 12 months ({start_lbl} - {end_lbl})"
+
+    pdf_buffer = pdf_generator.generate_compliance_pack_pdf(
+        tenant_name=tenant_name,
+        company_settings=settings,
+        generated_by=context.user_email,
+        period_label=period_label,
+        compliance_rows=compliance_rows,
+        compliance_summary=summary,
+        bookings=bookings,
+        total_bookings=total_bookings,
+    )
+
+    safe = "".join(ch for ch in (tenant_name or "fleet") if ch.isalnum() or ch in "-_").lower() or "fleet"
+    filename = f"compliance_pack_{safe}_{datetime.now().strftime('%Y%m%d')}.pdf"
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
 # ==================== COMPANY SETTINGS ====================
 
 @api_router.get("/platform/settings")

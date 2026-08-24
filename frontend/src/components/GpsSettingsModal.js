@@ -84,29 +84,23 @@ const GpsSettingsModal = ({ isOpen, onClose, gps, onSaved }) => {
         </div>
 
         <div className="p-5 space-y-5">
-          {/* Master toggle */}
+          {/* Status banner — GPS is activated by the Quick Wing team, not
+              self-served, so this is read-only status rather than a toggle. */}
           <div className={`p-4 rounded-lg border ${form.enabled ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.enabled}
-                onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked }))}
-                className="h-5 w-5 mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                data-testid="gps-enabled-checkbox"
-              />
+            <div className="flex items-start gap-3">
+              <div className={`h-2.5 w-2.5 mt-1.5 rounded-full ${form.enabled ? 'bg-emerald-500' : 'bg-slate-400'}`} />
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-slate-900">
-                  Enable GPS Fleet Tracking (SinoTrack)
+                  GPS Fleet Tracking (SinoTrack) — {form.enabled ? 'Active' : 'Inactive'}
                 </p>
                 <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  When enabled, Quick Wing will poll SinoTrack&apos;s cloud every
-                  30 seconds for every registered tracker, showing live positions,
-                  journey history, speed alerts and driver scores. When disabled,
-                  no polling happens and GPS UI is hidden — existing data is
-                  retained.
+                  When active, Quick Wing polls SinoTrack&apos;s cloud every 30 seconds
+                  for every registered tracker, showing live positions, journey history,
+                  speed alerts and driver scores. To activate or deactivate this add-on,
+                  contact the Quick Wing team.
                 </p>
               </div>
-            </label>
+            </div>
           </div>
 
           {/* Advanced settings — only shown when enabled */}

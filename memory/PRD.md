@@ -4,6 +4,14 @@
 Quick Wing is a comprehensive fleet management SaaS platform designed for multi-franchise operations. Each franchise (tenant) operates in complete data isolation while being managed from a central platform.
 
 
+### Feature — Jun 2026 — GPS two-tier activation (offer → request → enable)
+User flow: platform admin OFFERS GPS when generating a tenant → tenant REQUESTS it from their dashboard → platform admin ACTIVATES it from the Command Centre. Tenants can no longer self-enable. Hardware: SinoTrack 4G trackers + 1NCE SIMs, device password default 123456.
+- **Model** (`models/tenant.py`): added `gps_available` (offered) + `gps_requested` (tenant asked); kept `gps_enabled` (live). TenantCreate offers via `gps_available`; TenantUpdate carries all three.
+- **Backend** (`server.py`): create-tenant sets gps_available (never auto-enables); `get_tenant_settings`/`_gps_response` expose available/requested/enabled (available implies-true when enabled, so legacy tenants aren't hidden); tenant GPS-settings save now IGNORES `enabled` (platform-only); new `POST /api/tenant/gps/request` (tenant) and `PATCH /api/platform/tenants/{id}/gps` (platform: offer/activate, seeds gps_settings + clears request on enable).
+- **Frontend**: PlatformAdmin create form → "Offer GPS Fleet Tracking add-on" (sets gps_available); Command Centre tenant cards → GPS status + Offer/Activate/Withdraw/Deactivate buttons + "Requested" badge; TenantDashboard → GPS fully hidden unless available, shows "Add GPS Tracking" (request) → "GPS Requested" (pending) → "GPS On"+Trackers (enabled); GpsSettingsModal enable toggle replaced with read-only status.
+- **Verified**: full curl flow offer→request→list→activate all correct; Command Centre + console clean via screenshot. `api.js`: added `settingsAPI.requestGps`, `platformAPI.setTenantGps`.
+
+
 ### Feature — Jun 2026 — Auditor Pack PDF (one-click tenant compliance & usage report)
 User pick (Enterprise Ireland credibility play). Branded, auditor-ready PDF built on the existing reportlab `services/pdf_service.py`.
 - **Backend**: `PDFGenerator.generate_compliance_pack_pdf(...)` + endpoint `GET /api/tenant/reports/compliance-pack/pdf` (`require_admin`). Cover page (tenant name, company-settings contact block, reporting period, generated on/by, fleet size); Section 1 = Vehicle Compliance Register (Tax/NCT/Insurance/Service with colour-coded VALID/EXPIRING/EXPIRED + N/A, status key, summary counts); Section 2 = Booking & Usage Log for the **last 12 months** (date, vehicle, driver, purpose, location, status; capped at 500 most-recent with a note, headers repeat across pages). Service uses `service_due_date` or falls back to mileage vs `service_due_mileage`.

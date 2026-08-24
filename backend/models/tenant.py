@@ -388,8 +388,11 @@ class TenantCreate(BaseModel):
     # password login is possible for demo tenants.
     is_demo: bool = False
     demo_link_expires_in_days: int = 30
-    # Opt-in: enable SinoTrack GPS Fleet Tracking on this tenant at creation.
-    # When false, no GPS collections / polling are ever spun up for this tenant.
+    # Opt-in: OFFER SinoTrack GPS Fleet Tracking as an add-on to this tenant at
+    # creation. This does NOT turn GPS on — it makes it available so the tenant
+    # can request it, after which a platform admin enables it from the Command
+    # Centre. When false, no GPS UI is ever shown to the tenant.
+    gps_available: bool = False
     gps_enabled: bool = False
     
 
@@ -405,6 +408,8 @@ class TenantUpdate(BaseModel):
     feature_overrides: Optional[dict] = None
     customizations_remaining: Optional[int] = None
     # GPS Fleet Tracking (SinoTrack bridge — see /app/memory/SINOTRACK_MULTI_TENANT_PROMPT.md)
+    gps_available: Optional[bool] = None
+    gps_requested: Optional[bool] = None
     gps_enabled: Optional[bool] = None
     gps_settings: Optional[dict] = None
 
@@ -423,8 +428,12 @@ class Tenant(BaseModel):
     customizations_reset_date: Optional[datetime] = None
     feature_overrides: Optional[dict] = None  # Super admin can override features
     notes: Optional[str] = None
-    # GPS Fleet Tracking (opt-in add-on, off by default). When true, the
-    # SinoTrack bridge poller (Phase 2) starts syncing tracker positions.
+    # GPS Fleet Tracking (opt-in add-on, off by default).
+    # gps_available: platform admin has OFFERED the add-on to this tenant.
+    # gps_requested: tenant admin has requested activation (pending platform action).
+    # gps_enabled:   platform admin has turned GPS ON (poller syncs positions).
+    gps_available: bool = False
+    gps_requested: bool = False
     gps_enabled: bool = False
     gps_settings: Optional[dict] = None  # {speed_limit_kmh, poll_interval_seconds, history_retention_days, device_password}
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

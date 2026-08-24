@@ -12,12 +12,12 @@ import {
   Globe, Copy, Layers, Star, Zap, ArrowRight, Instagram,
   BarChart3, Headphones as HeadphonesIcon, MessageSquare,
   Database, HardDrive, CloudDownload, RotateCcw, AlertCircle, Scale,
-  LogIn, Mail, ExternalLink, X
+  LogIn, Mail, ExternalLink, X, Satellite
 } from 'lucide-react';
 import ContentWorker from '../components/ContentWorker';
 import LegalRecordsSection from '../components/LegalRecordsSection';
 import { useConfirm } from '../components/ConfirmDialog';
-import { demoAPI } from '../api/api';
+import { demoAPI, platformAPI } from '../api/api';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -103,7 +103,7 @@ const PlatformAdmin = () => {
     custom_price: 199,
     is_demo: false,
     demo_link_expires_in_days: 30,
-    gps_enabled: false,
+    gps_available: false,
   });
   
   // Created tenant result (to show credentials)
@@ -557,6 +557,20 @@ const PlatformAdmin = () => {
       setError(getErrorMessage(err, 'Failed to impersonate tenant'));
     }
   };
+
+  const handleSetTenantGps = async (tenantId, patch, label) => {
+    try {
+      const res = await platformAPI.setTenantGps(tenantId, patch);
+      const gps = res.data?.gps || {};
+      setTenants((prev) => prev.map((t) => (t.id === tenantId
+        ? { ...t, gps_available: gps.available, gps_requested: gps.requested, gps_enabled: gps.enabled }
+        : t)));
+      toast.success(label || 'GPS status updated');
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Could not update GPS status');
+    }
+  };
+
 
   const handleStopImpersonation = async () => {
     try {
@@ -1029,6 +1043,70 @@ const PlatformAdmin = () => {
                         />
                       </div>
 
+                      {/* GPS Fleet Tracking add-on control */}
+                      <div className="px-5 pb-2">
+                        <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Satellite size={16} className="text-slate-500 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-slate-800">GPS Fleet Tracking</p>
+                              <p className="text-[11px] text-slate-500">
+                                {tenant.gps_enabled
+                                  ? 'Active'
+                                  : tenant.gps_requested
+                                    ? 'Requested — awaiting activation'
+                                    : tenant.gps_available
+                                      ? 'Offered (not yet requested)'
+                                      : 'Not offered'}
+                              </p>
+                            </div>
+                            {tenant.gps_requested && !tenant.gps_enabled && (
+                              <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 flex-shrink-0">
+                                Requested
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            {!tenant.gps_available && (
+                              <button
+                                onClick={() => handleSetTenantGps(tenant.id, { available: true }, 'GPS add-on offered')}
+                                className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300"
+                                data-testid={`gps-offer-${tenant.slug}`}
+                              >
+                                Offer add-on
+                              </button>
+                            )}
+                            {tenant.gps_available && !tenant.gps_enabled && (
+                              <>
+                                <button
+                                  onClick={() => handleSetTenantGps(tenant.id, { enabled: true }, 'GPS Fleet Tracking activated')}
+                                  className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
+                                  data-testid={`gps-activate-${tenant.slug}`}
+                                >
+                                  Activate
+                                </button>
+                                <button
+                                  onClick={() => handleSetTenantGps(tenant.id, { available: false }, 'GPS add-on withdrawn')}
+                                  className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  data-testid={`gps-withdraw-${tenant.slug}`}
+                                >
+                                  Withdraw
+                                </button>
+                              </>
+                            )}
+                            {tenant.gps_enabled && (
+                              <button
+                                onClick={() => handleSetTenantGps(tenant.id, { enabled: false }, 'GPS Fleet Tracking deactivated')}
+                                className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+                                data-testid={`gps-deactivate-${tenant.slug}`}
+                              >
+                                Deactivate
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Credentials section */}
                       <div className="px-5 pb-4 space-y-3">
                         {/* Super admin (you) */}
@@ -1358,24 +1436,25 @@ const PlatformAdmin = () => {
                   </div>
                   )}
 
-                  {/* GPS Fleet Tracking opt-in (Phase 1 of SinoTrack bridge).
-                      Available for both real and demo tenants — flips
-                      tenant.gps_enabled at creation, which will make the
-                      Phase 2 poller start syncing tracker positions once it lands. */}
+                  {/* GPS Fleet Tracking add-on. Offering it here sets
+                      tenant.gps_available — it does NOT turn GPS on. The tenant
+                      then requests activation and a platform admin enables it
+                      from the Command Centre (tenant GPS controls). */}
                   <div className="border-t pt-4 mt-4">
                     <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
                       <input
                         type="checkbox"
-                        checked={!!newTenant.gps_enabled}
-                        onChange={(e) => setNewTenant({ ...newTenant, gps_enabled: e.target.checked })}
+                        checked={!!newTenant.gps_available}
+                        onChange={(e) => setNewTenant({ ...newTenant, gps_available: e.target.checked })}
                         className="h-4 w-4 mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        data-testid="create-tenant-gps-enabled"
+                        data-testid="create-tenant-gps-available"
                       />
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">Enable GPS Fleet Tracking (SinoTrack)</p>
+                        <p className="text-sm font-semibold text-gray-900">Offer GPS Fleet Tracking add-on (SinoTrack)</p>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          Turns on the SinoTrack cloud bridge for this tenant. Off by default —
-                          the tenant admin can enable it later from their settings.
+                          Makes GPS available to this tenant as an upgrade. It stays OFF until the
+                          tenant requests it and you activate it from the Command Centre. Leave
+                          unchecked to hide GPS from this tenant entirely.
                         </p>
                       </div>
                     </label>

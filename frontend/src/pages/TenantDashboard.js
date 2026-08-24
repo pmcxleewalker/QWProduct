@@ -236,12 +236,23 @@ const TenantDashboard = () => {
   const [showGpsSettings, setShowGpsSettings] = useState(false);
   const [showTrackerDevices, setShowTrackerDevices] = useState(false);
   const [gpsSettings, setGpsSettings] = useState({
+    available: false,
+    requested: false,
     enabled: false,
     speed_limit_kmh: 120,
     poll_interval_seconds: 30,
     history_retention_days: 60,
     device_password: '123456',
   });
+  const handleRequestGps = async () => {
+    try {
+      const res = await settingsAPI.requestGps();
+      if (res.data?.gps) setGpsSettings(res.data.gps);
+      toast.success(res.data?.message || 'GPS activation requested');
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Could not send GPS request');
+    }
+  };
 
   // Use the isAdminUser variable defined at top
   const isAdmin = isAdminUser;
@@ -1642,22 +1653,40 @@ const TenantDashboard = () => {
                         <Settings size={18} />
                         <span className="hidden sm:inline">Reminders</span>
                       </button>
-                      <button
-                        onClick={() => setShowGpsSettings(true)}
-                        className={`flex items-center space-x-2 px-3 py-2 border rounded-lg ${
-                          gpsSettings.enabled
-                            ? 'border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100'
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
-                        title="GPS Fleet Tracking Settings"
-                        data-testid="gps-settings-btn"
-                      >
-                        <Satellite size={18} />
-                        <span className="hidden sm:inline">
-                          GPS {gpsSettings.enabled ? 'On' : 'Off'}
-                        </span>
-                      </button>
-                      {gpsSettings.enabled && (
+                      {gpsSettings.available && gpsSettings.enabled && (
+                        <button
+                          onClick={() => setShowGpsSettings(true)}
+                          className="flex items-center space-x-2 px-3 py-2 border rounded-lg border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100"
+                          title="GPS Fleet Tracking Settings"
+                          data-testid="gps-settings-btn"
+                        >
+                          <Satellite size={18} />
+                          <span className="hidden sm:inline">GPS On</span>
+                        </button>
+                      )}
+                      {gpsSettings.available && !gpsSettings.enabled && gpsSettings.requested && (
+                        <button
+                          disabled
+                          className="flex items-center space-x-2 px-3 py-2 border rounded-lg border-amber-300 text-amber-800 bg-amber-50 cursor-default"
+                          title="Your GPS activation request is pending"
+                          data-testid="gps-requested-btn"
+                        >
+                          <Satellite size={18} />
+                          <span className="hidden sm:inline">GPS Requested</span>
+                        </button>
+                      )}
+                      {gpsSettings.available && !gpsSettings.enabled && !gpsSettings.requested && (
+                        <button
+                          onClick={handleRequestGps}
+                          className="flex items-center space-x-2 px-3 py-2 border rounded-lg border-blue-300 text-blue-800 bg-blue-50 hover:bg-blue-100"
+                          title="Request GPS Fleet Tracking for your fleet"
+                          data-testid="gps-request-btn"
+                        >
+                          <Satellite size={18} />
+                          <span className="hidden sm:inline">Add GPS Tracking</span>
+                        </button>
+                      )}
+                      {gpsSettings.available && gpsSettings.enabled && (
                         <button
                           onClick={() => setShowTrackerDevices(true)}
                           className="flex items-center space-x-2 px-3 py-2 border border-blue-300 text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg"

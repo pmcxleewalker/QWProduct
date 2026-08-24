@@ -267,6 +267,7 @@ export const settingsAPI = {
   get: () => axios.get(`${API}/tenant/settings`),
   update: (data) => axios.put(`${API}/tenant/settings`, data),
   updateGps: (data) => axios.put(`${API}/tenant/settings/gps`, data),
+  requestGps: () => axios.post(`${API}/tenant/gps/request`),
 };
 
 // Tenant User API (tenant admin)
@@ -292,6 +293,7 @@ export const platformAPI = {
   getTenant: (id) => axios.get(`${API}/platform/tenants/${id}`),
   createTenant: (data) => axios.post(`${API}/platform/tenants`, data),
   updateTenant: (id, data) => axios.put(`${API}/platform/tenants/${id}`, data),
+  setTenantGps: (id, data) => axios.patch(`${API}/platform/tenants/${id}/gps`, data),
   suspendTenant: (id) => axios.post(`${API}/platform/tenants/${id}/suspend`),
   reactivateTenant: (id) => axios.post(`${API}/platform/tenants/${id}/reactivate`),
   impersonateTenant: (id) => axios.post(`${API}/platform/tenants/${id}/impersonate`),

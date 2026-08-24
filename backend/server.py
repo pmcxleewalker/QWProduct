@@ -1053,8 +1053,10 @@ async def create_tenant(
         "feature_overrides": tenant_data.feature_overrides or {},
         "subscription_expires_at": None,
         "is_demo": bool(tenant_data.is_demo),
-        "gps_enabled": bool(getattr(tenant_data, "gps_enabled", False)),
-        "gps_settings": dict(GPS_DEFAULTS) if getattr(tenant_data, "gps_enabled", False) else None,
+        "gps_available": bool(getattr(tenant_data, "gps_available", False)),
+        "gps_requested": False,
+        "gps_enabled": False,
+        "gps_settings": None,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
@@ -1570,6 +1572,8 @@ async def get_tenant_settings(context: TenantContext = Depends(require_tenant_co
         # gate the Live Map tab and all tracker UI. Phase 1 = toggle only;
         # the actual poller lands in Phase 2.
         "gps": {
+            "available": bool(tenant.get("gps_available") or tenant.get("gps_enabled")),
+            "requested": bool(tenant.get("gps_requested", False)),
             "enabled": bool(tenant.get("gps_enabled", False)),
             "speed_limit_kmh": (tenant.get("gps_settings") or {}).get("speed_limit_kmh", 120),
             "poll_interval_seconds": (tenant.get("gps_settings") or {}).get("poll_interval_seconds", 30),
@@ -1736,6 +1740,8 @@ def _gps_response(tenant: dict) -> dict:
     """Shape the GPS block returned by settings endpoints."""
     gs = tenant.get("gps_settings") or {}
     return {
+        "available": bool(tenant.get("gps_available") or tenant.get("gps_enabled")),
+        "requested": bool(tenant.get("gps_requested", False)),
         "enabled": bool(tenant.get("gps_enabled", False)),
         "speed_limit_kmh": gs.get("speed_limit_kmh", GPS_DEFAULTS["speed_limit_kmh"]),
         "poll_interval_seconds": gs.get("poll_interval_seconds", GPS_DEFAULTS["poll_interval_seconds"]),
@@ -1758,11 +1764,10 @@ async def update_gps_settings(
         raise HTTPException(status_code=404, detail="Tenant not found")
 
     update_fields = {}
-    if payload.enabled is not None:
-        update_fields["gps_enabled"] = bool(payload.enabled)
-        # First-time enable: seed defaults if none stored yet
-        if payload.enabled and not tenant.get("gps_settings"):
-            update_fields["gps_settings"] = dict(GPS_DEFAULTS)
+    # NOTE: Turning GPS on/off is a platform-admin action (tenant self-enable is
+    # intentionally disabled). Tenants may only REQUEST activation via
+    # /tenant/gps/request; payload.enabled from a tenant is ignored here.
+    # Settings knobs below are only meaningful once GPS is enabled.
 
     # Merge any overrides into gps_settings
     current_settings = dict(tenant.get("gps_settings") or GPS_DEFAULTS)
@@ -1793,6 +1798,67 @@ async def update_gps_settings(
         "message": "GPS settings updated successfully",
         "gps": _gps_response(updated_tenant),
     }
+
+
+@api_router.post("/tenant/gps/request")
+async def request_gps_activation(context: TenantContext = Depends(require_admin)):
+    """Tenant admin requests GPS Fleet Tracking activation. Only valid when the
+    add-on has been OFFERED (gps_available) and GPS is not already enabled.
+    Sets gps_requested=True; a platform admin then enables it from the Command
+    Centre. Tenants cannot enable GPS themselves."""
+    tenant = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    if not tenant.get("gps_available"):
+        raise HTTPException(status_code=403, detail="GPS Fleet Tracking is not available for this account.")
+    if tenant.get("gps_enabled"):
+        return {"message": "GPS Fleet Tracking is already active.", "gps": _gps_response(tenant)}
+    await db.tenants.update_one(
+        {"id": context.tenant_id},
+        {"$set": {"gps_requested": True, "updated_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    await ttl_cache.invalidate(tenant_settings_key(context.tenant_id))
+    updated = await db.tenants.find_one({"id": context.tenant_id}, {"_id": 0})
+    return {"message": "GPS activation requested. Our team will enable it shortly.", "gps": _gps_response(updated)}
+
+
+class PlatformGpsUpdate(BaseModel):
+    available: Optional[bool] = None
+    enabled: Optional[bool] = None
+
+
+@api_router.patch("/platform/tenants/{tenant_id}/gps")
+async def platform_set_tenant_gps(
+    tenant_id: str,
+    payload: PlatformGpsUpdate,
+    context: TenantContext = Depends(require_platform_admin),
+):
+    """Platform admin offers (available) and/or activates (enabled) GPS for a
+    tenant. Enabling seeds default gps_settings and clears any pending request."""
+    tenant = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    update_fields = {}
+    if payload.available is not None:
+        update_fields["gps_available"] = bool(payload.available)
+        if not payload.available:
+            # Withdrawing the offer also turns GPS off and clears the request.
+            update_fields["gps_enabled"] = False
+            update_fields["gps_requested"] = False
+    if payload.enabled is not None:
+        update_fields["gps_enabled"] = bool(payload.enabled)
+        if payload.enabled:
+            update_fields["gps_available"] = True
+            update_fields["gps_requested"] = False
+            if not tenant.get("gps_settings"):
+                update_fields["gps_settings"] = dict(GPS_DEFAULTS)
+    if update_fields:
+        update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.tenants.update_one({"id": tenant_id}, {"$set": update_fields})
+        await ttl_cache.invalidate(tenant_settings_key(tenant_id))
+    updated = await db.tenants.find_one({"id": tenant_id}, {"_id": 0})
+    return {"message": "GPS status updated", "gps": _gps_response(updated)}
+
 
 
 # ---------- Tracker Devices (Phase 2) ----------

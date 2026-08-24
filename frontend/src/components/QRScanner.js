@@ -113,7 +113,7 @@ const QRScanner = ({ isOpen, onClose, onSuccess, tenantSlug }) => {
       // Check for service alert
       if (response.data.service_alert) {
         const alert = response.data.service_alert;
-        setSuccess(`${scannedVehicle.name} updated! ⚠️ ${alert.message}`);
+        setSuccess(`${scannedVehicle.name} updated! ${alert.message}`);
       } else {
         setSuccess(`${scannedVehicle.name} updated successfully!`);
       }

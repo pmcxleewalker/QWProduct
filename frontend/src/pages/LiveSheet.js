@@ -338,11 +338,11 @@ const LiveSheet = () => {
                           (item.car.current_status === 'Booked' || item.car.current_status === 'In Use') ? 'text-red-700' :
                           item.latest_status?.is_upcoming ? 'text-amber-700' : ''
                         }>
-                          {item.latest_status?.is_recurring ? '🔄 ' : ''}
+                          {item.latest_status?.is_recurring ? '↻ ' : ''}
                           {item.latest_status.notes}
                         </span>
                       ) : item.car.current_status === 'Recurring' ? (
-                        <span className="text-purple-700 font-medium">🔄 Recurring booking</span>
+                        <span className="text-purple-700 font-medium">↻ Recurring booking</span>
                       ) : item.car.current_status === 'Booked' ? (
                         <span className="text-red-700 font-medium">Currently booked</span>
                       ) : '-'}

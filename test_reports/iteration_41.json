@@ -1,0 +1,37 @@
+{
+  "summary": "Full-app regression pass after 'AI-slop / dead-button' polish. Covered (a) backend Auditor Pack PDF endpoint, (b) tenant admin end-to-end click-through (Overview/Fleet/Team/Reports/Announcements sub-tabs + top nav to Live Sheet/Alerts/Behaviour/Admin), (c) Manage Vehicles dialogs on /admin?tab=cars, (d) Command Centre (Suspend + Regenerate-magic-link styled confirms), and (e) Staff mobile app (Home/Bookings/Docs/Lift). RESULT: All requested polish items pass. (1) NEW backend PDF endpoint GET /api/tenant/reports/compliance-pack/pdf returns 200 application/pdf, valid %PDF header, requires admin (staff -> 403, unauth -> 403). Auditor Pack (PDF) blue button (data-testid=download-auditor-pack-button) visible on Admin > Reports and triggers download of compliance_pack_bluebirdcaredublinfleet_20260824.pdf. (2) EMOJI SWEEP: Ran a Unicode emoji regex leaf-node scan on every screen visited (Tenant Overview, Fleet cards, Team, Reports (Fleet Reports / Incident Reports / Documents / Daily Timeline sub-tabs), Announcements, Live Sheet, Alerts, Behaviour, Admin Panel > Fleet / Team / Reports, Command Centre Dashboard, Command Centre Clients, Staff Home/Bookings/Docs/Lift) — all CLEAN, zero emoji-as-icon leaks. (3) STATUSBADGE: rewritten component renders colour pill + dot correctly on Fleet Board (Overview) — no missing/blank badges, no emoji. (Admin > Fleet card view intentionally shows plain 'Status: Free/Blocked' text, not the StatusBadge pill — that view uses its own text.) (4) COMMAND CENTRE styled confirms — verified programmatically: window.confirm was monkey-patched to count native calls; on both 'Regenerate magic link' and 'Suspend tenant' actions native count stayed at 0 and a styled dialog appeared with proper text ('Generate a new magic link? Any previous link for \"Prospect Demo A\" stops working immediately.' and 'Suspend this tenant? They will lose access immediately.'), then Cancel was clicked. Plan comparison cards render (no emoji). (5) MANAGE VEHICLES: Add Car / Edit / Delete / QR / Block-for-Appointment / Sign-Off-Unblock buttons all present on /admin?tab=cars; Block-for-Appointment modal opens & closes cleanly. (6) STAFF MOBILE at /test-fleet/login (390x844): teststaff logs in, Home/Bookings/Docs/Lift bottom nav renders, no emoji anywhere on any tab, 'New Booking' button present on Bookings, Lift tab renders. (7) NO 'jsx' non-boolean-attribute React warning surfaces anywhere any more (previous iteration reported this on every page — now zero). (8) Console-error scan: only ONE React warning across the entire sweep — 'Each child in a list should have a unique key prop' fired in Admin render when the Reports tab loads. Non-breaking (renders correctly, PDF works) but should be fixed for Enterprise Ireland demo.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Admin.js Reports tab", "issue": "React console warning: 'Each child in a list should have a unique key prop' fires when the Reports tab renders (only warning found in whole sweep). Non-blocking — page/PDF work — but reviewers open devtools.", "selector": "activeTab==='reports' render block (list around line ~2987+)", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_auditor_pack_pdf.py"
+  ],
+  "action_items": [
+    "Add a unique `key` prop to whichever mapped list in Admin.js Reports tab is missing it (only remaining React console warning across all screens).",
+    "Known/deferred per review note: 4 window.prompt() calls remain in Command Centre (rename tenant, delete-tenant typed confirm, password prompts). Not fixed this iteration."
+  ],
+  "critical_code_review_comments": [
+    "StatusBadge.js is now a clean dot+pill (no emoji), and exposes data-testid=status-badge-<status> plus status-badge-blocked — good for regression.",
+    "backend/server.py GET /api/tenant/reports/compliance-pack/pdf correctly gated by require_admin (staff -> 403, unauth -> 403 verified).",
+    "PlatformAdmin: Suspend + Regenerate-magic-link successfully migrated off window.confirm to styled dialog — verified by monkey-patch that native confirm was never invoked.",
+    "Old React warning 'Received true for a non-boolean attribute jsx' is GONE across every page tested — a real improvement over iteration 40."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_auditor_pack_pdf.py (new)"
+  ],
+  "success_rate": {"backend": "100% (3/3 PDF endpoint tests pass, all screens' /api calls 200)", "frontend": "99% (all polish items verified; 1 low-severity react key warning on Admin Reports)"},
+  "test_credentials": "admin.test-fleet@quickwing.com / admin123 ; teststaff@quickwing.com / Staff123 ; superadmin@quickwing.com / Super123",
+  "seed_data_creation": "None. No bookings/tenants created or deleted this run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Auditor Pack button lives at /:slug/admin?tab=reports (Admin.js activeTab==='reports'), NOT on TenantDashboard's Reports sub-tab. Don't confuse the two Reports labels. Emoji-scan pattern used: /[\\u{1F300}-\\u{1FAFF}\\u{2600}-\\u{27BF}\\u{1F000}-\\u{1F2FF}]/u on leaf-node text. To verify styled-confirm migration, monkey-patch window.confirm to a counter before clicking; native count must remain 0. Only outstanding console warning: React unique-key warning in Admin.js Reports tab.",
+  "rca of the issue": "N/A — no failing feature. The single React key warning likely comes from a .map() render inside the Reports tab (bookings list or charts) without key={item.id}. Simple to fix."
+}

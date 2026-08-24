@@ -108,7 +108,7 @@ const MessageAcknowledgmentModal = ({ onComplete }) => {
           <div className="flex items-center space-x-2">
             <AlertTriangle size={28} />
             <div>
-              <h2 className="text-xl font-bold">⚠️ Important Notice - Please Read</h2>
+              <h2 className="text-xl font-bold">Important Notice - Please Read</h2>
               <p className="text-sm opacity-90">
                 Message {currentIndex + 1} of {messages.length} - You must acknowledge to continue
               </p>
@@ -136,7 +136,7 @@ const MessageAcknowledgmentModal = ({ onComplete }) => {
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
             <p className="text-sm text-yellow-800 font-medium text-center">
-              🔒 You must acknowledge this message to access the app
+              You must acknowledge this message to access the app
             </p>
           </div>
         </div>

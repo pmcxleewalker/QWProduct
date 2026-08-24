@@ -270,7 +270,7 @@ const Navigation = ({ tenantSlug }) => {
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-2">
-          <span className="text-xl">🔔</span>
+          <Bell size={18} className="text-white" />
           <span className="text-white font-bold">Notifications</span>
         </div>
         <button
@@ -309,7 +309,7 @@ const Navigation = ({ tenantSlug }) => {
 
         {/* Lift Requests section */}
         <div className="p-3 border-b border-gray-100 flex items-center gap-2">
-          <span className="text-lg">🙋‍♂️</span>
+          <PhoneCall size={16} className="text-blue-600" />
           <span className="text-sm font-semibold text-gray-900 flex-1">Lift Requests</span>
           <span className="text-xs font-semibold text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">{liftRequestCount}</span>
         </div>
@@ -465,7 +465,7 @@ const Navigation = ({ tenantSlug }) => {
                   ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 border border-amber-300'
                   : 'bg-purple-100 text-purple-800'
               }`}>
-                {isPlatformAdmin() ? '👑 Master Admin' : 'Admin'}
+                {isPlatformAdmin() ? 'Master Admin' : 'Admin'}
               </span>
             )}
             {/* Command Centre Button for Super Admin */}
@@ -654,7 +654,7 @@ const Navigation = ({ tenantSlug }) => {
                         ? 'bg-gradient-to-r from-amber-300 to-yellow-200 text-amber-900 border border-amber-200 shadow-[0_0_10px_rgba(252,211,77,0.45)]'
                         : 'bg-white/20 text-white border border-white/30'
                     }`}>
-                      {isPlatformAdmin() ? '👑 Master Admin' : 'Admin'}
+                      {isPlatformAdmin() ? 'Master Admin' : 'Admin'}
                     </span>
                   </div>
                 )}

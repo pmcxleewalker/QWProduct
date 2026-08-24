@@ -31,7 +31,7 @@ const BookingNotificationModal = ({ notification, onDismiss }) => {
             </div>
           </div>
           <h2 className="text-xl font-bold text-white">
-            {isApproved ? 'Booking Approved! ✅' : 'Booking Rejected'}
+            {isApproved ? 'Booking Approved!' : 'Booking Rejected'}
           </h2>
           <p className={`text-sm mt-1 ${isApproved ? 'text-green-100' : 'text-red-100'}`}>
             {isApproved 

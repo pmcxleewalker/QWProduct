@@ -49,7 +49,7 @@ const AcceptLiftModal = ({ isOpen, onClose, onAccept, request }) => {
         {/* Header */}
         <div className="bg-gradient-to-r from-green-500 to-green-600 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <span className="text-2xl">🚗</span>
+            <span className="text-2xl"></span>
             <h2 className="text-lg font-bold text-white">Accept Lift Request</h2>
           </div>
           <button

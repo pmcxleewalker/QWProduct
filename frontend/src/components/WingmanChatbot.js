@@ -19,7 +19,7 @@ const WingmanChatbot = () => {
   // Structured conversation flow
   const CONVERSATION_STEPS = {
     0: {
-      question: "Welcome! 👋 To help you best, what is your name, company, and the #1 challenge you're currently facing in managing your fleet?",
+      question: "Welcome! To help you best, what is your name, company, and the #1 challenge you're currently facing in managing your fleet?",
       placeholder: "e.g., John from ABC Fleet - struggling with compliance tracking"
     },
     1: {
@@ -159,7 +159,7 @@ const WingmanChatbot = () => {
       
       // Show thank you message
       setTimeout(async () => {
-        const thankYouMessage = `Thank you${finalInfo.name ? `, ${finalInfo.name.split(' ')[0]}` : ''}! 🙏
+        const thankYouMessage = `Thank you${finalInfo.name ? `, ${finalInfo.name.split(' ')[0]}` : ''}!
 
 I really appreciate you taking the time to share your fleet challenges with me. Your information has been sent to our team, and either myself or one of our team will be in contact with you to arrange a call within the next 24hrs.
 

@@ -30,7 +30,7 @@ const createCarIcon = (color, isDoubleUp = false) => {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40" width="32" height="40">
       <path d="M16 0C7.164 0 0 7.164 0 16c0 8.837 16 24 16 24s16-15.163 16-24C32 7.164 24.836 0 16 0z" fill="${color}" stroke="white" stroke-width="2"/>
       <circle cx="16" cy="14" r="8" fill="white"/>
-      <text x="16" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="${color}">${isDoubleUp ? '2x' : '🚗'}</text>
+      <text x="16" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="${color}">${isDoubleUp ? '2x' : '•'}</text>
     </svg>
   `;
   return L.divIcon({
@@ -304,10 +304,10 @@ const BookingLocationsMap = ({ carId = null, selectedDate = null, height = '400p
                 </div>
                 <div className="text-xs text-gray-600">
                   <span>{pin.user_name}</span>
-                  {pin.location && <span className="ml-2">📍 {pin.location}</span>}
+                  {pin.location && <span className="ml-2">{pin.location}</span>}
                 </div>
                 {!pin.has_coordinates && pin.location && (
-                  <p className="text-xs text-orange-600 mt-1">⚠️ Location not mapped</p>
+                  <p className="text-xs text-orange-600 mt-1">Location not mapped</p>
                 )}
               </div>
             ))}

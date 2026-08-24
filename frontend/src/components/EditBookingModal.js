@@ -132,7 +132,7 @@ const EditBookingModal = ({ isOpen, onClose, booking, onSuccess }) => {
         {isRecurring && (
           <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-2">
             <p className="text-sm text-yellow-800">
-              ⚠️ This is part of a recurring series. Changes will only affect this individual booking.
+              This is part of a recurring series. Changes will only affect this individual booking.
             </p>
           </div>
         )}
@@ -198,7 +198,7 @@ const EditBookingModal = ({ isOpen, onClose, booking, onSuccess }) => {
               )}
               {carChanged && (
                 <p className="text-xs text-green-700 mt-2 font-medium">
-                  ✓ Car will be changed when you save
+                  Car will be changed when you save
                 </p>
               )}
             </div>

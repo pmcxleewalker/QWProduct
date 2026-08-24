@@ -17,9 +17,9 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
   
   // Tier styling
   const tierStyles = {
-    standard: { color: 'gray', icon: '🚗', badge: 'bg-gray-600' },
-    essential: { color: 'blue', icon: '⭐', badge: 'bg-gradient-to-r from-blue-600 to-indigo-600' },
-    professional: { color: 'purple', icon: '👑', badge: 'bg-gradient-to-r from-purple-600 to-pink-600' }
+    standard: { color: 'gray', icon: '', badge: 'bg-gray-600' },
+    essential: { color: 'blue', icon: '', badge: 'bg-gradient-to-r from-blue-600 to-indigo-600' },
+    professional: { color: 'purple', icon: '', badge: 'bg-gradient-to-r from-purple-600 to-pink-600' }
   };
   const tierStyle = tierStyles[planId] || tierStyles.standard;
 

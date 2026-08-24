@@ -54,7 +54,7 @@ const LiftRequestModal = ({ isOpen, onClose, onSuccess }) => {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-500 to-blue-600 rounded-t-xl">
           <div className="flex items-center space-x-2">
-            <span className="text-2xl">🙋‍♂️</span>
+            <span className="text-2xl"></span>
             <h2 className="text-xl font-bold text-white">Request a Lift</h2>
           </div>
           <button
@@ -183,7 +183,7 @@ const LiftRequestModal = ({ isOpen, onClose, onSuccess }) => {
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
             ) : (
               <>
-                <span>🙋‍♂️</span>
+                <span></span>
                 <span>Request Lift</span>
               </>
             )}

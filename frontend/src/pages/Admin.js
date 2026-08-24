@@ -141,14 +141,14 @@ const Admin = () => {
   // Helper function to format schedule info
   const formatSchedule = (todo) => {
     if (!todo.schedule_type) return null;
-    if (todo.schedule_type === 'daily') return '🔄 Daily';
+    if (todo.schedule_type === 'daily') return 'Daily';
     if (todo.schedule_type === 'weekly' && todo.schedule_days?.length) {
       const days = todo.schedule_days.sort((a, b) => a - b).map(d => DAYS_OF_WEEK[d]).join(', ');
-      return `📅 Weekly: ${days}`;
+      return `Weekly: ${days}`;
     }
     if (todo.schedule_type === 'monthly' && todo.schedule_days?.length) {
       const dates = todo.schedule_days.sort((a, b) => a - b).join(', ');
-      return `📆 Monthly: ${dates}`;
+      return `Monthly: ${dates}`;
     }
     return null;
   };
@@ -1235,7 +1235,7 @@ const Admin = () => {
                 
                 {/* Compliance Dates Section */}
                 <div className="border-t pt-4 mt-4">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">📋 Compliance Dates (Optional)</h4>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Compliance Dates (Optional)</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Tax Due Date</label>
@@ -1457,7 +1457,7 @@ const Admin = () => {
                   </div>
                   {car.is_blocked && (
                     <span className="px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-800">
-                      🚫 {car.block_reason}
+                      {car.block_reason}
                     </span>
                   )}
                 </div>
@@ -1472,7 +1472,7 @@ const Admin = () => {
                     : 'bg-blue-50 border-blue-200'
                 }`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600 font-medium">📍 Current Mileage:</span>
+                    <span className="text-gray-600 font-medium">Current Mileage:</span>
                     <span className={`font-bold text-lg ${
                       car.current_mileage && car.service_due_mileage && car.current_mileage >= car.service_due_mileage
                         ? 'text-red-600'
@@ -1486,19 +1486,19 @@ const Admin = () => {
                   
                   {car.service_due_mileage && (
                     <div className="flex items-center justify-between mt-1 text-xs">
-                      <span className="text-gray-500">🔧 Service Due At:</span>
+                      <span className="text-gray-500">Service Due At:</span>
                       <span className="text-gray-700 font-medium">{car.service_due_mileage.toLocaleString()} km</span>
                     </div>
                   )}
                   
                   {car.current_mileage && car.service_due_mileage && car.current_mileage >= car.service_due_mileage && (
                     <div className="mt-2 p-2 bg-red-100 rounded text-center">
-                      <p className="text-red-700 font-bold text-sm">⚠️ SERVICE OVERDUE!</p>
+                      <p className="text-red-700 font-bold text-sm">SERVICE OVERDUE!</p>
                     </div>
                   )}
                   {car.current_mileage && car.service_due_mileage && car.current_mileage >= (car.service_due_mileage - 500) && car.current_mileage < car.service_due_mileage && (
                     <div className="mt-2 p-2 bg-orange-100 rounded text-center">
-                      <p className="text-orange-700 font-semibold text-sm">⚠️ Service approaching</p>
+                      <p className="text-orange-700 font-semibold text-sm">Service approaching</p>
                     </div>
                   )}
                   
@@ -1970,7 +1970,7 @@ const Admin = () => {
           {/* Admin Users Section */}
           <div className="mb-8">
             <h3 className="text-lg font-bold text-purple-800 mb-4 flex items-center">
-              <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-lg mr-2">👑</span>
+              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-lg mr-2 inline-flex items-center"><Crown size={14} /></span>
               Administrators ({users.filter(u => u.role === 'admin').length})
             </h3>
             <div className="space-y-4">
@@ -2001,7 +2001,7 @@ const Admin = () => {
                               ? 'bg-gradient-to-r from-yellow-100 to-amber-100 text-amber-800 border border-amber-300'
                               : 'bg-purple-100 text-purple-800'
                           }`}>
-                            {isThisMasterAdmin ? '👑 Master Admin' : adminUser.role}
+                            {isThisMasterAdmin ? 'Master Admin' : adminUser.role}
                           </span>
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded ${
@@ -2080,7 +2080,7 @@ const Admin = () => {
                         >
                           <Key size={16} />
                           <span>Reset PW</span>
-                          {isThisMasterAdmin && !isMasterAdmin && <span className="text-xs">🔒</span>}
+                          {isThisMasterAdmin && !isMasterAdmin && <Lock size={12} className="text-gray-400" />}
                         </button>
                         
                         {!isThisMasterAdmin && (
@@ -2108,7 +2108,7 @@ const Admin = () => {
                               title={isMasterAdmin ? 'Delete Admin' : 'Only Master Admin can delete admins'}
                             >
                               <Trash2 size={16} />
-                              {!isMasterAdmin && <span className="text-xs">🔒</span>}
+                              {!isMasterAdmin && <Lock size={12} className="text-gray-400" />}
                             </button>
                           </>
                         )}
@@ -2123,7 +2123,7 @@ const Admin = () => {
           {/* Staff Users Section */}
           <div>
             <h3 className="text-lg font-bold text-blue-800 mb-4 flex items-center">
-              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg mr-2">👤</span>
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-lg mr-2 inline-flex items-center"><Users size={14} /></span>
               Staff Members ({users.filter(u => u.role === 'staff').length})
             </h3>
             <div className="space-y-4">
@@ -2287,13 +2287,13 @@ const Admin = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                     {(group.first_booking?.purpose || group.first_booking?.destination_notes) && (
                       <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                        <p className="text-xs font-medium text-purple-600 mb-1">📋 Purpose</p>
+                        <p className="text-xs font-medium text-purple-600 mb-1">Purpose</p>
                         <p className="text-sm text-purple-900">{group.first_booking.purpose || group.first_booking.destination_notes}</p>
                       </div>
                     )}
                     {group.first_booking?.location && (
                       <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                        <p className="text-xs font-medium text-blue-600 mb-1">📍 Location (Eircode)</p>
+                        <p className="text-xs font-medium text-blue-600 mb-1">Location (Eircode)</p>
                         <p className="text-sm text-blue-900">{group.first_booking.location}</p>
                       </div>
                     )}
@@ -2591,7 +2591,7 @@ const Admin = () => {
                           ))}
                         </div>
                         {todoForm.schedule_days.length === 0 && (
-                          <p className="text-xs text-amber-600 mt-2">⚠️ Please select at least one day</p>
+                          <p className="text-xs text-amber-600 mt-2">Please select at least one day</p>
                         )}
                       </div>
                     )}
@@ -2625,13 +2625,13 @@ const Admin = () => {
                           ))}
                         </div>
                         {todoForm.schedule_days.length === 0 && (
-                          <p className="text-xs text-amber-600 mt-2">⚠️ Please select at least one date</p>
+                          <p className="text-xs text-amber-600 mt-2">Please select at least one date</p>
                         )}
                       </div>
                     )}
                     
                     <p className="text-xs text-blue-600">
-                      💡 Scheduled tasks will automatically become pending again based on the schedule.
+                      Scheduled tasks will automatically become pending again based on the schedule.
                     </p>
                   </div>
                 )}
@@ -2697,7 +2697,7 @@ const Admin = () => {
                             <div className="flex flex-wrap items-center gap-2 mt-1">
                               {todo.is_mandatory && (
                                 <span className="bg-amber-200 text-amber-800 text-xs px-2 py-0.5 rounded font-medium">
-                                  ⚠️ Mandatory
+                                  Mandatory
                                 </span>
                               )}
                               {formatSchedule(todo) && (
@@ -3300,7 +3300,7 @@ const Admin = () => {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {reportData.most_booked.slice(0, 9).map((car, index) => (
-                    <div key={car.car_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={car.car_id || car.registration || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
                           index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-amber-600' : 'bg-gray-300'

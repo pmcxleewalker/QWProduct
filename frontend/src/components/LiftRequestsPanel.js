@@ -38,7 +38,7 @@ const LiftRequestsPanel = ({ requests, onAccept, onDismiss, onDelete, currentUse
         <div className="flex items-center">
           <Car className="text-blue-600 mr-2" size={20} />
           <h2 className="text-base font-bold text-blue-800">
-            🙋‍♂️ Lift Requests ({requests.length})
+            Lift Requests ({requests.length})
           </h2>
         </div>
         <button 

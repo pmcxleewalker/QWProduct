@@ -1,6 +1,10 @@
 import React from 'react';
 
 const StatusBadge = ({ status, isBlocked, blockReason, compact = false }) => {
+  const Dot = () => (
+    <span className={`inline-block w-1.5 h-1.5 rounded-full bg-white/90 align-middle ${compact ? '' : 'mr-1.5'}`} />
+  );
+
   // If car is blocked, show blocked status
   if (isBlocked) {
     return (
@@ -10,7 +14,8 @@ const StatusBadge = ({ status, isBlocked, blockReason, compact = false }) => {
           compact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'
         }`}
       >
-        {compact ? '🚫' : `🚫 Blocked - ${blockReason || 'Maintenance'}`}
+        <Dot />
+        {compact ? '' : `Blocked - ${blockReason || 'Maintenance'}`}
       </span>
     );
   }
@@ -38,26 +43,6 @@ const StatusBadge = ({ status, isBlocked, blockReason, compact = false }) => {
     }
   };
 
-  // Get compact emoji for status
-  const getStatusEmoji = () => {
-    switch (status) {
-      case 'Free':
-        return '🟢';
-      case 'In Use':
-        return '🔵';
-      case 'Booked':
-        return '🔴';
-      case 'Recurring':
-        return '🟣';
-      case 'Maintenance':
-        return '🔧';
-      case 'Out of Service':
-        return '🔴';
-      default:
-        return '⚪';
-    }
-  };
-
   return (
     <span
       data-testid={`status-badge-${status?.toLowerCase().replace(/\s+/g, '-')}`}
@@ -65,7 +50,8 @@ const StatusBadge = ({ status, isBlocked, blockReason, compact = false }) => {
         compact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'
       }`}
     >
-      {compact ? getStatusEmoji() : status}
+      <Dot />
+      {compact ? '' : status}
     </span>
   );
 };

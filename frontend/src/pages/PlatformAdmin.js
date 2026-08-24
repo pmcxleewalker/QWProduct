@@ -422,7 +422,13 @@ const PlatformAdmin = () => {
   };
 
   const handleSuspendTenant = async (tenantId) => {
-    if (!window.confirm('Are you sure you want to suspend this tenant? They will lose access immediately.')) return;
+    const ok = await confirm({
+      title: 'Suspend this tenant?',
+      description: 'They will lose access immediately.',
+      confirmLabel: 'Suspend tenant',
+      tone: 'danger',
+    });
+    if (!ok) return;
     
     try {
       await axios.post(`${API}/platform/tenants/${tenantId}/suspend`);
@@ -638,23 +644,16 @@ const PlatformAdmin = () => {
       const removed = res.data?.removed?.deleted_user_emails || [];
       const emailStatus = res.data?.email || {};
       const emailLine = !sendWelcomeEmail
-        ? '\u2139\uFE0F  Welcome email skipped (already sent manually).'
+        ? 'Welcome email skipped (already sent manually).'
         : emailStatus.sent
-          ? `\u2709\uFE0F  Welcome email sent to ${o?.email}`
+          ? `Welcome email sent to ${o?.email}`
           : emailStatus.error
-            ? `\u26A0\uFE0F  Welcome email failed: ${emailStatus.error}`
-            : '\u2139\uFE0F  Welcome email skipped.';
-      toast.success(`Owner replaced for ${tenant.name}`);
-      window.alert(
-        `\u2705 New owner ready for ${tenant.name}\n\n` +
-        `Email: ${o?.email}\n` +
-        `Password: ${o?.password}\n` +
-        `Login URL: ${o?.login_url}\n\n` +
-        `${emailLine}\n` +
-        (removed.length
-          ? `Old owner removed: ${removed.join(', ')}`
-          : 'Old owner detached from this tenant.')
-      );
+            ? `Welcome email failed: ${emailStatus.error}`
+            : 'Welcome email skipped.';
+      toast.success(`New owner ready for ${tenant.name}`, {
+        description: `Email: ${o?.email}  •  Password: ${o?.password}  •  Login: ${o?.login_url}. ${emailLine} ${removed.length ? 'Old owner removed: ' + removed.join(', ') : 'Old owner detached from this tenant.'}`,
+        duration: 60000,
+      });
       setReplaceOwnerTenant(null);
       fetchData();
     } catch (err) {
@@ -1539,7 +1538,12 @@ const PlatformAdmin = () => {
                 const magicLink = tenant.magic_link;
 
                 const regenerateMagicLink = async () => {
-                  if (!window.confirm(`Generate a new magic link for "${tenant.name}"? Any previous link stops working immediately.`)) return;
+                  const ok = await confirm({
+                    title: 'Generate a new magic link?',
+                    description: `Any previous link for "${tenant.name}" stops working immediately.`,
+                    confirmLabel: 'Generate link',
+                  });
+                  if (!ok) return;
                   try {
                     const { data } = await demoAPI.regenerateForTenant(tenant.id, { expires_in_days: 30 });
                     try { await navigator.clipboard.writeText(data.url); } catch { /* clipboard unavailable */ }
@@ -2995,7 +2999,7 @@ const PlatformAdmin = () => {
                     border: 'border-blue-200 hover:border-blue-300',
                     header: 'bg-gradient-to-br from-blue-50 via-sky-50 to-blue-100',
                     badge: 'bg-blue-500',
-                    icon: '🚐',
+                    Icon: Car,
                     accent: 'text-blue-700',
                     accentBg: 'bg-blue-50',
                     checkColor: 'text-blue-500'
@@ -3004,7 +3008,7 @@ const PlatformAdmin = () => {
                     border: 'border-sky-400 ring-2 ring-sky-200 shadow-sky-100',
                     header: 'bg-gradient-to-br from-sky-600 via-cyan-600 to-teal-600',
                     badge: 'bg-gradient-to-r from-sky-500 to-cyan-500',
-                    icon: '✦',
+                    Icon: Star,
                     accent: 'text-white',
                     accentBg: 'bg-sky-50',
                     checkColor: 'text-sky-500',
@@ -3014,7 +3018,7 @@ const PlatformAdmin = () => {
                     border: 'border-violet-400 ring-2 ring-violet-200 shadow-violet-100',
                     header: 'bg-gradient-to-br from-violet-700 via-purple-700 to-fuchsia-700',
                     badge: 'bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500',
-                    icon: '♛',
+                    Icon: Crown,
                     accent: 'text-white',
                     accentBg: 'bg-violet-50',
                     checkColor: 'text-violet-500',
@@ -3095,7 +3099,7 @@ const PlatformAdmin = () => {
 
                     {/* Header */}
                     <div className={`${style.header} p-6 pt-10 text-center`}>
-                      <div className={`text-4xl mb-3 ${isColoredHeader ? 'drop-shadow-lg' : ''}`}>{style.icon}</div>
+                      <div className={`mb-3 ${isColoredHeader ? 'drop-shadow-lg' : ''}`}><style.Icon size={34} className={`mx-auto ${isColoredHeader ? 'text-white' : style.accent}`} /></div>
                       <h3 className={`text-xl font-bold ${isColoredHeader ? 'text-white' : style.accent}`}>{plan.name}</h3>
                       
                       {/* Price */}

@@ -27,7 +27,7 @@ const LiftAcceptedNotification = ({ notification, onDismiss }) => {
               <CheckCircle size={32} className="text-green-600" />
             </div>
           </div>
-          <h2 className="text-xl font-bold text-white">Great News! 🎉</h2>
+          <h2 className="text-xl font-bold text-white">Great News!</h2>
           <p className="text-green-100 text-sm mt-1">Your lift request has been accepted!</p>
         </div>
 

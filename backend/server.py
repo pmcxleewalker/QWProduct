@@ -68,6 +68,7 @@ from middleware.tenant import (
     validate_resource_tenant, TenantQueryBuilder
 )
 from services.audit import AuditService
+from services.booking_edit_validation import validate_booking_edit, BookingEditError
 from services.email_service import send_staff_invitation_email, send_owner_welcome_email
 from services.cache import (
     cache as ttl_cache,
@@ -7878,28 +7879,15 @@ async def update_booking(
     
     update_dict = {k: v for k, v in update_data.model_dump().items() if v is not None}
     
-    # If time or vehicle is being changed, check for conflicts
+    # Validate the resulting booking before writing any changes.
     if update_dict:
-        new_start = update_dict.get('start_time', booking.get('start_time'))
-        new_end = update_dict.get('end_time', booking.get('end_time'))
-        new_car_id = update_dict.get('car_id', booking.get('car_id'))
-        
-        # Check vehicle conflict (exclude current booking)
-        vehicle_conflict_query = {
-            "tenant_id": context.tenant_id,
-            "car_id": new_car_id,
-            "id": {"$ne": booking_id},  # Exclude current booking
-            "start_time": {"$lt": new_end},
-            "end_time": {"$gt": new_start},
-            "status": {"$nin": ["rejected", "cancelled"]}
-        }
-        existing_vehicle_booking = await db.bookings.find_one(vehicle_conflict_query, {"_id": 0})
-        if existing_vehicle_booking:
-            existing_user = existing_vehicle_booking.get('user_name', 'Another user')
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Vehicle is already booked at this time by {existing_user}"
+        try:
+            await validate_booking_edit(
+                db, booking, update_dict, context.tenant_id,
+                context.role in (UserRole.ADMIN, UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN),
             )
+        except BookingEditError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=exc.detail)
         
         await db.bookings.update_one(query, {"$set": update_dict})
     

@@ -15,6 +15,11 @@
 - Wired into `TenantDashboard.js`: auto-launches once per tenant for admins on first login (localStorage `qw_tour_done_<tenantId>`), plus header "Guided Tour" button (data-testid `help-button`) re-opens it. Replaces the old static AdminTraining guide as the primary onboarding path (AdminTraining component left in codebase, no longer triggered).
 - Tested: iteration_44.json — backend 5/5, frontend 100%, 0 console errors.
 
+### P1 — Nexus instructor persona + deep tour + calmer voice (2026-06)
+- Voice: switched to OpenAI `sage` at speed 0.9 (calm, unhurried); narration rewritten with gentler phrasing. `tour_tts_service` now takes `speed`, cache key includes it. Frontend no longer forces a voice; backend `DEFAULT_VOICE=sage`, `DEFAULT_SPEED=0.9`.
+- Persona: "Nexus, Quick Wing Instructor" — friendly static avatar at `/frontend/public/nexus-instructor.jpg` (generated). Shown in card header on every step + larger portrait on welcome/help steps. Nexus introduces itself and signs off.
+- Depth: tour expanded 7 → 16 steps, now navigating INTO each sub-tab (Fleet: live-fleet/vehicles/car-calendars/all-cars; Reports: fleet-reports/incident-reports/documents/daily-timeline) via existing `subtab-<id>` testids, describing what each does. Step counter shown (n/total). Verified sub-tab navigation + spotlight.
+
 ### P1 — Plan-aware Overview + Tour analytics (2026-06)
 - Overview step now names the exact Action-Required alert types (tax/NCT/insurance, overdue inspections, licence renewals, incidents) + "mileage-based service reminders" only when `features.mileage_tracking`.
 - Analytics: `POST /api/tour/event {event: start|finish|skip, step_id, step_index, total_steps}` (any authed user) → `db.tour_events`. `GET /api/platform/tour-analytics` (super admin) → starts/finishes/skips/unique_admins/completion_rate/avg_skip_step.

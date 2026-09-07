@@ -1,7 +1,7 @@
 """Cached OpenAI TTS for the in-app guided tour narration.
 
-Audio is generated once per (text, voice) and persisted in Emergent Object
-Storage so repeat plays never re-hit the LLM key.
+Audio is generated once per (text, voice, speed) and persisted in Emergent
+Object Storage so repeat plays never re-hit the LLM key.
 """
 import os
 import re
@@ -15,7 +15,8 @@ from services.storage_service import put_object, get_object, APP_NAME
 logger = logging.getLogger(__name__)
 
 TTS_MODEL = "tts-1"
-DEFAULT_VOICE = "coral"  # warm, friendly
+DEFAULT_VOICE = "sage"   # calm, measured, reassuring — "Nexus"
+DEFAULT_SPEED = 0.9      # slightly slower so it never feels rushed
 
 
 def _clean(text: str) -> str:
@@ -25,14 +26,14 @@ def _clean(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def cache_key(text: str, voice: str) -> str:
-    return hashlib.sha256(f"{text}|{voice}|{TTS_MODEL}|mp3".encode()).hexdigest()
+def cache_key(text: str, voice: str, speed: float = DEFAULT_SPEED) -> str:
+    return hashlib.sha256(f"{text}|{voice}|{speed}|{TTS_MODEL}|mp3".encode()).hexdigest()
 
 
-async def get_or_create_narration(db, text: str, voice: str = DEFAULT_VOICE) -> str:
+async def get_or_create_narration(db, text: str, voice: str = DEFAULT_VOICE, speed: float = DEFAULT_SPEED) -> str:
     """Return the storage path for the narration mp3, generating if needed."""
     cleaned = _clean(text)
-    key = cache_key(cleaned, voice)
+    key = cache_key(cleaned, voice, speed)
     path = f"{APP_NAME}/tour-tts/{key}.mp3"
 
     existing = await db.tour_tts_cache.find_one({"key": key})
@@ -40,9 +41,9 @@ async def get_or_create_narration(db, text: str, voice: str = DEFAULT_VOICE) -> 
         return path
 
     tts = OpenAITextToSpeech(api_key=os.getenv("EMERGENT_LLM_KEY"))
-    audio_bytes = await tts.generate_speech(text=cleaned, model=TTS_MODEL, voice=voice)
+    audio_bytes = await tts.generate_speech(text=cleaned, model=TTS_MODEL, voice=voice, speed=speed)
     put_object(path, audio_bytes, "audio/mpeg")
-    await db.tour_tts_cache.insert_one({"key": key, "voice": voice, "path": path})
+    await db.tour_tts_cache.insert_one({"key": key, "voice": voice, "speed": speed, "path": path})
     return path
 
 

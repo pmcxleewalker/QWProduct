@@ -1,123 +1,192 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import {
-  X, ChevronRight, ChevronLeft, Volume2, VolumeX, Loader2, Sparkles, CheckCircle
+  X, ChevronRight, ChevronLeft, Volume2, VolumeX, Loader2, CheckCircle
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const NEXUS_AVATAR = '/nexus-instructor.jpg';
 
-// Build the tour steps. Each step targets a real UI element by data-testid,
-// tells the dashboard which tab to open, and carries warm narration text.
-// `opts` tailors the tour to what this tenant's UI actually shows
-// (e.g. GPS / Live Map only appears on plans that have tracking enabled).
+// Build the tour steps. Nexus, Quick Wing's built-in instructor, walks the
+// admin through every tab AND its sub-tabs, tailored to what this tenant's
+// plan actually shows. Narration is calm and unhurried.
 export const buildTourSteps = (franchiseName, planName, opts = {}) => {
   const { gpsEnabled = false, features = {}, maxUsers = null } = opts;
 
-  // Team capacity line reflects the tenant's actual seat limit.
+  const joinList = (arr) => arr.length <= 1 ? (arr[0] || '') :
+    `${arr.slice(0, -1).join(', ')} and ${arr[arr.length - 1]}`;
+
   const seatLine = maxUsers ? ` (up to ${maxUsers} on your plan)` : '';
   const seatSpoken = maxUsers ? `, with room for up to ${maxUsers} people on your plan,` : '';
 
-  // Reports wording adapts to the analytics this plan actually unlocks.
-  const reportExtras = [];
-  if (features.cost_analytics) reportExtras.push('cost analytics using your own cost-per-kilometre rates');
-  if (features.detailed_reports) reportExtras.push('detailed vehicle-level analytics');
-  else if (features.enhanced_reports) reportExtras.push('enhanced utilisation insights');
-  const extrasText = reportExtras.length
-    ? ` Your plan also unlocks ${reportExtras.length === 2 ? `${reportExtras[0]} and ${reportExtras[1]}` : reportExtras[0]}.`
-    : '';
-  const reportsBody = `Dig into fleet reports, incident reports, submitted documents and a daily timeline, and export polished PDFs whenever you need them.${extrasText}`;
-  const reportsNarration = `The Reports tab gives you fleet reports, incident reports, submitted documents and a daily timeline, and you can export polished P D F reports whenever you need them.${extrasText}`;
+  // Manage-vehicles extras depend on the plan's toolset.
+  const vehicleExtras = [];
+  if (features.qr_codes) vehicleExtras.push('print a QR code for each vehicle');
+  if (features.block_vehicles) vehicleExtras.push('block a vehicle when it\'s off the road');
+  const vehicleExtrasText = vehicleExtras.length ? ` You can also ${joinList(vehicleExtras)}.` : '';
 
-  // Fleet wording adapts to the tools this plan includes.
-  const fleetExtras = [];
-  if (features.qr_codes) fleetExtras.push('print QR codes for each vehicle');
-  if (features.block_vehicles) fleetExtras.push('block or unblock a vehicle when it\'s in for service');
-  if (features.live_status_updates) fleetExtras.push('watch live status refresh in real time');
-  const joinList = (arr) => arr.length <= 1 ? (arr[0] || '') :
-    `${arr.slice(0, -1).join(', ')} and ${arr[arr.length - 1]}`;
-  const fleetExtrasText = fleetExtras.length ? ` You can also ${joinList(fleetExtras)}.` : '';
-  const fleetBody = `Add vehicles and track tax, insurance and service dates — compliance alerts appear automatically as renewals fall due.${fleetExtrasText}`;
-  const fleetNarration = `Under the Fleet tab, you can add vehicles and track tax, insurance and service dates. Compliance alerts appear automatically as renewals fall due.${fleetExtrasText}`;
-
-  // Overview "Action Required" alerts — name exactly what this tenant will see.
   const overviewAlerts = ['tax, NCT and insurance expiries', 'overdue vehicle inspections', 'driver\'s licence renewals', 'open incident reports'];
   if (features.mileage_tracking) overviewAlerts.push('mileage-based service reminders');
   const overviewAlertsText = joinList(overviewAlerts);
-  const overviewBody = `This is your home base. The Action Required panel flags ${overviewAlertsText} — everything needing attention, all in one place.`;
-  const overviewNarration = `This is your Overview tab, your home base. The Action Required panel flags ${overviewAlertsText}, so everything needing your attention is in one place.`;
 
-  const steps = [
-  {
+  const steps = [];
+
+  // 1. Welcome — Nexus introduces itself
+  steps.push({
     id: 'welcome',
     target: 'dashboard-title',
-    title: `Welcome to ${franchiseName || 'Quick Wing'}`,
-    body: `You're on the ${planName || 'Standard'} plan. I'll give you a quick guided walk-through of your command centre — it only takes a minute.`,
-    narration: `Welcome to ${franchiseName || 'Quick Wing'}! I'm your guide, and I'll show you around your fleet command centre. It only takes a minute, so let's get started.`,
-  },
-  {
+    showAvatar: true,
+    title: `Hello, I'm Nexus`,
+    body: `I'm Quick Wing's built-in instructor for ${franchiseName || 'your team'}. I'll walk you through your dashboard, one calm step at a time — take as long as you like, and bring me back whenever you need a refresher.`,
+    narration: `Hello, I'm Nexus, Quick Wing's built-in instructor. It's lovely to meet you. I'll walk you through your dashboard, one calm step at a time. There's no rush at all — take as long as you like, and you can bring me back whenever you or your team need a refresher. Let's begin.`,
+  });
+
+  // 2. Overview
+  steps.push({
     id: 'overview',
     target: 'tab-overview',
     tab: 'overview',
-    title: 'Your Overview',
-    body: overviewBody,
-    narration: overviewNarration,
-  },
-  {
+    title: 'Overview — your home base',
+    body: `This is where you start each day. The Action Required panel gently flags ${overviewAlertsText}, so nothing important slips by.`,
+    narration: `This is your Overview, your home base. It's where I'd suggest starting each day. The Action Required panel gently flags ${overviewAlertsText}. So nothing important slips by.`,
+  });
+
+  // 3. Fleet — intro
+  steps.push({
     id: 'fleet',
     target: 'tab-fleet',
     tab: 'fleet',
     subTab: 'live-fleet',
-    title: 'Manage Your Fleet',
-    body: fleetBody,
-    narration: fleetNarration,
-  },
-  ];
+    title: 'Fleet — manage your vehicles',
+    body: 'The Fleet area is home to everything about your vehicles. It has a few sections along the top — let me take you through each one.',
+    narration: 'Now, let\'s look at your Fleet. This is home to everything about your vehicles. It has a few sections along the top, and I\'ll take you through each one gently.',
+  });
 
-  // GPS / Live Map only exists for tenants who have tracking enabled.
+  // Fleet sub-tabs
+  steps.push({
+    id: 'fleet-live',
+    target: 'subtab-live-fleet',
+    tab: 'fleet',
+    subTab: 'live-fleet',
+    title: 'Live Status',
+    body: 'Live Status shows every vehicle\'s current state — free, booked, in use, blocked, or needing attention. It refreshes on its own, so it\'s a lovely first glance each morning.',
+    narration: 'First, Live Status. This shows every vehicle\'s current state — free, booked, in use, blocked, or needing attention. It refreshes on its own, so it makes a lovely first glance each morning.',
+  });
+  steps.push({
+    id: 'fleet-vehicles',
+    target: 'subtab-vehicles',
+    tab: 'fleet',
+    subTab: 'vehicles',
+    title: 'Manage Vehicles',
+    body: `Here you add and edit vehicles, and set their tax, insurance, NCT and service dates so the compliance alerts stay accurate.${vehicleExtrasText}`,
+    narration: `Next is Manage Vehicles. Here you add and edit each vehicle, and set its tax, insurance, N C T and service dates, which keeps your compliance alerts accurate.${vehicleExtrasText}`,
+  });
+  steps.push({
+    id: 'fleet-board',
+    target: 'subtab-car-calendars',
+    tab: 'fleet',
+    subTab: 'car-calendars',
+    title: 'Fleet Board',
+    body: 'The Fleet Board lays every vehicle\'s bookings side by side, like a wall planner, so gaps and clashes are easy to spot.',
+    narration: 'The Fleet Board lays every vehicle\'s bookings side by side, rather like a wall planner. It makes gaps and clashes easy to spot at a glance.',
+  });
+  steps.push({
+    id: 'fleet-allcars',
+    target: 'subtab-all-cars',
+    tab: 'fleet',
+    subTab: 'all-cars',
+    title: 'All Cars Calendar',
+    body: 'The All Cars Calendar brings the whole fleet onto one calendar — perfect for planning a busy week ahead.',
+    narration: 'And the All Cars Calendar brings your whole fleet onto a single calendar. It\'s perfect for planning a busy week ahead.',
+  });
+
+  // GPS / Live Map — only when tracking is enabled
   if (gpsEnabled) {
     steps.push({
       id: 'live-map',
       target: 'live-map-btn',
       title: 'Live GPS Map',
-      body: 'Because your plan includes GPS tracking, this button opens a live map showing exactly where every vehicle is right now.',
-      narration: 'Because your plan includes G P S tracking, this Live Map button opens a live map showing exactly where every vehicle is right now.',
+      body: 'Because your plan includes GPS tracking, this button opens a live map showing where every vehicle is right now.',
+      narration: 'Because your plan includes G P S tracking, this Live Map button opens a live map, showing you where every vehicle is, right now.',
     });
   }
 
-  steps.push(
-  {
+  // Team
+  steps.push({
     id: 'team',
     target: 'tab-team',
     tab: 'team',
-    title: 'Your Team',
-    body: `Invite staff and admins${seatLine}, set their roles, reset passwords, and deactivate anyone who leaves. New members get a branded welcome email automatically.`,
-    narration: `The Team tab is where you invite staff and admins${seatSpoken} set their roles, reset passwords, and manage who has access. New members get a branded welcome email automatically.`,
-  },
-  {
+    title: 'Team',
+    body: `Invite staff and admins${seatLine}, set their roles, reset passwords, and deactivate anyone who leaves. New members receive a branded welcome email automatically.`,
+    narration: `Let\'s move to your Team. Here you invite staff and admins${seatSpoken} set their roles, reset passwords, and manage who has access. New members receive a branded welcome email automatically.`,
+  });
+
+  // Reports — intro
+  steps.push({
     id: 'reports',
     target: 'tab-reports',
     tab: 'reports',
     subTab: 'fleet-reports',
     title: 'Reports & Analytics',
-    body: reportsBody,
-    narration: reportsNarration,
-  },
-  {
+    body: 'Reports has a few sections too. Let me show you what each one gives you.',
+    narration: 'Now for Reports and Analytics. This area also has a few sections, so let me show you what each one gives you.',
+  });
+  steps.push({
+    id: 'reports-fleet',
+    target: 'subtab-fleet-reports',
+    tab: 'reports',
+    subTab: 'fleet-reports',
+    title: 'Fleet Reports',
+    body: 'Fleet Reports show utilisation, idle days and mileage per vehicle, and you can export them as a polished PDF whenever you need to.',
+    narration: 'Fleet Reports show utilisation, idle days and mileage for each vehicle. And you can export them as a polished P D F whenever you need to.',
+  });
+  steps.push({
+    id: 'reports-incidents',
+    target: 'subtab-incident-reports',
+    tab: 'reports',
+    subTab: 'incident-reports',
+    title: 'Incident Reports',
+    body: 'Every damage, accident or near-miss your team logs lands here — each one timestamped and linked to a vehicle and driver.',
+    narration: 'Incident Reports gather every damage, accident or near-miss your team logs. Each one is timestamped, and linked to a vehicle and a driver.',
+  });
+  steps.push({
+    id: 'reports-documents',
+    target: 'subtab-documents',
+    tab: 'reports',
+    subTab: 'documents',
+    title: 'Documents Inbox',
+    body: 'Staff submissions arrive here — inspections and any custom forms you create. You can review them, filter, and open the attached photos.',
+    narration: 'The Documents inbox is where staff submissions arrive — inspections, and any custom forms you create. You can review them, filter them, and open the attached photos.',
+  });
+  steps.push({
+    id: 'reports-timeline',
+    target: 'subtab-daily-timeline',
+    tab: 'reports',
+    subTab: 'daily-timeline',
+    title: 'Daily Timeline',
+    body: 'The Daily Timeline plots your fleet\'s activity hour by hour, so your busy and quiet periods are easy to see.',
+    narration: 'And the Daily Timeline plots your fleet\'s activity, hour by hour. It makes your busy and quiet periods easy to see.',
+  });
+
+  // Announcements
+  steps.push({
     id: 'announcements',
     target: 'tab-announcements',
     tab: 'announcements',
     title: 'Announcements',
-    body: 'Broadcast important messages to your whole team. They\'ll see them the moment they log in, and you can require a read-receipt for critical notices.',
-    narration: 'Use the Announcements tab to broadcast important messages to your whole team. They will see them the moment they log in, and you can require a read receipt for critical notices.',
-  },
-  {
+    body: 'Broadcast important messages to your whole team. They see them the moment they log in, and you can ask for a read-receipt on critical notices.',
+    narration: 'Announcements let you broadcast important messages to your whole team. They see them the moment they log in, and you can ask for a read receipt on the critical ones.',
+  });
+
+  // Help / signoff — Nexus returns
+  steps.push({
     id: 'help',
     target: 'help-button',
-    title: 'Help Is Always Here',
-    body: 'You can replay this guided tour any time from this button. That\'s the whole tour — you\'re ready to run your fleet.',
-    narration: 'And finally, you can replay this guided tour any time from the Help button up here. That is the whole tour. You are all set to run your fleet with confidence!',
-  },
-  );
+    showAvatar: true,
+    title: 'You\'re all set',
+    body: 'That\'s the full walk-through. You can bring me back any time from this button — I\'ll be right here whenever you, or a new team member, need a hand.',
+    narration: 'And that\'s the full walk-through. You did wonderfully. You can bring me back any time from this Help button. I\'ll be right here whenever you, or a new team member, need a hand. Take care, and happy driving.',
+  });
 
   return steps;
 };
@@ -141,7 +210,6 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
     }).catch(() => {});
   }, [steps]);
 
-  // Ensure audio element exists
   useEffect(() => {
     audioRef.current = new Audio();
     audioRef.current.preload = 'auto';
@@ -153,7 +221,6 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
     };
   }, []);
 
-  // Reset to first step whenever the tour opens
   useEffect(() => {
     if (isOpen) {
       setCurrent(0);
@@ -183,7 +250,7 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
       let url = urlCacheRef.current[step.id];
       if (!url) {
         setLoadingAudio(true);
-        const res = await axios.post(`${API}/tour/narration`, { text: step.narration, voice: 'coral' });
+        const res = await axios.post(`${API}/tour/narration`, { text: step.narration });
         url = `${process.env.REACT_APP_BACKEND_URL}${res.data.url}`;
         urlCacheRef.current[step.id] = url;
         setLoadingAudio(false);
@@ -193,12 +260,10 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
       await audio.play();
     } catch (err) {
       setLoadingAudio(false);
-      // Autoplay likely blocked until user interaction
       if (err && err.name === 'NotAllowedError') setNeedsPlayTap(true);
     }
   }, [step, muted]);
 
-  // On step change: navigate the dashboard, then locate target + play voice
   useEffect(() => {
     if (!isOpen || !step) return;
     if (onNavigate) onNavigate(step);
@@ -206,12 +271,11 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
     const t = setTimeout(() => {
       locateTarget();
       playNarration();
-    }, 350);
+    }, 400);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, isOpen]);
 
-  // Reposition on resize/scroll
   useEffect(() => {
     if (!isOpen) return;
     const handler = () => locateTarget();
@@ -231,10 +295,7 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
   const prev = () => { if (current > 0) setCurrent(current - 1); };
   const finish = (completed = false) => {
     if (audioRef.current) audioRef.current.pause();
-    logEvent(completed ? 'finish' : 'skip', {
-      step_id: step ? step.id : null,
-      step_index: current,
-    });
+    logEvent(completed ? 'finish' : 'skip', { step_id: step ? step.id : null, step_index: current });
     onClose && onClose(completed);
   };
   const toggleMute = () => {
@@ -244,26 +305,24 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
     else playNarration();
   };
 
-  // Tooltip position: below the target if room, else above; fallback centered
   const vh = window.innerHeight;
   const vw = window.innerWidth;
-  const cardWidth = 380;
+  const cardWidth = 400;
   let cardStyle = {};
   if (rect) {
     const below = rect.top + rect.height + 16;
-    const placeBelow = below + 240 < vh;
+    const placeBelow = below + 280 < vh;
     let left = rect.left + rect.width / 2 - cardWidth / 2;
     left = Math.max(16, Math.min(left, vw - cardWidth - 16));
     cardStyle = placeBelow
       ? { top: `${below}px`, left: `${left}px` }
-      : { top: `${Math.max(16, rect.top - 236)}px`, left: `${left}px` };
+      : { top: `${Math.max(16, rect.top - 292)}px`, left: `${left}px` };
   } else {
     cardStyle = { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
   }
 
   return (
     <div className="fixed inset-0 z-[9999]" data-testid="guided-tour">
-      {/* Dark overlay with spotlight cut-out */}
       {rect ? (
         <div
           className="absolute rounded-xl pointer-events-none transition-all duration-300"
@@ -281,27 +340,35 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
         <div className="absolute inset-0" style={{ background: 'rgba(10,4,25,0.72)' }} />
       )}
 
-      {/* Tooltip card */}
       <div
-        className="absolute w-[380px] max-w-[calc(100vw-32px)] rounded-2xl overflow-hidden shadow-2xl"
+        className="absolute w-[400px] max-w-[calc(100vw-32px)] rounded-2xl overflow-hidden shadow-2xl"
         style={{ ...cardStyle, background: '#ffffff', border: '1px solid rgba(216,180,254,0.6)' }}
         data-testid="guided-tour-card"
       >
-        {/* Header */}
+        {/* Header — Nexus is always present */}
         <div
-          className="px-5 py-3 flex items-center justify-between"
+          className="px-4 py-3 flex items-center justify-between"
           style={{ background: 'linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%)' }}
         >
-          <div className="flex items-center space-x-2 text-white">
-            <Sparkles size={18} className="text-fuchsia-200" />
-            <span className="text-sm font-semibold tracking-tight">Guided Tour</span>
+          <div className="flex items-center space-x-2.5 text-white min-w-0">
+            <img
+              src={NEXUS_AVATAR}
+              alt="Nexus"
+              className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+              style={{ border: '2px solid rgba(216,180,254,0.8)' }}
+              data-testid="nexus-avatar"
+            />
+            <div className="leading-tight min-w-0">
+              <p className="text-sm font-semibold truncate">Nexus</p>
+              <p className="text-[11px] text-purple-200 truncate">Quick Wing Instructor</p>
+            </div>
           </div>
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1 flex-shrink-0">
             <button
               onClick={toggleMute}
               className="p-1.5 rounded-lg hover:bg-white/15 text-white/90"
               data-testid="tour-mute-toggle"
-              title={muted ? 'Unmute voiceover' : 'Mute voiceover'}
+              title={muted ? 'Unmute Nexus' : 'Mute Nexus'}
             >
               {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </button>
@@ -318,15 +385,23 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
 
         {/* Body */}
         <div className="p-5">
+          {step.showAvatar && (
+            <div className="flex justify-center mb-3">
+              <img
+                src={NEXUS_AVATAR}
+                alt="Nexus, your instructor"
+                className="w-20 h-20 rounded-full object-cover"
+                style={{ border: '3px solid #ede9fe', boxShadow: '0 4px 14px rgba(124,58,237,0.25)' }}
+              />
+            </div>
+          )}
           <div className="flex items-center space-x-2 mb-2">
             <h3 className="text-lg font-bold text-gray-900 tracking-tight" data-testid="tour-step-title">
               {step.title}
             </h3>
-            {(loadingAudio || (!muted && !needsPlayTap)) && (
-              loadingAudio
-                ? <Loader2 size={16} className="text-purple-500 animate-spin" />
-                : <Volume2 size={15} className="text-purple-400" />
-            )}
+            {loadingAudio
+              ? <Loader2 size={16} className="text-purple-500 animate-spin" />
+              : (!muted && !needsPlayTap && <Volume2 size={15} className="text-purple-400" />)}
           </div>
           <p className="text-sm text-gray-600 leading-relaxed" data-testid="tour-step-body">
             {step.body}
@@ -339,24 +414,25 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
               data-testid="tour-play-voice"
             >
               <Volume2 size={14} />
-              <span>Play voiceover</span>
+              <span>Play Nexus's voice</span>
             </button>
           )}
         </div>
 
         {/* Footer */}
         <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
-          <div className="flex items-center space-x-1.5">
+          <div className="flex items-center space-x-1 flex-wrap gap-y-1 max-w-[45%]">
             {steps.map((_, i) => (
               <span
                 key={i}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === current ? 'w-5 bg-purple-600' : i < current ? 'w-1.5 bg-purple-300' : 'w-1.5 bg-gray-200'
+                  i === current ? 'w-4 bg-purple-600' : i < current ? 'w-1.5 bg-purple-300' : 'w-1.5 bg-gray-200'
                 }`}
               />
             ))}
           </div>
           <div className="flex items-center space-x-2">
+            <span className="text-[11px] text-gray-400 mr-1">{current + 1}/{steps.length}</span>
             {current > 0 && (
               <button
                 onClick={prev}

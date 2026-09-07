@@ -9848,7 +9848,7 @@ async def get_content_file(filename: str):
 # ---------------------------------------------------------------------------
 class TourNarrationRequest(BaseModel):
     text: str
-    voice: Optional[str] = "coral"
+    voice: Optional[str] = None
 
 
 @api_router.post("/tour/narration")
@@ -9857,17 +9857,17 @@ async def create_tour_narration(
     context: TenantContext = Depends(get_tenant_context)
 ):
     """Generate (or reuse cached) AI voiceover for a tour step. Returns a URL."""
-    from services.tour_tts_service import get_or_create_narration, cache_key, _clean, DEFAULT_VOICE
+    from services.tour_tts_service import get_or_create_narration, cache_key, _clean, DEFAULT_VOICE, DEFAULT_SPEED
     text = (payload.text or "").strip()
     if not text:
         raise HTTPException(status_code=400, detail="Text is required")
     voice = payload.voice or DEFAULT_VOICE
     try:
-        await get_or_create_narration(db, text, voice)
+        await get_or_create_narration(db, text, voice, DEFAULT_SPEED)
     except Exception as e:
         logger.error(f"Tour narration generation failed: {e}")
         raise HTTPException(status_code=502, detail="Voiceover generation failed")
-    key = cache_key(_clean(text), voice)
+    key = cache_key(_clean(text), voice, DEFAULT_SPEED)
     return {"url": f"/api/tour/tts/{key}.mp3"}
 
 

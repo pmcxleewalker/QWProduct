@@ -4843,7 +4843,7 @@ async def list_tenant_users(
 
 
 @api_router.put("/tenant/users/{user_id}/role")
-async def update_user_role(
+async def update_user_role_v2(
     user_id: str,
     role: UserRole,
     context: TenantContext = Depends(require_admin),
@@ -4959,7 +4959,7 @@ async def update_tenant_user_profile(
 
 
 @api_router.delete("/tenant/users/{user_id}")
-async def remove_user_from_tenant(
+async def remove_user_from_tenant_v2(
     user_id: str,
     context: TenantContext = Depends(require_admin),
     request: Request = None
@@ -5274,7 +5274,7 @@ async def get_vehicle_utilization_report(
                     end_dt = datetime.fromisoformat(end.replace("Z", "+00:00"))
                     hours = (end_dt - start_dt).total_seconds() / 3600
                     total_hours += hours
-                except:
+                except Exception:
                     pass
             
             created_at = booking.get("created_at")
@@ -8307,7 +8307,7 @@ async def export_daily_timeline_csv(
                 
                 if booking_start <= hour_end_aware and booking_end >= hour_start_aware:
                     vehicles_in_use.add(booking["car_id"])
-            except:
+            except Exception:
                 continue
         
         in_use_count = len(vehicles_in_use)
@@ -8663,7 +8663,7 @@ async def get_vehicle_availability(
                         status = "recurring" if is_recurring else "booked"
                         booked_by = booking.get("user_name", "Unknown")
                         break
-                except:
+                except Exception:
                     continue
             
             hours.append({
@@ -10165,6 +10165,7 @@ async def get_instagram_settings(context: TenantContext = Depends(require_super_
             "updated_at": datetime.now(timezone.utc).isoformat()
         }
         await db.instagram_settings.insert_one(settings)
+    settings.pop("_id", None)
     return settings
 
 
@@ -11530,7 +11531,7 @@ def create_branded_preview(image_path: str, blur_zones: list, size: tuple, add_b
         # Add brand text
         try:
             font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 18)
-        except:
+        except Exception:
             font = ImageFont.load_default()
         
         draw.text((20, bar_y + 20), "Quick Wing Fleet Management", fill=(255, 255, 255), font=font)
@@ -12052,7 +12053,6 @@ async def get_draft_with_full_details(
 
 
 # ==================== WINGMAN AI CHATBOT ====================
-import asyncio
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart

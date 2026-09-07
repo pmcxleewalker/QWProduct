@@ -566,7 +566,7 @@ class PDFGenerator:
                     date_obj = datetime.strptime(date_str, '%Y-%m-%d')
                     day_name = date_obj.strftime('%A')
                     formatted_date = date_obj.strftime('%d %b')
-                except:
+                except Exception:
                     day_name = 'N/A'
                     formatted_date = date_str
                 
@@ -649,7 +649,7 @@ class PDFGenerator:
                     try:
                         dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
                         timestamp = dt.strftime('%Y-%m-%d %H:%M')
-                    except:
+                    except Exception:
                         pass
                 
                 actor = event.get('actor_email', 'System')[:25]

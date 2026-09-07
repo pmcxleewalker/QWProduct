@@ -160,7 +160,7 @@ class BackupService:
                 count = await self.db[collection_name].count_documents({})
                 stats["collections"][collection_name] = count
                 total_docs += count
-            except:
+            except Exception:
                 stats["collections"][collection_name] = 0
         
         stats["total_documents"] = total_docs

@@ -15,6 +15,11 @@
 - Wired into `TenantDashboard.js`: auto-launches once per tenant for admins on first login (localStorage `qw_tour_done_<tenantId>`), plus header "Guided Tour" button (data-testid `help-button`) re-opens it. Replaces the old static AdminTraining guide as the primary onboarding path (AdminTraining component left in codebase, no longer triggered).
 - Tested: iteration_44.json — backend 5/5, frontend 100%, 0 console errors.
 
+### P1 — Tour polish: warmer HD voice, lighter overlay, try-it prompts (2026-06)
+- Voice: `tts-1-hd` + `coral` @ 0.95 speed (warm/friendly, removes tts-1 robotic reverb). All narrations rewritten into short spoken sentences; detail stays in on-screen body text.
+- Overlay: replaced the near-black blackout (0.72) with a light dim (~0.34) + bright ring/glow on the target, so the app stays visible while highlighting.
+- Encouragement: steps have an optional `tryPrompt` shown as a lavender callout; on those steps the pause button becomes a solid "Let me try this myself" CTA. Final step encourages repeating the tour to build muscle memory.
+
 ### P1 — Pause & Try (2026-06)
 - Added a "Pause — let me try this myself" button on every tour step. Pausing hides the overlay/card entirely (dashboard becomes fully clickable) and shows a floating "Resume tour" pill with Nexus's avatar + current step (n/total) bottom-right.
 - Resume restores the overlay at the same step, re-navigates to that step's tab/sub-tab, and replays narration. `paused` state resets on tour open. Verified: paused → clicked a live tab → resumed to same step.

@@ -14,9 +14,9 @@ from services.storage_service import put_object, get_object, APP_NAME
 
 logger = logging.getLogger(__name__)
 
-TTS_MODEL = "tts-1"
-DEFAULT_VOICE = "sage"   # calm, measured, reassuring — "Nexus"
-DEFAULT_SPEED = 0.9      # slightly slower so it never feels rushed
+TTS_MODEL = "tts-1-hd"    # HD removes the robotic/reverb artefacts of tts-1
+DEFAULT_VOICE = "coral"   # warm and friendly — "Nexus"
+DEFAULT_SPEED = 0.95      # gentle, natural pacing (short sentences do the rest)
 
 
 def _clean(text: str) -> str:

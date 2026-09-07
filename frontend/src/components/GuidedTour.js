@@ -7,9 +7,9 @@ import {
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const NEXUS_AVATAR = '/nexus-instructor.jpg';
 
-// Build the tour steps. Nexus, Quick Wing's built-in instructor, walks the
-// admin through every tab AND its sub-tabs, tailored to what this tenant's
-// plan actually shows. Narration is calm and unhurried.
+// Nexus, Quick Wing's built-in instructor, walks the admin through every tab
+// AND its sub-tabs, tailored to the plan. Narration is warm and kept to short
+// sentences; bodies carry the fuller detail. Actionable steps invite a try.
 export const buildTourSteps = (franchiseName, planName, opts = {}) => {
   const { gpsEnabled = false, features = {}, maxUsers = null } = opts;
 
@@ -17,13 +17,12 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
     `${arr.slice(0, -1).join(', ')} and ${arr[arr.length - 1]}`;
 
   const seatLine = maxUsers ? ` (up to ${maxUsers} on your plan)` : '';
-  const seatSpoken = maxUsers ? `, with room for up to ${maxUsers} people on your plan,` : '';
 
-  // Manage-vehicles extras depend on the plan's toolset.
   const vehicleExtras = [];
   if (features.qr_codes) vehicleExtras.push('print a QR code for each vehicle');
   if (features.block_vehicles) vehicleExtras.push('block a vehicle when it\'s off the road');
   const vehicleExtrasText = vehicleExtras.length ? ` You can also ${joinList(vehicleExtras)}.` : '';
+  const vehicleExtrasSpoken = features.qr_codes ? ' You can print QR codes too.' : '';
 
   const overviewAlerts = ['tax, NCT and insurance expiries', 'overdue vehicle inspections', 'driver\'s licence renewals', 'open incident reports'];
   if (features.mileage_tracking) overviewAlerts.push('mileage-based service reminders');
@@ -31,38 +30,34 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
 
   const steps = [];
 
-  // 1. Welcome — Nexus introduces itself
   steps.push({
     id: 'welcome',
     target: 'dashboard-title',
     showAvatar: true,
     title: `Hello, I'm Nexus`,
-    body: `I'm Quick Wing's built-in instructor for ${franchiseName || 'your team'}. I'll walk you through your dashboard, one calm step at a time — take as long as you like, and bring me back whenever you need a refresher.`,
-    narration: `Hello, I'm Nexus, Quick Wing's built-in instructor. It's lovely to meet you. I'll walk you through your dashboard, one calm step at a time. There's no rush at all — take as long as you like, and you can bring me back whenever you or your team need a refresher. Let's begin.`,
+    body: `I'm your built-in instructor for ${franchiseName || 'your team'}. I'll show you around your dashboard, one easy step at a time. Take as long as you like — and bring me back whenever you need a hand.`,
+    narration: `Hello! I'm Nexus, your built-in instructor. I'll show you around. We'll go nice and easy. Ready? Let's begin.`,
   });
 
-  // 2. Overview
   steps.push({
     id: 'overview',
     target: 'tab-overview',
     tab: 'overview',
     title: 'Overview — your home base',
-    body: `This is where you start each day. The Action Required panel gently flags ${overviewAlertsText}, so nothing important slips by.`,
-    narration: `This is your Overview, your home base. It's where I'd suggest starting each day. The Action Required panel gently flags ${overviewAlertsText}. So nothing important slips by.`,
+    body: `Start here each day. The Action Required panel gently flags ${overviewAlertsText}, so nothing important slips by.`,
+    narration: `This is your Overview. It's your home base. The Action Required panel flags anything that needs your attention.`,
   });
 
-  // 3. Fleet — intro
   steps.push({
     id: 'fleet',
     target: 'tab-fleet',
     tab: 'fleet',
     subTab: 'live-fleet',
-    title: 'Fleet — manage your vehicles',
-    body: 'The Fleet area is home to everything about your vehicles. It has a few sections along the top — let me take you through each one.',
-    narration: 'Now, let\'s look at your Fleet. This is home to everything about your vehicles. It has a few sections along the top, and I\'ll take you through each one gently.',
+    title: 'Fleet — your vehicles',
+    body: 'The Fleet area holds everything about your vehicles. It has a few sections along the top. Let me walk you through each one.',
+    narration: `Now, your Fleet. This is everything about your vehicles. It has a few sections up top. Let's look at each one.`,
   });
 
-  // Fleet sub-tabs
   steps.push({
     id: 'fleet-live',
     target: 'subtab-live-fleet',
@@ -70,17 +65,21 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
     subTab: 'live-fleet',
     title: 'Live Status',
     body: 'Live Status shows every vehicle\'s current state — free, booked, in use, blocked, or needing attention. It refreshes on its own, so it\'s a lovely first glance each morning.',
-    narration: 'First, Live Status. This shows every vehicle\'s current state — free, booked, in use, blocked, or needing attention. It refreshes on its own, so it makes a lovely first glance each morning.',
+    narration: `First, Live Status. It shows each vehicle's state. It updates on its own. A great first glance each morning.`,
+    tryPrompt: 'Go on — try searching or filtering the list. I\'ll wait right here.',
   });
+
   steps.push({
     id: 'fleet-vehicles',
     target: 'subtab-vehicles',
     tab: 'fleet',
     subTab: 'vehicles',
     title: 'Manage Vehicles',
-    body: `Here you add and edit vehicles, and set their tax, insurance, NCT and service dates so the compliance alerts stay accurate.${vehicleExtrasText}`,
-    narration: `Next is Manage Vehicles. Here you add and edit each vehicle, and set its tax, insurance, N C T and service dates, which keeps your compliance alerts accurate.${vehicleExtrasText}`,
+    body: `Add and edit vehicles here, and set their tax, insurance, NCT and service dates so your compliance alerts stay accurate.${vehicleExtrasText}`,
+    narration: `Next, Manage Vehicles. Add or edit a vehicle here. Set its tax, insurance and service dates.${vehicleExtrasSpoken}`,
+    tryPrompt: 'Try it yourself — open a vehicle and take a look. I\'ll wait.',
   });
+
   steps.push({
     id: 'fleet-board',
     target: 'subtab-car-calendars',
@@ -88,8 +87,9 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
     subTab: 'car-calendars',
     title: 'Fleet Board',
     body: 'The Fleet Board lays every vehicle\'s bookings side by side, like a wall planner, so gaps and clashes are easy to spot.',
-    narration: 'The Fleet Board lays every vehicle\'s bookings side by side, rather like a wall planner. It makes gaps and clashes easy to spot at a glance.',
+    narration: `This is the Fleet Board. It shows every vehicle's bookings side by side. Gaps and clashes are easy to spot.`,
   });
+
   steps.push({
     id: 'fleet-allcars',
     target: 'subtab-all-cars',
@@ -97,31 +97,29 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
     subTab: 'all-cars',
     title: 'All Cars Calendar',
     body: 'The All Cars Calendar brings the whole fleet onto one calendar — perfect for planning a busy week ahead.',
-    narration: 'And the All Cars Calendar brings your whole fleet onto a single calendar. It\'s perfect for planning a busy week ahead.',
+    narration: `And the All Cars Calendar. Your whole fleet, on one calendar. Handy for a busy week.`,
   });
 
-  // GPS / Live Map — only when tracking is enabled
   if (gpsEnabled) {
     steps.push({
       id: 'live-map',
       target: 'live-map-btn',
       title: 'Live GPS Map',
       body: 'Because your plan includes GPS tracking, this button opens a live map showing where every vehicle is right now.',
-      narration: 'Because your plan includes G P S tracking, this Live Map button opens a live map, showing you where every vehicle is, right now.',
+      narration: `Your plan has G P S tracking. This button opens a live map. It shows where each vehicle is, right now.`,
     });
   }
 
-  // Team
   steps.push({
     id: 'team',
     target: 'tab-team',
     tab: 'team',
     title: 'Team',
     body: `Invite staff and admins${seatLine}, set their roles, reset passwords, and deactivate anyone who leaves. New members receive a branded welcome email automatically.`,
-    narration: `Let\'s move to your Team. Here you invite staff and admins${seatSpoken} set their roles, reset passwords, and manage who has access. New members receive a branded welcome email automatically.`,
+    narration: `Here's your Team. Invite staff and admins. Set their roles. Reset passwords when needed.`,
+    tryPrompt: 'Have a go — open the Add Member form. I\'ll be right here.',
   });
 
-  // Reports — intro
   steps.push({
     id: 'reports',
     target: 'tab-reports',
@@ -129,8 +127,9 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
     subTab: 'fleet-reports',
     title: 'Reports & Analytics',
     body: 'Reports has a few sections too. Let me show you what each one gives you.',
-    narration: 'Now for Reports and Analytics. This area also has a few sections, so let me show you what each one gives you.',
+    narration: `Now, Reports. This area has a few sections too. Let's take them one at a time.`,
   });
+
   steps.push({
     id: 'reports-fleet',
     target: 'subtab-fleet-reports',
@@ -138,8 +137,9 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
     subTab: 'fleet-reports',
     title: 'Fleet Reports',
     body: 'Fleet Reports show utilisation, idle days and mileage per vehicle, and you can export them as a polished PDF whenever you need to.',
-    narration: 'Fleet Reports show utilisation, idle days and mileage for each vehicle. And you can export them as a polished P D F whenever you need to.',
+    narration: `Fleet Reports show utilisation and mileage. You can export a clean P D F anytime.`,
   });
+
   steps.push({
     id: 'reports-incidents',
     target: 'subtab-incident-reports',
@@ -147,8 +147,9 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
     subTab: 'incident-reports',
     title: 'Incident Reports',
     body: 'Every damage, accident or near-miss your team logs lands here — each one timestamped and linked to a vehicle and driver.',
-    narration: 'Incident Reports gather every damage, accident or near-miss your team logs. Each one is timestamped, and linked to a vehicle and a driver.',
+    narration: `Incident Reports gather every bump and near-miss. Each one is linked to a vehicle and a driver.`,
   });
+
   steps.push({
     id: 'reports-documents',
     target: 'subtab-documents',
@@ -156,8 +157,10 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
     subTab: 'documents',
     title: 'Documents Inbox',
     body: 'Staff submissions arrive here — inspections and any custom forms you create. You can review them, filter, and open the attached photos.',
-    narration: 'The Documents inbox is where staff submissions arrive — inspections, and any custom forms you create. You can review them, filter them, and open the attached photos.',
+    narration: `The Documents inbox holds staff submissions. Inspections, and your own custom forms. Review them here.`,
+    tryPrompt: 'Try opening a submission to see the detail. I\'ll wait.',
   });
+
   steps.push({
     id: 'reports-timeline',
     target: 'subtab-daily-timeline',
@@ -165,27 +168,25 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
     subTab: 'daily-timeline',
     title: 'Daily Timeline',
     body: 'The Daily Timeline plots your fleet\'s activity hour by hour, so your busy and quiet periods are easy to see.',
-    narration: 'And the Daily Timeline plots your fleet\'s activity, hour by hour. It makes your busy and quiet periods easy to see.',
+    narration: `And the Daily Timeline. It shows activity, hour by hour. Your busy and quiet times, at a glance.`,
   });
 
-  // Announcements
   steps.push({
     id: 'announcements',
     target: 'tab-announcements',
     tab: 'announcements',
     title: 'Announcements',
     body: 'Broadcast important messages to your whole team. They see them the moment they log in, and you can ask for a read-receipt on critical notices.',
-    narration: 'Announcements let you broadcast important messages to your whole team. They see them the moment they log in, and you can ask for a read receipt on the critical ones.',
+    narration: `Announcements let you message your whole team. They see it the moment they log in.`,
   });
 
-  // Help / signoff — Nexus returns
   steps.push({
     id: 'help',
     target: 'help-button',
     showAvatar: true,
     title: 'You\'re all set',
-    body: 'That\'s the full walk-through. You can bring me back any time from this button — I\'ll be right here whenever you, or a new team member, need a hand.',
-    narration: 'And that\'s the full walk-through. You did wonderfully. You can bring me back any time from this Help button. I\'ll be right here whenever you, or a new team member, need a hand. Take care, and happy driving.',
+    body: 'That\'s the full walk-through. Bring me back any time from this button. And don\'t worry — running through it a few times is the best way to make it stick.',
+    narration: `That's the tour! You did great. Bring me back any time from the Help button. Try things a few times. That's how it sticks. Take care!`,
   });
 
   return steps;
@@ -346,18 +347,22 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
     );
   }
 
+  // A light dim keeps the app clearly visible; a bright ring + soft glow draws
+  // the eye to the element Nexus is describing (no heavy blackout).
+  const DIM = 'rgba(17,9,38,0.34)';
+
   const vh = window.innerHeight;
   const vw = window.innerWidth;
   const cardWidth = 400;
   let cardStyle = {};
   if (rect) {
     const below = rect.top + rect.height + 16;
-    const placeBelow = below + 280 < vh;
+    const placeBelow = below + 300 < vh;
     let left = rect.left + rect.width / 2 - cardWidth / 2;
     left = Math.max(16, Math.min(left, vw - cardWidth - 16));
     cardStyle = placeBelow
       ? { top: `${below}px`, left: `${left}px` }
-      : { top: `${Math.max(16, rect.top - 292)}px`, left: `${left}px` };
+      : { top: `${Math.max(16, rect.top - 312)}px`, left: `${left}px` };
   } else {
     cardStyle = { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
   }
@@ -368,17 +373,16 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
         <div
           className="absolute rounded-xl pointer-events-none transition-all duration-300"
           style={{
-            top: rect.top - 8,
-            left: rect.left - 8,
-            width: rect.width + 16,
-            height: rect.height + 16,
-            boxShadow: '0 0 0 9999px rgba(10,4,25,0.72)',
-            border: '2px solid rgba(216,180,254,0.95)',
-            outline: '2px solid rgba(168,85,247,0.5)',
+            top: rect.top - 6,
+            left: rect.left - 6,
+            width: rect.width + 12,
+            height: rect.height + 12,
+            boxShadow: `0 0 0 9999px ${DIM}, 0 0 0 3px rgba(216,180,254,1), 0 0 26px 6px rgba(168,85,247,0.65)`,
+            border: '2px solid rgba(255,255,255,0.9)',
           }}
         />
       ) : (
-        <div className="absolute inset-0" style={{ background: 'rgba(10,4,25,0.72)' }} />
+        <div className="absolute inset-0" style={{ background: DIM }} />
       )}
 
       <div
@@ -448,6 +452,17 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
             {step.body}
           </p>
 
+          {step.tryPrompt && (
+            <div
+              className="mt-3 flex items-start gap-2 rounded-lg px-3 py-2"
+              style={{ background: '#f5f3ff', border: '1px solid #e9d5ff' }}
+              data-testid="tour-try-prompt"
+            >
+              <Hand size={15} className="text-purple-600 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-purple-800 leading-relaxed">{step.tryPrompt}</p>
+            </div>
+          )}
+
           {needsPlayTap && !muted && (
             <button
               onClick={playNarration}
@@ -460,19 +475,22 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
           )}
         </div>
 
-        {/* Pause & explore this screen */}
+        {/* Pause & explore this screen — inviting */}
         <button
           onClick={pauseAndExplore}
-          className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 border-t border-gray-100"
+          className={`w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold border-t border-gray-100 ${
+            step.tryPrompt ? 'text-white' : 'text-purple-700 hover:bg-purple-50'
+          }`}
+          style={step.tryPrompt ? { background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)' } : undefined}
           data-testid="tour-pause-try"
         >
-          <Hand size={14} />
-          <span>Pause — let me try this myself</span>
+          <Hand size={15} />
+          <span>{step.tryPrompt ? 'Let me try this myself' : 'Pause — let me try this myself'}</span>
         </button>
 
         {/* Footer */}
         <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
-          <div className="flex items-center space-x-1 flex-wrap gap-y-1 max-w-[45%]">
+          <div className="flex items-center space-x-1 flex-wrap gap-y-1 max-w-[42%]">
             {steps.map((_, i) => (
               <span
                 key={i}

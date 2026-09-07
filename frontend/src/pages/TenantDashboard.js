@@ -203,6 +203,7 @@ const TenantDashboard = () => {
   const [userForm, setUserForm] = useState({ name: '', email: '', role: 'staff' });
   const [showTraining, setShowTraining] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const [showTourNudge, setShowTourNudge] = useState(false);
   
   // Booking Management Modal States
   const [showManageBooking, setShowManageBooking] = useState(false);
@@ -845,12 +846,43 @@ const TenantDashboard = () => {
     }
   };
 
-  const closeTour = () => {
+  const closeTour = (completed = false) => {
     setShowTour(false);
-    if (activeTenant?.tenant_id) {
-      localStorage.setItem(`qw_tour_done_${activeTenant.tenant_id}`, '1');
+    const tid = activeTenant?.tenant_id;
+    if (!tid) return;
+    localStorage.setItem(`qw_tour_done_${tid}`, '1');
+    if (completed) {
+      // Fully completed — no nudge needed
+      localStorage.removeItem(`qw_tour_skipped_${tid}`);
+      setShowTourNudge(false);
+    } else {
+      // Dismissed early — offer a gentle nudge on Overview later
+      localStorage.setItem(`qw_tour_skipped_${tid}`, '1');
+      if (!localStorage.getItem(`qw_tour_nudge_dismissed_${tid}`)) {
+        setShowTourNudge(true);
+      }
     }
   };
+
+  const dismissTourNudge = () => {
+    const tid = activeTenant?.tenant_id;
+    if (tid) localStorage.setItem(`qw_tour_nudge_dismissed_${tid}`, '1');
+    setShowTourNudge(false);
+  };
+
+  const startTourFromNudge = () => {
+    setShowTourNudge(false);
+    setShowTour(true);
+  };
+
+  // Show the "Take the tour" nudge for admins who dismissed the tour earlier
+  useEffect(() => {
+    if (!isAdmin || isStaffUser || !planData || !activeTenant?.tenant_id) return;
+    const tid = activeTenant.tenant_id;
+    const skipped = localStorage.getItem(`qw_tour_skipped_${tid}`);
+    const nudgeDismissed = localStorage.getItem(`qw_tour_nudge_dismissed_${tid}`);
+    if (skipped && !nudgeDismissed) setShowTourNudge(true);
+  }, [isAdmin, isStaffUser, planData, activeTenant?.tenant_id]);
 
   return (
     <div className="min-h-screen bg-gray-50" data-testid="tenant-dashboard">
@@ -1124,6 +1156,44 @@ const TenantDashboard = () => {
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
+                {/* Gentle nudge for admins who dismissed the guided tour */}
+                {isAdmin && showTourNudge && (
+                  <div
+                    className="relative flex items-center gap-4 rounded-xl px-5 py-4 overflow-hidden"
+                    style={{ background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)', border: '1px solid #ddd6fe' }}
+                    data-testid="tour-nudge-card"
+                  >
+                    <div
+                      className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)' }}
+                    >
+                      <Sparkles size={20} className="text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900">Finish your guided tour</p>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        Take a one-minute walk-through of your dashboard, narrated step by step.
+                      </p>
+                    </div>
+                    <button
+                      onClick={startTourFromNudge}
+                      className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white rounded-lg flex-shrink-0"
+                      style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)' }}
+                      data-testid="tour-nudge-start"
+                    >
+                      <span>Take the tour</span>
+                      <ArrowRight size={15} />
+                    </button>
+                    <button
+                      onClick={dismissTourNudge}
+                      className="p-1.5 rounded-lg hover:bg-white/60 text-slate-400 hover:text-slate-600 flex-shrink-0"
+                      data-testid="tour-nudge-dismiss"
+                      title="Dismiss"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
                 {/* === Action Required section — consolidates anything needing immediate attention === */}
                 {isAdmin && (
                   <div data-testid="action-required-section">

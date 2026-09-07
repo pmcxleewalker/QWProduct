@@ -28,6 +28,17 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
   const reportsBody = `Dig into fleet reports, incident reports, submitted documents and a daily timeline, and export polished PDFs whenever you need them.${extrasText}`;
   const reportsNarration = `The Reports tab gives you fleet reports, incident reports, submitted documents and a daily timeline, and you can export polished P D F reports whenever you need them.${extrasText}`;
 
+  // Fleet wording adapts to the tools this plan includes.
+  const fleetExtras = [];
+  if (features.qr_codes) fleetExtras.push('print QR codes for each vehicle');
+  if (features.block_vehicles) fleetExtras.push('block or unblock a vehicle when it\'s in for service');
+  if (features.live_status_updates) fleetExtras.push('watch live status refresh in real time');
+  const joinList = (arr) => arr.length <= 1 ? (arr[0] || '') :
+    `${arr.slice(0, -1).join(', ')} and ${arr[arr.length - 1]}`;
+  const fleetExtrasText = fleetExtras.length ? ` You can also ${joinList(fleetExtras)}.` : '';
+  const fleetBody = `Add vehicles and track tax, insurance and service dates — compliance alerts appear automatically as renewals fall due.${fleetExtrasText}`;
+  const fleetNarration = `Under the Fleet tab, you can add vehicles and track tax, insurance and service dates. Compliance alerts appear automatically as renewals fall due.${fleetExtrasText}`;
+
   const steps = [
   {
     id: 'welcome',
@@ -50,8 +61,8 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
     tab: 'fleet',
     subTab: 'live-fleet',
     title: 'Manage Your Fleet',
-    body: 'Add vehicles, track tax, insurance and service dates, print QR codes, and see each vehicle\'s current status at a glance. Compliance alerts appear automatically as renewals fall due.',
-    narration: 'Under the Fleet tab, you can add vehicles, track tax, insurance and service dates, print Q R codes, and see each vehicle\'s current status. Compliance alerts appear automatically as renewals fall due.',
+    body: fleetBody,
+    narration: fleetNarration,
   },
   ];
 
@@ -197,11 +208,11 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
 
   const isLast = current === steps.length - 1;
 
-  const next = () => { if (!isLast) setCurrent(current + 1); else finish(); };
+  const next = () => { if (!isLast) setCurrent(current + 1); else finish(true); };
   const prev = () => { if (current > 0) setCurrent(current - 1); };
-  const finish = () => {
+  const finish = (completed = false) => {
     if (audioRef.current) audioRef.current.pause();
-    onClose && onClose();
+    onClose && onClose(completed);
   };
   const toggleMute = () => {
     const nextMuted = !muted;
@@ -272,7 +283,7 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
               {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </button>
             <button
-              onClick={finish}
+              onClick={() => finish(false)}
               className="p-1.5 rounded-lg hover:bg-white/15 text-white/90"
               data-testid="tour-close"
               title="End tour"

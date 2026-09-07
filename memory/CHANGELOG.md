@@ -15,6 +15,11 @@
 - Wired into `TenantDashboard.js`: auto-launches once per tenant for admins on first login (localStorage `qw_tour_done_<tenantId>`), plus header "Guided Tour" button (data-testid `help-button`) re-opens it. Replaces the old static AdminTraining guide as the primary onboarding path (AdminTraining component left in codebase, no longer triggered).
 - Tested: iteration_44.json — backend 5/5, frontend 100%, 0 console errors.
 
+### P1 — Tour: Skipped nudge + plan-aware Fleet step (2026-06)
+- `GuidedTour` now reports completion: `onClose(completed)` — Finish/last-step = completed, X = dismissed early.
+- TenantDashboard: dismissing the tour early sets `qw_tour_skipped_<tid>` and shows a dismissible "Take the tour" nudge card on the Overview tab (`tour-nudge-card`, `tour-nudge-start`, `tour-nudge-dismiss`). Dismissing persists `qw_tour_nudge_dismissed_<tid>`; completing the tour clears the skipped flag so no nudge shows.
+- Fleet step wording now plan-aware via `features`: appends `qr_codes` → "print QR codes", `block_vehicles` → "block or unblock a vehicle", `live_status_updates` → "watch live status refresh in real time". Standard plans get the base compliance sentence only.
+
 ### P1 — Tour personalization by plan/UI (2026-06)
 - `buildTourSteps(franchiseName, planName, {gpsEnabled, features, maxUsers})` builds the step list dynamically.
 - "Live GPS Map" step (targets `live-map-btn`) only included when `gpsSettings.available && gpsSettings.enabled` — tenants without tracking never see GPS/Live Map narration.

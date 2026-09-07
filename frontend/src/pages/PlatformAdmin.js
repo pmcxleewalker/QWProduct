@@ -78,6 +78,7 @@ const PlatformAdmin = () => {
   const [auditLogTab, setAuditLogTab] = useState('all'); // 'all', 'command-centre', or tenant_id
   const [tenants, setTenants] = useState([]);
   const [stats, setStats] = useState(null);
+  const [tourAnalytics, setTourAnalytics] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -225,6 +226,11 @@ const PlatformAdmin = () => {
           u.memberships?.some(m => m.role === 'master_admin')
         );
         setMasterAdmins(admins);
+
+        try {
+          const taRes = await axios.get(`${API}/platform/tour-analytics`);
+          setTourAnalytics(taRes.data);
+        } catch (e) { /* non-blocking */ }
       }
     } catch (err) {
       setError('Failed to load platform data');
@@ -953,6 +959,48 @@ const PlatformAdmin = () => {
                 </div>
               </div>
             </div>
+
+            {/* Onboarding Tour analytics */}
+            {tourAnalytics && (
+              <div className="bg-white rounded-2xl border border-slate-200 p-6" data-testid="tour-analytics-card">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)' }}>
+                    <TrendingUp size={17} className="text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold text-slate-900">Onboarding Tour</h2>
+                    <p className="text-xs text-slate-500">How admins are engaging with the guided tour</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  <div data-testid="tour-metric-starts">
+                    <p className="text-2xl font-bold text-slate-900">{tourAnalytics.starts}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Tours started</p>
+                  </div>
+                  <div data-testid="tour-metric-finishes">
+                    <p className="text-2xl font-bold text-emerald-600">{tourAnalytics.finishes}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Completed</p>
+                  </div>
+                  <div data-testid="tour-metric-skips">
+                    <p className="text-2xl font-bold text-amber-600">{tourAnalytics.skips}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Skipped early</p>
+                  </div>
+                  <div data-testid="tour-metric-completion">
+                    <p className="text-2xl font-bold text-slate-900">{tourAnalytics.completion_rate}%</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Completion rate</p>
+                  </div>
+                  <div data-testid="tour-metric-admins">
+                    <p className="text-2xl font-bold text-slate-900">{tourAnalytics.unique_admins}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Unique admins</p>
+                  </div>
+                </div>
+                {tourAnalytics.skips > 0 && (
+                  <p className="text-xs text-slate-400 mt-4">
+                    Admins who skip typically leave around step {tourAnalytics.avg_skip_step} of the tour.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Tenant cards grid */}
             {tenants.length === 0 ? (

@@ -15,6 +15,12 @@
 - Wired into `TenantDashboard.js`: auto-launches once per tenant for admins on first login (localStorage `qw_tour_done_<tenantId>`), plus header "Guided Tour" button (data-testid `help-button`) re-opens it. Replaces the old static AdminTraining guide as the primary onboarding path (AdminTraining component left in codebase, no longer triggered).
 - Tested: iteration_44.json — backend 5/5, frontend 100%, 0 console errors.
 
+### P1 — Plan-aware Overview + Tour analytics (2026-06)
+- Overview step now names the exact Action-Required alert types (tax/NCT/insurance, overdue inspections, licence renewals, incidents) + "mileage-based service reminders" only when `features.mileage_tracking`.
+- Analytics: `POST /api/tour/event {event: start|finish|skip, step_id, step_index, total_steps}` (any authed user) → `db.tour_events`. `GET /api/platform/tour-analytics` (super admin) → starts/finishes/skips/unique_admins/completion_rate/avg_skip_step.
+- `GuidedTour` fires `start` on open, `finish` on completion, `skip` on early close.
+- PlatformAdmin Dashboard tab shows an "Onboarding Tour" card (`tour-analytics-card`) with the metrics. Verified via curl + screenshots.
+
 ### P1 — Tour: Skipped nudge + plan-aware Fleet step (2026-06)
 - `GuidedTour` now reports completion: `onClose(completed)` — Finish/last-step = completed, X = dismissed early.
 - TenantDashboard: dismissing the tour early sets `qw_tour_skipped_<tid>` and shows a dismissible "Take the tour" nudge card on the Overview tab (`tour-nudge-card`, `tour-nudge-start`, `tour-nudge-dismiss`). Dismissing persists `qw_tour_nudge_dismissed_<tid>`; completing the tour clears the skipped flag so no nudge shows.

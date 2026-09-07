@@ -9886,6 +9886,60 @@ async def get_tour_narration(key: str):
     )
 
 
+class TourEventRequest(BaseModel):
+    event: str  # "start" | "finish" | "skip"
+    step_id: Optional[str] = None
+    step_index: Optional[int] = None
+    total_steps: Optional[int] = None
+
+
+@api_router.post("/tour/event")
+async def record_tour_event(
+    payload: TourEventRequest,
+    context: TenantContext = Depends(get_tenant_context)
+):
+    """Record a guided-tour onboarding event (start/finish/skip) for analytics."""
+    if payload.event not in ("start", "finish", "skip"):
+        raise HTTPException(status_code=400, detail="Invalid event type")
+    await db.tour_events.insert_one({
+        "id": str(uuid.uuid4()),
+        "tenant_id": context.tenant_id,
+        "user_id": context.user_id,
+        "user_email": context.user_email,
+        "event": payload.event,
+        "step_id": payload.step_id,
+        "step_index": payload.step_index,
+        "total_steps": payload.total_steps,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"ok": True}
+
+
+@api_router.get("/platform/tour-analytics")
+async def get_tour_analytics(context: TenantContext = Depends(require_super_admin)):
+    """Aggregate guided-tour onboarding metrics across all tenants."""
+    starts = await db.tour_events.count_documents({"event": "start"})
+    finishes = await db.tour_events.count_documents({"event": "finish"})
+    skips = await db.tour_events.count_documents({"event": "skip"})
+    unique_admins = len(await db.tour_events.distinct("user_id", {"event": "start"}))
+    completion_rate = round((finishes / starts) * 100) if starts else 0
+
+    # Average step reached before skipping (how far skippers got)
+    skip_docs = await db.tour_events.find(
+        {"event": "skip", "step_index": {"$ne": None}}, {"_id": 0, "step_index": 1}
+    ).to_list(1000)
+    avg_skip_step = round(sum(d["step_index"] for d in skip_docs) / len(skip_docs), 1) if skip_docs else 0
+
+    return {
+        "starts": starts,
+        "finishes": finishes,
+        "skips": skips,
+        "unique_admins": unique_admins,
+        "completion_rate": completion_rate,
+        "avg_skip_step": avg_skip_step,
+    }
+
+
 @api_router.delete("/content-worker/assets/{asset_id}")
 async def delete_content_asset(asset_id: str, context: TenantContext = Depends(require_super_admin)):
     """Delete a content asset"""

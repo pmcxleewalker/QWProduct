@@ -39,6 +39,13 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
   const fleetBody = `Add vehicles and track tax, insurance and service dates — compliance alerts appear automatically as renewals fall due.${fleetExtrasText}`;
   const fleetNarration = `Under the Fleet tab, you can add vehicles and track tax, insurance and service dates. Compliance alerts appear automatically as renewals fall due.${fleetExtrasText}`;
 
+  // Overview "Action Required" alerts — name exactly what this tenant will see.
+  const overviewAlerts = ['tax, NCT and insurance expiries', 'overdue vehicle inspections', 'driver\'s licence renewals', 'open incident reports'];
+  if (features.mileage_tracking) overviewAlerts.push('mileage-based service reminders');
+  const overviewAlertsText = joinList(overviewAlerts);
+  const overviewBody = `This is your home base. The Action Required panel flags ${overviewAlertsText} — everything needing attention, all in one place.`;
+  const overviewNarration = `This is your Overview tab, your home base. The Action Required panel flags ${overviewAlertsText}, so everything needing your attention is in one place.`;
+
   const steps = [
   {
     id: 'welcome',
@@ -52,8 +59,8 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
     target: 'tab-overview',
     tab: 'overview',
     title: 'Your Overview',
-    body: 'This is your home base. At a glance you\'ll see fleet status, action items like compliance alerts, and anything that needs your attention today.',
-    narration: 'This is your Overview tab, your home base. At a glance, you will see your fleet status, compliance alerts, and anything that needs your attention today.',
+    body: overviewBody,
+    narration: overviewNarration,
   },
   {
     id: 'fleet',
@@ -126,6 +133,14 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
 
   const step = steps && steps[current];
 
+  const logEvent = useCallback((event, extra = {}) => {
+    axios.post(`${API}/tour/event`, {
+      event,
+      total_steps: steps ? steps.length : null,
+      ...extra,
+    }).catch(() => {});
+  }, [steps]);
+
   // Ensure audio element exists
   useEffect(() => {
     audioRef.current = new Audio();
@@ -140,7 +155,11 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
 
   // Reset to first step whenever the tour opens
   useEffect(() => {
-    if (isOpen) setCurrent(0);
+    if (isOpen) {
+      setCurrent(0);
+      logEvent('start');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const locateTarget = useCallback(() => {
@@ -212,6 +231,10 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
   const prev = () => { if (current > 0) setCurrent(current - 1); };
   const finish = (completed = false) => {
     if (audioRef.current) audioRef.current.pause();
+    logEvent(completed ? 'finish' : 'skip', {
+      step_id: step ? step.id : null,
+      step_index: current,
+    });
     onClose && onClose(completed);
   };
   const toggleMute = () => {

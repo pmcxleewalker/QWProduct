@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import {
-  X, ChevronRight, ChevronLeft, Volume2, VolumeX, Loader2, CheckCircle
+  X, ChevronRight, ChevronLeft, Volume2, VolumeX, Loader2, CheckCircle, Hand, Play
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -197,6 +197,7 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
   const [muted, setMuted] = useState(!!mutedProp);
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [needsPlayTap, setNeedsPlayTap] = useState(false);
+  const [paused, setPaused] = useState(false);
   const audioRef = useRef(null);
   const urlCacheRef = useRef({});
 
@@ -224,6 +225,7 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
   useEffect(() => {
     if (isOpen) {
       setCurrent(0);
+      setPaused(false);
       logEvent('start');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -304,6 +306,45 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
     if (nextMuted && audioRef.current) audioRef.current.pause();
     else playNarration();
   };
+
+  const pauseAndExplore = () => {
+    if (audioRef.current) audioRef.current.pause();
+    setPaused(true);
+  };
+
+  const resumeTour = () => {
+    setPaused(false);
+    if (onNavigate) onNavigate(step);
+    setTimeout(() => { locateTarget(); playNarration(); }, 400);
+  };
+
+  // Paused: hide the overlay so the admin can freely click the screen,
+  // leaving only a floating "Resume" pill from Nexus.
+  if (paused) {
+    return (
+      <div className="fixed bottom-6 right-6 z-[9999]" data-testid="tour-paused">
+        <button
+          onClick={resumeTour}
+          className="flex items-center gap-3 pl-2 pr-4 py-2 rounded-full shadow-2xl text-white"
+          style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%)', border: '1px solid rgba(216,180,254,0.6)' }}
+          data-testid="tour-resume"
+          title="Resume the tour with Nexus"
+        >
+          <img
+            src={NEXUS_AVATAR}
+            alt="Nexus"
+            className="w-9 h-9 rounded-full object-cover"
+            style={{ border: '2px solid rgba(216,180,254,0.8)' }}
+          />
+          <div className="text-left leading-tight">
+            <span className="block text-sm font-semibold">Resume tour</span>
+            <span className="block text-[11px] text-purple-200">Nexus is waiting · {current + 1}/{steps.length}</span>
+          </div>
+          <Play size={16} className="ml-1" />
+        </button>
+      </div>
+    );
+  }
 
   const vh = window.innerHeight;
   const vw = window.innerWidth;
@@ -418,6 +459,16 @@ const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) =>
             </button>
           )}
         </div>
+
+        {/* Pause & explore this screen */}
+        <button
+          onClick={pauseAndExplore}
+          className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 border-t border-gray-100"
+          data-testid="tour-pause-try"
+        >
+          <Hand size={14} />
+          <span>Pause — let me try this myself</span>
+        </button>
 
         {/* Footer */}
         <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">

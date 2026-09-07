@@ -15,6 +15,10 @@
 - Wired into `TenantDashboard.js`: auto-launches once per tenant for admins on first login (localStorage `qw_tour_done_<tenantId>`), plus header "Guided Tour" button (data-testid `help-button`) re-opens it. Replaces the old static AdminTraining guide as the primary onboarding path (AdminTraining component left in codebase, no longer triggered).
 - Tested: iteration_44.json — backend 5/5, frontend 100%, 0 console errors.
 
+### P1 — Pause & Try (2026-06)
+- Added a "Pause — let me try this myself" button on every tour step. Pausing hides the overlay/card entirely (dashboard becomes fully clickable) and shows a floating "Resume tour" pill with Nexus's avatar + current step (n/total) bottom-right.
+- Resume restores the overlay at the same step, re-navigates to that step's tab/sub-tab, and replays narration. `paused` state resets on tour open. Verified: paused → clicked a live tab → resumed to same step.
+
 ### P1 — Nexus instructor persona + deep tour + calmer voice (2026-06)
 - Voice: switched to OpenAI `sage` at speed 0.9 (calm, unhurried); narration rewritten with gentler phrasing. `tour_tts_service` now takes `speed`, cache key includes it. Frontend no longer forces a voice; backend `DEFAULT_VOICE=sage`, `DEFAULT_SPEED=0.9`.
 - Persona: "Nexus, Quick Wing Instructor" — friendly static avatar at `/frontend/public/nexus-instructor.jpg` (generated). Shown in card header on every step + larger portrait on welcome/help steps. Nexus introduces itself and signs off.

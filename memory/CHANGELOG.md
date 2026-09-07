@@ -15,6 +15,10 @@
 - Wired into `TenantDashboard.js`: auto-launches once per tenant for admins on first login (localStorage `qw_tour_done_<tenantId>`), plus header "Guided Tour" button (data-testid `help-button`) re-opens it. Replaces the old static AdminTraining guide as the primary onboarding path (AdminTraining component left in codebase, no longer triggered).
 - Tested: iteration_44.json — backend 5/5, frontend 100%, 0 console errors.
 
-### Notes for next agent
-- Handoff creds for Karen were stale. Tenant admin for testing: `victim.admin@example.com` / `Admin123` at `/test-fleet/login` (see test_credentials.md).
+### P1 — Tour personalization by plan/UI (2026-06)
+- `buildTourSteps(franchiseName, planName, {gpsEnabled})` now builds the step list dynamically. The "Live GPS Map" step (targets `live-map-btn`) is only included when `gpsSettings.available && gpsSettings.enabled` — tenants without tracking never see GPS/Live Map narration.
+- Fleet step reworded to "see each vehicle's current status" (no GPS implication). Reports step reworded to match the dashboard's actual sub-tabs (fleet/incident/documents/daily-timeline) — dropped the off-page Auditor Pack reference.
+- Verified via screenshot on GPS-enabled test-fleet (Live Map step present, 8 steps). GPS-off tenants get 7 steps, no tracking mention.
+
+### Notes for next agent- Handoff creds for Karen were stale. Tenant admin for testing: `victim.admin@example.com` / `Admin123` at `/test-fleet/login` (see test_credentials.md).
 - Still open (from backlog): server.py monolith breakdown (P1), security hardening — slowapi rate limit, CORS lock, JWT 24h (P2), SinoTrack Phase 7 (trip sharing links + retention cron).

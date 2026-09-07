@@ -3097,7 +3097,9 @@ const TenantDashboard = () => {
           isOpen={showTour}
           onClose={closeTour}
           onNavigate={handleTourNavigate}
-          steps={buildTourSteps(activeTenant?.tenant_name, planData?.plan?.name)}
+          steps={buildTourSteps(activeTenant?.tenant_name, planData?.plan?.name, {
+            gpsEnabled: !!(gpsSettings?.available && gpsSettings?.enabled),
+          })}
         />
       )}
 

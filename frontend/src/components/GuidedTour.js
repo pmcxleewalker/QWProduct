@@ -8,7 +8,11 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 // Build the tour steps. Each step targets a real UI element by data-testid,
 // tells the dashboard which tab to open, and carries warm narration text.
-export const buildTourSteps = (franchiseName, planName) => ([
+// `opts` tailors the tour to what this tenant's UI actually shows
+// (e.g. GPS / Live Map only appears on plans that have tracking enabled).
+export const buildTourSteps = (franchiseName, planName, opts = {}) => {
+  const { gpsEnabled = false } = opts;
+  const steps = [
   {
     id: 'welcome',
     target: 'dashboard-title',
@@ -30,9 +34,23 @@ export const buildTourSteps = (franchiseName, planName) => ([
     tab: 'fleet',
     subTab: 'live-fleet',
     title: 'Manage Your Fleet',
-    body: 'Add vehicles, track tax, insurance and service dates, print QR codes, and watch live status. Compliance alerts appear automatically as renewals fall due.',
-    narration: 'Under the Fleet tab, you can add vehicles, track tax, insurance and service dates, print Q R codes, and watch live status. Compliance alerts appear automatically as renewals fall due.',
+    body: 'Add vehicles, track tax, insurance and service dates, print QR codes, and see each vehicle\'s current status at a glance. Compliance alerts appear automatically as renewals fall due.',
+    narration: 'Under the Fleet tab, you can add vehicles, track tax, insurance and service dates, print Q R codes, and see each vehicle\'s current status. Compliance alerts appear automatically as renewals fall due.',
   },
+  ];
+
+  // GPS / Live Map only exists for tenants who have tracking enabled.
+  if (gpsEnabled) {
+    steps.push({
+      id: 'live-map',
+      target: 'live-map-btn',
+      title: 'Live GPS Map',
+      body: 'Because your plan includes GPS tracking, this button opens a live map showing exactly where every vehicle is right now.',
+      narration: 'Because your plan includes G P S tracking, this Live Map button opens a live map showing exactly where every vehicle is right now.',
+    });
+  }
+
+  steps.push(
   {
     id: 'team',
     target: 'tab-team',
@@ -47,8 +65,8 @@ export const buildTourSteps = (franchiseName, planName) => ([
     tab: 'reports',
     subTab: 'fleet-reports',
     title: 'Reports & Analytics',
-    body: 'Track utilisation, costs, incidents and compliance. Export polished PDFs, and generate a one-click Auditor Pack when inspectors come calling.',
-    narration: 'The Reports tab gives you utilisation, costs, incidents and compliance analytics. You can export polished P D F reports, and generate a one-click Auditor Pack when inspectors come calling.',
+    body: 'Dig into fleet reports, incident reports, submitted documents and a daily timeline. Track utilisation and compliance, and export polished PDFs whenever you need them.',
+    narration: 'The Reports tab gives you fleet reports, incident reports, submitted documents and a daily timeline. Track utilisation and compliance, and export polished P D F reports whenever you need them.',
   },
   {
     id: 'announcements',
@@ -65,7 +83,10 @@ export const buildTourSteps = (franchiseName, planName) => ([
     body: 'You can replay this guided tour any time from this button. That\'s the whole tour — you\'re ready to run your fleet.',
     narration: 'And finally, you can replay this guided tour any time from the Help button up here. That is the whole tour. You are all set to run your fleet with confidence!',
   },
-]);
+  );
+
+  return steps;
+};
 
 const GuidedTour = ({ isOpen, onClose, steps, onNavigate, muted: mutedProp }) => {
   const [current, setCurrent] = useState(0);

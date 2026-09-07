@@ -14,6 +14,7 @@ import {
   Save, X, Sparkles, Search, Satellite, Radio, MapPin
 } from 'lucide-react';
 import AdminTraining from '../components/AdminTraining';
+import GuidedTour, { buildTourSteps } from '../components/GuidedTour';
 import CarBookingCalendar from '../components/CarBookingCalendar';
 import AllCarsCalendar from '../components/AllCarsCalendar';
 import FleetBoard from '../components/FleetBoard';
@@ -201,6 +202,7 @@ const TenantDashboard = () => {
   const [vehicleForm, setVehicleForm] = useState({ name: '', registration: '' });
   const [userForm, setUserForm] = useState({ name: '', email: '', role: 'staff' });
   const [showTraining, setShowTraining] = useState(false);
+  const [showTour, setShowTour] = useState(false);
   
   // Booking Management Modal States
   const [showManageBooking, setShowManageBooking] = useState(false);
@@ -825,6 +827,31 @@ const TenantDashboard = () => {
     }
   }, [isStaffUser, activeTab, activeSubTab]);
 
+  // Auto-launch the guided tour once for brand-new admins
+  useEffect(() => {
+    if (!isAdmin || isStaffUser || !planData || !activeTenant?.tenant_id) return;
+    const flag = `qw_tour_done_${activeTenant.tenant_id}`;
+    if (!localStorage.getItem(flag)) {
+      const t = setTimeout(() => setShowTour(true), 900);
+      return () => clearTimeout(t);
+    }
+  }, [isAdmin, isStaffUser, planData, activeTenant?.tenant_id]);
+
+  // Guided tour navigates the dashboard as it advances
+  const handleTourNavigate = (step) => {
+    if (step?.tab) {
+      setActiveTab(step.tab);
+      setActiveSubTab(step.subTab || null);
+    }
+  };
+
+  const closeTour = () => {
+    setShowTour(false);
+    if (activeTenant?.tenant_id) {
+      localStorage.setItem(`qw_tour_done_${activeTenant.tenant_id}`, '1');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50" data-testid="tenant-dashboard">
       {/* Futuristic AI-themed header — locked purple gradient regardless of tier.
@@ -944,12 +971,12 @@ const TenantDashboard = () => {
               </button>
               {isAdmin && (
                 <button
-                  onClick={() => setShowTraining(true)}
+                  onClick={() => setShowTour(true)}
                   className="flex items-center space-x-2 px-4 py-2 bg-white text-gray-800 rounded-lg hover:bg-gray-100 font-medium"
                   data-testid="help-button"
                 >
                   <HelpCircle size={18} />
-                  <span>Help</span>
+                  <span>Guided Tour</span>
                 </button>
               )}
             </div>
@@ -3061,6 +3088,16 @@ const TenantDashboard = () => {
           onClose={() => setShowTraining(false)}
           franchiseName={activeTenant?.tenant_name}
           planData={planData}
+        />
+      )}
+
+      {/* Interactive Guided Tour with AI voiceover */}
+      {isAdmin && !isStaffUser && showTour && (
+        <GuidedTour
+          isOpen={showTour}
+          onClose={closeTour}
+          onNavigate={handleTourNavigate}
+          steps={buildTourSteps(activeTenant?.tenant_name, planData?.plan?.name)}
         />
       )}
 

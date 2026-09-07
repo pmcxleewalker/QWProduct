@@ -2536,17 +2536,14 @@ async def upload_tenant_logo(
     # Generate unique filename
     ext = file.filename.split('.')[-1] if '.' in file.filename else 'png'
     filename = f"{context.tenant_id}_{uuid.uuid4().hex[:8]}.{ext}"
-    filepath = UPLOADS_DIR / filename
-    
-    # Save file
-    with open(filepath, "wb") as f:
-        f.write(contents)
-    
+
+    # Upload to Emergent Object Storage (deploy-safe; pod-local disk is not persisted)
+    from services.storage_service import put_object, APP_NAME
+    storage_path = f"{APP_NAME}/logos/{filename}"
+    put_object(storage_path, contents, file.content_type or "image/png")
+
     # Store a *relative* URL — the frontend prefixes it with REACT_APP_BACKEND_URL
-    # so the same DB record works in preview, production, or any other host. The
-    # earlier implementation baked in os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
-    # at upload time, which broke as soon as the request came from a different host
-    # (e.g. a preview URL or the production domain).
+    # so the same DB record works in preview, production, or any other host.
     logo_url = f"/api/uploads/logos/{filename}"
     
     # Update tenant settings
@@ -2568,12 +2565,13 @@ async def upload_tenant_logo(
 
 @api_router.get("/uploads/logos/{filename}")
 async def get_logo(filename: str):
-    """Serve uploaded logo files"""
-    filepath = UPLOADS_DIR / filename
-    if not filepath.exists():
+    """Serve uploaded logo files from Emergent Object Storage"""
+    from services.storage_service import get_object, APP_NAME
+    try:
+        data, content_type = get_object(f"{APP_NAME}/logos/{filename}")
+    except Exception:
         raise HTTPException(status_code=404, detail="Logo not found")
-    
-    return FileResponse(filepath)
+    return Response(content=data, media_type=content_type)
 
 
 @api_router.post("/platform/tenants/{tenant_id}/suspend")
@@ -9046,6 +9044,14 @@ async def initialize_super_admin():
 async def startup():
     logger.info("Quick Wing Multi-Tenant SaaS starting up...")
     
+    # Initialize Emergent Object Storage (deploy-safe file uploads)
+    try:
+        from services.storage_service import init_storage
+        init_storage()
+        logger.info("Object storage initialized")
+    except Exception as e:
+        logger.error(f"Object storage init failed: {e}")
+
     # Seed database with super admin
     await seed_super_admin()
 
@@ -9790,10 +9796,6 @@ async def upload_content_asset(
     context: TenantContext = Depends(require_super_admin)
 ):
     """Upload a content asset file"""
-    # Create content uploads directory
-    content_uploads = ROOT_DIR / "uploads" / "content"
-    content_uploads.mkdir(parents=True, exist_ok=True)
-    
     # Validate file type
     allowed_types = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif", "video/mp4", "video/quicktime", "video/webm"]
     if file.content_type not in allowed_types:
@@ -9806,13 +9808,12 @@ async def upload_content_asset(
     
     ext = file.filename.split('.')[-1] if '.' in file.filename else 'png'
     filename = f"content_{uuid.uuid4().hex[:8]}.{ext}"
-    filepath = content_uploads / filename
-    
-    with open(filepath, "wb") as f:
-        f.write(contents)
-    
-    base_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
-    file_url = f"{base_url}/api/content-worker/files/{filename}"
+
+    # Upload to Emergent Object Storage (deploy-safe)
+    from services.storage_service import put_object, APP_NAME
+    put_object(f"{APP_NAME}/content/{filename}", contents, file.content_type or "application/octet-stream")
+
+    file_url = f"/api/content-worker/files/{filename}"
     
     file_type = "video" if file.content_type.startswith("video") else "image"
     
@@ -9833,11 +9834,56 @@ async def upload_content_asset(
 
 @api_router.get("/content-worker/files/{filename}")
 async def get_content_file(filename: str):
-    """Serve content files"""
-    filepath = ROOT_DIR / "uploads" / "content" / filename
-    if not filepath.exists():
+    """Serve content files from Emergent Object Storage"""
+    from services.storage_service import get_object, APP_NAME
+    try:
+        data, content_type = get_object(f"{APP_NAME}/content/{filename}")
+    except Exception:
         raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(filepath)
+    return Response(content=data, media_type=content_type)
+
+
+# ---------------------------------------------------------------------------
+# Interactive Training Tour — AI voiceover (cached OpenAI TTS)
+# ---------------------------------------------------------------------------
+class TourNarrationRequest(BaseModel):
+    text: str
+    voice: Optional[str] = "coral"
+
+
+@api_router.post("/tour/narration")
+async def create_tour_narration(
+    payload: TourNarrationRequest,
+    context: TenantContext = Depends(get_tenant_context)
+):
+    """Generate (or reuse cached) AI voiceover for a tour step. Returns a URL."""
+    from services.tour_tts_service import get_or_create_narration, cache_key, _clean, DEFAULT_VOICE
+    text = (payload.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Text is required")
+    voice = payload.voice or DEFAULT_VOICE
+    try:
+        await get_or_create_narration(db, text, voice)
+    except Exception as e:
+        logger.error(f"Tour narration generation failed: {e}")
+        raise HTTPException(status_code=502, detail="Voiceover generation failed")
+    key = cache_key(_clean(text), voice)
+    return {"url": f"/api/tour/tts/{key}.mp3"}
+
+
+@api_router.get("/tour/tts/{key}.mp3")
+async def get_tour_narration(key: str):
+    """Serve a cached tour narration mp3."""
+    from services.tour_tts_service import load_narration, APP_NAME
+    try:
+        data, content_type = load_narration(f"{APP_NAME}/tour-tts/{key}.mp3")
+    except Exception:
+        raise HTTPException(status_code=404, detail="Narration not found")
+    return Response(
+        content=data,
+        media_type="audio/mpeg",
+        headers={"Cache-Control": "public, max-age=31536000"},
+    )
 
 
 @api_router.delete("/content-worker/assets/{asset_id}")

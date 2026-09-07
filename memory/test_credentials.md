@@ -19,6 +19,12 @@
 - Email: `admin.<slug>@quickwing.com`
 - Password: `admin123`
 
+## Tenant Admin for GUIDED TOUR + dashboard testing (test-fleet, REAL tenant)
+- Email: `victim.admin@example.com`
+- Password: `Admin123`
+- Login at `/test-fleet/login` (desktop viewport → admin TenantDashboard)
+- Admin role on tenant `test-fleet`. Use to test the Guided Tour (Help/"Guided Tour" button, auto-launch on first login), Object Storage logo upload, etc.
+
 ## Demo tenants (created via Command Centre → Create Tenant → Demo toggle)
 - **No credentials.** Access is via the magic link URL returned when the demo tenant is created (or reshown from Command Centre → Clients → row detail).
 - Demo user email is `demo+<slug>@quickwing.com` — password login is BLOCKED for these accounts (returns 401 "demo-only").

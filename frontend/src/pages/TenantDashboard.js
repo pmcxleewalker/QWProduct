@@ -3099,6 +3099,8 @@ const TenantDashboard = () => {
           onNavigate={handleTourNavigate}
           steps={buildTourSteps(activeTenant?.tenant_name, planData?.plan?.name, {
             gpsEnabled: !!(gpsSettings?.available && gpsSettings?.enabled),
+            features: planData?.features || {},
+            maxUsers: planData?.limits?.max_users || null,
           })}
         />
       )}

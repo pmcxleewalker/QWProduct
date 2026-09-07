@@ -11,7 +11,23 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 // `opts` tailors the tour to what this tenant's UI actually shows
 // (e.g. GPS / Live Map only appears on plans that have tracking enabled).
 export const buildTourSteps = (franchiseName, planName, opts = {}) => {
-  const { gpsEnabled = false } = opts;
+  const { gpsEnabled = false, features = {}, maxUsers = null } = opts;
+
+  // Team capacity line reflects the tenant's actual seat limit.
+  const seatLine = maxUsers ? ` (up to ${maxUsers} on your plan)` : '';
+  const seatSpoken = maxUsers ? `, with room for up to ${maxUsers} people on your plan,` : '';
+
+  // Reports wording adapts to the analytics this plan actually unlocks.
+  const reportExtras = [];
+  if (features.cost_analytics) reportExtras.push('cost analytics using your own cost-per-kilometre rates');
+  if (features.detailed_reports) reportExtras.push('detailed vehicle-level analytics');
+  else if (features.enhanced_reports) reportExtras.push('enhanced utilisation insights');
+  const extrasText = reportExtras.length
+    ? ` Your plan also unlocks ${reportExtras.length === 2 ? `${reportExtras[0]} and ${reportExtras[1]}` : reportExtras[0]}.`
+    : '';
+  const reportsBody = `Dig into fleet reports, incident reports, submitted documents and a daily timeline, and export polished PDFs whenever you need them.${extrasText}`;
+  const reportsNarration = `The Reports tab gives you fleet reports, incident reports, submitted documents and a daily timeline, and you can export polished P D F reports whenever you need them.${extrasText}`;
+
   const steps = [
   {
     id: 'welcome',
@@ -56,8 +72,8 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
     target: 'tab-team',
     tab: 'team',
     title: 'Your Team',
-    body: 'Invite staff and admins, set their roles, reset passwords, and deactivate anyone who leaves. New members get a branded welcome email automatically.',
-    narration: 'The Team tab is where you invite staff and admins, set their roles, reset passwords, and manage who has access. New members get a branded welcome email automatically.',
+    body: `Invite staff and admins${seatLine}, set their roles, reset passwords, and deactivate anyone who leaves. New members get a branded welcome email automatically.`,
+    narration: `The Team tab is where you invite staff and admins${seatSpoken} set their roles, reset passwords, and manage who has access. New members get a branded welcome email automatically.`,
   },
   {
     id: 'reports',
@@ -65,8 +81,8 @@ export const buildTourSteps = (franchiseName, planName, opts = {}) => {
     tab: 'reports',
     subTab: 'fleet-reports',
     title: 'Reports & Analytics',
-    body: 'Dig into fleet reports, incident reports, submitted documents and a daily timeline. Track utilisation and compliance, and export polished PDFs whenever you need them.',
-    narration: 'The Reports tab gives you fleet reports, incident reports, submitted documents and a daily timeline. Track utilisation and compliance, and export polished P D F reports whenever you need them.',
+    body: reportsBody,
+    narration: reportsNarration,
   },
   {
     id: 'announcements',

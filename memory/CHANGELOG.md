@@ -16,9 +16,12 @@
 - Tested: iteration_44.json — backend 5/5, frontend 100%, 0 console errors.
 
 ### P1 — Tour personalization by plan/UI (2026-06)
-- `buildTourSteps(franchiseName, planName, {gpsEnabled})` now builds the step list dynamically. The "Live GPS Map" step (targets `live-map-btn`) is only included when `gpsSettings.available && gpsSettings.enabled` — tenants without tracking never see GPS/Live Map narration.
-- Fleet step reworded to "see each vehicle's current status" (no GPS implication). Reports step reworded to match the dashboard's actual sub-tabs (fleet/incident/documents/daily-timeline) — dropped the off-page Auditor Pack reference.
-- Verified via screenshot on GPS-enabled test-fleet (Live Map step present, 8 steps). GPS-off tenants get 7 steps, no tracking mention.
+- `buildTourSteps(franchiseName, planName, {gpsEnabled, features, maxUsers})` builds the step list dynamically.
+- "Live GPS Map" step (targets `live-map-btn`) only included when `gpsSettings.available && gpsSettings.enabled` — tenants without tracking never see GPS/Live Map narration.
+- Team step shows the tenant's real seat limit ("up to {max_users} on your plan").
+- Reports step base wording + conditional extras: `cost_analytics` → "cost analytics using your own cost-per-km rates"; `detailed_reports` → "detailed vehicle-level analytics" (else `enhanced_reports` → "enhanced utilisation insights"). Standard plans see base wording only.
+- Fleet step reworded to "see each vehicle's current status" (no GPS implication). Dropped off-page Auditor Pack reference.
+- Verified via screenshots on GPS-enabled full-feature test-fleet (Live Map step + tailored Team/Reports wording).
 
 ### Notes for next agent- Handoff creds for Karen were stale. Tenant admin for testing: `victim.admin@example.com` / `Admin123` at `/test-fleet/login` (see test_credentials.md).
 - Still open (from backlog): server.py monolith breakdown (P1), security hardening — slowapi rate limit, CORS lock, JWT 24h (P2), SinoTrack Phase 7 (trip sharing links + retention cron).

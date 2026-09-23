@@ -1,5 +1,7 @@
 """Bulk tracker setup isolated tests: CSV/review/router behavior with temporary Mongo DB."""
 import asyncio
+import csv
+import io
 import os
 import sys
 import uuid
@@ -242,6 +244,70 @@ async def test_retry_endpoint_returns_409_when_row_lease_held(seeded_db, super_c
     async with await _build_test_client(seeded_db, configured=True) as client:
         res = await client.post(f"/api/platform/bulk-tracker-setup/batches/{batch['id']}/rows/0/retry")
     assert res.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_template_without_query_returns_exact_header_only(seeded_db):
+    async with await _build_test_client(seeded_db, configured=True) as client:
+        res = await client.get("/api/platform/bulk-tracker-setup/template")
+    assert res.status_code == 200
+    assert res.headers.get("content-disposition") == 'attachment; filename="quick-wing-tracker-template.csv"'
+    assert res.text.strip() == "registration,tracker_id,sim_iccid,sim_msisdn,tracker_model"
+
+
+@pytest.mark.asyncio
+async def test_template_with_tenant_sorts_registrations_blanks_hardware_and_caps_200(seeded_db):
+    vehicles = []
+    for i in range(250):
+        vehicles.append({"id": f"CAR_AX_{i}", "tenant_id": "TENANT_A", "registration": f"ZZ-{i:03d}"})
+    await seeded_db.vehicles.insert_many(vehicles)
+
+    async with await _build_test_client(seeded_db, configured=True) as client:
+        res = await client.get("/api/platform/bulk-tracker-setup/template", params={"tenant_id": "TENANT_A"})
+
+    assert res.status_code == 200
+    rows = list(csv.reader(io.StringIO(res.text)))
+    assert rows[0] == ["registration", "tracker_id", "sim_iccid", "sim_msisdn", "tracker_model"]
+    data_rows = rows[1:]
+    assert len(data_rows) == 200
+    regs = [r[0] for r in data_rows]
+    assert regs == sorted(regs)
+    assert all(r[1:] == ["", "", "", ""] for r in data_rows)
+
+
+@pytest.mark.asyncio
+async def test_template_with_unknown_tenant_returns_404(seeded_db):
+    async with await _build_test_client(seeded_db, configured=True) as client:
+        res = await client.get("/api/platform/bulk-tracker-setup/template", params={"tenant_id": "NOPE"})
+    assert res.status_code == 404
+    assert res.json().get("detail") == "Franchise not found"
+
+
+@pytest.mark.asyncio
+async def test_template_example_true_returns_placeholders_and_example_filename(seeded_db):
+    async with await _build_test_client(seeded_db, configured=True) as client:
+        res = await client.get("/api/platform/bulk-tracker-setup/template", params={"example": "true"})
+    assert res.status_code == 200
+    assert res.headers.get("content-disposition") == 'attachment; filename="quick-wing-tracker-example-only.csv"'
+    rows = list(csv.reader(io.StringIO(res.text)))
+    assert rows[0] == ["registration", "tracker_id", "sim_iccid", "sim_msisdn", "tracker_model"]
+    assert rows[1] == ["YOUR-VEHICLE-REG", "YOUR_TRACKER_ID", "YOUR_SIM_ICCID", "YOUR_SIM_MSISDN", "YOUR_TRACKER_MODEL"]
+
+
+@pytest.mark.asyncio
+async def test_template_csv_writer_preserves_quotes_commas_and_escapes_formula_registration(seeded_db):
+    await seeded_db.vehicles.insert_many([
+        {"id": "CAR_SPECIAL_1", "tenant_id": "TENANT_A", "registration": '=HYPERLINK("http://x","x")'},
+        {"id": "CAR_SPECIAL_2", "tenant_id": "TENANT_A", "registration": 'ABC,"quoted",REG'},
+    ])
+    async with await _build_test_client(seeded_db, configured=True) as client:
+        res = await client.get("/api/platform/bulk-tracker-setup/template", params={"tenant_id": "TENANT_A"})
+
+    assert res.status_code == 200
+    rows = list(csv.reader(io.StringIO(res.text)))
+    registrations = [r[0] for r in rows[1:]]
+    assert "'=HYPERLINK(\"http://x\",\"x\")" in registrations
+    assert 'ABC,"quoted",REG' in registrations
 
 
 async def _build_test_client(db, configured: bool):

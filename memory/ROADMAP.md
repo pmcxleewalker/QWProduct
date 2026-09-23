@@ -1,7 +1,7 @@
 # Quick Wing — Roadmap
 
 ## P0 — current approved scope
-- Bulk Tracker Setup implementation/testing complete in preview (40 automated tests + UI flows). No runtime mock, no deployment.
+- Bulk Tracker Setup plus approved CSV/review polish complete in preview (45 automated tests + responsive/download UI checks). No runtime mock, no deployment.
 - **Awaiting user:** securely set ONENCE_CLIENT_ID, ONENCE_CLIENT_SECRET and ONENCE_API_URL in backend environment; real test SIM/tracker for live activation, exact SMS order and delivery confirmation. Variables currently blank; outbound activation/SMS deliberately disabled.
 - Suggested next safeguard: a one-tracker live pilot before uploading a larger batch. This is verification of the current tool, not a new feature.
 - Prior pending user verification: Nexus calm `echo` voice, HD at 0.95 speed. Leave unchanged unless requested.

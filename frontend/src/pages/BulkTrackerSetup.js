@@ -4,6 +4,7 @@ import { Download, Upload, RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { BulkTrackerRows } from '../components/BulkTrackerRows';
+import { BulkTrackerCsvGuide } from '../components/BulkTrackerCsvGuide';
 import { useConfirm } from '../components/ConfirmDialog';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api/platform/bulk-tracker-setup`;
@@ -83,21 +84,22 @@ export default function BulkTrackerSetup({ tenants }) {
     await axios.post(`${API}/batches/${id}/activate`); await refresh();
   });
 
-  const download = () => run(async () => {
-    const { data } = await axios.get(`${API}/template`, { responseType: 'blob' });
+  const download = (example = false) => run(async () => {
+    const { data } = await axios.get(`${API}/template`, { responseType: 'blob', params: example ? { example: true } : { tenant_id: tenantId || undefined } });
     const url = URL.createObjectURL(data); const a = document.createElement('a');
-    a.href = url; a.download = 'quick-wing-tracker-template.csv'; a.click(); URL.revokeObjectURL(url);
+    a.href = url; a.download = example ? 'quick-wing-tracker-example-only.csv' : 'quick-wing-tracker-template.csv'; a.click(); URL.revokeObjectURL(url);
   });
 
   return (
     <section data-testid="bulk-tracker-setup-page" className="min-w-0 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 data-testid="bulk-tracker-title" className="text-lg font-semibold text-gray-900">Bulk Tracker Setup</h2>
-        <Button data-testid="bulk-download-template" size="sm" variant="outline" onClick={download} disabled={busy}><Download />Download CSV template</Button>
+        <Button data-testid="bulk-download-template" size="sm" variant="outline" onClick={() => download()} disabled={busy}><Download />Download CSV template</Button>
       </div>
       {!loaded && <p data-testid="onence-config-loading" role="status" className="text-sm text-gray-600">Checking 1NCE configuration…</p>}
       {loaded && !configured && <div data-testid="onence-not-configured" role="alert" className="flex items-center gap-2 border border-amber-200 bg-amber-50 p-3 rounded-md text-sm text-amber-900"><AlertCircle size={18} className="shrink-0" />1NCE integration not configured</div>}
       {error && <div data-testid="bulk-setup-error" role="alert" className="text-sm text-red-700 break-words">{error}</div>}
+      <BulkTrackerCsvGuide hasTenant={Boolean(tenantId)} busy={busy} onExample={() => download(true)} />
       <div className="grid sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] items-end gap-4">
         <label className="text-sm font-medium text-gray-700">Franchise / client
           <select data-testid="bulk-tenant-select" className="block w-full min-w-0 mt-1 h-10 border border-gray-300 rounded-md px-2 bg-white" value={tenantId} disabled={busy} onChange={e => { setTenantId(e.target.value); chooseBatch(''); }}>
@@ -119,7 +121,7 @@ export default function BulkTrackerSetup({ tenants }) {
       </div>
       {batch && <>
         <div className="flex flex-wrap justify-between items-center gap-3">
-          <div><h3 data-testid="bulk-review-tenant" className="font-semibold text-gray-900">{batch.tenant_name}</h3><p data-testid="bulk-review-summary" className="text-sm text-gray-600">{batch.rows.length} tracker(s) · {batch.rows.filter(r => r.errors.length).length} row(s) with validation errors</p></div>
+          <div className="min-w-0 space-y-1"><span className="text-xs text-gray-500">{batch.started_at ? 'Batch progress' : 'Review before activation'}</span><h3 data-testid="bulk-review-tenant" className="font-semibold text-gray-900 break-words">{batch.tenant_name}</h3><p data-testid="bulk-review-summary" className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600"><span>{batch.rows.length} row{batch.rows.length === 1 ? '' : 's'}</span><span>{batch.rows.filter(r => r.status === 'Ready to start').length} ready to start</span><span className={batch.rows.some(r => r.errors.length || r.error) ? 'text-red-700' : ''}>{batch.rows.filter(r => r.errors.length || r.error).length} needing attention</span></p></div>
           {!batch.started_at && <Button data-testid="bulk-activate-configure" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={!configured || !batch.valid || busy} onClick={activate}>Activate and Configure</Button>}
         </div>
         <BulkTrackerRows batch={batch} configured={configured} busy={busy} onRetry={id => run(async () => { await axios.post(`${API}/batches/${batch.id}/rows/${id}/retry`); await refresh(); })} />

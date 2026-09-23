@@ -24,6 +24,8 @@ registration,tracker_id,sim_iccid,sim_msisdn,tracker_model
 
 The selected existing franchise is authoritative. Vehicle registrations are matched case-insensitively, ignoring spaces/hyphens, within that franchise. Tracker IDs, ICCIDs and MSISDNs remain strings. The existing tracker ID field is `imei`; the existing MSISDN field is `sim_number`. Only `sim_iccid`, `tracker_model`, and `provisioning_batch_id` are added to existing tracker records. No SIM inventory model is introduced.
 
+The template download now includes up to 200 sorted vehicle registrations when a franchise is selected, leaving hardware fields blank. Remove unused rows and complete every remaining field. Without a selected franchise, it remains header-only. A separate example-only download contains non-provisionable placeholders; replace them before upload. The on-page CSV guide lists every required column. In Excel, use **Text** for tracker IDs, ICCIDs and MSISDNs before entering values to avoid number rounding or lost leading zeros, then save as CSV UTF-8. CSV itself does not retain spreadsheet fonts or column widths; presentation improvements are in the review screen and column guide.
+
 ## Persistence and retries
 
 - `tracker_setup_batches`: reviewed rows, per-row activation results, ordered SMS attempt/results, delivered count, user IDs/timestamps, and restart-safe worker leases.

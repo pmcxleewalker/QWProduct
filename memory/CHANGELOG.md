@@ -1,5 +1,14 @@
 # Quick Wing — Changelog
 
+## 2026-09-23 — Bulk Tracker CSV/template and review polish
+- User asked to improve the CSV and sloppy review layout; explicitly approved **both**. No unrelated Control Centre redesign.
+- Template endpoint retains five headers, optionally prefills up to 200 selected-franchise vehicle registrations and empty hardware fields. csv.writer handles quoting; unusual formula-leading registrations are escaped. Unknown tenant returns 404; existing super-admin gate unchanged.
+- Separate example CSV uses clearly marked non-provisionable placeholders. New collapsible column guide explains each field and Excel Text formatting for long ICCIDs/leading zeros.
+- Review rows now group vehicle/tracker/SIM details with row numbers, aligned readable identifiers, restrained status badges, accessible four-segment delivery progress and individual bullet validation errors. Summary shows row/ready/attention counts.
+- Changed: `backend/routes/bulk_tracker_setup.py`; `frontend/src/pages/BulkTrackerSetup.js`; `frontend/src/components/BulkTrackerRows.js`; new `frontend/src/components/BulkTrackerCsvGuide.js`; extended `backend/tests/test_bulk_tracker_setup_isolated.py`; setup/memory documentation.
+- Verified **45/45 automated tests**, browser template/example downloads, busy states, guide toggle and review. No overflow at 320/768/1024/1440 with guide open/closed. Report `test_reports/iteration_47.json`; JUnit `test_reports/pytest/pytest_bulk_tracker_setup_iteration47.xml`.
+- QA-only unstarted review batches cleaned. No hardware activated, no real or fake provisioning results inserted. Live 1NCE credentials still missing; activation intentionally disabled. Existing provider tests remain MOCKED only in isolated automated tests. No packages added, no deployment.
+
 ## 2026-09-23 — P0 Bulk Tracker Setup
 - Added one super-admin-only page at `/platform#bulk-tracker-setup` within the existing Control Centre. Existing design and navigation retained, with a new tab only.
 - Franchise-selected CSV template/upload/review, tenant-safe existing-vehicle matches, row validation, duplicate/used-asset checks, stored batches and refresh-safe selection. 200-row / 512KB bounds.

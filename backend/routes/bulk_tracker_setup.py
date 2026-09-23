@@ -1,6 +1,8 @@
 """Super-admin-only bulk provisioning endpoints, using existing authentication."""
 import time
 import uuid
+import csv
+import io
 from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -72,9 +74,28 @@ def build_router(db, worker):
                 "batches": [dict(b, row_count=len(b.pop("rows"))) for b in batches]}
 
     @router.get("/template")
-    async def template():
-        return Response(",".join(FIELDS) + "\r\n", media_type="text/csv",
-                        headers={"Content-Disposition": 'attachment; filename="quick-wing-tracker-template.csv"'})
+    async def template(tenant_id: Optional[str] = None, example: bool = False):
+        output = io.StringIO(newline="")
+        writer = csv.writer(output)
+        writer.writerow(FIELDS)
+        if example:
+            # Deliberately non-provisionable placeholders, not real hardware identifiers.
+            writer.writerow(["YOUR-VEHICLE-REG", "YOUR_TRACKER_ID", "YOUR_SIM_ICCID",
+                             "YOUR_SIM_MSISDN", "YOUR_TRACKER_MODEL"])
+        elif tenant_id:
+            if not await db.tenants.find_one({"id": tenant_id}, {"_id": 0, "id": 1}):
+                raise HTTPException(404, "Franchise not found")
+            vehicles = await db.vehicles.find({"tenant_id": tenant_id},
+                {"_id": 0, "registration": 1}).sort("registration", 1).to_list(200)
+            for vehicle in vehicles:
+                registration = vehicle.get("registration", "")
+                # Prevent spreadsheet formula execution for unusual saved registrations.
+                if registration.lstrip().startswith(("=", "+", "-", "@")):
+                    registration = "'" + registration
+                writer.writerow([registration, "", "", "", ""])
+        filename = "quick-wing-tracker-example-only.csv" if example else "quick-wing-tracker-template.csv"
+        return Response(output.getvalue(), media_type="text/csv",
+                        headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
     @router.post("/review", response_model=BatchView)
     async def review(tenant_id: str = Form(...), file: UploadFile = File(...), context=Depends(require_super_admin)):

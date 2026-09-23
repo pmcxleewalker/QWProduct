@@ -25,10 +25,18 @@ User requested a minimal working super-admin page within the existing Franchise 
 7. 1NCE credentials are currently absent by user choice. Backend-only environment keys: `ONENCE_CLIENT_ID`, `ONENCE_CLIENT_SECRET`, `ONENCE_API_URL`. Blank/missing configuration displays **1NCE integration not configured** and disables live activation/SMS. No credentials in frontend/database. Provider mocks ONLY inside automated tests, never real UI results.
 8. Excluded: barcode scanning, installer apps, charts, emails, PDFs, new GPS maps, network steering, advanced analytics and cosmetic animation.
 
+### Approved follow-up — CSV and review polish (2026-09-23)
+User requested a better-formatted/easier CSV and less sloppy review, then selected **both** template and review-table improvements. Scoped changes only:
+- Download template optionally fills up to 200 existing registrations for the selected franchise; hardware fields stay blank. No selection still produces the original safe header-only template. Five CSV column names remain unchanged.
+- Separate example-only CSV contains explicit non-provisionable placeholders. Collapsible field guide explains expected values and Excel Text formatting to preserve long identifiers and leading zeros.
+- Review groups vehicle, tracker and SIM details; consistent column sizing, row numbers, readable status badges, four-segment delivered-only progress and individual bullet errors. Clear row/ready/attention summary. Responsive at 320/768/1024/1440.
+- No change to provisioning, authorization, credentials or tenant structure. No new dependencies.
+
 ## Architecture / source of truth
 - React frontend + FastAPI backend + MongoDB. Existing protected environment variables are unchanged.
 - `frontend/src/pages/PlatformAdmin.js`: existing Control Centre, one added super-admin tab; URL `/platform#bulk-tracker-setup`.
 - `frontend/src/pages/BulkTrackerSetup.js`: franchise selection, upload/review, saved batches, polling, confirmation/retry, not-configured state. `components/BulkTrackerRows.js`: responsive review/progress rows.
+- `frontend/src/components/BulkTrackerCsvGuide.js`: template field guidance, safe example download and Excel identifier handling note.
 - `backend/server.py`: existing API/auth integration; small startup/router hookup and resource-claim guards on existing tracker mutations. No unrelated monolith refactor.
 - `backend/routes/bulk_tracker_setup.py`: super-admin-only `/api/platform/bulk-tracker-setup` routes for index/template/review/batch/activate/retry; typed responses excluding Mongo `_id` and internal provider state.
 - `backend/services/bulk_tracker_setup.py`: in-memory CSV parser and validation (200 rows/512KB); durable idempotent review batches.
@@ -40,8 +48,9 @@ User requested a minimal working super-admin page within the existing Franchise 
 - Existing third-party integrations outside this scope: SinoTrack cloud, Resend, Emergent Object Storage, OpenAI TTS. Unchanged.
 
 ## Current status and verification
-- Implemented P0 scope; **40/40 automated tests passed** (final combined run), plus frontend CSV/reload/selection/template/not-configured checks and responsive fit at 320/768/1024/1440.
+- Implemented P0 scope and approved CSV/review polish; latest **45/45 automated tests passed** (iteration 47), plus browser download/guide/review checks and responsive fit at 320/768/1024/1440. Initial provisioning baseline had 40 passing tests.
 - Reports: `/app/test_reports/iteration_45.json`, `iteration_46.json`, `bulk_tracker_setup_final.json`, and `/app/test_reports/pytest/pytest_bulk_tracker_setup_final.xml`.
+- Latest polish report: `/app/test_reports/iteration_47.json`, JUnit `/app/test_reports/pytest/pytest_bulk_tracker_setup_iteration47.xml`. All temporary QA review batches cleaned; no live provisioning attempted.
 - MOCKED 1NCE responses exist only in isolated automated tests/temporary databases. Running app contains no fake provisioning results. Removed only the two QA-created unstarted review batches; zero runtime provisioning claims/trackers were created.
 - Live SIM activation/SMS delivery is **not verified**, awaiting secure 1NCE credentials and a designated real test SIM/device. Missing-config behavior is verified; outbound operations are blocked.
 - Credential setup and operational caveats: `/app/backend/ONENCE_SETUP.md`. Empty slots added ONLY to `/app/backend/.env`; actual API base value should be `https://api.1nce.com/management-api`. Restart backend after secure environment changes. No deployment performed.

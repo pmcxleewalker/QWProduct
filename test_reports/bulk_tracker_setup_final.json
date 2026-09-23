@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-23",
+  "feature": "Bulk Tracker Setup",
+  "automated_tests": {"passed": 40, "failed": 0, "junit": "/app/test_reports/pytest/pytest_bulk_tracker_setup_final.xml"},
+  "reports": ["/app/test_reports/iteration_45.json", "/app/test_reports/iteration_46.json"],
+  "frontend_verified": ["super-admin page access", "CSV template/upload and invalid/valid review", "missing-config notice and disabled activation", "saved batch plus matching franchise restored after reload", "franchise switching clears previous review without polling restoring it", "no content or page overflow at 320/768/1024/1440"],
+  "backend_verified": ["CSV validation and size/row limits", "super-admin API authorization and tenant separation", "atomic duplicate and cross-franchise claim prevention", "concurrent review/activation/worker processing", "SIM GET/PUT confirmation", "exact four ordered SMS with source 1234", "delivered-only progress", "no resend of delivered or queued SMS", "safe retry and uncertain-send reconciliation"],
+  "live_onence_verified": false,
+  "live_onence_blocker": "Credentials intentionally absent; activation and SMS sending remain disabled",
+  "mocking": "MOCKED provider responses only in isolated automated tests; no runtime UI mock results",
+  "cleanup": "Two test-created unstarted review batches removed; temporary test databases dropped. Zero live provisioning claims or tracker records created.",
+  "deployment_performed": false
+}

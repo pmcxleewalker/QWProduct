@@ -1,5 +1,41 @@
 # Quick Wing — Changelog
 
+## 2026-09-23 — P0 Bulk Tracker Setup
+- Added one super-admin-only page at `/platform#bulk-tracker-setup` within the existing Control Centre. Existing design and navigation retained, with a new tab only.
+- Franchise-selected CSV template/upload/review, tenant-safe existing-vehicle matches, row validation, duplicate/used-asset checks, stored batches and refresh-safe selection. 200-row / 512KB bounds.
+- Backend-only 1NCE adapter: OAuth, administrative SIM GET/Enabled PUT/confirmation, four ordered SMS from `1234`, persisted allowlisted results, actual delivered count 0/4–4/4. Reused existing tracker collection/relationships.
+- Durable resource claims + per-batch/start and per-row leases prevent duplicate setup; worker restarts reconcile saved intents. Retry polls queued SMS, skips delivered messages, resends explicit failures only; uncertain outcomes require unique provider record reconciliation, never blind resend. Reconciles all messages before acting on an earlier failure so later deliveries are counted.
+- Existing tracker writes share claims, enforce global tracker-ID ownership and cannot detach/delete bulk-provisioned hardware from tenant settings. No auth logic changes.
+- Empty ONENCE_CLIENT_ID / ONENCE_CLIENT_SECRET / ONENCE_API_URL slots in backend/.env ONLY. No real credentials supplied. Explicit missing-config banner/loading state, disabled frontend activation/retry, backend HTTP503 and no provider calls.
+- Testing: iteration45 initial 22/22; iteration46 supplemental 36/36 isolated backend cases; final combined four-suite run **40/40 passed**, plus UI checks for batch restore, franchise switching while polling and no overflow at 320/768/1024/1440. Final JUnit: `/app/test_reports/pytest/pytest_bulk_tracker_setup_final.xml`.
+- Provider responses MOCKED only in isolated automated tests, never app UI. Temporary test DBs dropped and two preview QA review batches removed; no live provisioning claims/trackers created. Live 1NCE enablement and SMS/device delivery remain unverified until credentials and test hardware are supplied.
+- No new dependencies, no unrelated refactor, no deployment. Earlier Hardware Register/returns/reassignment request not implemented.
+
+### Changed files
+**Application**
+- `backend/server.py`
+- `backend/routes/bulk_tracker_setup.py` (new)
+- `backend/services/bulk_tracker_setup.py` (new)
+- `backend/services/tracker_asset_claims.py` (new)
+- `backend/services/onence_client.py` (new)
+- `backend/services/tracker_setup_worker.py` (new)
+- `frontend/src/pages/PlatformAdmin.js`
+- `frontend/src/pages/BulkTrackerSetup.js` (new)
+- `frontend/src/components/BulkTrackerRows.js` (new)
+
+**Configuration/documentation/tests**
+- `backend/.env`: three blank backend-only slots; no existing keys changed.
+- `backend/ONENCE_SETUP.md` (new): secure setup, API contract, operational limitations.
+- `backend/tests/test_bulk_tracker_setup_isolated.py` (new)
+- `backend/tests/test_tracker_setup_worker_isolated.py` (new)
+- `backend/tests/test_onence_client_unit.py` (new)
+- `backend/tests/test_bulk_tracker_setup_auth_live.py` (new)
+- Test reports `iteration_45.json`, `iteration_46.json`, `bulk_tracker_setup_final.json` and JUnit XMLs under `test_reports/pytest/`.
+- Memory: shortened canonical PRD, current CHANGELOG, new ROADMAP; former PRD preserved verbatim in `CHANGELOG_ARCHIVE_PRE_2026_09_23.md`.
+
+### Next
+User supplies real 1NCE credentials securely in backend environment; designate one test SIM/tracker for live end-to-end verification before a larger batch. Detailed priorities in ROADMAP.md.
+
 ## 2026-06 (fork continuation)
 
 ### P0 — Deploy blocker fixed: uploads → Emergent Object Storage

@@ -85,6 +85,9 @@ from services.documents import (
     BUILTIN_TEMPLATES,
 )
 from backup_service import BackupService, serialize_backup
+from services.tracker_asset_claims import claim_assets, device_keys, release_assets
+from services.tracker_setup_worker import TrackerSetupWorker
+from routes.bulk_tracker_setup import build_router as build_bulk_tracker_router
 
 # Initialize services
 audit_service = AuditService(db)
@@ -92,6 +95,10 @@ audit_service = AuditService(db)
 # Create app
 app = FastAPI(title="Quick Wing Fleet Management - Multi-Tenant SaaS")
 api_router = APIRouter(prefix="/api")
+tracker_setup_worker = TrackerSetupWorker(db)
+api_router.include_router(build_bulk_tracker_router(db, tracker_setup_worker))
+app.add_event_handler("startup", tracker_setup_worker.start)
+app.add_event_handler("shutdown", tracker_setup_worker.stop)
 
 # CORS
 app.add_middleware(
@@ -1887,10 +1894,10 @@ async def register_tracker_device(
             raise HTTPException(status_code=400, detail="IMEI must be 10-20 digits")
 
     existing = await db.tracker_devices.find_one(
-        {"tenant_id": context.tenant_id, "imei": imei}, {"_id": 0}
+        {"imei": imei}, {"_id": 0}
     )
     if existing:
-        raise HTTPException(status_code=409, detail="This IMEI is already registered for your tenant")
+        raise HTTPException(status_code=409, detail="This tracker ID is already registered")
 
     # Optional car assignment must belong to this tenant
     car_id = (payload.car_id or "").strip() or None
@@ -1933,7 +1940,16 @@ async def register_tracker_device(
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
-    await db.tracker_devices.insert_one(doc)
+    owner = "device:" + doc["id"]
+    await claim_assets(db, owner, device_keys(imei=imei, msisdn=doc["sim_number"], car_id=car_id))
+    try:
+        # Recheck after reservation: another registration may have finished during cloud verification.
+        if await db.tracker_devices.find_one({"imei": imei}, {"_id": 0, "id": 1}):
+            raise HTTPException(409, "This tracker ID is already registered")
+        await db.tracker_devices.insert_one(doc)
+    except Exception:
+        await release_assets(db, owner)
+        raise
     doc.pop("_id", None)
     return doc
 
@@ -1962,6 +1978,9 @@ async def update_tracker_device(
     if not row:
         raise HTTPException(status_code=404, detail="Tracker not found")
 
+    if row.get("provisioning_batch_id") and any(getattr(payload, key) is not None for key in ("car_id", "sim_number", "is_active")):
+        raise HTTPException(409, "Bulk-provisioned hardware assignments are managed by super-admin")
+
     update = {"updated_at": datetime.now(timezone.utc).isoformat()}
     if payload.car_id is not None:
         car_id = (payload.car_id or "").strip() or None
@@ -1987,10 +2006,17 @@ async def update_tracker_device(
     if payload.is_active is not None:
         update["is_active"] = bool(payload.is_active)
 
+    merged = {**row, **update}
+    owner = "device:" + device_id
+    keys = device_keys(imei=row["imei"], msisdn=merged.get("sim_number"), car_id=merged.get("car_id"))
+    if not row.get("provisioning_batch_id"):
+        await claim_assets(db, owner, keys)
     await db.tracker_devices.update_one(
         {"id": device_id, "tenant_id": context.tenant_id},
         {"$set": update},
     )
+    if not row.get("provisioning_batch_id"):
+        await release_assets(db, owner, keep=keys)
     updated = await db.tracker_devices.find_one(
         {"id": device_id, "tenant_id": context.tenant_id}, {"_id": 0}
     )
@@ -2003,11 +2029,15 @@ async def delete_tracker_device(
     context: TenantContext = Depends(require_admin),
 ):
     """Hard-delete a tracker registration (positions/history retained)."""
+    row = await db.tracker_devices.find_one({"id": device_id, "tenant_id": context.tenant_id}, {"_id": 0})
+    if row and row.get("provisioning_batch_id"):
+        raise HTTPException(409, "Bulk-provisioned hardware cannot be deleted from tenant tracker settings")
     res = await db.tracker_devices.delete_one(
         {"id": device_id, "tenant_id": context.tenant_id}
     )
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Tracker not found")
+    await release_assets(db, "device:" + device_id)
     return {"ok": True}
 
 

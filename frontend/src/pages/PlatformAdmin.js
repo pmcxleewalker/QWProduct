@@ -18,6 +18,7 @@ import ContentWorker from '../components/ContentWorker';
 import LegalRecordsSection from '../components/LegalRecordsSection';
 import { useConfirm } from '../components/ConfirmDialog';
 import { demoAPI, platformAPI } from '../api/api';
+import BulkTrackerSetup from './BulkTrackerSetup';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -64,7 +65,7 @@ const PlatformAdmin = () => {
   const { user, isPlatformAdmin, isSuperAdmin, impersonateTenant, isImpersonating, stopImpersonation, activeTenant, logout } = useAuth();
   const confirm = useConfirm();
   
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => window.location.hash === '#bulk-tracker-setup' ? 'bulk-tracker-setup' : 'overview');
   
   // Set default tab based on user role after user data is available
   useEffect(() => {
@@ -877,6 +878,7 @@ const PlatformAdmin = () => {
             {[
               { id: 'overview', label: 'Dashboard', sublabel: 'Platform Overview', icon: Activity, roles: ['super_admin', 'master_admin'] },
               { id: 'tenants', label: 'Clients', sublabel: 'Manage Clients', icon: Building2, roles: ['super_admin', 'master_admin', 'bot'] },
+              { id: 'bulk-tracker-setup', label: 'Bulk Tracker Setup', sublabel: 'SIM Configuration', icon: Satellite, roles: ['super_admin'] },
               { id: 'reports', label: 'Finance', sublabel: 'Reports & Billing', icon: Receipt, roles: ['super_admin', 'master_admin'] },
               { id: 'audit', label: 'Activity', sublabel: 'Audit Log', icon: FileText, roles: ['super_admin', 'master_admin'] },
               { id: 'backup', label: 'Backup', sublabel: 'Disaster Recovery', icon: Database, roles: ['super_admin', 'master_admin'] },
@@ -886,7 +888,7 @@ const PlatformAdmin = () => {
             .map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => { setActiveTab(tab.id); window.history.replaceState(null, '', tab.id === 'bulk-tracker-setup' ? '#bulk-tracker-setup' : window.location.pathname); }}
                 className={`flex flex-col items-center px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   activeTab === tab.id
                     ? 'bg-blue-600 text-white shadow-md'
@@ -924,6 +926,8 @@ const PlatformAdmin = () => {
             <button onClick={() => setSuccess('')} className="ml-auto">×</button>
           </div>
         )}
+
+        {activeTab === 'bulk-tracker-setup' && isSuperAdmin() && <BulkTrackerSetup tenants={tenants} />}
 
         {/* Overview Tab */}
         {activeTab === 'overview' && (

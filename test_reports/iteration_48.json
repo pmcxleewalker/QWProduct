@@ -1,0 +1,24 @@
+{
+  "summary": "Iteration 48 regression for demo/tenant isolation + demo banner. Backend: 18/18 pytest cases passed covering superadmin, tenant owner (master_admin), demo redeemed user, and cross-tenant support admin — all 403s expected are enforced and /auth/me context flags (is_platform_admin / is_demo) correct. Frontend: all five requested cases pass: (A) superadmin with stale localStorage demo flags shows no demo-banner and stale keys are cleared on login; (B) tenant owner with stale flags lands on /dashboard, no banner, flags cleared; (C) fresh demo tenant magic link lands inside demo tenant, data-testid='demo-banner' visible with correct prospect name, and no Command Centre / /platform nav link in demo session; (D) tenant admin regression — lands on /dashboard (not bounced to /platform or /select-tenant); (E) superadmin reaches /platform. Backend impersonate + stop-impersonation flow works end-to-end for superadmin and is 403 for demo user.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_demo_tenant_isolation_iter48.py",
+    "/app/test_reports/pytest/iter48.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Demo session correctly minted with role=admin + is_demo=true; platform/* and select-tenant for foreign tenants return 403.",
+    "Tenant owner (membership master_admin) is correctly treated as tenant-only — is_platform_admin false and /api/platform/* return 403.",
+    "Support admin cross-tenant membership returns is_platform_admin false but can still select any tenant it is a member of.",
+    "AuthContext clears isDemoSession/demoProspectName localStorage keys on login for non-demo sessions (verified via browser)."
+  ],
+  "updated_files": ["/app/backend/tests/test_demo_tenant_isolation_iter48.py"],
+  "success_rate": {"backend": "100% (18/18)", "frontend": "100% (5/5 cases)"},
+  "test_credentials": "Read from /app/memory/test_credentials.md: superadmin@quickwing.com/Super123, admin.test-fleet@quickwing.com/admin123, support@quickwing.com/QuickWing123!",
+  "seed_data_creation": "Created ephemeral demo tenants (slug prefixes iso-demo-* and uidemo*) via POST /api/platform/tenants for backend+frontend tests. Not cleaned up (demo tenants are intentionally short-lived in preview).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend test file at /app/backend/tests/test_demo_tenant_isolation_iter48.py is reusable regression. Impersonate endpoint path is /api/platform/tenants/{id}/impersonate (not /api/platform/impersonate/{id}); stop-impersonation requires the impersonation token (new token returned by impersonate). Demo tenant create response returns magic link at body.magic_link.token and body.magic_link.url.",
+  "rca of the issue": "No regression reproduced. Permission fix (platform_role gate in get_tenant_context + is_platform_admin_context in select_tenant + demo mint as UserRole.ADMIN) and DemoBanner now reading isDemoSession from AuthContext (not localStorage) are both effective."
+}

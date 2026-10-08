@@ -95,3 +95,10 @@ User supplies real 1NCE credentials securely in backend environment; designate o
 
 ### Notes for next agent- Handoff creds for Karen were stale. Tenant admin for testing: `victim.admin@example.com` / `Admin123` at `/test-fleet/login` (see test_credentials.md).
 - Still open (from backlog): server.py monolith breakdown (P1), security hardening — slowapi rate limit, CORS lock, JWT 24h (P2), SinoTrack Phase 7 (trip sharing links + retention cron).
+
+## 2026-06 — P0 Tenant isolation + demo banner fix (preview only)
+- Demo (magic-link) sessions now mint `role=admin` + `is_demo=true` — never `master_admin`. Demo contexts are hard-pinned to the demo tenant on their user doc (X-Tenant-ID ignored), and are rejected by `require_super_admin` / `require_platform_admin` / `select-tenant` for any other tenant.
+- Platform privilege now derives ONLY from the role on the USER document (`platform_role` on TenantContext, `PLATFORM_ROLES`, `is_platform_admin_context`). A tenant membership role of `master_admin` (franchise owner, support@) no longer unlocks `/api/platform/*`, cross-tenant `select-tenant` or impersonation.
+- `/api/auth/me` now returns `current_context.is_demo` and `current_context.is_platform_admin`.
+- Frontend: `DemoBanner` reads `isDemoSession` from AuthContext (verified session) instead of `localStorage`; stale `isDemoSession`/`demoProspectName` keys are cleared on login + logout. `App.js` route guards and AuthContext role helpers use the backend-verified `isPlatformAdminVerified`.
+- Tested: iteration_48 — backend 18/18 (isolation for superadmin, tenant owner, demo, support), frontend 5/5 (no stale banner, demo banner shows only for real demo sessions). Regression test: /app/backend/tests/test_demo_tenant_isolation_iter48.py

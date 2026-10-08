@@ -23,6 +23,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(getStoredToken());
   const [needsTenantSelection, setNeedsTenantSelection] = useState(false);
+  const [isDemoSession, setIsDemoSession] = useState(false);
+  const [platformAdmin, setPlatformAdmin] = useState(false);
 
   // Set axios default header
   useEffect(() => {
@@ -52,6 +54,15 @@ export const AuthProvider = ({ children }) => {
       const role = data.current_context?.role;
       const userWithRole = { ...data.user, role, memberships: data.memberships };
       setUser(userWithRole);
+
+      // Demo state comes from the verified session only — never browser flags.
+      const demo = !!(data.current_context?.is_demo || data.user?.is_demo);
+      setIsDemoSession(demo);
+      setPlatformAdmin(!!data.current_context?.is_platform_admin);
+      if (!demo) {
+        localStorage.removeItem('isDemoSession');
+        localStorage.removeItem('demoProspectName');
+      }
       
       // Handle tenant context
       if (data.memberships && data.memberships.length > 0) {
@@ -101,7 +112,15 @@ export const AuthProvider = ({ children }) => {
       }
       
       setToken(access_token);
+
+      // A password login is never a demo session — clear any leftover flags.
+      setIsDemoSession(false);
+      localStorage.removeItem('isDemoSession');
+      localStorage.removeItem('demoProspectName');
       
+      // Optimistic from login payload; /auth/me confirms it immediately after.
+      setPlatformAdmin(['super_admin', 'master_admin', 'content_manager', 'bot'].includes(userData.role));
+
       // Include memberships in user object for tenant route checking
       const userWithMemberships = { ...userData, memberships: userTenants };
       setUser(userWithMemberships);
@@ -271,7 +290,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('rememberMe');
     localStorage.removeItem('activeTenant');
+    localStorage.removeItem('isDemoSession');
+    localStorage.removeItem('demoProspectName');
+    sessionStorage.removeItem('demoBannerDismissed');
     sessionStorage.removeItem('token');
+    setIsDemoSession(false);
+    setPlatformAdmin(false);
     setToken(null);
     setUser(null);
     setTenants([]);
@@ -281,12 +305,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Role checks
-  const isSuperAdmin = () => user?.role === 'super_admin';
-  const isMasterAdmin = () => user?.role === 'master_admin';
-  const isContentManager = () => user?.role === 'content_manager';
-  const isBot = () => user?.role === 'bot';
-  const isPlatformAdmin = () => user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager' || user?.role === 'bot';
-  const isTenantAdmin = () => activeTenant?.role === 'tenant_admin' || isPlatformAdmin();
+  // Platform privilege is confirmed by the backend session (/auth/me), never by
+  // a tenant-level membership role.
+  const isSuperAdmin = () => !isDemoSession && platformAdmin && user?.role === 'super_admin';
+  const isMasterAdmin = () => !isDemoSession && platformAdmin && user?.role === 'master_admin';
+  const isContentManager = () => !isDemoSession && platformAdmin && user?.role === 'content_manager';
+  const isBot = () => !isDemoSession && platformAdmin && user?.role === 'bot';
+  const isPlatformAdmin = () => !isDemoSession && platformAdmin;
+  const isTenantAdmin = () => ['tenant_admin', 'admin', 'master_admin'].includes(activeTenant?.role) || isPlatformAdmin();
   const isStaff = () => activeTenant?.role === 'staff';
   const isImpersonating = () => activeTenant?.is_impersonating === true;
 
@@ -299,6 +325,8 @@ export const AuthProvider = ({ children }) => {
       tenants,
       activeTenant,
       needsTenantSelection,
+      isDemoSession,
+      isPlatformAdminVerified: platformAdmin,
       loading, 
       isAuthenticated,
       hasTenantContext,

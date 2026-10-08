@@ -65,7 +65,7 @@ from models.invoice import (
 from middleware.tenant import (
     get_tenant_context, require_tenant_context, require_admin,
     require_super_admin, require_platform_admin,
-    validate_resource_tenant, TenantQueryBuilder
+    validate_resource_tenant, TenantQueryBuilder, is_platform_admin_context
 )
 from services.audit import AuditService
 from services.email_service import send_staff_invitation_email, send_owner_welcome_email
@@ -307,9 +307,17 @@ async def select_tenant(
             detail="This tenant account is suspended"
         )
     
-    # Verify membership (unless super/master admin)
+    # Demo sessions can only ever select their own demo tenant.
+    if context.is_demo:
+        if selection.tenant_id != context.tenant_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Demo accounts cannot access other tenants"
+            )
+
+    # Verify membership (platform admins only may select any tenant)
     role = context.role
-    if context.role not in [UserRole.SUPER_ADMIN, UserRole.MASTER_ADMIN]:
+    if not is_platform_admin_context(context):
         membership = await db.memberships.find_one({
             "user_id": context.user_id,
             "tenant_id": selection.tenant_id
@@ -376,7 +384,11 @@ async def get_current_user_info(context: TenantContext = Depends(get_tenant_cont
             "tenant_id": context.tenant_id,
             "tenant_name": context.tenant_name,
             "role": context.role.value,
-            "is_impersonating": context.is_impersonating
+            "is_impersonating": context.is_impersonating,
+            "is_demo": context.is_demo,
+            "is_platform_admin": (not context.is_demo) and context.platform_role in (
+                "super_admin", "master_admin", "content_manager", "bot"
+            )
         },
         "memberships": tenant_list
     }
@@ -9631,10 +9643,12 @@ async def redeem_demo_token(payload: DemoRedeemPayload):
     if not demo_user:
         raise HTTPException(status_code=503, detail="Demo environment is not ready yet")
 
+    # Demo sessions get tenant-scoped ADMIN only — never master_admin/platform
+    # privileges — so a demo link can never reach platform or cross-tenant data.
     access_token = create_access_token({
         "sub": demo_user["id"],
         "email": demo_user["email"],
-        "role": UserRole.MASTER_ADMIN.value,
+        "role": UserRole.ADMIN.value,
         "tenant_id": tenant_id,
         "is_impersonating": False,
         "is_demo": True,
@@ -9653,14 +9667,14 @@ async def redeem_demo_token(payload: DemoRedeemPayload):
             "id": demo_user["id"],
             "email": demo_user["email"],
             "name": demo_user.get("name", "Demo User"),
-            "role": UserRole.MASTER_ADMIN.value,
+            "role": UserRole.ADMIN.value,
             "require_password_change": False,
         },
         "active_tenant": {
             "tenant_id": tenant_id,
             "tenant_name": demo_tenant.get("name", "Demo"),
             "tenant_slug": demo_tenant.get("slug", ""),
-            "role": UserRole.MASTER_ADMIN.value,
+            "role": UserRole.ADMIN.value,
             "status": demo_tenant.get("status", "active"),
         },
         "prospect_name": row.get("prospect_name", ""),

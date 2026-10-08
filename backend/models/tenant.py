@@ -526,6 +526,8 @@ class TenantContext(BaseModel):
     tenant_slug: Optional[str]
     role: UserRole
     is_impersonating: bool = False  # True when master admin is impersonating
+    is_demo: bool = False  # True for magic-link demo sessions (locked to one tenant)
+    platform_role: Optional[str] = None  # Role on the USER document — the only source of platform privilege
 
 
 class TenantSelector(BaseModel):

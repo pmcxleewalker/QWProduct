@@ -15,6 +15,21 @@ ALGORITHM = "HS256"
 
 security = HTTPBearer()
 
+# Platform privilege can ONLY come from the role on the user document.
+# A tenant membership role (e.g. a franchise owner's "master_admin") is
+# tenant-scoped and must never unlock platform or cross-tenant access.
+PLATFORM_ROLES = {
+    UserRole.SUPER_ADMIN.value,
+    UserRole.MASTER_ADMIN.value,
+    UserRole.CONTENT_MANAGER.value,
+    UserRole.BOT.value,
+}
+
+
+def is_platform_admin_context(context) -> bool:
+    """True only for genuine platform accounts (never demo sessions)."""
+    return (not context.is_demo) and context.platform_role in PLATFORM_ROLES
+
 
 async def get_tenant_context(
     request: Request,
@@ -54,11 +69,30 @@ async def get_tenant_context(
     
     role = UserRole(payload.get("role", "staff"))
     is_impersonating = payload.get("is_impersonating", False)
+    is_demo = bool(payload.get("is_demo") or user.get("is_demo"))
     
     # Get tenant_id from token first, then fall back to header
     tenant_id = payload.get("tenant_id")
     if not tenant_id:
         tenant_id = request.headers.get("X-Tenant-ID")
+    
+    # Demo sessions are hard-pinned to the demo tenant on their user record.
+    # The X-Tenant-ID header and any token tenant_id are ignored/rejected so a
+    # demo link can never reach another tenant's data.
+    if is_demo:
+        demo_tenant_id = user.get("tenant_id")
+        if not demo_tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Demo account is not linked to a demo tenant"
+            )
+        if tenant_id and tenant_id != demo_tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Demo accounts cannot access other tenants"
+            )
+        tenant_id = demo_tenant_id
+        is_impersonating = False
     
     # If tenant_id is set, verify tenant is still active and user has membership
     tenant_name = None
@@ -91,7 +125,9 @@ async def get_tenant_context(
         
         # Verify user has membership in this tenant (unless super/master admin or impersonating)
         # When impersonating, the original_role is preserved in the token, so we skip membership check
-        if role not in [UserRole.SUPER_ADMIN, UserRole.MASTER_ADMIN] and not is_impersonating:
+        platform_role = user.get("role")
+        is_platform = (not is_demo) and platform_role in PLATFORM_ROLES
+        if not (is_platform or (is_impersonating and not is_demo)):
             membership = await db.memberships.find_one({
                 "user_id": user_id,
                 "tenant_id": tenant_id
@@ -111,7 +147,9 @@ async def get_tenant_context(
         tenant_name=tenant_name,
         tenant_slug=tenant_slug,
         role=role,
-        is_impersonating=is_impersonating
+        is_impersonating=is_impersonating,
+        is_demo=is_demo,
+        platform_role=user.get("role")
     )
 
 
@@ -167,7 +205,14 @@ async def require_super_admin(
     """
     Require super admin role (platform owner).
     """
-    if context.role != UserRole.SUPER_ADMIN:
+    if context.is_demo:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Demo accounts cannot access platform administration"
+        )
+    # Platform privilege comes from the user document only — a tenant-level
+    # membership role (e.g. a franchise owner's master_admin) must never grant it.
+    if context.platform_role != UserRole.SUPER_ADMIN.value:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Super admin access required"
@@ -181,7 +226,20 @@ async def require_platform_admin(
     """
     Require super admin, master admin, content manager, or bot role.
     """
-    if context.role not in [UserRole.SUPER_ADMIN, UserRole.MASTER_ADMIN, UserRole.CONTENT_MANAGER, UserRole.BOT]:
+    if context.is_demo:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Demo accounts cannot access platform administration"
+        )
+    # Platform privilege comes from the user document only — a tenant-level
+    # membership role (e.g. a franchise owner's master_admin) must never grant it.
+    platform_roles = {
+        UserRole.SUPER_ADMIN.value,
+        UserRole.MASTER_ADMIN.value,
+        UserRole.CONTENT_MANAGER.value,
+        UserRole.BOT.value,
+    }
+    if context.platform_role not in platform_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Platform admin access required"

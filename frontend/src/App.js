@@ -85,10 +85,10 @@ const LoginRedirect = () => {
 
 // Protected route that requires tenant context
 const TenantProtectedRoute = ({ children, adminOnly = false }) => {
-  const { isAuthenticated, user, hasTenantContext, needsTenantSelection, activeTenant, loading } = useAuth();
+  const { isAuthenticated, user, hasTenantContext, needsTenantSelection, activeTenant, loading, isPlatformAdminVerified } = useAuth();
 
-  // Direct role checks to avoid function call timing issues
-  const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager' || user?.role === 'bot';
+  // Platform privilege is confirmed by the backend session, not a tenant role
+  const isPlatformAdminUser = isPlatformAdminVerified;
   const isTenantAdminUser = activeTenant?.role === 'admin' || activeTenant?.role === 'master_admin' || isPlatformAdminUser;
 
   if (loading) {
@@ -128,7 +128,7 @@ const TenantProtectedRoute = ({ children, adminOnly = false }) => {
 
 // Platform admin route protection
 const PlatformProtectedRoute = ({ children }) => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { isAuthenticated, loading, isPlatformAdminVerified } = useAuth();
 
   if (loading) {
     return (
@@ -142,8 +142,7 @@ const PlatformProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Check if user is platform admin using direct role check
-  const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager' || user?.role === 'bot';
+  const isPlatformAdminUser = isPlatformAdminVerified;
   
   if (!isPlatformAdminUser) {
     return <Navigate to="/dashboard" replace />;
@@ -155,7 +154,7 @@ const PlatformProtectedRoute = ({ children }) => {
 // Tenant Routes - handles /{tenant-slug}/* routes
 const TenantRoutes = () => {
   const { tenantSlug } = useParams();
-  const { isAuthenticated, activeTenant, selectTenant, user, loading } = useAuth();
+  const { isAuthenticated, activeTenant, selectTenant, user, loading, isPlatformAdminVerified } = useAuth();
   const [tenantLoading, setTenantLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -226,8 +225,8 @@ const TenantRoutes = () => {
       // data" flash on first open for platform/master admins).
       setTenantLoading(true);
 
-      // Super Admins and Master Admins have access to ALL franchises
-      const isPlatformAdminUser = user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager' || user?.role === 'bot';
+      // Platform-level access is confirmed by the backend session only
+      const isPlatformAdminUser = isPlatformAdminVerified;
 
       // Try to find and select the tenant from user's memberships
       if (user?.memberships) {
@@ -289,8 +288,8 @@ const TenantRoutes = () => {
     return <Navigate to={`/${tenantSlug}/login`} replace />;
   }
 
-  // Super Admins and Master Admins have access to ALL franchises
-  const isPlatformAdmin = user?.role === 'super_admin' || user?.role === 'master_admin' || user?.role === 'content_manager' || user?.role === 'bot';
+  // Platform-level access is confirmed by the backend session only
+  const isPlatformAdmin = isPlatformAdminVerified;
   
   // Check if user has access - platform admins have universal access
   const hasAccess = isPlatformAdmin ||

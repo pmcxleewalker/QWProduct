@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, X } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const MAILTO_DEMO = 'mailto:Lee.quickwing@gmail.com?subject=Quick Wing Demo — Real conversation please';
 
@@ -15,14 +16,17 @@ const MAILTO_DEMO = 'mailto:Lee.quickwing@gmail.com?subject=Quick Wing Demo — 
  *  - a subtle X to hide it for the current tab (session-scoped)
  */
 const DemoBanner = () => {
-  const isDemo = typeof window !== 'undefined' && localStorage.getItem('isDemoSession') === '1';
+  // Demo state is derived from the verified backend session (never localStorage),
+  // so an admin signing in after a demo never sees this banner.
+  const { isDemoSession } = useAuth();
+  const isDemo = !!isDemoSession;
   const [dismissed, setDismissed] = useState(
     typeof window !== 'undefined' && sessionStorage.getItem('demoBannerDismissed') === '1'
   );
 
   if (!isDemo || dismissed) return null;
 
-  const prospect = typeof window !== 'undefined' ? localStorage.getItem('demoProspectName') : '';
+  const prospect = typeof window !== 'undefined' ? localStorage.getItem('demoProspectName') || '' : '';
 
   return (
     <div

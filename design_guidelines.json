@@ -1,117 +1,257 @@
 {
-  "theme": "light",
-  "archetype": "Swiss & High-Contrast / Enterprise Precision",
-  "target_audience": "Enterprise Ireland Evaluators, B2B Fleet Managers",
-  "core_philosophy": "Authoritative, data-dense, human-crafted precision. Strip out all AI gimmicks and replace them with high-fidelity, Bloomberg-esque tabular layouts and stark, trustworthy contrasts.",
+  "project_meta": {
+    "title": "Quick Wing Public Home Page Redesign Blueprint",
+    "vibe": "Premium and Understated Industry Player",
+    "target_audience": "Irish Care Providers, Fleet Managers, Operations Directors, Transport Coordinators",
+    "design_archetype": "Architectural Editorial & Premium SaaS (Archetype 4 + Archetype 5 Hybrid)",
+    "key_objectives": [
+      "Shift visual tone from generic 'AI blue' to an authoritative, professional fleet management industry leader",
+      "Introduce a warm, high-contrast, editorial visual hierarchy with generous white space and clean typography",
+      "Relocate the large Live Fleet Status dashboard window into the Features section tabs",
+      "Organize features and pricing with clear, prominent subheadings",
+      "Remove cookie consent notices completely from the public landing experience",
+      "Preserve 100% of existing copy, client logos, HCCI award assets, video, ROI calculator logic, contact form backend, and data-testid attributes"
+    ]
+  },
+  "color_palette": {
+    "theme_mode": "Light Editorial with Dark Dynamic Highlights",
+    "background_primary": "#FBFBF9",
+    "background_secondary": "#F3F4F1",
+    "background_surface": "#FFFFFF",
+    "background_dark": "#0F172A",
+    "background_dark_subtle": "#1E293B",
+    "text_primary": "#0F172A",
+    "text_secondary": "#475569",
+    "text_muted": "#64748B",
+    "text_on_dark": "#F8FAFC",
+    "text_on_dark_muted": "#94A3B8",
+    "accent_primary": "#1E40AF",
+    "accent_hover": "#1E3A8A",
+    "accent_subtle": "#EFF6FF",
+    "border_light": "#E2E8F0",
+    "border_dark": "rgba(255, 255, 255, 0.12)",
+    "gold_award": "#D97706",
+    "gold_award_light": "#FEF3C7",
+    "gold_award_border": "rgba(217, 119, 6, 0.3)"
+  },
   "typography": {
-    "headings": {
-      "family": "Manrope, sans-serif",
-      "rationale": "Geometric, highly legible, modern but corporate-safe. Removes the 'generic template' feel of Inter.",
-      "styles": {
-        "h1": "text-3xl sm:text-4xl font-bold tracking-tight text-slate-900",
-        "h2": "text-2xl font-semibold tracking-tight text-slate-900",
-        "h3": "text-xl font-medium tracking-tight text-slate-900",
-        "h4": "text-lg font-medium text-slate-900"
-      }
-    },
-    "body": {
-      "family": "IBM Plex Sans, sans-serif",
-      "rationale": "The ultimate data-table font. Monospaced numerals built-in, highly legible at small sizes.",
-      "styles": {
-        "base": "text-sm text-slate-600 leading-relaxed",
-        "small": "text-xs text-slate-500",
-        "mono": "font-mono text-sm tracking-tight"
-      }
+    "heading_font": "Manrope, system-ui, sans-serif",
+    "body_font": "Manrope, system-ui, sans-serif",
+    "mono_font": "'IBM Plex Mono', monospace",
+    "hierarchy": {
+      "h1": {
+        "desktop": "text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.08]",
+        "mobile": "text-3xl font-extrabold tracking-tight leading-[1.12]",
+        "max_ceiling": "text-6xl"
+      },
+      "h2": {
+        "desktop": "text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight",
+        "mobile": "text-2xl font-extrabold tracking-tight"
+      },
+      "h3": {
+        "desktop": "text-xl lg:text-2xl font-bold tracking-tight",
+        "mobile": "text-lg font-bold"
+      },
+      "eyebrow": "text-xs font-mono uppercase tracking-[0.18em] font-semibold",
+      "lead": "text-lg lg:text-xl font-normal leading-relaxed text-slate-600"
     }
   },
-  "colors": {
-    "primary": {
-      "brand": "#1d4ed8",
-      "classes": "bg-blue-700 text-white hover:bg-blue-800",
-      "rationale": "Shifted from blue-600 to blue-700. A deeper, more authoritative 'Royal/Navy' blue that screams established enterprise, not startup."
-    },
-    "header": {
-      "background": "#0f172a",
-      "text": "#f8fafc",
-      "classes": "bg-slate-900 text-slate-50 border-b border-slate-800",
-      "rationale": "Replaces the purple gradient. Deep slate provides a solid, command-center anchor at the top of the screen."
-    },
-    "surface": {
-      "background": "#f8fafc",
-      "card": "#ffffff",
-      "classes": "bg-slate-50 text-slate-900"
-    },
-    "semantic_status": {
-      "available_healthy": {
-        "bg": "bg-emerald-50",
-        "text": "text-emerald-700",
-        "border": "ring-1 ring-inset ring-emerald-600/20",
-        "icon": "text-emerald-600"
+  "layout_and_sections": [
+    {
+      "section_id": "header_nav",
+      "type": "Sticky Header Navigation",
+      "description": "Clean, glassmorphism sticky navigation bar with 1px bottom border (#E2E8F0). Clean wide logo on left, clear navigation links in center, login link and primary CTA button on right.",
+      "elements": {
+        "logo": "/images/quick-wing-logo-wide.png",
+        "links": ["Features (#features)", "Award (#award)", "ROI Calculator (#roi)", "Pricing (#pricing)", "Contact (https://quick-wing.com/contact)"],
+        "login_link": "Login (https://quick-wing.com/login)",
+        "cta": "Get Started (#contact)"
       },
-      "in_use": {
-        "bg": "bg-blue-50",
-        "text": "text-blue-700",
-        "border": "ring-1 ring-inset ring-blue-600/20",
-        "icon": "text-blue-600"
-      },
-      "warning_expiring": {
-        "bg": "bg-amber-50",
-        "text": "text-amber-700",
-        "border": "ring-1 ring-inset ring-amber-600/20",
-        "icon": "text-amber-500"
-      },
-      "blocked_critical": {
-        "bg": "bg-rose-50",
-        "text": "text-rose-700",
-        "border": "ring-1 ring-inset ring-rose-600/20",
-        "icon": "text-rose-600"
+      "testids": ["landing-nav-logo", "landing-nav-login", "landing-menu-btn", "landing-mobile-menu"]
+    },
+    {
+      "section_id": "hero",
+      "type": "Hero Section (Warm Editorial Layout)",
+      "description": "Executive hero layout with warm off-white background (#FBFBF9) or deep obsidian tone (#0F172A). Relocates the big Live Fleet Status window into the Features section below. Displays award pill badge, strong authoritative headline ('Stay compliant. Reduce downtime. Control your fleet.'), lead copy, clear dual CTAs, key metrics bar (73% automated, €6.50/mo, 1 afternoon setup), and a compact phone device visual framing.",
+      "content_spec": {
+        "award_pill": "Winner · Technological Innovation of the Year 2026 · HCCI",
+        "eyebrow": "Trusted by Irish Care Providers",
+        "title": "Stay compliant. Reduce downtime. Control your fleet.",
+        "subtitle": "The simple, all-in-one system for vehicle bookings, compliance tracking, and live visibility. Built for teams that can't afford downtime.",
+        "stats": [
+          {"value": "73%", "label": "of fleet admin processes automated (Sept 2026)"},
+          {"value": "€6.50", "label": "per vehicle, per month"},
+          {"value": "1 afternoon", "label": "to set up"}
+        ]
       }
+    },
+    {
+      "section_id": "trust_bar",
+      "type": "Client & Press Proof Bar",
+      "description": "Subtle, horizontal trust band with warm border top/bottom (#E2E8F0). Showcases Bluebird Care logo, HCCI Award badge, and AI Six Podcast feature link.",
+      "elements": [
+        {"type": "client", "logo": "/images/bluebird-care-logo.jpg", "label": "Client"},
+        {"type": "award", "title": "HCCI Home Care Awards 2026", "subtitle": "Technological Innovation of the Year — Winner"},
+        {"type": "podcast", "logo": "/images/ai-six-podcast.jpg", "title": "AI Six Podcast", "url": "https://youtu.be/_oR2ROeUOp4"}
+      ]
+    },
+    {
+      "section_id": "award",
+      "type": "Award Highlight Section",
+      "description": "2-column asymmetrical grid highlighting HCCI Technological Innovation of the Year 2026. Left column features award photo grid (big photo of Lee Walker + stacked certificate & trophy). Right column features structured editorial fact sheet.",
+      "imagery": [
+        "/images/hcci-award-lee-walker.jpg",
+        "/images/hcci-award-certificate.jpg",
+        "/images/hcci-award-trophy.jpg"
+      ]
+    },
+    {
+      "section_id": "features",
+      "type": "Core Features & Interactive Dashboard Section",
+      "description": "The centerpiece feature showcase. Includes office/field split photography, 5 interactive tab buttons, clear subheadings for each feature category, and the large Live Fleet Status dashboard window housed directly in tab 01 as requested.",
+      "subheadings": {
+        "section_head": "Built for both sides of the working day.",
+        "section_lead": "Less chasing. More clarity. Easier coordination."
+      },
+      "interactive_tabs": [
+        {"id": "landing-tab-app-dashboard", "num": "01", "title": "One organised admin view", "sub": "Live Fleet Status Dashboard", "desc": "Bookings and live status—without the chasing.", "image": "/images/app-dashboard.jpg"},
+        {"id": "landing-tab-app-booking", "num": "02", "title": "Booking management", "sub": "AI Booking Intelligence & Calendars", "desc": "Create, assign and repeat bookings, with AI Booking Intelligence.", "image": "/images/app-booking.jpg"},
+        {"id": "landing-tab-app-vehicles", "num": "03", "title": "Compliance & fleet records", "sub": "Vehicle Reminders & Document Tracking", "desc": "Reminders, fleet records and clear reports.", "image": "/images/app-vehicles.jpg"},
+        {"id": "landing-tab-app-reports", "num": "04", "title": "Reports & analytics", "sub": "Availability, Usage & Export", "desc": "All bookings, most-booked cars and daily availability, with CSV export.", "image": "/images/app-reports.jpg"},
+        {"id": "landing-tab-app-gps", "num": "05", "title": "Live GPS visibility", "sub": "Active Journey Tracking", "desc": "Follow active journeys in one calm view.", "image": "/images/app-gps.jpg"}
+      ],
+      "field_app_gallery": [
+        {"title": "For teams in the field", "desc": "Live availability—clear at a glance.", "image": "/images/app-mobile-home.jpg"},
+        {"title": "Book in seconds", "desc": "Personal bookings and calendars stay together.", "image": "/images/app-mobile-bookings.jpg"},
+        {"title": "Report from the field", "desc": "Checks and incidents—captured while details are fresh.", "image": "/images/app-mobile-docs.jpg"},
+        {"title": "Built-in lift requests", "desc": "A simple taxi system for Quick Wing users.", "image": "/images/app-mobile-lift.jpg"}
+      ],
+      "testids": ["landing-tab-app-dashboard", "landing-tab-app-booking", "landing-tab-app-vehicles", "landing-tab-app-reports", "landing-tab-app-gps", "landing-tab-image"]
+    },
+    {
+      "section_id": "video_demo",
+      "type": "Video Showcase Section",
+      "description": "Video frame with phone container playing /video/quick-wing-demo.mp4 with poster /images/demo-poster.jpg, paired with field photo (/images/photo-mobile.jpg) and executive copy.",
+      "video_src": "/video/quick-wing-demo.mp4",
+      "poster": "/images/demo-poster.jpg",
+      "secondary_photo": "/images/photo-mobile.jpg"
+    },
+    {
+      "section_id": "proof_founder",
+      "type": "Testimonial & Founder Story Cards",
+      "description": "2-column grid featuring a light testimonial card from Bluebird Care Director and a dark card with Founder Lee Walker's story + podcast link.",
+      "elements": {
+        "testimonial_quote": "Quick Wing has completely changed how we run our fleet. Compliance is under control, downtime is down, and my team finally have visibility of every vehicle without chasing spreadsheets. It's the kind of tool you didn't know you needed until you can't imagine working without it.",
+        "founder_title": "Built from real experience.",
+        "founder_quote": "I'm proud to announce the launch of Quick Wing. I built this to help businesses manage vehicle bookings, track compliance, and gain clear visibility in one place. Designed for real working teams who don't have time for complicated software.",
+        "founder_name": "Lee Walker",
+        "founder_role": "Founder & CEO, Quick Wing",
+        "podcast_link": "https://youtu.be/_oR2ROeUOp4"
+      }
+    },
+    {
+      "section_id": "roi_calculator",
+      "type": "Interactive ROI Calculator",
+      "description": "Interactive fleet return calculator. Left column with range sliders (vehicles: 1-150, hours: 1-60, hourly rate: €12-€45, plan buttons: €6.50 software / €8.50 software+GPS). Right column with live outputs (monthly hours saved, staff value saved, software cost, net return).",
+      "testids": ["roi-plan-6-5", "roi-plan-8-5"],
+      "calculation_formula": "saved_hours = (h * 52 / 12) * 0.73; value = saved_hours * hourly_rate; cost = vehicles * plan_price; net = value - cost"
+    },
+    {
+      "section_id": "pricing",
+      "type": "Transparent Pricing Tier Grid",
+      "description": "2-column pricing comparison with clear subheadings for features and plan scope.",
+      "plans": [
+        {
+          "name": "Fleet Software",
+          "price": "€6.50",
+          "period": "per vehicle / month",
+          "subheading": "Essential Software Management",
+          "features": [
+            "Vehicle bookings & shared calendar",
+            "Live fleet status dashboard",
+            "Compliance reminders & fleet records",
+            "Inspections & incident reporting",
+            "Built-in lift requests",
+            "Reports & CSV export",
+            "AI Booking Intelligence"
+          ]
+        },
+        {
+          "name": "Fleet Software + Live GPS",
+          "badge": "Full visibility",
+          "price": "€8.50",
+          "period": "per vehicle / month",
+          "subheading": "Complete Fleet Oversight & Telemetry",
+          "features": [
+            "Everything in Fleet Software",
+            "Live GPS tracking",
+            "Live fleet map — follow active journeys in one calm view"
+          ],
+          "map_image": "/images/app-gps.jpg"
+        }
+      ]
+    },
+    {
+      "section_id": "contact_form",
+      "type": "Executive Contact & Lead Generation",
+      "description": "2-column layout. Left column with contact details (Lee@quick-wing.com, availability note, onboarding reassurance). Right column with interactive contact form wired to /api/public/contact endpoint.",
+      "testids": [
+        "landing-contact-form",
+        "contact-full-name",
+        "contact-company",
+        "contact-email",
+        "contact-phone",
+        "contact-message",
+        "contact-submit"
+      ]
+    },
+    {
+      "section_id": "footer",
+      "type": "Site Footer",
+      "description": "Minimal, structured footer with logo, links (Contact, Login, Privacy Policy, AI Six Podcast), copyright and company details."
     }
-  },
-  "spacing_and_layout": {
-    "dashboard_grid": "Grid Layout Technical Rules (CRITICAL). Strict grid hierarchy. Mode B: High Density Grid. Gap: gap-4 or gap-6.",
-    "cards": "p-5 or p-6. Flat solid background. 1px subtle border (border-slate-200), NO shadow or very soft shadow-sm. Radii: rounded-lg or rounded-md (max 8px).",
-    "tables": "Tight spacing. py-2.5 px-4 for table cells. text-sm for all rows. text-xs font-semibold tracking-wider uppercase text-slate-500 for headers. border-b border-slate-200.",
-    "alignment": "All financial/mileage metrics right-aligned. Dates/Status center-aligned. Names/IDs left-aligned."
-  },
-  "component_polish": {
-    "kpi_stat_cards": "Remove drop shadows. Use 1px border-slate-200. Value must be Manrope, text-3xl, font-semibold. Add a subtle Phosphor icon (Duotone) in top right in slate-400.",
-    "status_pills": "Use the semantic_status definitions. Must be rounded-full, px-2.5 py-0.5, text-xs font-medium. Never use pure bright colors as backgrounds; always tinted-50 background with tinted-700 text and an inset ring.",
-    "fleet_board_timeline": "Strict geometrical grid. Vertical day columns with border-r border-slate-100. Booking blocks should have sharp corners (rounded-sm) and solid backgrounds (e.g. bg-blue-100 text-blue-800 border-l-2 border-blue-600). Make it look like an engineering Gantt chart, not a calendar app.",
-    "buttons": "Primary: bg-blue-700 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-800 transition-colors. Secondary: bg-white text-slate-700 border border-slate-300 hover:bg-slate-50.",
-    "empty_states": "No illustrations. Use a single, large Phosphor icon (e.g., ClipboardText) in slate-300. Title in slate-900, description in slate-500. Center aligned. Clean and clinical.",
-    "loading_skeletons": "bg-slate-200 animate-pulse rounded-md. Do not use spinners for page loads, use skeleton blocks mimicking the tables and cards."
-  },
-  "feature_retreatment": {
-    "booking_intelligence": {
-      "old_state": "Dark neon/purple animated treatment with floating particles.",
-      "new_state": "The 'Conflict Engine'. Stark white background. 1px border-slate-200. A simple green 'Active' pulse dot next to the header 'System Scanner'. Results shown in a dense, tabular format with IBM Plex Sans Mono. It should look like high-speed Bloomberg terminal output, proving it's running hard calculations, not making up a story."
-    }
-  },
-  "anti_ai_slop_rules": [
-    "No emojis anywhere (remove ✨, 🤖, 🚀). Use Phosphor icons instead.",
-    "No typewriter effect for intelligence outputs. Show data instantly in tables.",
-    "No gradient text or full-screen glowing gradients.",
-    "No blurry colored blobs in the background.",
-    "No center-everything disease. Left-align data for scannability.",
-    "No massive empty spaces. Utilize pixels efficiently for the fleet manager."
   ],
-  "visual_enhancers": {
-    "icons": "Use @phosphor-icons/react. Use 'Regular' weight for general UI, 'Duotone' for KPI cards.",
-    "micro_interactions": "Hover states on table rows (bg-slate-50). Button active states scale down slightly (active:scale-[0.98])."
-  },
-  "images": {
-    "hero_marketing": "https://images.pexels.com/photos/16325212/pexels-photo-16325212.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-    "marketing_about": "https://images.pexels.com/photos/15153848/pexels-photo-15153848.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-    "notes": "Use these strictly for the public Landing Page. The dashboard should not contain decorative imagery."
-  },
-  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
-    "Implement the font switch immediately: Import Manrope and IBM Plex Sans. Apply Manrope to all headers and IBM Plex Sans to body classes.",
-    "Remove the purple gradient from the header. Replace with bg-slate-900 border-b border-slate-800.",
-    "Update tailwind.config.js primary color to #1d4ed8.",
-    "Scrub the entire 'Booking Intelligence' component. Strip all particles, framer-motion floaters, and purple themes. Rebuild it as a data-dense, stark white table component with monospace data points.",
-    "Convert all soft card shadows to border border-slate-200 shadow-sm.",
-    "Add data-testid attributes to all buttons, navigation links, and KPI cards."
+  "image_urls": [
+    {"category": "logo", "url": "/images/quick-wing-logo-wide.png", "description": "Quick Wing primary header & footer logo"},
+    {"category": "logo", "url": "/images/bluebird-care-logo.jpg", "description": "Bluebird Care client logo"},
+    {"category": "media", "url": "/images/ai-six-podcast.jpg", "description": "AI Six Podcast cover image"},
+    {"category": "award", "url": "/images/hcci-award-lee-walker.jpg", "description": "Lee Walker holding HCCI award trophy"},
+    {"category": "award", "url": "/images/hcci-award-certificate.jpg", "description": "HCCI Award Certificate photo"},
+    {"category": "award", "url": "/images/hcci-award-trophy.jpg", "description": "HCCI Award Glass Trophy photo"},
+    {"category": "lifestyle", "url": "/images/photo-office.jpg", "description": "Office fleet coordinator at desk"},
+    {"category": "lifestyle", "url": "/images/photo-field.jpg", "description": "Field worker next to van"},
+    {"category": "lifestyle", "url": "/images/photo-mobile.jpg", "description": "Coordinator using mobile app"},
+    {"category": "app_screenshot", "url": "/images/app-dashboard.jpg", "description": "Live Fleet Status Dashboard screenshot"},
+    {"category": "app_screenshot", "url": "/images/app-booking.jpg", "description": "Car Bookings & Intelligence screenshot"},
+    {"category": "app_screenshot", "url": "/images/app-vehicles.jpg", "description": "Fleet Vehicles & Compliance screenshot"},
+    {"category": "app_screenshot", "url": "/images/app-reports.jpg", "description": "Fleet Reports & Analytics screenshot"},
+    {"category": "app_screenshot", "url": "/images/app-gps.jpg", "description": "Live GPS Map screenshot"},
+    {"category": "mobile_screenshot", "url": "/images/app-mobile-home.jpg", "description": "Mobile App Home screen"},
+    {"category": "mobile_screenshot", "url": "/images/app-mobile-bookings.jpg", "description": "Mobile App Bookings calendar"},
+    {"category": "mobile_screenshot", "url": "/images/app-mobile-docs.jpg", "description": "Mobile App Inspections & Documents"},
+    {"category": "mobile_screenshot", "url": "/images/app-mobile-lift.jpg", "description": "Mobile App Lift Request screen"}
   ],
-  "instructions_to_main_agent": "Follow the UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT. The goal is an extreme pivot from 'startup AI toy' to 'established enterprise infrastructure'. Focus on density, tabular legibility, and high-contrast conservative coloring."
+  "instructions_to_main_agent": [
+    "1. Do not modify backend code or route definitions.",
+    "2. Update `/app/frontend/src/pages/LandingPage.js` to implement the new 'Premium and Understated' design blueprint.",
+    "3. Replace the old bright blue CSS variables with warm stone/off-white backgrounds (--bg: #FBFBF9), rich charcoal text (--ink: #0F172A), dark slate containers (--navy: #0F172A, --navy-2: #1E293B), and refined cobalt blue accent (#1E40AF).",
+    "4. In the Hero section, remove the massive full-width Live Fleet Status dashboard window and place it inside Tab 01 of the Features section.",
+    "5. Ensure subheadings are present in both the Features section and Pricing cards to clearly explain features and pricing tiers.",
+    "6. Completely remove any Cookie Notice or Cookie Consent banner from the landing page as requested by user.",
+    "7. Preserve all existing event delegation logic (onClick, onInput, onSubmit) and exact data-testid attributes so automated test suites pass without regression.",
+    "8. Keep exact contact form submission API logic (`/api/public/contact`), ROI calculation formula, image URLs, and text content."
+  ],
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "You tend to converge toward generic, 'on distribution' outputs. In frontend design, this creates what users call the 'AI slop' aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight.",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur).",
+    "You MUST NOT apply universal transition. Eg: transition: all. Always add transitions for specific interactive elements.",
+    "You MUST NOT center align the app container.",
+    "NEVER use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯 for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "All interactive and key informational elements MUST include a data-testid attribute to facilitate robust automated testing."
+  ]
 }

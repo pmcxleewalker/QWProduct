@@ -1,5 +1,16 @@
 # Quick Wing — Changelog
 
+## 2026-10-09 — Premium and understated public website
+- User explicitly requested a more established fleet-industry aesthetic, preserving all marketing content/media/logos, clearer feature/pricing headings, dashboard in Features, and no cookie notice. Selected premium/understated over other options; prior 1:1 layout constraint superseded.
+- Replaced blue-heavy layout with warm white, charcoal, restrained accents and editorial typography. Supplied fleet photo anchors the hero; original dashboard is the first feature tab, with booking/compliance/reports/GPS tabs. Reorganized mobile gallery, award, founder/client proof, pricing, ROI and personal-contact sections.
+- Both plan prices and complete original benefit lists retained; all original meaningful content, logos, award images, screenshots, video and podcast links retained. No fabricated customer or performance claims.
+- Split static trusted content/styles/delegated handlers out of `LandingPage.js` into `pages/landing/{content.js,LandingPage.css,useLandingInteractions.js}`. Kept original static-markup approach; don't regenerate with the historical `scripts/build_landing.py` importer.
+- Removed `CookieConsent` rendering/import from App; no cookie acceptance is fabricated, no tracking enabled, no auth/session behavior changed. Existing routes remain; internal landing links are now origin-relative.
+- Improved feature-tab keyboard/ARIA behavior and menu Escape handling; native contact email validation, duplicate-submit guard, recoverable error and accessible focused success panel. Existing API/Resend configuration unchanged.
+- Verification: iteration 50 frontend passed at 320/390/768/1024/1440/1920; 4/4 backend contact/media tests passed; production build successful with pre-existing warnings only. Supplementary browser confirmation-panel/focus check passed. Browser success/error responses **MOCKED only in tests**, real contact API independently tested once. No runtime mocks introduced; inbox delivery not independently checked this iteration.
+- No backend app code, database settings, auth credentials or dependencies changed. No deployment. User visual review pending. Reports: `test_reports/iteration_50.json`, `test_reports/pytest/iter50_landing_backend.xml`, `test_reports/landing-premium-build.log`.
+- Existing monolith and JWT fallback observations recorded for the separate maintainability/auth-hardening backlog, not changed during the landing redesign.
+
 ## 2026-09-23 — Bulk Tracker CSV/template and review polish
 - User asked to improve the CSV and sloppy review layout; explicitly approved **both**. No unrelated Control Centre redesign.
 - Template endpoint retains five headers, optionally prefills up to 200 selected-franchise vehicle registrations and empty hardware fields. csv.writer handles quoting; unusual formula-leading registrations are escaped. Unknown tenant returns 404; existing super-admin gate unchanged.

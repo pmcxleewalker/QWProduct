@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate, useSearchParams, useParams } fr
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Toaster } from 'sonner';
 import ProtectedRoute from './components/ProtectedRoute';
-import CookieConsent from './components/CookieConsent';
 import { ConfirmProvider } from './components/ConfirmDialog';
 import ErrorBoundary from './components/ErrorBoundary';
 import LandingPage from './pages/LandingPage';
@@ -499,7 +498,6 @@ function App() {
       <AuthProvider>
         <ConfirmProvider>
           <AppContent />
-          <CookieConsent />
           <Toaster position="top-right" richColors closeButton />
         </ConfirmProvider>
       </AuthProvider>

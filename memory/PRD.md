@@ -8,7 +8,7 @@ Multi-tenant SaaS fleet-management platform (Quick Wing), with separate franchis
 - Franchise/client admins: their own vehicles, trackers, bookings, reports and teams only.
 - Staff: tenant-scoped bookings, inspections and mobile workflows.
 
-## Current approved scope — Bulk Tracker Setup (2026-09-23)
+## Approved scope — Bulk Tracker Setup (2026-09-23)
 User requested a minimal working super-admin page within the existing Franchise Control Centre. Reuse the existing database, authentication, franchises, vehicles and tracker records. No redesign, unrelated refactoring, new packages, automatic deployment, or separate inventory application. The earlier full Hardware Register request is paused/out of scope.
 
 ### Requirements
@@ -65,3 +65,26 @@ User requested a better-formatted/easier CSV and less sloppy review, then select
 - DONE (P0): demo account cross-tenant/platform escalation closed; platform privilege now user-document-only; demo banner bound to verified session. See CHANGELOG 2026-06.
 - OPEN: P1 server.py monolith split; P1 Admin Hardware Register; P1 SinoTrack Phase 7 (trip sharing + retention cron); P2 rate limiting/CORS lock/upload limits; P0-blocked MongoDB Atlas migration (needs prod infra verification — do not start).
 - DONE (2026-06): public landing page replaced with the supplied design; contact form wired to the existing lead backend (emails Lee@quick-wing.com); SEO tags refreshed.
+
+## Latest approved scope — Premium public-site redesign (2026-10-09)
+- User request: reduce the overwhelmingly blue/AI-generated appearance; make Quick Wing feel like an established fleet-management industry player; preserve content, logos and media; improve layout and feature/pricing subheadings; move the large Live Fleet Status window into Features; remove cookie notice.
+- User explicitly chose **Premium and understated**: warm white, black, subtle blue accents, generous spacing and editorial layouts. This supersedes the earlier exact-layout requirement, not the requirement to preserve content.
+- Implemented: neutral editorial design, supplied full-bleed fleet photograph in hero, understated serif headline accent, clear numbered section hierarchy, product tabs under Features, mobile two-column screenshot gallery, equal-weight pricing comparison, original award/client/founder content and assets, existing video and ROI calculator.
+- Cookie notice removed from the app shell; no automatic consent written, no tracking added, essential session behavior and privacy/cookie policy routes left unchanged.
+- Existing `/login`, `/contact`, `/privacy-policy` routes kept; landing links now relative to current origin. Existing contact API, Resend destination and all backend/auth/database settings unchanged. Frontend validation, sending/error/success states, keyboard feature tabs and Escape menu dismissal verified.
+
+### Public-site architecture
+- `frontend/src/pages/LandingPage.js`: small root wrapper, scoped page lifecycle.
+- `frontend/src/pages/landing/content.js`: static trusted markup retaining original copy/media (not a React component rewrite).
+- `frontend/src/pages/landing/LandingPage.css`: scoped editorial design and responsive styles; no CSS leakage into app.
+- `frontend/src/pages/landing/useLandingInteractions.js`: delegated menu/tabs/ROI/contact handlers; original 73% formula and €6.50 / €8.50 prices unchanged.
+- `frontend/src/App.js`: cookie notice import/render removed only; no route/auth changes.
+- `frontend/public/index.html`: added DM Serif Display font, SEO metadata unchanged.
+- **Do not run `scripts/build_landing.py`**: it is the historical 1:1 importer and would overwrite the newly approved design. Edit the modular source above instead.
+
+### Latest verification / next actions
+- Iteration 50: **4/4 backend tests passed**, frontend checks passed at 320/390/768/1024/1440/1920, no horizontal page overflow, broken images, duplicate interactive test IDs, or functional defects found. Menus, anchors, tabs/keyboard, ROI, prices, routes, video and cookie removal verified.
+- Real contact API submission passed. Browser error-state and supplementary success-panel/focus checks used **MOCKED test responses only** to avoid extra lead emails; runtime contact integration remains real. One QA-labelled contact lead created by testing. This iteration did not independently confirm inbox delivery.
+- Production build succeeds; pre-existing QR-library source-map warnings and unrelated hook/bundle-size warnings remain. No new landing-file lint warnings. Build log: `test_reports/landing-premium-build.log`; regression: `test_reports/iteration_50.json`.
+- **Next action: user visual approval in preview.** No deployment performed. Optional future enhancement: a detailed, verified Bluebird Care case study to deepen industry credibility.
+- Existing backlog remains separate: P0 blocked production DB discovery/backup before Atlas migration (no DB changes); P1 monolith/SinoTrack Phase 7; P2 hardening/monitoring/backups. Testing also noted existing JWT fallback secret for the separate auth-hardening work. Hardware Register remains deferred by earlier explicit scope.

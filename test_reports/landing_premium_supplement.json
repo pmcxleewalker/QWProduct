@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-09",
+  "base_report": "/app/test_reports/iteration_50.json",
+  "ui_success_confirmation": {
+    "status": "passed",
+    "checks": ["Valid form submission replaces the form", "Message sent confirmation is visible", "Keyboard focus moves to the confirmation panel"],
+    "api_response": "MOCKED browser-only HTTP 200 using the existing API contract; no additional lead or email created",
+    "real_api": "Independently tested in iteration 50"
+  },
+  "build": {
+    "status": "passed_with_existing_warnings",
+    "log": "/app/test_reports/landing-premium-build.log",
+    "warnings": "Existing html5-qrcode source maps, unrelated React hook dependencies and bundle size; no new landing-file warnings"
+  },
+  "runtime_mocked_integrations_added": false,
+  "deployment_performed": false
+}

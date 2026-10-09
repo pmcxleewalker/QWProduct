@@ -28,4 +28,4 @@
 ## Demo tenants (created via Command Centre → Create Tenant → Demo toggle)
 - **No credentials.** Access is via the magic link URL returned when the demo tenant is created (or reshown from Command Centre → Clients → row detail).
 - Demo user email is `demo+<slug>@quickwing.com` — password login is BLOCKED for these accounts (returns 401 "demo-only").
-- Magic link URL format: `<FRONTEND_URL>/demo-link/<token>` — opening in any browser (including incognito) auto-logs in the visitor as a demo master admin, no signup, no password.
+- Magic link URL format: `<FRONTEND_URL>/demo-link/<token>` — opening in any browser auto-logs in the visitor as a tenant-isolated demo `admin` (`is_demo=true`), never `master_admin` or platform admin; no signup, no password. Credentials unchanged in the 2026-10-09 public-site redesign.

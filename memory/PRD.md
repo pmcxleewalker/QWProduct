@@ -88,3 +88,9 @@ User requested a better-formatted/easier CSV and less sloppy review, then select
 - Production build succeeds; pre-existing QR-library source-map warnings and unrelated hook/bundle-size warnings remain. No new landing-file lint warnings. Build log: `test_reports/landing-premium-build.log`; regression: `test_reports/iteration_50.json`.
 - **Next action: user visual approval in preview.** No deployment performed. Optional future enhancement: a detailed, verified Bluebird Care case study to deepen industry credibility.
 - Existing backlog remains separate: P0 blocked production DB discovery/backup before Atlas migration (no DB changes); P1 monolith/SinoTrack Phase 7; P2 hardening/monitoring/backups. Testing also noted existing JWT fallback secret for the separate auth-hardening work. Hardware Register remains deferred by earlier explicit scope.
+
+### Follow-up — user-provided HCCI logo (2026-10-09)
+- Added the supplied, unchanged HCCI / Home & Community Care Ireland logo to the recognition strip and award story. It identifies the awarding body, not a client or implied endorsement; original award/client content and all other branding remain unchanged.
+- Asset: `frontend/public/images/hcci-logo.png` (738×198), from the user's attached PNG. Preserved proportions/colours with contained, responsive sizing and distinct test IDs; no integration/backend changes.
+- Browser verification passed at 320/768/1024/1440/1920: both images load, no cropping/distortion, no adjacent-text overlap or document overflow. Screenshot: `test_reports/hcci-logo-check.jpg`.
+- Next: user visual review. Optional later enhancement: link to the official award announcement once supplied/verified. Existing backlog unchanged; no deployment.

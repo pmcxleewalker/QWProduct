@@ -1,5 +1,10 @@
 # Quick Wing — Changelog
 
+## 2026-10-09 — HCCI logo follow-up
+- Added user-supplied HCCI logo, unchanged, to recognition strip and award section; all other logos/copy retained. Award-only context, no client/endorsement claims added.
+- Changed `pages/landing/content.js`, scoped `LandingPage.css`; added `public/images/hcci-logo.png` (738×198).
+- Verified both placements in browser at 320/768/1024/1440/1920 for loaded asset, natural aspect ratio, no clipping, text overlap or page overflow. No API/auth/database changes or deployment.
+
 ## 2026-10-09 — Premium and understated public website
 - User explicitly requested a more established fleet-industry aesthetic, preserving all marketing content/media/logos, clearer feature/pricing headings, dashboard in Features, and no cookie notice. Selected premium/understated over other options; prior 1:1 layout constraint superseded.
 - Replaced blue-heavy layout with warm white, charcoal, restrained accents and editorial typography. Supplied fleet photo anchors the hero; original dashboard is the first feature tab, with booking/compliance/reports/GPS tabs. Reorganized mobile gallery, award, founder/client proof, pricing, ROI and personal-contact sections.

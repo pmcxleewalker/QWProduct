@@ -89,6 +89,8 @@ html.qw-home { scroll-behavior: smooth; scroll-padding-top: 104px; }
 #qw-landing .podcast-logo { width: 40px; height: 40px; object-fit: contain; }
 #qw-landing .trust-award > svg { width: 24px; height: 28px; color: #837653; flex-shrink: 0; }
 #qw-landing .trust-award > .tag { display: none; }
+#qw-landing .trust-award { display: grid; grid-template-columns: 145px minmax(0,1fr); }
+#qw-landing .trust-award-logo { width: 145px; height: auto; object-fit: contain; }
 
 /* The product is the feature: stable screenshot frame and numbered feature index. */
 #qw-landing .features-section { background: #fff; }
@@ -134,6 +136,7 @@ html.qw-home { scroll-behavior: smooth; scroll-padding-top: 104px; }
 #qw-landing .award-section { background: #fff; border-block: 1px solid var(--line); }
 #qw-landing .award-layout { display: grid; grid-template-columns: 1fr 1.05fr; gap: 80px; align-items: center; }
 #qw-landing .award-copy { min-width: 0; }
+#qw-landing .award-body-logo { width: 260px; max-width: 100%; height: auto; object-fit: contain; margin-bottom: 30px; }
 #qw-landing .award-copy .section-title { font-size: 34px; }
 #qw-landing .award-copy .lead { font-size: 14px; }
 #qw-landing .award-grid { min-width: 0; display: grid; grid-template-columns: 1.7fr 1fr; gap: 12px; align-items: center; }
@@ -280,7 +283,7 @@ html.qw-home { scroll-behavior: smooth; scroll-padding-top: 104px; }
   #qw-landing .trust-in { flex-wrap: wrap; }
   #qw-landing .trust-award { order: 3; width: 100%; border-top: 1px solid var(--line); padding-top: 16px; }
   #qw-landing .trust-award > svg { display: block; }
-  #qw-landing .trust-award > .tag { display: block; margin-left: auto; }
+  #qw-landing .trust-award > .tag { display: block; grid-column: 2; margin-left: 0; }
   #qw-landing .tabs-wrap { grid-template-columns: .9fr 1fr; gap: 30px; }
   #qw-landing .tab { padding-right: 10px; gap: 10px; min-height: 130px; }
   #qw-landing .tab[aria-selected="true"] { padding-left: 10px; }
@@ -336,6 +339,9 @@ html.qw-home { scroll-behavior: smooth; scroll-padding-top: 104px; }
   #qw-landing .stat span { font-size: 9px; }
   #qw-landing .trust-in { gap: 20px; padding-block: 22px; }
   #qw-landing .trust-item { gap: 12px; }
+  #qw-landing .trust-award { grid-template-columns: minmax(0,1fr) auto; }
+  #qw-landing .trust-award-logo { width: 180px; grid-column: 1 / -1; }
+  #qw-landing .trust-award > .tag { grid-column: 2; }
   #qw-landing .client-logo { width: 110px; }
   #qw-landing .trust-item b { font-size: 10px; }
   #qw-landing .trust-item small { font-size: 9px; }

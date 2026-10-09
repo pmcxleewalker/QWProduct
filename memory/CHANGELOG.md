@@ -1,5 +1,14 @@
 # Quick Wing — Changelog
 
+## 2026-10-09 — Mobile finishing pass and video prominence
+- Demo now immediately follows hero/stats, with Watch demo CTA and navigation. Dark video band, visible stone/sage sections and restrained accent details replace the near-all-white sequence.
+- Removed requested 01/02 lifestyle photo pair; retained hero man and branding. Mobile hero photo no longer obscured by white overlay; mobile text displays immediately, fits more compactly and stays readable.
+- Compact mobile feature selector retains every description in selected preview. Single-row field gallery retains every screenshot/feature with working count/prev/next controls, scroll-snap and resize synchronization. Corrected mobile-to-desktop-to-mobile disabled-state bug and scroll-padding start-boundary bug.
+- Added local WebM alternative; original MP4 retained. Confirmed automated browser cannot play H.264 but can play VP9/Opus; actual playback now verified. No autoplay or default muting added to production. Both originals and media content preserved.
+- Production asset RCA found no missing images/routing fault; preview image load checks all pass. Original reported unspecified mobile image failure not reproduced as a missing file; mobile visual masking corrected.
+- Final build passed with no landing-file warnings. Direct browser verification at six widths, 19 decoded mobile images, actual video advancement/pause, tabs/menu/anchors, gallery boundaries/rotation and ROI passed. Testing agent timed out; main-agent report `test_reports/iteration_51.json` records completed checks honestly.
+- Changed: `pages/landing/content.js`, `LandingPage.css`, `useLandingInteractions.js`; new `public/video/quick-wing-demo.webm`. No app backend/auth/DB changes or new lead emails. Existing publication completed BEFORE this finishing pass; latest refinements remain in preview.
+
 ## 2026-10-09 — HCCI logo follow-up
 - Added user-supplied HCCI logo, unchanged, to recognition strip and award section; all other logos/copy retained. Award-only context, no client/endorsement claims added.
 - Changed `pages/landing/content.js`, scoped `LandingPage.css`; added `public/images/hcci-logo.png` (738×198).

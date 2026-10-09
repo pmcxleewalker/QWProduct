@@ -1,0 +1,20 @@
+HTTP/2 206 
+date: Fri, 09 Oct 2026 20:44:27 GMT
+content-type: video/mp4
+content-length: 2048
+content-range: bytes 0-2047/3463199
+cf-ray: a480392e0d28dad8-ORD
+cf-cache-status: DYNAMIC
+accept-ranges: bytes
+access-control-allow-origin: *
+cache-control: no-store, no-cache, must-revalidate
+etag: W/"34d81f-1a1220ea973"
+last-modified: Fri, 09 Oct 2026 19:05:48 GMT
+server: cloudflare
+via: 1.1 google
+access-control-allow-headers: *
+access-control-allow-methods: *
+x-powered-by: Express
+set-cookie: __cf_bm=m9souHeO93bGqWIKkGaf4tBC8Ua3wzvadtK6XdMqWVw-1791578667.2088017-1.0.1.1-XNzRy1DG_oQ7kX2T2HdTM_.YMRiKQQhzV1KA.OtxYe_pRa94drJAMELsQh_BfwvtJlXhFR11j6Kf5xOzUJ1OBmDzDKhS6bhozpUOviYIdbSZUlnqZMOG9L8aNVw1tUCH; HttpOnly; SameSite=None; Secure; Path=/; Domain=preview.emergentagent.com; Expires=Fri, 09 Oct 2026 21:14:27 GMT
+x-robots-tag: noindex, nofollow
+

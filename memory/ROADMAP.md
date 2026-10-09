@@ -1,8 +1,10 @@
 # Quick Wing — Roadmap
 
 ## Latest public-site work (2026-10-09)
+- Latest mobile finishing pass is verified in preview: early demo, richer section contrast, removed split-photo pair, compact features/gallery and visible mobile hero. Main-agent browser report iteration51; original testing workflow timed out, then bounded checks completed. Existing live publication predates this pass.
 - Premium/understated landing redesign implemented and verified (iteration 50; 4/4 backend, frontend six responsive widths). Awaiting user visual approval; no deployment performed.
 - Optional enhancement: a detailed Bluebird Care case study using verified customer results. Not approved for implementation yet.
+- Optional later mobile enhancement: captions for the demo video for sound-off viewing. Not implemented/approved.
 - P0 database safety remains: production database location/backup must be verified before any Atlas migration. Do not alter DB settings or run seeds.
 
 ## P0 — current approved scope

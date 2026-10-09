@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -37,7 +37,43 @@ export function useLandingInteractions(rootRef) {
     image.src = tab.dataset.img;
     image.alt = tab.dataset.alt;
     root.querySelector('#feature-preview-title').textContent = tab.dataset.title;
+    root.querySelector('#feature-preview-description').textContent = tab.dataset.description;
     root.querySelector('#feature-preview').setAttribute('aria-labelledby', tab.id);
+  };
+
+  const galleryState = useCallback(() => {
+    const gallery = rootRef.current.querySelector('#field-gallery');
+    const items = [...gallery.querySelectorAll('article')];
+    const step = items[1].offsetLeft - items[0].offsetLeft;
+    const atEnd = gallery.scrollLeft + gallery.clientWidth >= gallery.scrollWidth - 2;
+    const overflowing = gallery.scrollWidth > gallery.clientWidth + 2;
+    const index = !overflowing ? 0 : atEnd ? items.length - 1 : Math.round(gallery.scrollLeft / step);
+    return { gallery, items, index, atEnd };
+  }, [rootRef]);
+
+  const syncGallery = useCallback(() => {
+    const { items, index, atEnd } = galleryState();
+    const root = rootRef.current;
+    root.querySelector('[data-testid="landing-field-gallery-count"]').textContent = `${index + 1} / ${items.length}`;
+    root.querySelector('[data-gallery-step="-1"]').disabled = index === 0;
+    root.querySelector('[data-gallery-step="1"]').disabled = atEnd;
+  }, [rootRef, galleryState]);
+
+  useEffect(() => {
+    const gallery = rootRef.current.querySelector('#field-gallery');
+    const syncLayout = () => {
+      syncGallery();
+      rootRef.current.querySelector('.tabs').setAttribute('aria-orientation',
+        window.matchMedia('(max-width: 720px)').matches ? 'horizontal' : 'vertical');
+    };
+    const observer = new ResizeObserver(syncLayout);
+    observer.observe(gallery);
+    syncLayout();
+    return () => observer.disconnect();
+  }, [rootRef, syncGallery]);
+
+  const onScrollCapture = (event) => {
+    if (event.target.id === 'field-gallery') syncGallery();
   };
 
   const closeMenu = () => {
@@ -60,6 +96,14 @@ export function useLandingInteractions(rootRef) {
       return;
     }
     if (target.closest('#mobile-menu a')) closeMenu();
+    const galleryButton = target.closest('[data-gallery-step]');
+    if (galleryButton) {
+      const { gallery, items, index } = galleryState();
+      const next = Math.max(0, Math.min(items.length - 1, index + Number(galleryButton.dataset.galleryStep)));
+      gallery.scrollTo({ left: items[next].offsetLeft - items[0].offsetLeft,
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      return;
+    }
     const tab = target.closest('.tab');
     if (tab) selectTab(tab);
     const plan = target.closest('.plan-btns button');
@@ -125,7 +169,7 @@ export function useLandingInteractions(rootRef) {
     }
   };
 
-  return { onClick, onKeyDown, onSubmit, onInput: (event) => {
+  return { onClick, onKeyDown, onSubmit, onScrollCapture, onInput: (event) => {
     if (event.target.matches('input[type=range]')) calc();
   } };
 }

@@ -1,0 +1,37 @@
+{
+  "summary": "Mobile finishing pass verified in preview. Video moved directly below hero/stats, extra 01/02 photos removed, richer contrasting sections, clearer mobile hero and compact feature/gallery controls. All final executed browser checks passed.",
+  "verification_method": "Testing subagent timed out before producing a report. Main agent completed bounded Playwright browser checks through screenshot tool, ffprobe/ffmpeg media validation, preview HTTP probes and final production build.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "passed_checks": [
+    "No horizontal document overflow at 320,390,768,1024,1440,1920",
+    "Hero photo decoded; mobile text immediately opaque and white; obsolete white image mask removed",
+    "Demo is third section immediately after hero and stats; removed split-photo pair absent",
+    "Mobile Demo anchor and hamburger close work",
+    "All five feature tabs change screenshot, alt, title and selected description",
+    "Mobile field gallery advances1to4 and returns4to1 with correct boundary-disabled buttons",
+    "Gallery controls synchronize after mobile/desktop/mobile resizing",
+    "All19visible mobile images decode after scroll, including HCCI and gallery images",
+    "WebM video plays, currentTime advances,720pxnativewidth and60.594sduration; pause works",
+    "Original MP4 fully decodes with ffmpeg and serves206Range with proper MIME",
+    "ROI plan cost130/170 and default net376 preserved",
+    "Cookie notice absent",
+    "Final production build passes; no landing-file warnings"
+  ],
+  "fixed_during_verification": [
+    "Removed mobile entrance fade causing transient low-contrast text and tightened headline/CTA fit",
+    "Added gallery ResizeObserver synchronization after responsive mode changes",
+    "Corrected previous-button start state when native scroll snap leaves3pxpadding",
+    "Added VP9/Opus WebM option because test browser reports no H.264 support; original MP4 retained"
+  ],
+  "media_codec_evidence": {"browser_mp4_canPlayType": "", "browser_webm_canPlayType": "probably", "webm_actual_playback": "passed", "original_mp4_corrupt": false},
+  "production_asset_status": "Deployer investigation confirms all original referenced images/MP4 serve real200binaries. No production asset/routing defect found. Active publication predates this refinement; no new deployment initiated.",
+  "production_rca": "/app/deployer-agent-docs/RCA_3d97f6af-a4bc-4a55-b66d-c58f11ad6e53.MD",
+  "test_report_links": ["/app/test_reports/landing-mobile-refinement-build.log", "/app/test_reports/demo-video-response-headers.txt"],
+  "test_credentials": "None; public frontend only. No auth credentials changed.",
+  "mocked_apis": [],
+  "new_contact_submissions": 0,
+  "retest_needed": false,
+  "action_items": ["User visual approval of final mobile polish in preview"],
+  "limitations": "No physical iPhone/Safari playback test performed. Contact submission logic/backend unchanged, prior iteration50 realAPI validation remains baseline; no additional emails sent. Initial subagent screenshots were mid-animation and are not final visual evidence."
+}

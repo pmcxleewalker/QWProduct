@@ -18,12 +18,18 @@ const phones = [
 const softwareFeatures = ['Vehicle bookings &amp; shared calendar', 'Live fleet status dashboard', 'Compliance reminders &amp; fleet records', 'Inspections &amp; incident reporting', 'Built-in lift requests', 'Reports &amp; CSV export', 'AI Booking Intelligence'];
 const gpsFeatures = ['Everything in Fleet Software', 'Live GPS tracking', 'Live fleet map — follow active journeys in one calm view'];
 
+const DEMO_SECTION = `<section id="demo" class="section video-section" data-testid="landing-demo-section"><div class="wrap video-in">
+  <div class="video-copy"><h2 class="eyebrow" data-testid="landing-demo-heading">See it in action</h2><p class="section-title" data-testid="landing-demo-title">Smarter fleet management,<br><em>made simple.</em></p><p class="lead" data-testid="landing-demo-description">Less administration. Better oversight. Easier to manage.</p><div class="btns"><a data-testid="landing-demo-get-started" class="btn btn-primary" href="#contact">Get Started ${arrow}</a><a data-testid="landing-demo-pricing" class="btn btn-text" href="#pricing">See pricing ${arrow}</a></div><div class="video-photo"><img src="/images/photo-mobile.jpg" alt="Coordinator checking Quick Wing on her phone" loading="lazy" width="900" height="900"></div></div>
+  <div class="video-frame"><video data-testid="landing-demo-video" controls playsinline preload="metadata" poster="/images/demo-poster.jpg" aria-label="Quick Wing product demonstration"><source src="/video/quick-wing-demo.webm" type="video/webm"><source src="/video/quick-wing-demo.mp4" type="video/mp4"></video></div>
+</div></section>`;
+
 export const LANDING_HTML = `
 <header class="nav" data-testid="landing-header">
   <div class="wrap nav-in">
     <a data-testid="landing-nav-logo" class="nav-logo" href="/" aria-label="Quick Wing home"><img src="/images/quick-wing-logo-wide.png" alt="Quick Wing — Car Fleet Management" width="893" height="313"></a>
     <nav class="nav-links" aria-label="Main">
       <a data-testid="landing-nav-features" href="#features">Features</a>
+      <a data-testid="landing-nav-demo" href="#demo">Demo</a>
       <a data-testid="landing-nav-pricing" href="#pricing">Pricing</a>
       <a data-testid="landing-nav-roi" href="#roi">ROI Calculator</a>
       <a data-testid="landing-nav-award" href="#award">Award</a>
@@ -36,18 +42,18 @@ export const LANDING_HTML = `
     </div>
   </div>
   <nav data-testid="landing-mobile-menu" class="mobile-menu" id="mobile-menu" aria-label="Mobile">
-    <a data-testid="landing-mobile-features" href="#features">Features</a><a data-testid="landing-mobile-pricing" href="#pricing">Pricing</a><a data-testid="landing-mobile-roi" href="#roi">ROI Calculator</a><a data-testid="landing-mobile-award" href="#award">Award</a><a data-testid="landing-mobile-contact" href="/contact">Contact</a><a data-testid="landing-mobile-login" href="/login">Login</a>
+    <a data-testid="landing-mobile-features" href="#features">Features</a><a data-testid="landing-mobile-demo" href="#demo">Demo</a><a data-testid="landing-mobile-pricing" href="#pricing">Pricing</a><a data-testid="landing-mobile-roi" href="#roi">ROI Calculator</a><a data-testid="landing-mobile-award" href="#award">Award</a><a data-testid="landing-mobile-contact" href="/contact">Contact</a><a data-testid="landing-mobile-login" href="/login">Login</a>
   </nav>
 </header>
 <main>
   <section class="hero" data-testid="landing-hero" aria-labelledby="hero-title">
-    <div class="hero-backdrop" aria-hidden="true"><img src="/images/photo-field.jpg" alt="" fetchpriority="high"></div>
+    <div class="hero-backdrop" aria-hidden="true"><img data-testid="landing-hero-photo" src="/images/photo-field.jpg" alt="" width="900" height="1200" fetchpriority="high" loading="eager"></div>
     <div class="wrap hero-in">
       <div class="hero-copy">
         <p class="eyebrow" data-testid="landing-hero-brand"><span class="accent-line"></span>Quick Wing / Fleet management</p>
         <h1 id="hero-title" data-testid="landing-hero-title">Stay compliant.<br>Reduce downtime.<br><span>Control your fleet.</span></h1>
         <p class="hero-sub" data-testid="landing-hero-description">The simple, all-in-one system for vehicle bookings, compliance tracking, and live visibility. Built for teams that can't afford downtime.</p>
-        <div class="btns"><a data-testid="landing-hero-get-started" class="btn btn-primary" href="#contact">Get Started ${arrow}</a><a data-testid="landing-hero-features" class="btn btn-text" href="#features">See features <span aria-hidden="true">↗</span></a></div>
+        <div class="btns"><a data-testid="landing-hero-get-started" class="btn btn-primary" href="#contact">Get Started ${arrow}</a><a data-testid="landing-hero-demo" class="btn btn-text" href="#demo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z"/></svg>Watch demo</a></div>
         <a class="award-link" data-testid="landing-hero-award" href="#award">${award}<span>Winner · Technological Innovation of the Year 2026 · HCCI</span></a>
       </div>
       <span class="hero-caption" data-testid="landing-hero-caption">Built for teams that keep moving.</span>
@@ -61,6 +67,7 @@ export const LANDING_HTML = `
       <div class="stat" data-testid="landing-stat-setup"><b>1 afternoon</b><span>to set up</span></div>
     </div>
   </section>
+  ${DEMO_SECTION}
   <section class="trust" data-testid="landing-trust" aria-label="Clients and recognition">
     <div class="wrap trust-in">
       <div class="trust-item" data-testid="landing-trust-client"><span class="tag">Client</span><img src="/images/bluebird-care-logo.jpg" alt="Bluebird Care" class="client-logo" width="421" height="191"></div>
@@ -74,27 +81,19 @@ export const LANDING_HTML = `
       <div class="section-head"><div><h2 class="eyebrow" data-testid="landing-features-heading">01 / Features</h2><p class="section-title" data-testid="landing-features-title">Built for both sides<br>of the working day.</p></div><p class="lead" data-testid="landing-features-description">Less chasing. More clarity.<br>Easier coordination.</p></div>
       <div class="tabs-wrap">
         <div class="feature-list"><h3 class="section-subtitle" data-testid="landing-office-heading">In the office</h3><div class="tabs" role="tablist" aria-label="Admin features" aria-orientation="vertical">
-          ${features.map(([id, title, subtitle, description, alt], index) => `<button id="feature-tab-${index}" data-testid="landing-tab-${id}" class="tab" role="tab" aria-selected="${index === 0}" aria-controls="feature-preview" tabindex="${index === 0 ? '0' : '-1'}" data-img="/images/${id}.jpg" data-title="${subtitle}" data-alt="${alt}"><span class="tab-number">0${index + 1}</span><span class="tab-copy"><span class="tab-top"><b>${title}</b>${arrow}</span><span class="tab-subtitle">${subtitle}</span><span class="tab-description">${description}</span></span></button>`).join('')}
+          ${features.map(([id, title, subtitle, description, alt], index) => `<button id="feature-tab-${index}" data-testid="landing-tab-${id}" class="tab" role="tab" aria-selected="${index === 0}" aria-controls="feature-preview" tabindex="${index === 0 ? '0' : '-1'}" data-img="/images/${id}.jpg" data-title="${subtitle}" data-description="${description}" data-alt="${alt}"><span class="tab-number">0${index + 1}</span><span class="tab-copy"><span class="tab-top"><b>${title}</b>${arrow}</span><span class="tab-subtitle">${subtitle}</span><span class="tab-description">${description}</span></span></button>`).join('')}
         </div></div>
-        <div class="tab-stage" id="feature-preview" role="tabpanel" aria-labelledby="feature-tab-0" tabindex="0" data-testid="landing-feature-preview"><div class="preview-bar"><span data-testid="landing-preview-brand">Quick Wing</span><span id="feature-preview-title" data-testid="landing-preview-title">Live fleet status</span></div><div class="preview-image"><img data-testid="landing-tab-image" id="tab-img" src="/images/app-dashboard.jpg" alt="Live Fleet Status dashboard" loading="lazy" width="852" height="1348"></div></div>
-      </div>
-      <div class="split-photo">
-        <figure data-testid="landing-office-photo"><img src="/images/photo-office.jpg" alt="Office coordinator managing bookings on Quick Wing" loading="lazy" width="900" height="900"><figcaption><span>In the office</span><span aria-hidden="true">01</span></figcaption></figure>
-        <figure data-testid="landing-field-photo"><img src="/images/photo-field.jpg" alt="Team member checking Quick Wing on a phone beside a fleet van" loading="lazy" width="900" height="1200"><figcaption><span>Out in the field</span><span aria-hidden="true">02</span></figcaption></figure>
+        <div class="tab-stage" id="feature-preview" role="tabpanel" aria-labelledby="feature-tab-0" tabindex="0" data-testid="landing-feature-preview"><div class="preview-bar"><span data-testid="landing-preview-brand">Quick Wing</span><span id="feature-preview-title" data-testid="landing-preview-title">Live fleet status</span></div><p class="preview-description" id="feature-preview-description" data-testid="landing-preview-description" aria-live="polite">Bookings and live status—without the chasing.</p><div class="preview-image"><img data-testid="landing-tab-image" id="tab-img" src="/images/app-dashboard.jpg" alt="Live Fleet Status dashboard" loading="lazy" width="852" height="1348"></div></div>
       </div>
     </div>
   </section>
 
   <section class="section field-section" data-testid="landing-field-features">
     <div class="wrap"><div class="section-head"><div><h2 class="eyebrow" data-testid="landing-field-heading">Out in the field</h2><p class="section-title" data-testid="landing-field-title">One clear view. Live.</p></div><p class="lead" data-testid="landing-field-description">People and vehicles<br>moving together.</p></div>
-      <div class="phones">${phones.map(([id, title, description, alt], index) => `<article data-testid="landing-field-feature-${index}"><div class="phone"><img src="/images/${id}.jpg" alt="${alt}" loading="lazy" width="722" height="1584"></div><h3>${title}</h3><p>${description}</p></article>`).join('')}</div>
+      <div class="phones" id="field-gallery" data-testid="landing-field-gallery" role="region" aria-label="Mobile app features">${phones.map(([id, title, description, alt], index) => `<article data-testid="landing-field-feature-${index}" tabindex="0" aria-label="${title}"><div class="phone"><img src="/images/${id}.jpg" alt="${alt}" loading="lazy" width="722" height="1584"></div><h3>${title}</h3><p>${description}</p></article>`).join('')}</div>
+      <div class="gallery-nav" data-testid="landing-field-gallery-controls"><span class="gallery-count" data-testid="landing-field-gallery-count" aria-live="polite">1 / 4</span><div><button class="gallery-button" data-testid="landing-field-previous" data-gallery-step="-1" aria-label="Previous mobile feature" aria-controls="field-gallery" disabled>${arrow}</button><button class="gallery-button" data-testid="landing-field-next" data-gallery-step="1" aria-label="Next mobile feature" aria-controls="field-gallery">${arrow}</button></div></div>
     </div>
   </section>
-
-  <section class="section video-section" data-testid="landing-demo-section"><div class="wrap video-in">
-    <div class="video-copy"><h2 class="eyebrow" data-testid="landing-demo-heading">See it in action</h2><p class="section-title" data-testid="landing-demo-title">Smarter fleet management,<br><em>made simple.</em></p><p class="lead" data-testid="landing-demo-description">Less administration. Better oversight. Easier to manage.</p><div class="btns"><a data-testid="landing-demo-get-started" class="btn btn-primary" href="#contact">Get Started ${arrow}</a><a data-testid="landing-demo-pricing" class="btn btn-text" href="#pricing">See pricing ${arrow}</a></div><div class="video-photo"><img src="/images/photo-mobile.jpg" alt="Coordinator checking Quick Wing on her phone" loading="lazy" width="900" height="900"></div></div>
-    <div class="video-frame"><video data-testid="landing-demo-video" controls playsinline preload="none" poster="/images/demo-poster.jpg" aria-label="Quick Wing product demonstration"><source src="/video/quick-wing-demo.mp4" type="video/mp4"></video></div>
-  </div></section>
 
   <section id="award" class="section award-section" data-testid="landing-award"><div class="wrap award-layout">
     <div class="award-copy"><img class="award-body-logo" data-testid="landing-award-hcci-logo" src="/images/hcci-logo.png" alt="HCCI — Home &amp; Community Care Ireland" width="738" height="198" loading="lazy"><h2 class="eyebrow" data-testid="landing-award-heading">02 / Award-winning software</h2><p class="section-title" data-testid="landing-award-title">Technological Innovation<br>of the Year 2026.</p><p class="lead" data-testid="landing-award-description">Quick Wing was recognised at the Home &amp; Community Care Ireland (HCCI) Home Care Awards 2026, winning Technological Innovation of the Year. The award was presented to founder Lee Walker, Bluebird Care – Kerry and West Cork.</p><div class="facts" data-testid="landing-award-facts"><div><span>Awarding body</span><strong>Home &amp; Community Care Ireland</strong></div><div><span>Category</span><strong>Technological Innovation of the Year</strong></div><div><span>In use at</span><strong>Bluebird Care</strong></div></div></div>

@@ -1,5 +1,14 @@
 # Quick Wing — Changelog
 
+## 2026-10-09 — Mobile expandable headings
+- User requested the remaining long mobile sections be hidden inside subheadings. Added seven native disclosures, closed by default ≤767px: features, field app, award, stories, pricing, ROI, contact. Hero/video/recognition stay visible; all content and logos retained within their respective sections.
+- Desktop ≥768px remains fully expanded with summary controls hidden. Anchor/CTA/hash navigation opens targets automatically. Native keyboard/touch controls, preserved form/ROI state and remembered mobile expansion across resize.
+- Added mobileSectionMarkup.js, useMobileSections.js and MobileSections.css; integrated into existing static landing approach.
+- Initial iteration52 found state resets. Read-only RCA confirmed React19 compares the dangerouslySetInnerHTML prop by identity and resets DOM when passed a fresh object. Memoized the payload in LandingPage.js and changed responsive sync to query current nodes. Do not undo that memoization.
+- Retest iteration53 passed all requested mobile/desktop behavior, including settled fresh loads, breakpoint roundtrip, keyboard and hash navigation, form/ROI persistence, expanded feature/gallery interactions, unique IDs and no overflow at320/390/768/1024/1440/1920. Final build passes with no new landing-file warnings.
+- Folded mobile screenshot reviewed and saved at test_reports/artifacts/iter53/mobile-folded-sections.jpeg. Navigation-aborted media/telemetry requests investigated; independent asset probes returned valid206binary/MIME, no broken-asset defect found.
+- No backend/auth/DB changes, runtime mocks or lead emails. Latest accordion changes verified in preview; no additional deployment initiated. User review pending.
+
 ## 2026-10-09 — Mobile finishing pass and video prominence
 - Demo now immediately follows hero/stats, with Watch demo CTA and navigation. Dark video band, visible stone/sage sections and restrained accent details replace the near-all-white sequence.
 - Removed requested 01/02 lifestyle photo pair; retained hero man and branding. Mobile hero photo no longer obscured by white overlay; mobile text displays immediately, fits more compactly and stays readable.

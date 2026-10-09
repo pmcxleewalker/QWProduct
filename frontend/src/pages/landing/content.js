@@ -1,3 +1,5 @@
+import { withMobileSections } from './mobileSectionMarkup';
+
 const arrow = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 const check = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>';
 const award = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="6"/><path d="M8.2 13.4 7 22l5-3 5 3-1.2-8.6"/></svg>';
@@ -23,7 +25,7 @@ const DEMO_SECTION = `<section id="demo" class="section video-section" data-test
   <div class="video-frame"><video data-testid="landing-demo-video" controls playsinline preload="metadata" poster="/images/demo-poster.jpg" aria-label="Quick Wing product demonstration"><source src="/video/quick-wing-demo.webm" type="video/webm"><source src="/video/quick-wing-demo.mp4" type="video/mp4"></video></div>
 </div></section>`;
 
-export const LANDING_HTML = `
+const PAGE_HTML = `
 <header class="nav" data-testid="landing-header">
   <div class="wrap nav-in">
     <a data-testid="landing-nav-logo" class="nav-logo" href="/" aria-label="Quick Wing home"><img src="/images/quick-wing-logo-wide.png" alt="Quick Wing — Car Fleet Management" width="893" height="313"></a>
@@ -136,3 +138,5 @@ export const LANDING_HTML = `
   </div></section>
 </main>
 <footer class="footer" data-testid="landing-footer"><div class="wrap footer-in"><a href="/" data-testid="landing-footer-logo" aria-label="Quick Wing home"><img src="/images/quick-wing-logo-wide.png" alt="Quick Wing" width="893" height="313"></a><nav aria-label="Footer"><a data-testid="landing-footer-contact" href="/contact">Contact</a><a data-testid="landing-footer-login" href="/login">Login</a><a data-testid="landing-footer-privacy" href="/privacy-policy">Privacy Policy</a><a data-testid="landing-footer-podcast" href="https://youtu.be/_oR2ROeUOp4">AI Six Podcast</a></nav><small data-testid="landing-copyright">Quick Wing · Est. 2025 · A product of QuickFleet Limited<br>© 2026 QuickFleet Limited. All rights reserved.</small></div></footer>`;
+
+export const LANDING_HTML = withMobileSections(PAGE_HTML);

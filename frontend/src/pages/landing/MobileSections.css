@@ -1,0 +1,51 @@
+#qw-landing .mobile-section-summary { display: none; }
+#qw-landing .mobile-section-body { min-width: 0; }
+
+@media (max-width: 767px) {
+  #qw-landing .section.mobile-collapsible { padding-block: 0; border-top: 0; border-bottom: 1px solid var(--line); }
+  #qw-landing .mobile-section { width: 100%; }
+  #qw-landing .mobile-section-summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 18px;
+    min-height: 96px; padding-block: 21px; list-style: none; cursor: pointer;
+    color: var(--ink); -webkit-tap-highlight-color: transparent;
+    transition: background-color 180ms;
+  }
+  #qw-landing .mobile-section-summary::-webkit-details-marker { display: none; }
+  #qw-landing .mobile-section-summary::marker { content: ''; }
+  #qw-landing .mobile-section-summary:hover { background: rgba(60,78,49,.04); }
+  #qw-landing .mobile-section-summary:focus-visible { outline-offset: -5px; }
+  #qw-landing .mobile-section-label { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  #qw-landing .mobile-section-title { font-size: 17px; font-weight: 600; line-height: 1.4; }
+  #qw-landing .mobile-section-hint { font-size: 11px; line-height: 1.6; color: var(--body); }
+  #qw-landing .mobile-section-icon {
+    display: flex; align-items: center; justify-content: center; flex: 0 0 34px;
+    width: 34px; height: 34px; border: 1px solid #afbba7; border-radius: 50%;
+    color: #475a3d; transition: background-color 180ms, color 180ms;
+  }
+  #qw-landing .mobile-section[open] > .mobile-section-summary .mobile-section-icon { background: #314736; color: #fff; border-color: #314736; }
+  #qw-landing .mobile-section[open] > .mobile-section-summary .disclosure-plus { display: none; }
+  #qw-landing .mobile-section-body { padding-block: 6px 32px; }
+  #qw-landing .mobile-section-body .section-head { gap: 16px; }
+  #qw-landing .mobile-section-body .section-head .eyebrow { display: none; }
+  #qw-landing .mobile-section-body .section-head .section-title { margin-top: 0; font-size: 26px; }
+  #qw-landing .mobile-section-body .tabs-wrap,
+  #qw-landing .mobile-section-body .phones,
+  #qw-landing .mobile-section-body .prices { margin-top: 24px; }
+  #qw-landing .contact-section.mobile-collapsible { border-bottom-color: #465143; }
+  #qw-landing .contact-section .mobile-section-summary { color: #fff; }
+  #qw-landing .contact-section .mobile-section-hint { color: #c7d1c1; }
+  #qw-landing .contact-section .mobile-section-icon { color: #e3e9d7; border-color: #819173; }
+  #qw-landing .contact-section .mobile-section[open] > .mobile-section-summary .mobile-section-icon { background: #e3e9d7; color: #263024; }
+  #qw-landing .contact-section .mobile-section-summary:hover { background: rgba(255,255,255,.03); }
+  #qw-landing .contact-section .mobile-section-body { padding-bottom: 40px; }
+}
+
+@media (max-width: 380px) {
+  #qw-landing .mobile-section-summary { min-height: 92px; gap: 12px; }
+  #qw-landing .mobile-section-title { font-size: 16px; }
+  #qw-landing .mobile-section-hint { font-size: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #qw-landing .mobile-section-summary, #qw-landing .mobile-section-icon { transition: none; }
+}

@@ -64,3 +64,4 @@ User requested a better-formatted/easier CSV and less sloppy review, then select
 ## Status update (2026-06)
 - DONE (P0): demo account cross-tenant/platform escalation closed; platform privilege now user-document-only; demo banner bound to verified session. See CHANGELOG 2026-06.
 - OPEN: P1 server.py monolith split; P1 Admin Hardware Register; P1 SinoTrack Phase 7 (trip sharing + retention cron); P2 rate limiting/CORS lock/upload limits; P0-blocked MongoDB Atlas migration (needs prod infra verification — do not start).
+- DONE (2026-06): public landing page replaced with the supplied design; contact form wired to the existing lead backend (emails Lee@quick-wing.com); SEO tags refreshed.

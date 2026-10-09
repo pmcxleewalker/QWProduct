@@ -1,0 +1,26 @@
+{
+  "summary": "Iteration 49 — Full regression for new Quick Wing landing page (desktop + mobile) and backend contact form. 10/10 backend tests pass. All critical frontend flows verified: SEO/meta correct, no €179 anywhere, all hero/trust/award/features/video/proof/ROI/pricing/contact/footer sections render, no broken images, all 5 feature tabs swap #tab-img and set aria-selected, ROI maths exact (vehicles=20,hours=10,rate=16,plan €6.50 → 32h / €506 / €130 / €376), plan toggle updates cost to €170 at €8.50, contact form POSTs to /api/public/contact and the lead is persisted in Mongo with email_delivered_to=Lee@quick-wing.com and email_sent=true, success panel 'Message sent' replaces the form, empty submission keeps form visible, cookie notice present, all required hrefs correct (Login/Contact/Privacy/Podcast), video poster + source correct and 206 served. Mobile 390x844: scrollWidth=390 at top AND after scrolling the whole page, nav-links hidden, hamburger toggles #mobile-menu (open + aria-expanded) and closes on menu link click, .tabs & .phones overflow-x:auto, #c-name font-size=16px, submit + Get Started buttons = 48px tall. Route regression: /login, /contact, /privacy-policy render without landing CSS; superadmin login reaches /platform with normal dashboard styling (no landing CSS leak). Backend regression tests for superadmin + tenant admin login both 200.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_landing_contact_iter49.py",
+    "/app/test_reports/pytest/iter49_landing.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "LandingPage.js uses dangerouslySetInnerHTML with a very large static HTML+CSS string. Acceptable for 1:1 design fidelity but any future copy change requires React re-generation. Consider extracting the HTML to a .html file imported via raw-loader if iteration is expected.",
+    "Form submit handler sets `btn.disabled=true` but on error relies on the stale `original` text — fine, but if the user double-submits before failure the message briefly reads 'Sending…'. Minor UX only.",
+    "No client-side email format validation beyond native `type=email` + reportValidity() — backend accepts any non-empty string. Low risk since field is HTML `type=email` and leads are reviewed manually, but could be hardened."
+  ],
+  "updated_files": ["/app/backend/tests/test_landing_contact_iter49.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "superadmin@quickwing.com/Super123, admin.test-fleet@quickwing.com/admin123",
+  "seed_data_creation": "Two TEST_ prefixed contact_requests documents created in Mongo (test_iter49@example.com and test_pw@example.com); both have email_delivered_to=Lee@quick-wing.com. These can be left or cleaned up by filtering email LIKE 'test_%@example.com'.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Landing page is injected via dangerouslySetInnerHTML inside #qw-landing with all CSS scoped under that id. Click/input/submit delegation is attached to the root div. When testing tabs with Playwright, prefer page.evaluate(\"document.querySelector('[data-testid=...]').click()\") over page.click force=True — in a 1440px viewport the force-clicks on tabs occasionally land on the wrong element because the stage image is below the tabs; JS click is 100% reliable. Backend POST /api/public/contact returns {ok:true,id} and best-effort emails Lee via services/email_service.send_contact_lead_email (CONTACT_LEAD_INBOX in backend/.env)."
+}

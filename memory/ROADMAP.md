@@ -1,5 +1,9 @@
 # Quick Wing — Roadmap
 
+## Current public-site review (2026-10-10)
+- Warmer recognition/feature refinement implemented and verified (iteration54): Client label removed, balanced Bluebird/AI Six layout, separate HCCI award, stronger interactive feature tabs and preview. Phone accordion behaviour preserved. Await user visual approval in preview.
+- Optional later enhancement: recorded feature-specific walkthrough clips; not implemented or approved. Existing platform priorities below are unchanged.
+
 ## Latest public-site work (2026-10-09)
 - **Current review item:** mobile expandable headings implemented and verified (iteration53). Seven lower sections start closed on phones; desktop remains expanded; CTA/hash links open targets. All content retained. Await user visual approval of the shorter mobile version.
 - Latest mobile finishing pass is verified in preview: early demo, richer section contrast, removed split-photo pair, compact features/gallery and visible mobile hero. Main-agent browser report iteration51; original testing workflow timed out, then bounded checks completed. Existing live publication predates this pass.

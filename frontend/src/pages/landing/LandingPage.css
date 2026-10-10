@@ -1,9 +1,10 @@
 /* Public-site design system. Every visual rule is scoped away from the app. */
 html.qw-home { scroll-behavior: smooth; scroll-padding-top: 104px; }
 #qw-landing {
-  --paper: #f4f3ef; --stone: #e3e8df; --white: #fff;
-  --ink: #202622; --body: #575d59; --muted: #686e69;
-  --line: #d1d7cc; --blue: #235c88; --focus: #6999b8;
+  --paper: #faf8f5; --stone: #efece6; --white: #fff;
+  --ink: #181c1a; --body: #4a524d; --muted: #676f69;
+  --line: #e2dfd7; --blue: #1d5897; --focus: #2b6cb0;
+  --gold: #b88e38; --gold-light: #edce92;
   --max: 1240px;
   background: var(--paper); color: var(--ink);
   font-family: Manrope, sans-serif; -webkit-font-smoothing: antialiased;
@@ -128,7 +129,7 @@ html.qw-home { scroll-behavior: smooth; scroll-padding-top: 104px; }
 #qw-landing .video-section .eyebrow { color: #cbd4bd; }
 #qw-landing .video-section .eyebrow::before { content: ''; width: 28px; height: 1px; background: #b4a879; }
 #qw-landing .video-section .section-title { color: #f7f5ed; }
-#qw-landing .video-section .section-title em { color: #c7d2b3; }
+#qw-landing .video-section .section-title em { color: var(--gold-light); }
 #qw-landing .video-section .lead { color: #d1d7cd; }
 #qw-landing .video-section .btn-primary { background: #eeeede; color: #232d27; }
 #qw-landing .video-section .btn-primary:hover { background: #d8dfc5; }
@@ -139,7 +140,7 @@ html.qw-home { scroll-behavior: smooth; scroll-padding-top: 104px; }
 #qw-landing .video-photo img { width: 100%; aspect-ratio: 2.1; height: auto; object-fit: cover; object-position: 50% 34%; }
 #qw-landing .video-frame { width: min(100%,280px); margin-inline: auto; padding: 6px; border: 1px solid #8a967f; border-radius: 18px; background: #161d18; box-shadow: 0 20px 50px rgba(0,0,0,.22); }
 #qw-landing .video-frame video { width: 100%; aspect-ratio: 9/16; object-fit: contain; border-radius: 17px; background: #222924; }
-#qw-landing .award-section { background: #eef0e8; border-block: 1px solid var(--line); }
+#qw-landing .award-section { background: #f6f4ef; border-block: 1px solid var(--line); }
 #qw-landing .award-layout { display: grid; grid-template-columns: 1fr 1.05fr; gap: 80px; align-items: center; }
 #qw-landing .award-copy { min-width: 0; }
 #qw-landing .award-body-logo { width: 260px; max-width: 100%; height: auto; object-fit: contain; margin-bottom: 30px; }
@@ -173,10 +174,10 @@ html.qw-home { scroll-behavior: smooth; scroll-padding-top: 104px; }
 #qw-landing .pod svg { flex-shrink: 0; }
 
 /* Two equally legible plans, restrained rules rather than oversized dark cards. */
-#qw-landing .pricing-section { background: #e7e9e1; border-top: 1px solid var(--line); }
+#qw-landing .pricing-section { background: #f0eee9; border-top: 1px solid var(--line); }
 #qw-landing .prices { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 50px; }
 #qw-landing .price { display: flex; flex-direction: column; min-width: 0; padding: 36px; border: 1px solid var(--line); border-top: 3px solid #727d72; border-radius: 4px; background: #fff; }
-#qw-landing .price-gps { background: #f4f5ee; border-top-color: #5f7250; }
+#qw-landing .price-gps { background: #fcfaf5; border-top-color: var(--gold); }
 #qw-landing .price-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; min-height: 26px; }
 #qw-landing .plan-index { font-family: 'IBM Plex Mono', monospace; color: var(--muted); font-size: 11px; }
 #qw-landing .badge { color: var(--blue); font-size: 10px; font-weight: 600; border-bottom: 1px solid #a7bfc4; }

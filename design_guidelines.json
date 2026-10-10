@@ -1,257 +1,93 @@
 {
-  "project_meta": {
-    "title": "Quick Wing Public Home Page Redesign Blueprint",
-    "vibe": "Premium and Understated Industry Player",
-    "target_audience": "Irish Care Providers, Fleet Managers, Operations Directors, Transport Coordinators",
-    "design_archetype": "Architectural Editorial & Premium SaaS (Archetype 4 + Archetype 5 Hybrid)",
-    "key_objectives": [
-      "Shift visual tone from generic 'AI blue' to an authoritative, professional fleet management industry leader",
-      "Introduce a warm, high-contrast, editorial visual hierarchy with generous white space and clean typography",
-      "Relocate the large Live Fleet Status dashboard window into the Features section tabs",
-      "Organize features and pricing with clear, prominent subheadings",
-      "Remove cookie consent notices completely from the public landing experience",
-      "Preserve 100% of existing copy, client logos, HCCI award assets, video, ROI calculator logic, contact form backend, and data-testid attributes"
+  "project_title": "Quick Wing Landing Page Premium Refinement Blueprint",
+  "archetype": "ARCHETYPE 1 / 5 - Premium Understated & Warm Editorial",
+  "theme": {
+    "concept": "Warm Alabaster, Rich Obsidian Charcoal, Warm Cobalt Blue & Subtle Gold Recognition Accents",
+    "color_palette": {
+      "paper": "#FAF8F5",
+      "stone": "#EFECE6",
+      "white": "#FFFFFF",
+      "ink": "#181C1A",
+      "body": "#4A524D",
+      "muted": "#707872",
+      "line": "#E2DFD7",
+      "line_subtle": "#EBE8E0",
+      "blue": "#1D5897",
+      "blue_hover": "#144378",
+      "focus": "#2B6CB0",
+      "gold_accent": "#B88E38",
+      "gold_bg": "#FDFBF4",
+      "card_shadow": "0 20px 40px -15px rgba(24, 28, 26, 0.08), 0 1px 3px rgba(24, 28, 26, 0.05)",
+      "preview_glow": "0 24px 48px -12px rgba(29, 88, 151, 0.12), 0 4px 16px rgba(0, 0, 0, 0.04)"
+    },
+    "typography": {
+      "main_headings": "Manrope (SemiBold 600, Tight Tracking -0.02em)",
+      "accent_serif": "'DM Serif Display', Georgia, serif (Italic)",
+      "monospace": "'IBM Plex Mono', monospace (Labels & Tab Numbers)",
+      "body": "Manrope (Regular 400, line-height 1.65)"
+    }
+  },
+  "refinement_targets": [
+    {
+      "component": "Trust & Recognition Banner (data-testid='landing-trust')",
+      "issues_addressed": "Removed 'Client' word beside Bluebird logo; warm, balanced editorial layout with subtle hover states and card-like distinction.",
+      "changes": {
+        "content_js": "Remove `<span class=\"tag\">Client</span>` inside `data-testid=\"landing-trust-client\"`. Restructure trust items into an aligned 3-card editorial grid with warm card surfaces, soft borders (`#E2DFD7`), and hover lifts (`transform: translateY(-2px)`).",
+        "css": "Update `#qw-landing .trust` to `background: #FAF8F5; border-bottom: 1px solid var(--line);`. Grid `#qw-landing .trust-in` set to `display: grid; grid-template-columns: 1fr 1.3fr 1.1fr; gap: 24px; align-items: stretch;`. Each item styled as elevated card with `background: #FFFFFF`, `border: 1px solid var(--line)`, `padding: 20px 24px`, `border-radius: 8px`, `transition: all 200ms ease`. Client logo given crisp white background backdrop, `height: 48px; object-fit: contain;` without muddy filter."
+      }
+    },
+    {
+      "component": "Interactive Features Section (data-testid='landing-features')",
+      "issues_addressed": "Replaced cold/stale look with highly engaging, premium interactive dashboard showcase. Premium active tab state, warm cobalt indicator line, IBM Plex Mono index badges, and elevated preview stage with browser-bar header and soft ambient depth.",
+      "changes": {
+        "content_js": "Maintain 5 feature tabs switching live dashboard/booking/vehicles/reports/GPS screenshots with keyboard navigation support (Arrow keys, Home, End). Keep data-testid attributes intact (`landing-tab-*`, `landing-feature-preview`, `landing-tab-image`).",
+        "css_tabs": "#qw-landing .tab background set to `#FFFFFF` on hover and warm active fill `#EFECE6`. Active tab (`aria-selected='true'`) features a 3px left border accent in `var(--blue)` (`#1D5897`), text color `var(--ink)`, and subtle right chevron icon glow. Tab titles get `font-size: 16px; font-weight: 600;`. Descriptions get `font-size: 13px; color: var(--body);`.",
+        "css_stage": "#qw-landing .tab-stage styled with `background: #FAF8F5; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--preview_glow); overflow: hidden;`. Preview bar gets browser-window styling with 3 warm dot icons on left, brand pill `Quick Wing` in blue badge, and clean title. Preview image gets `border-radius: 8px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08); padding: 16px;`."
+      }
+    },
+    {
+      "component": "Mobile Accordion Headers & Expanded View (max-width: 767px)",
+      "issues_addressed": "Warm, tactile touch targets for 7 mobile accordion disclosures (`<details className='mobile-section'>`). Smooth summary background highlight and clear plus/minus pill icon.",
+      "changes": {
+        "css_mobile": "Mobile summary `min-height: 84px; padding: 18px 20px; background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px;`. Summary title `font-size: 16px; font-weight: 600; color: var(--ink);`. Hint `font-size: 12px; color: var(--body);`. Icon container `width: 32px; height: 32px; border-radius: 50%; background: #EFECE6; color: var(--blue);`. Open accordion changes summary header background to warm alabaster with subtle blue left accent bar."
+      }
+    },
+    {
+      "component": "Global Color System & Spacing Refinements",
+      "issues_addressed": "Eradicates grey/pale-sage flatness across hero, stats, demo, award, pricing, ROI calculator, and footer.",
+      "changes": {
+        "css_global": "Update CSS variables in `LandingPage.css`: `--paper: #FAF8F5; --stone: #EFECE6; --ink: #181C1A; --body: #4A524D; --muted: #707872; --line: #E2DFD7; --blue: #1D5897; --focus: #2B6CB0;`. Buttons get soft rounded-md styling (4px), smooth hover micro-transitions, and elevated shadow on primary CTAs."
+      }
+    }
+  ],
+  "exact_file_modifications": {
+    "/app/frontend/src/pages/landing/content.js": [
+      "In `trust-item` for Bluebird Care, remove `<span class=\"tag\">Client</span>` completely so the word 'Client' is no longer displayed beside Bluebird Care.",
+      "Ensure all asset paths (`/images/bluebird-care-logo.jpg`, `/images/ai-six-podcast.jpg`, `/images/hcci-logo.png`, screenshots) and testids remain strictly intact."
+    ],
+    "/app/frontend/src/pages/landing/LandingPage.css": [
+      "Update `:root` variables: `--paper: #FAF8F5; --stone: #EFECE6; --white: #ffffff; --ink: #181c1a; --body: #4A524D; --muted: #707872; --line: #E2DFD7; --blue: #1D5897; --focus: #2B6CB0;`.",
+      "Refine `#qw-landing .trust-in` layout grid for desktop (3 equal cards with internal padding `20px 24px`, white card backgrounds, subtle borders, flex alignment for text and image logos).",
+      "Refine `#qw-landing .tabs-wrap` and `.tab` styling: rounded edges, active left border indicator (`border-left: 3px solid var(--blue)`), IBM Plex Mono number styling in blue/muted tone.",
+      "Refine `#qw-landing .tab-stage` frame: elevated box shadow, clean browser header bar with status dot indicators, rich screenshot shadow."
+    ],
+    "/app/frontend/src/pages/landing/MobileSections.css": [
+      "Enhance summary touch target and card styling for collapsed accordion headers on mobile devices (`max-width: 767px`).",
+      "Add warm border and card fill to mobile summary headers to make them clearly tappable affordances."
+    ],
+    "/app/frontend/src/pages/LandingPage.js": [
+      "Keep stable `useMemo` for `dangerouslySetInnerHTML` to prevent React 19 re-render DOM node recreation.",
+      "Keep `rootRef` binding and hook integrations."
     ]
   },
-  "color_palette": {
-    "theme_mode": "Light Editorial with Dark Dynamic Highlights",
-    "background_primary": "#FBFBF9",
-    "background_secondary": "#F3F4F1",
-    "background_surface": "#FFFFFF",
-    "background_dark": "#0F172A",
-    "background_dark_subtle": "#1E293B",
-    "text_primary": "#0F172A",
-    "text_secondary": "#475569",
-    "text_muted": "#64748B",
-    "text_on_dark": "#F8FAFC",
-    "text_on_dark_muted": "#94A3B8",
-    "accent_primary": "#1E40AF",
-    "accent_hover": "#1E3A8A",
-    "accent_subtle": "#EFF6FF",
-    "border_light": "#E2E8F0",
-    "border_dark": "rgba(255, 255, 255, 0.12)",
-    "gold_award": "#D97706",
-    "gold_award_light": "#FEF3C7",
-    "gold_award_border": "rgba(217, 119, 6, 0.3)"
+  "testing_and_accessibility": {
+    "data_testids": "All original `data-testid` attributes preserved (`landing-trust-client`, `landing-trust-award`, `landing-trust-podcast`, `landing-features`, `landing-tab-*`, `landing-feature-preview`, etc.).",
+    "accessibility": "Full WCAG AA contrast ratio compliance (> 4.5:1 for body text, > 3:1 for large headings & interactive elements). Keyboard navigation enabled for tabs (`ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`, `Home`, `End`)."
   },
-  "typography": {
-    "heading_font": "Manrope, system-ui, sans-serif",
-    "body_font": "Manrope, system-ui, sans-serif",
-    "mono_font": "'IBM Plex Mono', monospace",
-    "hierarchy": {
-      "h1": {
-        "desktop": "text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.08]",
-        "mobile": "text-3xl font-extrabold tracking-tight leading-[1.12]",
-        "max_ceiling": "text-6xl"
-      },
-      "h2": {
-        "desktop": "text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight",
-        "mobile": "text-2xl font-extrabold tracking-tight"
-      },
-      "h3": {
-        "desktop": "text-xl lg:text-2xl font-bold tracking-tight",
-        "mobile": "text-lg font-bold"
-      },
-      "eyebrow": "text-xs font-mono uppercase tracking-[0.18em] font-semibold",
-      "lead": "text-lg lg:text-xl font-normal leading-relaxed text-slate-600"
-    }
-  },
-  "layout_and_sections": [
-    {
-      "section_id": "header_nav",
-      "type": "Sticky Header Navigation",
-      "description": "Clean, glassmorphism sticky navigation bar with 1px bottom border (#E2E8F0). Clean wide logo on left, clear navigation links in center, login link and primary CTA button on right.",
-      "elements": {
-        "logo": "/images/quick-wing-logo-wide.png",
-        "links": ["Features (#features)", "Award (#award)", "ROI Calculator (#roi)", "Pricing (#pricing)", "Contact (https://quick-wing.com/contact)"],
-        "login_link": "Login (https://quick-wing.com/login)",
-        "cta": "Get Started (#contact)"
-      },
-      "testids": ["landing-nav-logo", "landing-nav-login", "landing-menu-btn", "landing-mobile-menu"]
-    },
-    {
-      "section_id": "hero",
-      "type": "Hero Section (Warm Editorial Layout)",
-      "description": "Executive hero layout with warm off-white background (#FBFBF9) or deep obsidian tone (#0F172A). Relocates the big Live Fleet Status window into the Features section below. Displays award pill badge, strong authoritative headline ('Stay compliant. Reduce downtime. Control your fleet.'), lead copy, clear dual CTAs, key metrics bar (73% automated, €6.50/mo, 1 afternoon setup), and a compact phone device visual framing.",
-      "content_spec": {
-        "award_pill": "Winner · Technological Innovation of the Year 2026 · HCCI",
-        "eyebrow": "Trusted by Irish Care Providers",
-        "title": "Stay compliant. Reduce downtime. Control your fleet.",
-        "subtitle": "The simple, all-in-one system for vehicle bookings, compliance tracking, and live visibility. Built for teams that can't afford downtime.",
-        "stats": [
-          {"value": "73%", "label": "of fleet admin processes automated (Sept 2026)"},
-          {"value": "€6.50", "label": "per vehicle, per month"},
-          {"value": "1 afternoon", "label": "to set up"}
-        ]
-      }
-    },
-    {
-      "section_id": "trust_bar",
-      "type": "Client & Press Proof Bar",
-      "description": "Subtle, horizontal trust band with warm border top/bottom (#E2E8F0). Showcases Bluebird Care logo, HCCI Award badge, and AI Six Podcast feature link.",
-      "elements": [
-        {"type": "client", "logo": "/images/bluebird-care-logo.jpg", "label": "Client"},
-        {"type": "award", "title": "HCCI Home Care Awards 2026", "subtitle": "Technological Innovation of the Year — Winner"},
-        {"type": "podcast", "logo": "/images/ai-six-podcast.jpg", "title": "AI Six Podcast", "url": "https://youtu.be/_oR2ROeUOp4"}
-      ]
-    },
-    {
-      "section_id": "award",
-      "type": "Award Highlight Section",
-      "description": "2-column asymmetrical grid highlighting HCCI Technological Innovation of the Year 2026. Left column features award photo grid (big photo of Lee Walker + stacked certificate & trophy). Right column features structured editorial fact sheet.",
-      "imagery": [
-        "/images/hcci-award-lee-walker.jpg",
-        "/images/hcci-award-certificate.jpg",
-        "/images/hcci-award-trophy.jpg"
-      ]
-    },
-    {
-      "section_id": "features",
-      "type": "Core Features & Interactive Dashboard Section",
-      "description": "The centerpiece feature showcase. Includes office/field split photography, 5 interactive tab buttons, clear subheadings for each feature category, and the large Live Fleet Status dashboard window housed directly in tab 01 as requested.",
-      "subheadings": {
-        "section_head": "Built for both sides of the working day.",
-        "section_lead": "Less chasing. More clarity. Easier coordination."
-      },
-      "interactive_tabs": [
-        {"id": "landing-tab-app-dashboard", "num": "01", "title": "One organised admin view", "sub": "Live Fleet Status Dashboard", "desc": "Bookings and live status—without the chasing.", "image": "/images/app-dashboard.jpg"},
-        {"id": "landing-tab-app-booking", "num": "02", "title": "Booking management", "sub": "AI Booking Intelligence & Calendars", "desc": "Create, assign and repeat bookings, with AI Booking Intelligence.", "image": "/images/app-booking.jpg"},
-        {"id": "landing-tab-app-vehicles", "num": "03", "title": "Compliance & fleet records", "sub": "Vehicle Reminders & Document Tracking", "desc": "Reminders, fleet records and clear reports.", "image": "/images/app-vehicles.jpg"},
-        {"id": "landing-tab-app-reports", "num": "04", "title": "Reports & analytics", "sub": "Availability, Usage & Export", "desc": "All bookings, most-booked cars and daily availability, with CSV export.", "image": "/images/app-reports.jpg"},
-        {"id": "landing-tab-app-gps", "num": "05", "title": "Live GPS visibility", "sub": "Active Journey Tracking", "desc": "Follow active journeys in one calm view.", "image": "/images/app-gps.jpg"}
-      ],
-      "field_app_gallery": [
-        {"title": "For teams in the field", "desc": "Live availability—clear at a glance.", "image": "/images/app-mobile-home.jpg"},
-        {"title": "Book in seconds", "desc": "Personal bookings and calendars stay together.", "image": "/images/app-mobile-bookings.jpg"},
-        {"title": "Report from the field", "desc": "Checks and incidents—captured while details are fresh.", "image": "/images/app-mobile-docs.jpg"},
-        {"title": "Built-in lift requests", "desc": "A simple taxi system for Quick Wing users.", "image": "/images/app-mobile-lift.jpg"}
-      ],
-      "testids": ["landing-tab-app-dashboard", "landing-tab-app-booking", "landing-tab-app-vehicles", "landing-tab-app-reports", "landing-tab-app-gps", "landing-tab-image"]
-    },
-    {
-      "section_id": "video_demo",
-      "type": "Video Showcase Section",
-      "description": "Video frame with phone container playing /video/quick-wing-demo.mp4 with poster /images/demo-poster.jpg, paired with field photo (/images/photo-mobile.jpg) and executive copy.",
-      "video_src": "/video/quick-wing-demo.mp4",
-      "poster": "/images/demo-poster.jpg",
-      "secondary_photo": "/images/photo-mobile.jpg"
-    },
-    {
-      "section_id": "proof_founder",
-      "type": "Testimonial & Founder Story Cards",
-      "description": "2-column grid featuring a light testimonial card from Bluebird Care Director and a dark card with Founder Lee Walker's story + podcast link.",
-      "elements": {
-        "testimonial_quote": "Quick Wing has completely changed how we run our fleet. Compliance is under control, downtime is down, and my team finally have visibility of every vehicle without chasing spreadsheets. It's the kind of tool you didn't know you needed until you can't imagine working without it.",
-        "founder_title": "Built from real experience.",
-        "founder_quote": "I'm proud to announce the launch of Quick Wing. I built this to help businesses manage vehicle bookings, track compliance, and gain clear visibility in one place. Designed for real working teams who don't have time for complicated software.",
-        "founder_name": "Lee Walker",
-        "founder_role": "Founder & CEO, Quick Wing",
-        "podcast_link": "https://youtu.be/_oR2ROeUOp4"
-      }
-    },
-    {
-      "section_id": "roi_calculator",
-      "type": "Interactive ROI Calculator",
-      "description": "Interactive fleet return calculator. Left column with range sliders (vehicles: 1-150, hours: 1-60, hourly rate: €12-€45, plan buttons: €6.50 software / €8.50 software+GPS). Right column with live outputs (monthly hours saved, staff value saved, software cost, net return).",
-      "testids": ["roi-plan-6-5", "roi-plan-8-5"],
-      "calculation_formula": "saved_hours = (h * 52 / 12) * 0.73; value = saved_hours * hourly_rate; cost = vehicles * plan_price; net = value - cost"
-    },
-    {
-      "section_id": "pricing",
-      "type": "Transparent Pricing Tier Grid",
-      "description": "2-column pricing comparison with clear subheadings for features and plan scope.",
-      "plans": [
-        {
-          "name": "Fleet Software",
-          "price": "€6.50",
-          "period": "per vehicle / month",
-          "subheading": "Essential Software Management",
-          "features": [
-            "Vehicle bookings & shared calendar",
-            "Live fleet status dashboard",
-            "Compliance reminders & fleet records",
-            "Inspections & incident reporting",
-            "Built-in lift requests",
-            "Reports & CSV export",
-            "AI Booking Intelligence"
-          ]
-        },
-        {
-          "name": "Fleet Software + Live GPS",
-          "badge": "Full visibility",
-          "price": "€8.50",
-          "period": "per vehicle / month",
-          "subheading": "Complete Fleet Oversight & Telemetry",
-          "features": [
-            "Everything in Fleet Software",
-            "Live GPS tracking",
-            "Live fleet map — follow active journeys in one calm view"
-          ],
-          "map_image": "/images/app-gps.jpg"
-        }
-      ]
-    },
-    {
-      "section_id": "contact_form",
-      "type": "Executive Contact & Lead Generation",
-      "description": "2-column layout. Left column with contact details (Lee@quick-wing.com, availability note, onboarding reassurance). Right column with interactive contact form wired to /api/public/contact endpoint.",
-      "testids": [
-        "landing-contact-form",
-        "contact-full-name",
-        "contact-company",
-        "contact-email",
-        "contact-phone",
-        "contact-message",
-        "contact-submit"
-      ]
-    },
-    {
-      "section_id": "footer",
-      "type": "Site Footer",
-      "description": "Minimal, structured footer with logo, links (Contact, Login, Privacy Policy, AI Six Podcast), copyright and company details."
-    }
-  ],
-  "image_urls": [
-    {"category": "logo", "url": "/images/quick-wing-logo-wide.png", "description": "Quick Wing primary header & footer logo"},
-    {"category": "logo", "url": "/images/bluebird-care-logo.jpg", "description": "Bluebird Care client logo"},
-    {"category": "media", "url": "/images/ai-six-podcast.jpg", "description": "AI Six Podcast cover image"},
-    {"category": "award", "url": "/images/hcci-award-lee-walker.jpg", "description": "Lee Walker holding HCCI award trophy"},
-    {"category": "award", "url": "/images/hcci-award-certificate.jpg", "description": "HCCI Award Certificate photo"},
-    {"category": "award", "url": "/images/hcci-award-trophy.jpg", "description": "HCCI Award Glass Trophy photo"},
-    {"category": "lifestyle", "url": "/images/photo-office.jpg", "description": "Office fleet coordinator at desk"},
-    {"category": "lifestyle", "url": "/images/photo-field.jpg", "description": "Field worker next to van"},
-    {"category": "lifestyle", "url": "/images/photo-mobile.jpg", "description": "Coordinator using mobile app"},
-    {"category": "app_screenshot", "url": "/images/app-dashboard.jpg", "description": "Live Fleet Status Dashboard screenshot"},
-    {"category": "app_screenshot", "url": "/images/app-booking.jpg", "description": "Car Bookings & Intelligence screenshot"},
-    {"category": "app_screenshot", "url": "/images/app-vehicles.jpg", "description": "Fleet Vehicles & Compliance screenshot"},
-    {"category": "app_screenshot", "url": "/images/app-reports.jpg", "description": "Fleet Reports & Analytics screenshot"},
-    {"category": "app_screenshot", "url": "/images/app-gps.jpg", "description": "Live GPS Map screenshot"},
-    {"category": "mobile_screenshot", "url": "/images/app-mobile-home.jpg", "description": "Mobile App Home screen"},
-    {"category": "mobile_screenshot", "url": "/images/app-mobile-bookings.jpg", "description": "Mobile App Bookings calendar"},
-    {"category": "mobile_screenshot", "url": "/images/app-mobile-docs.jpg", "description": "Mobile App Inspections & Documents"},
-    {"category": "mobile_screenshot", "url": "/images/app-mobile-lift.jpg", "description": "Mobile App Lift Request screen"}
-  ],
-  "instructions_to_main_agent": [
-    "1. Do not modify backend code or route definitions.",
-    "2. Update `/app/frontend/src/pages/LandingPage.js` to implement the new 'Premium and Understated' design blueprint.",
-    "3. Replace the old bright blue CSS variables with warm stone/off-white backgrounds (--bg: #FBFBF9), rich charcoal text (--ink: #0F172A), dark slate containers (--navy: #0F172A, --navy-2: #1E293B), and refined cobalt blue accent (#1E40AF).",
-    "4. In the Hero section, remove the massive full-width Live Fleet Status dashboard window and place it inside Tab 01 of the Features section.",
-    "5. Ensure subheadings are present in both the Features section and Pricing cards to clearly explain features and pricing tiers.",
-    "6. Completely remove any Cookie Notice or Cookie Consent banner from the landing page as requested by user.",
-    "7. Preserve all existing event delegation logic (onClick, onInput, onSubmit) and exact data-testid attributes so automated test suites pass without regression.",
-    "8. Keep exact contact form submission API logic (`/api/public/contact`), ROI calculation formula, image URLs, and text content."
-  ],
   "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
-    "You tend to converge toward generic, 'on distribution' outputs. In frontend design, this creates what users call the 'AI slop' aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight.",
-    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
-    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
-    "Create depth through layered design elements with z-index hierarchy.",
-    "Use glass-morphism effects with backdrop filters (12-24px blur).",
-    "You MUST NOT apply universal transition. Eg: transition: all. Always add transitions for specific interactive elements.",
-    "You MUST NOT center align the app container.",
-    "NEVER use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯 for icons.",
-    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations.",
-    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
-    "All interactive and key informational elements MUST include a data-testid attribute to facilitate robust automated testing."
+    "Execute changes directly on target files: `/app/frontend/src/pages/landing/content.js`, `/app/frontend/src/pages/landing/LandingPage.css`, `/app/frontend/src/pages/landing/MobileSections.css`.",
+    "Do NOT alter mobile section default collapse behavior (<=767px collapsed, >=768px expanded).",
+    "Ensure the word 'Client' is removed from beside Bluebird logo in `content.js`.",
+    "Run frontend build / tests to verify visual rendering and testid stability after making updates."
   ]
 }

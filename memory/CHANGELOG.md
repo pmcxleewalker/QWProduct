@@ -1,5 +1,13 @@
 # Quick Wing — Changelog
 
+## 2026-10-10 — Warmer branding strip and interactive feature showcase
+- Removed visible “Client” label beside Bluebird; retained original Bluebird, AI Six and HCCI assets. Balanced Bluebird/AI Six recognition layout with clearer podcast action and separate HCCI award treatment.
+- Warm white/stone surfaces, charcoal selected states and restrained gold accents replace pale-sage flatness in the feature presentation. Added familiar feature icons, improved hierarchy, framed real product screenshots and synchronized preview index; retained all five tabs, text, images, keyboard controls and accessibility states.
+- Added See plans & pricing link with automatic mobile pricing-panel reveal. Mobile features summary gains a warm accent; all seven sections still start collapsed on phones and remain fully expanded on desktop.
+- Added `featureIcons.js` and `Showcase.css`; updated content, palette and preview-counter handler. Stable React19 memoized HTML retained. Fixed word spacing where mobile hides description line breaks.
+- Iteration54: all requested responsive/interaction/state/contrast checks passed across six widths; no JS errors, no runtime mocks. Main reviewed actual mobile/desktop screenshots and corrected report paths to persisted JPEGs. Build passes with no new landing warnings.
+- Evidence: `test_reports/iteration_54.json`, `test_reports/artifacts/iter54/`, `test_reports/landing-showcase-build.log`. No auth/backend/database changes, contact emails or deployment. User visual review pending.
+
 ## 2026-10-09 — Mobile expandable headings
 - User requested the remaining long mobile sections be hidden inside subheadings. Added seven native disclosures, closed by default ≤767px: features, field app, award, stories, pricing, ROI, contact. Hero/video/recognition stay visible; all content and logos retained within their respective sections.
 - Desktop ≥768px remains fully expanded with summary controls hidden. Anchor/CTA/hash navigation opens targets automatically. Native keyboard/touch controls, preserved form/ROI state and remembered mobile expansion across resize.

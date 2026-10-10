@@ -4,6 +4,7 @@ import { useLandingInteractions } from './landing/useLandingInteractions';
 import { useMobileSections } from './landing/useMobileSections';
 import './landing/LandingPage.css';
 import './landing/MobileSections.css';
+import './landing/Showcase.css';
 
 // Static, trusted site content keeps the supplied copy and assets intact.
 // Interaction is delegated to the root; no submitted values enter the markup.

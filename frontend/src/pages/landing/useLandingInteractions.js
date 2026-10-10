@@ -38,6 +38,7 @@ export function useLandingInteractions(rootRef) {
     image.alt = tab.dataset.alt;
     root.querySelector('#feature-preview-title').textContent = tab.dataset.title;
     root.querySelector('#feature-preview-description').textContent = tab.dataset.description;
+    root.querySelector('#feature-preview-index').textContent = `${tab.dataset.index.padStart(2, '0')} / 05`;
     root.querySelector('#feature-preview').setAttribute('aria-labelledby', tab.id);
   };
 

@@ -74,7 +74,7 @@ html.qw-home { scroll-behavior: smooth; scroll-padding-top: 104px; }
 #qw-landing .award-link svg { flex-shrink: 0; color: #7e734d; }
 #qw-landing .hero-caption { position: absolute; right: 40px; bottom: 26px; font-size: 10px; color: white; padding: 5px 9px; background: rgba(29,37,30,.78); }
 #qw-landing .stats-band { background: #fff; border-bottom: 1px solid var(--line); }
-#qw-landing .stats { display: grid; grid-template-columns: 1fr 1.2fr 1fr 1fr; align-items: center; padding-block: 28px; }
+#qw-landing .stats { display: grid; grid-template-columns: 1fr 1.3fr 1fr; align-items: center; padding-block: 28px; }
 #qw-landing .stats-label { font-size: 12px; color: var(--muted); line-height: 1.8; }
 #qw-landing .stats-label strong { color: var(--ink); font-weight: 600; }
 #qw-landing .stat { min-width: 0; display: flex; align-items: center; gap: 16px; padding-left: 30px; border-left: 1px solid var(--line); }
@@ -92,6 +92,13 @@ html.qw-home { scroll-behavior: smooth; scroll-padding-top: 104px; }
 #qw-landing .trust-award > .tag { display: none; }
 #qw-landing .trust-award { display: grid; grid-template-columns: 145px minmax(0,1fr); }
 #qw-landing .trust-award-logo { width: 145px; height: auto; object-fit: contain; }
+
+/* Official fuel-card partnership band. */
+#qw-landing .partners { background: var(--bg); border-bottom: 1px solid var(--line); }
+#qw-landing .partners-in { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 14px 28px; padding-block: 26px; text-align: center; }
+#qw-landing .partners-label { font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+#qw-landing .partners-logo { width: 190px; max-width: 60vw; height: auto; object-fit: contain; }
+#qw-landing .partners-note { font-size: 11px; color: var(--muted); max-width: 320px; }
 
 /* The product is the feature: stable screenshot frame and numbered feature index. */
 #qw-landing .features-section { background: var(--paper); }
@@ -285,7 +292,7 @@ html.qw-home { scroll-behavior: smooth; scroll-padding-top: 104px; }
   #qw-landing .hero-sub { max-width: 380px; }
   #qw-landing .hero-backdrop::after { background: linear-gradient(90deg,#f3f4f1 0%,#f3f4f1 32%,rgba(243,244,241,.94) 44%,rgba(243,244,241,.25) 70%,rgba(243,244,241,0) 100%); }
   #qw-landing .hero-caption { display: none; }
-  #qw-landing .stats { grid-template-columns: 1fr 1.3fr 1fr 1.1fr; }
+  #qw-landing .stats { grid-template-columns: 1fr 1.3fr 1fr; }
   #qw-landing .stat { flex-direction: column; align-items: flex-start; gap: 2px; }
   #qw-landing .stat b { font-size: 24px; }
   #qw-landing .trust-in { flex-wrap: wrap; }
@@ -344,7 +351,7 @@ html.qw-home { scroll-behavior: smooth; scroll-padding-top: 104px; }
   #qw-landing .hero .btn { font-size: 12px; padding-inline: 16px; gap: 10px; }
   #qw-landing .award-link { margin-top: 22px; font-size: 9px; align-items: flex-start; max-width: 320px; color: #d1d8cb; }
   #qw-landing .award-link svg { width: 15px; height: 17px; color: #d2c393; }
-  #qw-landing .stats { grid-template-columns: repeat(3,minmax(0,1fr)); row-gap: 18px; padding-block: 22px; }
+  #qw-landing .stats { grid-template-columns: repeat(2,minmax(0,1fr)); row-gap: 18px; padding-block: 22px; }
   #qw-landing .stats-label { grid-column: 1 / -1; display: flex; gap: 5px; font-size: 10px; }
   #qw-landing .stats-label br { display: none; }
   #qw-landing .stat { padding-left: 15px; }

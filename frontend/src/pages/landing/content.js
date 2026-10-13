@@ -63,16 +63,22 @@ const PAGE_HTML = `
     <div class="wrap stats">
       <p class="stats-label" data-testid="landing-trust-label">Trusted by<br><strong>Irish Care Providers</strong></p>
       <div class="stat" data-testid="landing-stat-automation"><b>73%</b><span>of fleet admin processes<br>automated (Sept 2026)</span></div>
-      <div class="stat" data-testid="landing-stat-price"><b>€6.50</b><span>per vehicle,<br>per month</span></div>
       <div class="stat" data-testid="landing-stat-setup"><b>1 afternoon</b><span>to set up</span></div>
     </div>
   </section>
   ${DEMO_SECTION}
   <section class="trust" data-testid="landing-trust" aria-label="Quick Wing recognition">
     <div class="wrap trust-in">
-      <div class="trust-item trust-bluebird" data-testid="landing-trust-client"><img src="/images/bluebird-care-logo.jpg" alt="Bluebird Care" class="client-logo" width="421" height="191"><span class="brand-location" data-testid="landing-bluebird-location">Kerry &amp; West Cork</span></div>
+      <div class="trust-item trust-bluebird" data-testid="landing-trust-client"><img src="/images/bluebird-care-logo.jpg" alt="Bluebird Care" class="client-logo" width="421" height="191"></div>
       <a class="trust-item trust-podcast" data-testid="landing-trust-podcast" href="https://youtu.be/_oR2ROeUOp4"><div class="podcast-identity"><img src="/images/ai-six-podcast.jpg" alt="AI Six Podcast" class="podcast-logo" width="500" height="449"><span><small class="tag" data-testid="landing-podcast-context">As featured on</small><b>AI Six<br>Podcast</b></span></div><span class="podcast-watch" data-testid="landing-podcast-watch">Watch the episode ${arrow}</span></a>
       <div class="trust-item trust-award" data-testid="landing-trust-award"><div class="award-identity"><img class="trust-award-logo" data-testid="landing-trust-hcci-logo" src="/images/hcci-logo.png" alt="HCCI — Home &amp; Community Care Ireland" width="738" height="198"><span class="recognition-label" data-testid="landing-award-recognition-label">${award}Award</span></div><span class="recognition-copy"><b>HCCI Home Care Awards 2026</b><small>Technological Innovation of the Year — Winner</small></span></div>
+    </div>
+  </section>
+  <section class="partners" data-testid="landing-partners" aria-label="Official partnership">
+    <div class="wrap partners-in">
+      <span class="partners-label" data-testid="landing-partners-label">Official partner</span>
+      <img class="partners-logo" data-testid="landing-partner-radius" src="/images/radius-dci-logo.png" alt="Radius | DCI — official fuel-card partner" width="880" height="145" loading="lazy">
+      <p class="partners-note" data-testid="landing-partners-note">Optional Radius&nbsp;/&nbsp;DCI fuel-card benefits for eligible customers.</p>
     </div>
   </section>
 

@@ -154,5 +154,13 @@ User approved Phases A+B. Implemented and verified end-to-end (iteration_55: 18/
 
 ### Remaining backlog (unchanged, separate from the above)
 - P0 BLOCKED: MongoDB Atlas migration — needs prod infra verification; do not start.
+
+## New-tenant setup is now tier-based (2026-06)
+Command Centre "New Client" form rebuilt around the per-vehicle tiers (verified via curl + UI screenshot).
+- Removed Number of Cars, Number of Staff and Monthly Cost fields, plus the old subscription-access dropdown.
+- Added a single-select tier picker: Standard €6.50 and Essential €8.50 selectable (tick); Professional €12.50 shown greyed as "Coming soon", not selectable. Prices/features come from `/api/public/subscription-catalog`.
+- Backend `create_tenant` (`server.py`) + `TenantCreate.tier` (`models/tenant.py`): a chosen tier sets `subscription_catalogue=per_vehicle_v1`, `plan=tier`, unlimited capacity (`max_vehicles=max_users=1_000_000`), `monthly_price=0`, and provisions a `tenant_subscription_controls` doc with an `active_agreement` so the tier's preset capabilities load immediately.
+- Essential auto-sets `gps_available=true` but keeps `gps_enabled=false` (GPS available, OFF until activated — hardware stays separate). Professional is rejected (422) by the tier field pattern.
+- Display: capacity shows "Unlimited"/"∞" wherever a tenant is at the unlimited sentinel (PlatformAdmin tenant details & cards, Admin.js badges). Demo tenants unchanged (legacy).
 - P1: Phase C Professional reporting suite (fix random/forecast metrics first, then real utilisation/XLSX/advanced PDF); server.py monolith split; Admin Hardware Register; SinoTrack Phase 7 (trip sharing + retention cron).
 - P2: slowapi rate limiting / CORS lock / upload limits / JWT expiry hardening; Sentry + nightly backups; external booking API key.

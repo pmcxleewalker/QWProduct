@@ -1050,35 +1050,49 @@ async def create_tenant(
     
     # Get plan configuration
     plan_config = PLAN_CONFIG.get(tenant_data.plan, PLAN_CONFIG[TenantPlan.STANDARD])
-    
-    # Use custom limits if provided by super admin, otherwise use plan defaults
-    max_vehicles = tenant_data.custom_max_vehicles or plan_config["max_vehicles"]
-    max_users = tenant_data.custom_max_users or plan_config["max_users"]
     customizations = plan_config["customizations_per_month"]
-    
+
+    # New per-vehicle tier setup: unlimited capacity, tier-priced, preset features.
+    UNLIMITED_CAPACITY = 1_000_000
+    tier = getattr(tenant_data, "tier", None)
+    is_per_vehicle_tier = (not tenant_data.is_demo) and tier in ("standard", "essential")
+    if is_per_vehicle_tier:
+        plan_value = tier
+        max_vehicles = UNLIMITED_CAPACITY
+        max_users = UNLIMITED_CAPACITY
+        monthly_price = 0.0
+        catalogue = "per_vehicle_v1"
+        # Essential includes GPS as an entitlement; it stays OFF until activated.
+        gps_available = True if tier == "essential" else bool(getattr(tenant_data, "gps_available", False))
+    else:
+        plan_value = tenant_data.plan.value
+        max_vehicles = tenant_data.custom_max_vehicles or plan_config["max_vehicles"]
+        max_users = tenant_data.custom_max_users or plan_config["max_users"]
+        monthly_price = (
+            tenant_data.custom_price
+            if tenant_data.custom_price is not None
+            else float(plan_config.get("price", 0))
+        )
+        catalogue = "legacy" if tenant_data.is_demo else tenant_data.subscription_catalogue
+        gps_available = bool(getattr(tenant_data, "gps_available", False))
+
     tenant_id = str(uuid.uuid4())
-    # Monthly price: custom price overrides plan default
-    monthly_price = (
-        tenant_data.custom_price
-        if tenant_data.custom_price is not None
-        else float(plan_config.get("price", 0))
-    )
     tenant = {
         "id": tenant_id,
         "name": tenant_data.name,
         "slug": tenant_data.slug,
         "status": TenantStatus.ACTIVE.value,
-        "plan": tenant_data.plan.value,
+        "plan": plan_value,
         "max_vehicles": max_vehicles,
         "max_users": max_users,
         "monthly_price": monthly_price,
-        "subscription_catalogue": "legacy" if tenant_data.is_demo else tenant_data.subscription_catalogue,
+        "subscription_catalogue": catalogue,
         "customizations_remaining": customizations,
         "customizations_reset_date": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
         "feature_overrides": tenant_data.feature_overrides or {},
         "subscription_expires_at": None,
         "is_demo": bool(tenant_data.is_demo),
-        "gps_available": bool(getattr(tenant_data, "gps_available", False)),
+        "gps_available": gps_available,
         "gps_requested": False,
         "gps_enabled": False,
         "gps_settings": None,
@@ -1087,6 +1101,38 @@ async def create_tenant(
     }
     
     await db.tenants.insert_one(tenant)
+
+    # Provision the chosen per-vehicle tier so preset entitlements load immediately.
+    if is_per_vehicle_tier:
+        from services.subscription_catalog import PLANS as NEW_PLANS
+        offer = NEW_PLANS[tier]
+        now_iso = datetime.now(timezone.utc).isoformat()
+        await db.tenant_subscription_controls.insert_one({
+            "_id": tenant_id,
+            "tenant_id": tenant_id,
+            "revision": 1,
+            "active_agreement": {
+                "plan": tier,
+                "name": offer["name"],
+                "unit_price_cents": offer["unit_price_cents"],
+                "currency": "EUR",
+                "pricing_version": "per_vehicle_v1",
+                "effective_at": now_iso,
+                "effective_date": now_iso[:10],
+                "billing_managed_separately": True,
+                "provisioned_at_setup": True,
+            },
+            "grandfather_capabilities": [],
+            "legacy_feature_overrides": {},
+            "requests": [],
+            "audit_events": [{
+                "id": str(uuid.uuid4()),
+                "action": "provisioned_at_setup",
+                "request_id": None,
+                "actor_id": context.user_id,
+                "at": now_iso,
+            }],
+        })
     
     # Remove MongoDB's _id before returning
     tenant.pop('_id', None)

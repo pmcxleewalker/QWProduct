@@ -92,6 +92,8 @@ const PlatformAdmin = () => {
   
   // Plan configurations
   const [planConfigs, setPlanConfigs] = useState([]);
+  // New per-vehicle tier catalogue (for new-tenant setup)
+  const [tierCatalog, setTierCatalog] = useState(null);
   
   // Create tenant form
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -99,12 +101,9 @@ const PlatformAdmin = () => {
     name: '', 
     slug: '', 
     plan: 'custom',
-    subscription_catalogue: 'per_vehicle_v1',
+    tier: 'standard',
     master_admin_email: '', 
     master_admin_name: '',
-    custom_max_vehicles: 10,
-    custom_max_users: 15,
-    custom_price: 199,
     is_demo: false,
     demo_link_expires_in_days: 30,
     gps_available: false,
@@ -194,6 +193,12 @@ const PlatformAdmin = () => {
       fetchReportsData();
     }
   }, [activeTab, reportsTab]);
+
+  useEffect(() => {
+    axios.get(`${API}/public/subscription-catalog`)
+      .then(res => setTierCatalog(res.data))
+      .catch(() => setTierCatalog(null));
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -406,7 +411,8 @@ const PlatformAdmin = () => {
       
       const response = await axios.post(`${API}/platform/tenants`, {
         ...newTenant,
-        subscription_catalogue: newTenant.subscription_catalogue || 'per_vehicle_v1',
+        tier: newTenant.is_demo ? undefined : newTenant.tier,
+        subscription_catalogue: newTenant.is_demo ? 'legacy' : 'per_vehicle_v1',
         master_admin_email: newTenant.master_admin_email || undefined,
         master_admin_name: newTenant.master_admin_name || undefined,
       });
@@ -417,14 +423,12 @@ const PlatformAdmin = () => {
         name: '', 
         slug: '', 
         plan: 'custom', 
-        subscription_catalogue: 'per_vehicle_v1',
+        tier: 'standard',
         master_admin_email: '', 
         master_admin_name: '',
-        custom_max_vehicles: 10,
-        custom_max_users: 15,
-        custom_price: 199,
         is_demo: false,
         demo_link_expires_in_days: 30,
+        gps_available: false,
       });
       fetchData();
     } catch (err) {
@@ -1376,59 +1380,57 @@ const PlatformAdmin = () => {
                     </div>
                   </div>
                   
-                  {/* Custom Plan Configuration */}
+                  {/* Tier selection (real tenants) — prices & features come from each tier */}
+                  {!newTenant.is_demo && (
                   <div className="border-t pt-4 mt-4">
-                    <h4 className="font-medium text-gray-900 mb-3">Plan Configuration</h4>
-                    <p className="text-xs text-gray-500 mb-4">Set the limits and price for this franchise's custom plan.</p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Number of Cars *</label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={newTenant.custom_max_vehicles ?? ''}
-                          onChange={(e) => setNewTenant({ ...newTenant, custom_max_vehicles: e.target.value ? parseInt(e.target.value) : null })}
-                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                          placeholder="e.g. 25"
-                          required
-                          data-testid="tenant-vehicles-input"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Number of Staff *</label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={newTenant.custom_max_users ?? ''}
-                          onChange={(e) => setNewTenant({ ...newTenant, custom_max_users: e.target.value ? parseInt(e.target.value) : null })}
-                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                          placeholder="e.g. 30"
-                          required
-                          data-testid="tenant-users-input"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Cost (€) *</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">€</span>
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={newTenant.custom_price ?? ''}
-                            onChange={(e) => setNewTenant({ ...newTenant, custom_price: e.target.value ? parseFloat(e.target.value) : null })}
-                            className="w-full pl-7 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                            placeholder="e.g. 199"
-                            required
-                            data-testid="tenant-price-input"
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">/ month</span>
-                        </div>
-                      </div>
+                    <h4 className="font-medium text-gray-900 mb-1">Choose a plan</h4>
+                    <p className="text-xs text-gray-500 mb-4">Select the tier for this franchise. Capacity is unlimited and pricing is per vehicle / month — the tier's advertised features are applied automatically.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3" data-testid="tenant-tier-picker">
+                      {(tierCatalog?.plans || []).map((p) => {
+                        const comingSoon = p.status !== 'available';
+                        const selected = newTenant.tier === p.id;
+                        return (
+                          <button
+                            type="button"
+                            key={p.id}
+                            disabled={comingSoon}
+                            onClick={() => !comingSoon && setNewTenant({ ...newTenant, tier: p.id })}
+                            data-testid={`tenant-tier-${p.id}`}
+                            aria-pressed={selected}
+                            className={`text-left rounded-xl border-2 p-4 transition-all ${
+                              comingSoon
+                                ? 'border-gray-200 bg-gray-50 opacity-70 cursor-not-allowed'
+                                : selected
+                                  ? 'border-blue-600 bg-blue-50 shadow-sm'
+                                  : 'border-gray-200 hover:border-blue-300 bg-white'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className={`h-4 w-4 rounded border flex items-center justify-center ${selected ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`} data-testid={`tenant-tier-${p.id}-tick`}>
+                                {selected && <Check size={12} className="text-white" />}
+                              </span>
+                              {p.recommended && <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-600">Best value</span>}
+                              {comingSoon && <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Coming soon</span>}
+                            </div>
+                            <p className="font-semibold text-gray-900">{p.name.replace('QuickWing ', '')}</p>
+                            <p className="text-sm text-gray-700 mb-2"><span className="text-xl font-bold">€{(p.unit_price_cents / 100).toFixed(2)}</span> <span className="text-xs text-gray-500">/ vehicle / month</span></p>
+                            <ul className="space-y-1">
+                              {(p.highlights || []).slice(0, 5).map((h, i) => (
+                                <li key={i} className="flex gap-1.5 text-[11px] text-gray-600"><Check size={12} className="text-blue-500 mt-0.5 flex-shrink-0" /><span>{h}</span></li>
+                              ))}
+                            </ul>
+                          </button>
+                        );
+                      })}
                     </div>
+                    {newTenant.tier === 'essential' && (
+                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mt-3" data-testid="tenant-tier-gps-note">
+                        Essential includes GPS. It will be made available to this tenant but stays OFF until you activate it from the Command Centre once hardware is arranged.
+                      </p>
+                    )}
                   </div>
-                  
-                  {!newTenant.is_demo && <div className="border-t pt-4 mt-4"><label htmlFor="tenant-catalogue" className="block text-sm font-medium text-gray-700 mb-2">Subscription access model</label><select id="tenant-catalogue" data-testid="tenant-subscription-catalogue" value={newTenant.subscription_catalogue || 'per_vehicle_v1'} onChange={e => setNewTenant({ ...newTenant, subscription_catalogue: e.target.value })} className="w-full p-3 border rounded-lg"><option value="per_vehicle_v1">New per-vehicle offer — Standard access until an agreement is accepted</option><option value="legacy">Existing / custom agreement — preserve legacy access</option></select><p data-testid="tenant-catalogue-note" className="text-xs text-gray-500 mt-2">New offers use tenant acceptance and platform approval under Subscriptions. The stored monthly amount and capacity above remain manual agreement fields; this does not charge a payment.</p></div>}
+                  )}
+
                   {/* Master Admin Section — hidden for demo tenants */}
                   {!newTenant.is_demo && (
                   <div className="border-t pt-4 mt-4">
@@ -1946,13 +1948,13 @@ const PlatformAdmin = () => {
                       <div className="bg-blue-50 p-4 rounded-lg">
                         <p className="text-sm text-blue-600">Vehicles</p>
                         <p className="text-2xl font-bold text-blue-700">
-                          {tenantDetails.usage?.vehicles} / {tenantDetails.usage?.max_vehicles}
+                          {tenantDetails.usage?.vehicles} / {tenantDetails.usage?.max_vehicles >= 1000000 ? 'Unlimited' : tenantDetails.usage?.max_vehicles}
                         </p>
                       </div>
                       <div className="bg-purple-50 p-4 rounded-lg">
                         <p className="text-sm text-purple-600">Users</p>
                         <p className="text-2xl font-bold text-purple-700">
-                          {tenantDetails.usage?.users} / {tenantDetails.usage?.max_users}
+                          {tenantDetails.usage?.users} / {tenantDetails.usage?.max_users >= 1000000 ? 'Unlimited' : tenantDetails.usage?.max_users}
                         </p>
                       </div>
                       <div className="bg-green-50 p-4 rounded-lg">
@@ -3485,7 +3487,7 @@ const PlatformAdmin = () => {
                         <div>
                           <div className="flex justify-between text-gray-600 mb-1">
                             <span>Vehicles</span>
-                            <span>{usageVehicles}/{tenant.max_vehicles || 10}</span>
+                            <span>{usageVehicles}/{tenant.max_vehicles >= 1000000 ? '∞' : (tenant.max_vehicles || 10)}</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
                             <div 
@@ -3501,7 +3503,7 @@ const PlatformAdmin = () => {
                         <div>
                           <div className="flex justify-between text-gray-600 mb-1">
                             <span>Users</span>
-                            <span>{usageUsers}/{tenant.max_users || 20}</span>
+                            <span>{usageUsers}/{tenant.max_users >= 1000000 ? '∞' : (tenant.max_users || 20)}</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
                             <div 

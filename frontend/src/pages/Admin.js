@@ -1151,7 +1151,7 @@ const Admin = () => {
                       ? 'bg-amber-100 text-amber-700' 
                       : 'bg-green-100 text-green-700'
                 }`}>
-                  {planData.usage.vehicles}/{planData.limits.max_vehicles} vehicles
+                  {planData.usage.vehicles}/{planData.limits.max_vehicles >= 1000000 ? '∞' : planData.limits.max_vehicles} vehicles
                 </span>
               )}
             </div>
@@ -1874,7 +1874,7 @@ const Admin = () => {
                       ? 'bg-amber-100 text-amber-700' 
                       : 'bg-green-100 text-green-700'
                 }`}>
-                  {planData.usage.users}/{planData.limits.max_users} users
+                  {planData.usage.users}/{planData.limits.max_users >= 1000000 ? '∞' : planData.limits.max_users} users
                 </span>
               )}
             </div>

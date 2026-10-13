@@ -374,6 +374,9 @@ class TenantCreate(BaseModel):
     slug: str  # URL-friendly identifier
     plan: TenantPlan = TenantPlan.CUSTOM
     subscription_catalogue: str = Field(default="legacy", pattern="^(legacy|per_vehicle_v1)$")
+    # New per-vehicle tier chosen at setup. When set, capacity is unlimited,
+    # pricing comes from the tier catalogue and preset features are applied.
+    tier: Optional[str] = Field(default=None, pattern="^(standard|essential)$")
     # Optional: Master Admin credentials. If not provided, will be auto-generated
     master_admin_email: Optional[EmailStr] = None  # Now validates email format
     master_admin_name: Optional[str] = None

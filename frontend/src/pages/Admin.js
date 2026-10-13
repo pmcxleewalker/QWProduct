@@ -3228,17 +3228,15 @@ const Admin = () => {
                     </div>
                     <div className="bg-white rounded-lg p-4 shadow-sm">
                       <h4 className="font-semibold text-purple-800 mb-2 flex items-center">
-                        <Activity size={16} className="mr-1" /> Demand Forecast
+                        <Activity size={16} className="mr-1" /> Recorded Bookings
                       </h4>
                       <p className="text-3xl font-bold text-purple-600">
-                        {reportData.summary.total_bookings > 0 
-                          ? Math.round(reportData.summary.total_bookings * 1.15) 
-                          : 0}
+                        {reportData.summary.total_bookings || 0}
                       </p>
-                      <p className="text-xs text-gray-500">Projected next period (+15%)</p>
+                      <p className="text-xs text-gray-500">Bookings in the current report dataset</p>
                       <div className="mt-2 flex items-center text-xs">
                         <TrendingUp size={12} className="text-green-500 mr-1" />
-                        <span className="text-green-600">Growth trend detected</span>
+                        <span className="text-green-600">Recorded data — not a forecast</span>
                       </div>
                     </div>
                     <div className="bg-white rounded-lg p-4 shadow-sm">
@@ -3275,17 +3273,17 @@ const Admin = () => {
                     <div>
                       <h3 className="text-lg font-bold text-amber-900">Unlock Enhanced Analytics</h3>
                       <p className="text-sm text-amber-700 mt-1">
-                        Upgrade to Essential for utilization metrics, or Professional for predictive insights and demand forecasting.
+                        Essential includes detailed booking, GPS, compliance and daily availability reports. Professional’s additional analytics are coming soon.
                       </p>
                     </div>
                     <div className="hidden md:flex space-x-2">
                       <div className="px-3 py-2 bg-blue-100 rounded-lg text-center">
                         <p className="text-xs text-blue-600 font-medium">Essential</p>
-                        <p className="text-sm font-bold text-blue-700">€279/mo</p>
+                        <p className="text-sm font-bold text-blue-700">€8.50/vehicle/month</p>
                       </div>
                       <div className="px-3 py-2 bg-purple-100 rounded-lg text-center">
                         <p className="text-xs text-purple-600 font-medium">Professional</p>
-                        <p className="text-sm font-bold text-purple-700">€399/mo</p>
+                        <p className="text-sm font-bold text-purple-700">€12.50/vehicle/month · coming soon</p>
                       </div>
                     </div>
                   </div>

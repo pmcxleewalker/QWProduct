@@ -33,6 +33,8 @@ import EditVehicleModal from '../components/EditVehicleModal';
 import AnnouncementBanner from '../components/AnnouncementBanner';
 import AnnouncementsManager from '../components/AnnouncementsManager';
 import DailyTimelineChart from '../components/DailyTimelineChart';
+import { CommercialGate } from '../components/subscriptions/CommercialGate';
+import { OperationalExports } from '../components/subscriptions/OperationalExports';
 import NotificationBell from '../components/NotificationBell';
 import GDPRSettings from '../components/GDPRSettings';
 import UserProfileMenu from '../components/UserProfileMenu';
@@ -2369,6 +2371,7 @@ const TenantDashboard = () => {
             {/* Fleet Reports Tab */}
             {((activeTab === 'fleet-reports') || (activeTab === 'reports' && activeSubTab === 'fleet-reports')) && isAdmin && (
               <div className="space-y-8">
+                <CommercialGate feature="detailed_booking_reports"><OperationalExports /></CommercialGate>
                 <FleetReportsSection 
                   onRefresh={() => fetchData()} 
                   vehicles={vehicles}
@@ -2379,7 +2382,7 @@ const TenantDashboard = () => {
 
             {/* Daily Timeline Tab */}
             {(activeTab === 'reports' && activeSubTab === 'daily-timeline') && isAdmin && (
-              <DailyTimelineChart />
+              <CommercialGate feature="daily_availability_reports"><DailyTimelineChart /></CommercialGate>
             )}
 
             {/* Incident Reports Tab */}
@@ -2389,7 +2392,7 @@ const TenantDashboard = () => {
 
             {/* Custom Documents Tab */}
             {(activeTab === 'reports' && activeSubTab === 'documents') && isAdmin && (
-              <CustomDocumentsAdmin />
+              <CommercialGate feature="custom_documents"><CustomDocumentsAdmin /></CommercialGate>
             )}
 
             {/* Analytics Tab (was Reports Tab) */}
@@ -2657,7 +2660,7 @@ const TenantDashboard = () => {
                           <div className="bg-white rounded-lg p-4 shadow-sm">
                             <h4 className="font-medium text-gray-800 mb-3 flex items-center text-sm">
                               <Clock size={16} className="mr-2 text-cyan-600" />
-                              Peak Booking Hours
+                              Scheduled start times (report bookings, UTC)
                             </h4>
                             <div className="grid grid-cols-4 gap-2">
                               {['Morning', 'Midday', 'Afternoon', 'Evening'].map((period, index) => {
@@ -2667,7 +2670,7 @@ const TenantDashboard = () => {
                                   [13, 17], // Afternoon 1-5
                                   [17, 22]  // Evening 5-10
                                 ][index];
-                                const periodBookings = Math.floor(Math.random() * 20) + (index === 1 || index === 2 ? 10 : 5);
+                                const periodBookings = tenantReports?.scheduled_start_periods?.[period];
                                 const colors = [
                                   'from-yellow-400 to-orange-400',
                                   'from-blue-400 to-indigo-400',
@@ -2677,7 +2680,7 @@ const TenantDashboard = () => {
                                 return (
                                   <div key={period} className="text-center p-3 bg-gray-50 rounded-lg">
                                     <div className={`w-10 h-10 mx-auto mb-2 rounded-full bg-gradient-to-br ${colors} flex items-center justify-center text-white text-xs font-bold`}>
-                                      {periodBookings}
+                                      {periodBookings ?? '—'}
                                     </div>
                                     <p className="text-xs text-gray-600">{period}</p>
                                     <p className="text-xs text-gray-400">{hours[0]}:00-{hours[1]}:00</p>

@@ -373,6 +373,7 @@ class TenantCreate(BaseModel):
     name: str
     slug: str  # URL-friendly identifier
     plan: TenantPlan = TenantPlan.CUSTOM
+    subscription_catalogue: str = Field(default="legacy", pattern="^(legacy|per_vehicle_v1)$")
     # Optional: Master Admin credentials. If not provided, will be auto-generated
     master_admin_email: Optional[EmailStr] = None  # Now validates email format
     master_admin_name: Optional[str] = None

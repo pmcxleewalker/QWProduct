@@ -1,5 +1,12 @@
 # Quick Wing — Changelog
 
+## 2026-10-10 — Read-only subscription/reporting audit; implementation NOT approved
+- Audited plan registry, tenant agreement fields, feature checks, manual invoicing, marketing copy, existing operational/GPS/behaviour reports and data coverage. User selected Professional as coming soon/register interest.
+- Verified public plans endpoint200 stillreturns legacyflat179/299/499+Custom; currentlandingpervehicle6.50/8.50 is separate. No changes to either.
+- Identified current random peak-hour chart, fixed15% forecasting and unreliable utilisation/cost assumptions, plus missing centralized plan enforcement. Documented, not fixed during this approval-only phase.
+- Read-only preview Mongo aggregates only; no identifiable customer data in audit output, no seeds/migrations/tenant/auth/billing/provider writes. All10previewtrackersareDEMO, not real-device validation. Production contracts/provider state not audited.
+- Created `memory/SUBSCRIPTION_REDESIGN_AUDIT.md` with feasibility matrix, evidence and staged proposal. Updated planning documents only. Await explicit approval before implementation; Professional presentation answer is not that approval.
+
 ## 2026-10-10 — Warmer branding strip and interactive feature showcase
 - Removed visible “Client” label beside Bluebird; retained original Bluebird, AI Six and HCCI assets. Balanced Bluebird/AI Six recognition layout with clearer podcast action and separate HCCI award treatment.
 - Warm white/stone surfaces, charcoal selected states and restrained gold accents replace pale-sage flatness in the feature presentation. Added familiar feature icons, improved hierarchy, framed real product screenshots and synchronized preview index; retained all five tabs, text, images, keyboard controls and accessibility states.

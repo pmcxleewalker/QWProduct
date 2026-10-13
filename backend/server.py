@@ -11,7 +11,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
-from typing import List, Optional, Any, Dict
+from typing import List, Optional, Any, Dict, Literal
 from datetime import timedelta, datetime, timezone
 import uuid
 import secrets
@@ -88,6 +88,7 @@ from backup_service import BackupService, serialize_backup
 from services.tracker_asset_claims import claim_assets, device_keys, release_assets
 from services.tracker_setup_worker import TrackerSetupWorker
 from routes.bulk_tracker_setup import build_router as build_bulk_tracker_router
+from routes.subscriptions import build_router as build_subscription_router
 
 # Initialize services
 audit_service = AuditService(db)
@@ -97,6 +98,7 @@ app = FastAPI(title="Quick Wing Fleet Management - Multi-Tenant SaaS")
 api_router = APIRouter(prefix="/api")
 tracker_setup_worker = TrackerSetupWorker(db)
 api_router.include_router(build_bulk_tracker_router(db, tracker_setup_worker))
+api_router.include_router(build_subscription_router(db))
 app.add_event_handler("startup", tracker_setup_worker.start)
 app.add_event_handler("shutdown", tracker_setup_worker.stop)
 
@@ -985,6 +987,9 @@ async def update_tenant_plan(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
     
+    existing_control = await db.tenant_subscription_controls.find_one({"tenant_id": tenant_id}, {"_id": 0, "active_agreement": 1})
+    if tenant.get("subscription_catalogue") == "per_vehicle_v1" or (existing_control or {}).get("active_agreement"):
+        raise HTTPException(409, "Use the subscription request, tenant acceptance and platform approval workflow for this agreement.")
     # Validate plan
     try:
         plan = TenantPlan(new_plan)
@@ -1067,6 +1072,7 @@ async def create_tenant(
         "max_vehicles": max_vehicles,
         "max_users": max_users,
         "monthly_price": monthly_price,
+        "subscription_catalogue": "legacy" if tenant_data.is_demo else tenant_data.subscription_catalogue,
         "customizations_remaining": customizations,
         "customizations_reset_date": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
         "feature_overrides": tenant_data.feature_overrides or {},
@@ -1478,16 +1484,22 @@ async def get_my_plan(context: TenantContext = Depends(require_tenant_context)):
     for key, value in overrides.items():
         features[key] = value
     
+    from services.subscription_catalog import plan_features, effective_capabilities, PLANS as NEW_PLANS
+    commercial = await db.tenant_subscription_controls.find_one({"tenant_id": context.tenant_id}, {"_id": 0})
+    capabilities = effective_capabilities(tenant, commercial)
+    features = plan_features(tenant, commercial, features)
+    selected_offer = ((commercial or {}).get("active_agreement") or {}).get("plan", "standard")
+    new_offer = NEW_PLANS.get(selected_offer) if capabilities is not None else None
     # Get current usage
     vehicles_count = await db.vehicles.count_documents({"tenant_id": context.tenant_id})
     users_count = await db.memberships.count_documents({"tenant_id": context.tenant_id})
     
     return {
         "plan": {
-            "id": plan.value,
-            "name": plan_config["name"],
-            "description": plan_config["description"],
-            "tagline": plan_config["tagline"]
+            "id": new_offer["id"] if new_offer else plan.value,
+            "name": new_offer["name"] if new_offer else plan_config["name"],
+            "description": new_offer["description"] if new_offer else plan_config["description"],
+            "tagline": "Per vehicle / month; billing managed separately" if new_offer else plan_config["tagline"]
         },
         "limits": {
             "max_vehicles": tenant.get("max_vehicles", plan_config["max_vehicles"]),
@@ -1499,7 +1511,9 @@ async def get_my_plan(context: TenantContext = Depends(require_tenant_context)):
             "vehicles": vehicles_count,
             "users": users_count
         },
-        "features": features
+        "features": features,
+        "capabilities": sorted(capabilities) if capabilities is not None else None,
+        "pricing_version": "per_vehicle_v1" if capabilities is not None else "legacy"
     }
 
 
@@ -2392,12 +2406,25 @@ class PublicContactPayload(BaseModel):
     fleet_size: Optional[str] = None
     message: Optional[str] = None
     type: str = "general"  # 'general' | 'pricing'
+    plan_interest: Optional[Literal["standard", "essential", "professional"]] = None
+    fuel_card_interest: bool = False
 
 
 @api_router.post("/public/contact")
 async def submit_public_contact(payload: PublicContactPayload):
     if not payload.name.strip() or not payload.email.strip():
         raise HTTPException(status_code=400, detail="Name and email are required")
+    if payload.fuel_card_interest and payload.plan_interest not in {"essential", "professional"}:
+        raise HTTPException(400, "Fuel-card interest must accompany an Essential or Professional enquiry.")
+    message_parts = []
+    if payload.plan_interest:
+        from services.subscription_catalog import PLANS
+        offer = PLANS[payload.plan_interest]
+        message_parts.append(f"Plan interest: {offer['name']} ({offer['status']})")
+    if payload.fuel_card_interest:
+        message_parts.append("Optional Radius/DCI fuel-card interest; eligibility and provider terms to be confirmed. No automatic partner data sharing.")
+    if payload.message:
+        message_parts.append(payload.message.strip())
 
     now_iso = datetime.now(timezone.utc).isoformat()
     lead = {
@@ -2407,8 +2434,11 @@ async def submit_public_contact(payload: PublicContactPayload):
         "company": (payload.company or "").strip() or None,
         "phone": (payload.phone or "").strip() or None,
         "fleet_size": (payload.fleet_size or "").strip() or None,
-        "message": (payload.message or "").strip() or None,
+        "message": "\n\n".join(message_parts) or None,
         "type": payload.type,
+        "plan_interest": payload.plan_interest,
+        "fuel_card_interest": payload.fuel_card_interest,
+        "offer_status": "coming_soon" if payload.plan_interest == "professional" else "available" if payload.plan_interest else None,
         "created_at": now_iso,
         "status": "new",
     }
@@ -5253,6 +5283,15 @@ async def get_tenant_report_summary(
         {"date": date, "count": count}
         for date, count in sorted(daily_bookings.items())
     ]
+    # Count stored scheduled times, never synthetic demand or random peaks.
+    from services.operational_exports import parsed as parse_report_datetime
+    scheduled_periods = {"Morning": 0, "Midday": 0, "Afternoon": 0, "Evening": 0}
+    for booking in all_bookings:
+        scheduled = parse_report_datetime(booking.get("start_time"))
+        if scheduled:
+            for label, first_hour, last_hour in [("Morning", 7, 10), ("Midday", 10, 13), ("Afternoon", 13, 17), ("Evening", 17, 22)]:
+                if first_hour <= scheduled.hour < last_hour:
+                    scheduled_periods[label] += 1
     
     return {
         "summary": {
@@ -5267,6 +5306,8 @@ async def get_tenant_report_summary(
         },
         "vehicle_usage": vehicle_usage[:10],  # Top 10 vehicles
         "daily_booking_trend": daily_trend,
+        "scheduled_start_periods": scheduled_periods,
+        "scheduled_start_scope": "Loaded report bookings; UTC scheduled times; all recorded statuses",
         "generated_at": now.isoformat()
     }
 
@@ -12324,18 +12365,20 @@ Fleet managers waste hours on double-bookings, compliance paperwork, and chasing
 2. **Automated Compliance**: Never miss a tax renewal, NCT, or service - the system alerts you weeks in advance
 3. **QR Code Mileage**: Drivers scan & submit mileage in seconds - no paperwork, no chasing
 4. **Staff Mobile App**: Real-time vehicle status, one-tap bookings, and lift requests
-5. **Cost Analytics**: See exactly where your money goes with detailed fleet reports
+5. **Operational reports**: Recorded booking, GPS, compliance and availability reports. Rate-based cost estimates are scenarios, not measured spending.
 
 ## WHAT MAKES US DIFFERENT
 - Built specifically for Irish franchises (we understand your compliance needs)
 - Multi-location support with per-franchise dashboards
 - Both admin AND driver apps included
-- No per-vehicle pricing traps - simple subscription tiers
+- New public offers: QuickWing Standard €6.50 per vehicle/month (non-GPS operations, standard reports and CSV); QuickWing Essential €8.50 per vehicle/month (Standard plus existing GPS, detailed booking/GPS/compliance/daily availability reports, CSV/PDF and optional eligible Radius/DCI benefits).
+- QuickWing Professional €12.50 per vehicle/month is COMING SOON, register interest only. Planned extras: in-depth staff usage, advanced most-used vehicle analysis, custom document design and PDF headers with Quick Wing and office/branch logos. Never describe planned extras as live.
+- Existing agreement prices/features stay protected. Hardware/installation and VAT treatment are confirmed separately. Fuel benefits depend on eligibility/provider approval with no guaranteed discount. No automatic migration or charging.
 
 ## YOUR SALES APPROACH
 1. **Ask discovery questions**: "How many vehicles are you managing?" "What's your biggest fleet headache right now?"
 2. **Relate to their pain**: Connect their answer to a feature that solves it
-3. **Create urgency**: "Most fleet managers tell us they wish they'd switched sooner"
+3. **Be accurate**: Explain recorded capabilities and optional benefits without inventing adoption, savings or urgency.
 4. **Push the demo**: Your #1 goal is to get them to book a demo call
 
 ## CALL-TO-ACTION (Push this!)

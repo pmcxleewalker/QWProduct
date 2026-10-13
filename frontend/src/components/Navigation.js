@@ -121,6 +121,7 @@ const Navigation = ({ tenantSlug }) => {
   // Only show Admin for admin users
   if (isTenantAdmin()) {
     navItems.push({ path: getTenantPath('/admin'), icon: Settings, label: 'Admin' });
+    navItems.push({ path: getTenantPath('/subscription'), icon: Crown, label: 'Subscription' });
   }
 
   // Show GPS Alerts nav item to tenant admins on GPS-enabled tenants.

@@ -19,6 +19,7 @@ import LegalRecordsSection from '../components/LegalRecordsSection';
 import { useConfirm } from '../components/ConfirmDialog';
 import { demoAPI, platformAPI } from '../api/api';
 import BulkTrackerSetup from './BulkTrackerSetup';
+import { PlatformSubscriptions } from '../components/subscriptions/PlatformSubscriptions';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -65,7 +66,7 @@ const PlatformAdmin = () => {
   const { user, isPlatformAdmin, isSuperAdmin, impersonateTenant, isImpersonating, stopImpersonation, activeTenant, logout } = useAuth();
   const confirm = useConfirm();
   
-  const [activeTab, setActiveTab] = useState(() => window.location.hash === '#bulk-tracker-setup' ? 'bulk-tracker-setup' : 'overview');
+  const [activeTab, setActiveTab] = useState(() => ['#bulk-tracker-setup', '#subscriptions'].includes(window.location.hash) ? window.location.hash.slice(1) : 'overview');
   
   // Set default tab based on user role after user data is available
   useEffect(() => {
@@ -98,6 +99,7 @@ const PlatformAdmin = () => {
     name: '', 
     slug: '', 
     plan: 'custom',
+    subscription_catalogue: 'per_vehicle_v1',
     master_admin_email: '', 
     master_admin_name: '',
     custom_max_vehicles: 10,
@@ -404,6 +406,7 @@ const PlatformAdmin = () => {
       
       const response = await axios.post(`${API}/platform/tenants`, {
         ...newTenant,
+        subscription_catalogue: newTenant.subscription_catalogue || 'per_vehicle_v1',
         master_admin_email: newTenant.master_admin_email || undefined,
         master_admin_name: newTenant.master_admin_name || undefined,
       });
@@ -414,6 +417,7 @@ const PlatformAdmin = () => {
         name: '', 
         slug: '', 
         plan: 'custom', 
+        subscription_catalogue: 'per_vehicle_v1',
         master_admin_email: '', 
         master_admin_name: '',
         custom_max_vehicles: 10,
@@ -879,6 +883,7 @@ const PlatformAdmin = () => {
               { id: 'overview', label: 'Dashboard', sublabel: 'Platform Overview', icon: Activity, roles: ['super_admin', 'master_admin'] },
               { id: 'tenants', label: 'Clients', sublabel: 'Manage Clients', icon: Building2, roles: ['super_admin', 'master_admin', 'bot'] },
               { id: 'bulk-tracker-setup', label: 'Bulk Tracker Setup', sublabel: 'SIM Configuration', icon: Satellite, roles: ['super_admin'] },
+              { id: 'subscriptions', label: 'Subscriptions', sublabel: 'Requests & Agreements', icon: Receipt, roles: ['super_admin'] },
               { id: 'reports', label: 'Finance', sublabel: 'Reports & Billing', icon: Receipt, roles: ['super_admin', 'master_admin'] },
               { id: 'audit', label: 'Activity', sublabel: 'Audit Log', icon: FileText, roles: ['super_admin', 'master_admin'] },
               { id: 'backup', label: 'Backup', sublabel: 'Disaster Recovery', icon: Database, roles: ['super_admin', 'master_admin'] },
@@ -888,7 +893,7 @@ const PlatformAdmin = () => {
             .map(tab => (
               <button
                 key={tab.id}
-                onClick={() => { setActiveTab(tab.id); window.history.replaceState(null, '', tab.id === 'bulk-tracker-setup' ? '#bulk-tracker-setup' : window.location.pathname); }}
+                onClick={() => { setActiveTab(tab.id); window.history.replaceState(null, '', ['bulk-tracker-setup', 'subscriptions'].includes(tab.id) ? `#${tab.id}` : window.location.pathname); }}
                 className={`flex flex-col items-center px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                   activeTab === tab.id
                     ? 'bg-blue-600 text-white shadow-md'
@@ -911,6 +916,7 @@ const PlatformAdmin = () => {
 
       {/* Main Content */}
       <div className={`max-w-7xl mx-auto ${activeTab === 'content-worker' ? 'px-0 py-0 md:px-4 md:py-6' : 'px-4 py-6'}`}>
+        {activeTab === 'subscriptions' && user?.role === 'super_admin' && <PlatformSubscriptions />}
         {/* Messages */}
         {error && (
           <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center text-red-700">
@@ -1422,6 +1428,7 @@ const PlatformAdmin = () => {
                     </div>
                   </div>
                   
+                  {!newTenant.is_demo && <div className="border-t pt-4 mt-4"><label htmlFor="tenant-catalogue" className="block text-sm font-medium text-gray-700 mb-2">Subscription access model</label><select id="tenant-catalogue" data-testid="tenant-subscription-catalogue" value={newTenant.subscription_catalogue || 'per_vehicle_v1'} onChange={e => setNewTenant({ ...newTenant, subscription_catalogue: e.target.value })} className="w-full p-3 border rounded-lg"><option value="per_vehicle_v1">New per-vehicle offer — Standard access until an agreement is accepted</option><option value="legacy">Existing / custom agreement — preserve legacy access</option></select><p data-testid="tenant-catalogue-note" className="text-xs text-gray-500 mt-2">New offers use tenant acceptance and platform approval under Subscriptions. The stored monthly amount and capacity above remain manual agreement fields; this does not charge a payment.</p></div>}
                   {/* Master Admin Section — hidden for demo tenants */}
                   {!newTenant.is_demo && (
                   <div className="border-t pt-4 mt-4">

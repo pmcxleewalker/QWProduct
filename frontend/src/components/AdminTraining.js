@@ -39,8 +39,8 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
               `Up to ${planData?.limits?.max_vehicles || 10} vehicles`,
               `Up to ${planData?.limits?.max_users || 20} team members`,
               features.enhanced_reports ? 'Enhanced Reports — included' : 'Enhanced Reports — available on Essential',
-              features.detailed_reports ? 'Detailed Analytics — included' : 'Detailed Analytics — available on Professional',
-              features.cost_analytics ? 'Cost Analytics with customisable rates — included' : 'Cost Analytics — available on Professional',
+              features.detailed_reports ? 'Existing detailed analytics — retained with your agreement' : 'Additional Professional analytics — coming soon',
+              features.cost_analytics ? 'Rate-based cost estimates — included in your existing agreement, not measured spending' : 'New Professional reporting — coming soon',
               features.priority_support ? 'Priority Support — included' : 'Priority Support — available on Professional'
             ]
           },
@@ -57,7 +57,7 @@ const AdminTraining = ({ isOpen, onClose, franchiseName, planData }) => {
         tip: planId === 'standard' 
           ? 'Upgrade to Essential for enhanced reports and booking controls!' 
           : planId === 'essential'
-          ? 'Upgrade to Professional for cost analytics and custom branding!'
+          ? 'Professional is coming soon: register interest in deeper staff/vehicle analysis, custom documents and co-branded PDF headers.'
           : 'You have access to all premium features!'
       }
     },

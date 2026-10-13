@@ -138,6 +138,8 @@ async def get_tenant_context(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You do not have access to this tenant"
                 )
+        from services.subscription_catalog import enforce_capability
+        await enforce_capability(db, tenant, request)
     
     return TenantContext(
         user_id=user_id,

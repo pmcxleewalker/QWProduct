@@ -32,6 +32,7 @@ import ThankYou from './pages/ThankYou';
 import ActivateAccount from './pages/ActivateAccount';
 import TenantSelector from './pages/TenantSelector';
 import PlatformAdmin from './pages/PlatformAdmin';
+import Subscription from './pages/Subscription';
 import DemoRedeem from './pages/DemoRedeem';
 import DemoBanner from './components/DemoBanner';
 import Reports from './pages/Reports';
@@ -361,6 +362,7 @@ const TenantRoutes = () => {
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/behaviour" element={<Behaviour />} />
+            <Route path="/subscription" element={isTenantAdmin ? <Subscription /> : <Navigate to={`/${tenantSlug}`} replace />} />
             <Route path="/assistance" element={<Assistance />} />
             <Route path="/request-lift" element={<RequestLift />} />
             <Route path="/mileage" element={<MileageUpdate />} />
@@ -470,6 +472,7 @@ const AppContent = () => {
                   <Route path="/bookings" element={<Bookings />} />
                   <Route path="/alerts" element={<Alerts />} />
                   <Route path="/behaviour" element={<Behaviour />} />
+                  <Route path="/subscription" element={<TenantProtectedRoute adminOnly={true}><Subscription /></TenantProtectedRoute>} />
                   <Route path="/assistance" element={<Assistance />} />
                   <Route path="/mileage" element={<MileageUpdate />} />
                   <Route

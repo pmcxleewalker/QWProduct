@@ -8,6 +8,20 @@ const eur = (n) => (n < 0 ? '−€' : '€') + Math.abs(Math.round(n)).toLocale
 export function useLandingInteractions(rootRef) {
   const priceRef = useRef(6.5);
   const submittingRef = useRef(false);
+  const onChoosePlan = useCallback((plan) => {
+    const root = rootRef.current;
+    const input = root?.querySelector('[name="plan_interest"]');
+    if (!input) return;
+    input.value = plan;
+    const fuel = root.querySelector('.fuel-interest');
+    fuel.hidden = !['essential', 'professional'].includes(plan);
+    if (fuel.hidden) fuel.querySelector('input').checked = false;
+  }, [rootRef]);
+
+  useEffect(() => {
+    const plan = new URLSearchParams(window.location.search).get('interest');
+    if (['standard', 'essential', 'professional'].includes(plan)) onChoosePlan(plan);
+  }, [onChoosePlan]);
 
   const calc = useCallback(() => {
     const root = rootRef.current;
@@ -26,6 +40,21 @@ export function useLandingInteractions(rootRef) {
     root.querySelector('#r-cost').textContent = eur(cost);
     root.querySelector('#r-net').textContent = eur(value - cost);
   }, [rootRef]);
+
+  const onSyncPricing = useCallback((catalog) => {
+    const root = rootRef.current;
+    if (!root || !catalog?.plans) return;
+    [['standard', 'roi-plan-6-5'], ['essential', 'roi-plan-8-5']].forEach(([id, testId]) => {
+      const offer = catalog.plans.find(plan => plan.id === id);
+      const button = root.querySelector(`[data-testid="${testId}"]`);
+      if (offer && button) {
+        button.dataset.price = String(offer.unit_price_cents / 100);
+        button.textContent = `€${(offer.unit_price_cents / 100).toFixed(2)} · ${offer.name.replace('QuickWing ', '')}`;
+        if (button.getAttribute('aria-pressed') === 'true') priceRef.current = offer.unit_price_cents / 100;
+      }
+    });
+    calc();
+  }, [rootRef, calc]);
 
   const selectTab = (tab) => {
     const root = rootRef.current;
@@ -150,7 +179,9 @@ export function useLandingInteractions(rootRef) {
     try {
       await axios.post(`${API}/public/contact`, {
         name: value('full_name'), company: value('company'), email: value('email'),
-        phone: value('phone'), message: value('message') || null, type: 'general',
+        phone: value('phone'), message: value('message') || null,
+        type: value('plan_interest') ? 'pricing' : 'general', plan_interest: value('plan_interest') || null,
+        fuel_card_interest: fields.get('fuel_card_interest') === 'on',
       });
       const panel = document.createElement('div');
       panel.className = 'form contact-success';
@@ -170,7 +201,8 @@ export function useLandingInteractions(rootRef) {
     }
   };
 
-  return { onClick, onKeyDown, onSubmit, onScrollCapture, onInput: (event) => {
+  return { onChoosePlan, onSyncPricing, onClick, onKeyDown, onSubmit, onScrollCapture, onInput: (event) => {
     if (event.target.matches('input[type=range]')) calc();
+    if (event.target.name === 'plan_interest') onChoosePlan(event.target.value);
   } };
 }

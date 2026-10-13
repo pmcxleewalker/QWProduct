@@ -1,5 +1,12 @@
 # Quick Wing — Roadmap
 
+## Highest-priority pending approval — Subscription redesign (2026-10-10)
+- Read-only audit and A/B/C proposal completed: `SUBSCRIPTION_REDESIGN_AUDIT.md`. User approval REQUIRED before any application changes.
+- Intended new prices per vehicle/month: Standard6.50, Essential8.50, Professional12.50; Professional **coming soon/register interest** selected by user.
+- ProposedA+B: truthful pricing/comparison and versioned catalogue; preserve legacy/custom terms; compatible plan enforcement and owner-reviewed upgrade/downgrade requests. No billing changes, customer migration or GPS reconfiguration.
+- SeparateC: real advanced reporting/XLSX/management packs. Correct random/unsupported existing metrics only after approval; no measured idle-time or forecasts without required data.
+- Launch decisions: verified popularity badge, VAT, hardware wording, Radius/DCI eligibility/referral, billable vehicles/capacities and change dates. Preview-only counts do not establish production agreements.
+
 ## Current public-site review (2026-10-10)
 - Warmer recognition/feature refinement implemented and verified (iteration54): Client label removed, balanced Bluebird/AI Six layout, separate HCCI award, stronger interactive feature tabs and preview. Phone accordion behaviour preserved. Await user visual approval in preview.
 - Optional later enhancement: recorded feature-specific walkthrough clips; not implemented or approved. Existing platform priorities below are unchanged.

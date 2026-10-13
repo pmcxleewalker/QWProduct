@@ -1,0 +1,52 @@
+#qw-landing .subscription-prices { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px; margin-top: 42px; align-items: stretch; }
+#qw-landing .subscription-price { display: flex; flex-direction: column; min-width: 0; padding: 28px 24px; background: #fff; border: 1px solid #ddd9cf; border-radius: 7px; }
+#qw-landing .subscription-price-essential { border: 2px solid #b99a59; background: #fffdf6; box-shadow: 0 14px 30px -20px rgba(111,83,24,.4); padding: 27px 23px; }
+#qw-landing .subscription-price-professional { background: #f7f7f3; border-top: 3px solid #4b554c; padding-top: 26px; }
+#qw-landing .subscription-plan-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 31px; }
+#qw-landing .subscription-kicker { font-size: 10px; color: var(--body); }
+#qw-landing .subscription-recommended { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #755617; }
+#qw-landing .subscription-value { font-size: 10px; font-weight: 700; color: #755617; border-bottom: 1px solid #b99a59; }
+#qw-landing .subscription-price h3 { margin-top: 16px; font-size: 21px; line-height: 1.45; font-weight: 600; }
+#qw-landing .subscription-description { font-size: 12px; color: var(--body); margin-top: 10px; min-height: 42px; line-height: 1.7; }
+#qw-landing .subscription-amount { margin-top: 26px; display: flex; flex-direction: column; gap: 5px; }
+#qw-landing .subscription-amount strong { font-size: 46px; line-height: 1.2; font-weight: 500; }
+#qw-landing .subscription-amount > span { font-size: 11px; color: var(--body); }
+#qw-landing .subscription-includes { margin-top: 25px; padding-top: 22px; border-top: 1px solid var(--line); font-size: 11px; font-weight: 600; min-height: 59px; }
+#qw-landing .subscription-price ul { padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; margin: 20px 0 28px; }
+#qw-landing .subscription-price li { display: flex; align-items: flex-start; gap: 9px; font-size: 12px; line-height: 1.7; }
+#qw-landing .subscription-price li svg { color: #5e714c; flex-shrink: 0; margin-top: 3px; }
+#qw-landing .subscription-price .btn { margin-top: auto; width: 100%; justify-content: space-between; gap: 10px; }
+#qw-landing .subscription-status { font-size: 10px; color: var(--body); padding-top: 12px; }
+#qw-landing .subscription-terms { margin-top: 26px; font-size: 11px; line-height: 1.85; color: var(--body); }
+#qw-landing .subscription-terms > p + p { margin-top: 10px; }
+#qw-landing .plan-comparison { margin-top: 38px; border-top: 1px solid #cfc7b5; border-bottom: 1px solid #cfc7b5; }
+#qw-landing .plan-comparison > summary { display: flex; justify-content: space-between; align-items: center; list-style: none; cursor: pointer; padding-block: 22px; font-size: 17px; font-weight: 600; }
+#qw-landing .plan-comparison > summary::-webkit-details-marker { display: none; }
+#qw-landing .comparison-heading, #qw-landing .comparison-row { display: grid; grid-template-columns: 2fr repeat(3,minmax(0,1fr)); gap: 12px; align-items: center; padding: 14px 8px; border-top: 1px solid var(--line); font-size: 12px; }
+#qw-landing .comparison-heading { font-weight: 600; background: #e9e6dc; }
+#qw-landing .comparison-row > span:not(:first-child), #qw-landing .comparison-heading > span:not(:first-child) { display: flex; justify-content: center; text-align: center; }
+#qw-landing .comparison-row svg { color: #526c43; }
+#qw-landing .comparison-planned { font-size: 10px; color: #676757; }
+#qw-landing .plan-comparison > p { margin-block: 18px; }
+#qw-landing .field select { min-height: 48px; border: 1px solid #566250; border-radius: 2px; color: #fff; background: #2b342d; padding: 12px; width: 100%; font-size: 16px; }
+#qw-landing .fuel-interest { display: flex; align-items: flex-start; gap: 12px; font-size: 12px; color: #d5decf; }
+#qw-landing .fuel-interest[hidden] { display: none; }
+#qw-landing .fuel-interest input { width: 18px; height: 18px; flex: 0 0 18px; margin-top: 2px; accent-color: #c7d0ae; }
+@media(max-width:1023px) {
+  #qw-landing .subscription-prices { gap: 14px; }
+  #qw-landing .subscription-price { padding: 22px 18px; }
+  #qw-landing .subscription-price h3 { font-size: 18px; }
+  #qw-landing .subscription-amount strong { font-size: 39px; }
+}
+@media(max-width:767px) {
+  #qw-landing .subscription-prices { grid-template-columns: 1fr; gap: 20px; margin-top: 26px; }
+  #qw-landing .subscription-price { padding: 25px; }
+  #qw-landing .subscription-price h3 { font-size: 22px; }
+  #qw-landing .subscription-description { min-height: 0; }
+  #qw-landing .subscription-amount { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 12px; }
+  #qw-landing .subscription-amount strong { font-size: 44px; }
+  #qw-landing .subscription-includes { min-height: 0; }
+  #qw-landing .comparison-heading, #qw-landing .comparison-row { grid-template-columns: minmax(0,1.6fr) repeat(3,minmax(0,1fr)); gap: 4px; padding: 12px 0; font-size: 10px; }
+  #qw-landing .comparison-heading { font-size: 9px; }
+  #qw-landing .comparison-planned { font-size: 9px; }
+}

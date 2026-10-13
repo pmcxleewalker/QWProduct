@@ -3,7 +3,7 @@ const sections = {
   'landing-field-features': ['field', 'Out in the field', 'The mobile app for your team'],
   'landing-award': ['award', 'Award-winning software', 'HCCI Innovation of the Year 2026'],
   'landing-stories': ['stories', 'Our customer &amp; founder', 'The people behind Quick Wing'],
-  'landing-pricing': ['pricing', 'Plans &amp; pricing', '€6.50–€8.50 per vehicle / month'],
+  'landing-pricing': ['pricing', 'Plans &amp; pricing', 'Three plans. From €6.50 per vehicle / month'],
   'landing-roi': ['roi', 'ROI calculator', 'See what your fleet could save'],
   'landing-contact': ['contact', 'Let’s talk about your fleet', 'Get in touch with Lee'],
 };

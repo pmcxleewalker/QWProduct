@@ -1,0 +1,26 @@
+{
+  "summary": "End-to-end verification of 3-tier per-vehicle subscription redesign (Phases A + B). Added /app/backend/tests/test_subscription_redesign.py (18 pytest cases) — all 18 pass. Verified public catalogue (version/prices/statuses/comparison), public contact form plan_interest + fuel_card_interest validation, LEGACY tenant protection (my-plan capabilities=null, legacy features intact), full tenant workflow (create→review/quote→accept→apply→my-plan reflects essential/per_vehicle_v1 with billing_unchanged=true), Professional activation blocked (409 'coming soon'), duplicate open request blocked (409), acknowledgement required (400), legacy super-admin PUT /platform/tenants/{id}/plan blocked (409) after agreement exists, operational exports CSV+PDF OK with plan gating, date-window >32d → 400, unknown kind → 404, GPS tracker route not plan-gated for legacy/essential. Frontend: landing pricing section correctly shows 3 tiers (€6.50/€8.50/€12.50), Essential 'Recommended / Best Value' highlighted, Professional 'Coming soon — Register interest / Not available to activate or purchase yet'. Tenant /test-fleet/subscription page renders legacy 'Existing agreement — protected' panel, cards, Professional greyed with Register interest, acknowledgement checkbox + Request review. Platform /platform Subscriptions tab loads with consent-first banner. State cleanup performed: tenant_subscription_controls doc deleted and subscription_catalogue unset for test-fleet so legacy state is restored for future testing agents.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/test-fleet/subscription", "issues": ["'Stored monthly agreement: €0.00' is shown for legacy tenants whose monthly_price is 0/null; cosmetic — consider hiding when 0 or substituting 'legacy agreement amount on file'."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_subscription_redesign.py", "/app/test_reports/pytest/subscription_redesign.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "subscription_catalog.required_capability maps all /api/tracker/* and /api/behaviour/* to gps capability — ensure no non-GPS tracker setup endpoints get accidentally gated. Verified current essential/legacy case; retest if new tracker admin endpoints are added.",
+    "operational_exports.build_export caches the full vehicles list before any plan-gating check for availability reports; acceptable but could early-return 403 before the 5001-vehicle fetch for efficiency on huge tenants.",
+    "server.py GET /my-plan still mixes legacy PLAN_CONFIG with new catalogue response fields; works today but doubles up logic — candidate for consolidation into subscription_catalog once legacy tenants migrate."
+  ],
+  "updated_files": ["/app/backend/tests/test_subscription_redesign.py"],
+  "success_rate": {"backend": "100% (18/18)", "frontend": "100% visual checks passed"},
+  "test_credentials": "Used superadmin@quickwing.com / Super123 and victim.admin@example.com / Admin123 (tenant test-fleet).",
+  "seed_data_creation": "Three test contact leads were submitted via POST /api/public/contact with name 'QA Lead' and emails prefixed 'qa+<rand>@example.com' (per protocol note: labelled as QA). Tenant subscription control document for test-fleet was created and then cleaned up (deleted) so test-fleet is restored to legacy state.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All backend subscription endpoints and workflow verified end-to-end. test-fleet left in LEGACY state (no tenant_subscription_controls doc, subscription_catalogue unset). To re-run lifecycle test it will re-apply and must be cleaned up again (same mongo delete). Frontend portals: PublicPricing on landing, Subscription page at /<slug>/subscription, PlatformAdmin → Subscriptions tab. 3 QA-labelled contact leads remain in DB.",
+  "rca of the issue": "N/A — no bugs found."
+}

@@ -141,3 +141,18 @@ User requested a better-formatted/easier CSV and less sloppy review, then select
 - Proposed A+B: versioned new catalogue and three-card/comparison UI, honest Recommended/Best Value positioning, Professional interest capture, consistent copy; grandfather legacy/custom agreements; centralized compatible entitlements and owner-approved plan-change requests; no automatic billing or data migrations. PhaseC advanced reporting is separate, with Professional remaining coming soon.
 - Approval/commercial flags: substantiate Most Popular before using it; confirm VAT display, hardware terms, fuel eligibility/referral details, billable vehicle/capacity and effective-date rules before activation/billing changes. Legacy Professional remains its existing agreement, not automatically coming soon.
 - **Next action: present proposal and await explicit implementation approval.** Do not treat earlier design approvals or the Professional display choice as authorization to change subscriptions.
+
+## Three-tier subscription redesign — IMPLEMENTED & TESTED (2026-06, Phases A+B)
+User approved Phases A+B. Implemented and verified end-to-end (iteration_55: 18/18 backend pytest pass, frontend visual checks pass, no bugs).
+- New per-vehicle catalogue `per_vehicle_v1`: Standard €6.50 / Essential €8.50 (Recommended·Best Value) / Professional €12.50 (coming soon — register interest, cannot be activated). Legacy flat catalogue left intact.
+- Backend: `services/subscription_catalog.py` (capabilities, effective_capabilities, required_capability, enforce_capability, plan_features), `services/subscription_workflow.py` (consent-first request→review/quote→accept→apply lifecycle, idempotency, grandfathering), `services/operational_exports.py` (CSV+PDF bookings/gps/compliance/availability with plan gating, 32-day/5000-vehicle/10000-booking caps), `routes/subscriptions.py`, `models/subscriptions.py`, model field `subscription_catalogue`.
+- Plan-capability enforcement wired in `middleware/tenant.py`. Legacy tenants resolve capabilities=null → ungated (NO loss of existing access). `/my-plan` and `/platform/plans` reflect the new catalogue; legacy super-admin plan-change endpoint blocks (409) once a new agreement/catalogue exists.
+- Frontend: landing `PublicPricing` (portal), `PlatformAdmin` Subscriptions tab, tenant `Subscription` page (request/accept/cancel), `OperationalExports` + `CommercialGate` in TenantDashboard. Contact form carries `plan_interest` + `fuel_card_interest`.
+- Billing-safety honoured: no automatic charges, invoice changes, GPS activation or data migration; legacy price/limits/overrides/GPS flags preserved. VAT/hardware/fuel wording confirmed per quote.
+- KNOWN DEFECTS NOT YET FIXED (separate, Phase C): `TenantDashboard.js:2670` Math.random Peak Booking Hours; `Admin.js:3233-3241` fixed +15% "growth" forecast. Professional analytics remain coming-soon.
+- Cosmetic: legacy €0/null stored price now displays "On file with your account team" instead of €0.00.
+
+### Remaining backlog (unchanged, separate from the above)
+- P0 BLOCKED: MongoDB Atlas migration — needs prod infra verification; do not start.
+- P1: Phase C Professional reporting suite (fix random/forecast metrics first, then real utilisation/XLSX/advanced PDF); server.py monolith split; Admin Hardware Register; SinoTrack Phase 7 (trip sharing + retention cron).
+- P2: slowapi rate limiting / CORS lock / upload limits / JWT expiry hardening; Sentry + nightly backups; external booking API key.
